@@ -6,11 +6,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { CardWrapper } from "@/components/card-wrapper"
 import { motion } from "framer-motion"
 import { 
-  Terminal, ArrowRight, Zap, Cpu, Globe, Store, ExternalLink, 
-  Network, Rocket, Eye, Shield, BookOpen, Code, FileText, Github,
-  Calendar, Clock, User, Tag, Database, Server, Lock, BarChart3,
-  Activity, Layers, GitBranch, Cloud, Key, CheckCircle, Play,
-  Settings, Users, Workflow
+  ArrowRight, Zap, Cpu, Globe, ExternalLink, 
+  Network, Shield, BookOpen, Code,
+  Calendar, Key, CheckCircle, Play, Database
 } from "lucide-react"
 import { TypingEffect } from "@/components/typing-effect"
 import { AnimatedBackground } from "@/components/animated-background"
@@ -347,7 +345,7 @@ runAgent();`
       <Navigation />
       
       {/* Hero Section */}
-      <div className="relative overflow-hidden bg-black">
+      <div className="relative overflow-hidden bg-black min-h-screen">
         {/* Background Image */}
         <div 
           className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-40"
@@ -372,15 +370,14 @@ runAgent();`
           />
         </div>
 
-        <div className="container relative px-4 sm:px-6">
-          <div className="flex flex-col items-center justify-center space-y-8 sm:space-y-10 md:space-y-12 py-16 sm:py-20 md:py-24 text-center">
+        <div className="container relative px-4 sm:px-6 h-screen">
+          <div className="flex flex-col items-center justify-center space-y-8 sm:space-y-12 md:space-y-16 lg:space-y-20 h-full text-center">
             <motion.div
-              className="space-y-6 sm:space-y-8 md:space-y-10"
+              className="space-y-8 sm:space-y-12 md:space-y-16 lg:space-y-20"
               initial={{ opacity: 0, y: 50 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 1 }}
             >
-
               {/* Main Title */}
               <motion.h1
                 className="text-6xl font-black tracking-tighter sm:text-7xl md:text-8xl lg:text-9xl xl:text-[10rem] 2xl:text-[12rem] font-orbitron leading-none"
@@ -395,7 +392,7 @@ runAgent();`
 
               {/* Subtitle */}
               <motion.div
-                className="mx-auto text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold"
+                className="mx-auto text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.6, duration: 1 }}
@@ -416,30 +413,30 @@ runAgent();`
 
               {/* CTA Buttons */}
               <motion.div
-                className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-center justify-center w-full px-4 sm:px-0"
+                className="flex flex-col sm:flex-row gap-4 sm:gap-6 md:gap-8 items-center justify-center w-full px-4 sm:px-0"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 1, duration: 0.8 }}
               >
                 <Button
                   size="lg"
-                  className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-semibold rounded-lg border-0 shadow-lg hover:shadow-red-500/25 transition-all duration-300 hover:scale-105 w-full sm:w-auto"
+                  className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-8 sm:px-10 md:px-12 py-4 sm:py-5 md:py-6 text-lg sm:text-xl md:text-2xl font-semibold rounded-xl border-0 shadow-2xl hover:shadow-red-500/25 transition-all duration-300 hover:scale-105 w-full sm:w-auto"
                   asChild
                 >
                   <Link href="https://docs.swarms.ai" target="_blank">
-                    <BookOpen className="w-5 h-5 mr-2" />
+                    <BookOpen className="w-6 h-6 mr-3" />
                     View documentation
-                    <ArrowRight className="w-5 h-5 ml-2" />
+                    <ArrowRight className="w-6 h-6 ml-3" />
                   </Link>
                 </Button>
                 <Button
                   size="lg"
                   variant="outline"
-                  className="border-red-500/30 text-red-400 hover:bg-red-500/10 hover:border-red-500/50 px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-semibold rounded-lg transition-all duration-300 hover:scale-105 w-full sm:w-auto"
+                  className="border-red-500/40 text-red-400 hover:bg-red-500/10 hover:border-red-500/60 px-8 sm:px-10 md:px-12 py-4 sm:py-5 md:py-6 text-lg sm:text-xl md:text-2xl font-semibold rounded-xl transition-all duration-300 hover:scale-105 w-full sm:w-auto backdrop-blur-sm"
                   asChild
                 >
                   <Link href="https://swarms.world/platform/api-keys" target="_blank">
-                    <Key className="w-5 h-5 mr-2" />
+                    <Key className="w-6 h-6 mr-3" />
                     Get API key
                   </Link>
                 </Button>

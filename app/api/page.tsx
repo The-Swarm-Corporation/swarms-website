@@ -348,9 +348,16 @@ runAgent();`
       
       {/* Hero Section */}
       <div className="relative overflow-hidden bg-black">
+        {/* Background Image */}
+        <div 
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-40"
+          style={{ backgroundImage: 'url(/generation-c179a831-b828-467c-b51b-730fcfe8d4ef.png)' }}
+        />
+        {/* Dark overlay for better text readability */}
+        <div className="absolute inset-0 bg-black/60" />
         {/* Cyberpunk grid background */}
         <div className="absolute inset-0 bg-[linear-gradient(rgba(239,68,68,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(239,68,68,0.1)_1px,transparent_1px)] bg-[size:50px_50px] opacity-20" aria-hidden="true" />
-        <div className="absolute inset-0 bg-gradient-to-b from-black via-red-950/20 to-black" aria-hidden="true" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-red-950/20 to-black/50" aria-hidden="true" />
         <AnimatedBackground particleColor="rgba(239, 68, 68, 0.3)" className="opacity-30" />
 
         {/* Dynamic cyberpunk elements */}
@@ -376,12 +383,12 @@ runAgent();`
 
               {/* Main Title */}
               <motion.h1
-                className="text-4xl font-black tracking-tighter sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-orbitron leading-none"
+                className="text-6xl font-black tracking-tighter sm:text-7xl md:text-8xl lg:text-9xl xl:text-[10rem] 2xl:text-[12rem] font-orbitron leading-none"
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.4, duration: 0.8 }}
               >
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 via-red-400 to-red-600">
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 via-red-400 to-red-600 drop-shadow-2xl">
                   Swarms API
                 </span>
               </motion.h1>
@@ -395,7 +402,7 @@ runAgent();`
               >
                 <TypingEffect
                   texts={[
-                    "The only multi-agent API in the world",
+                    "Enterprise-Grade Bleeding-Edge Multi-Agent API Platform",
                     "Rust-optimized: 100x faster than Python",
                     "600+ models with MCP protocol support",
                     "Enterprise-grade infrastructure & reliability"
@@ -406,16 +413,6 @@ runAgent();`
                   className="text-white font-orbitron tracking-wider"
                 />
               </motion.div>
-
-              {/* Description */}
-              <motion.p
-                className="text-base sm:text-lg md:text-xl text-red-200 max-w-4xl mx-auto font-light px-4 sm:px-0"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.8, duration: 0.8 }}
-              >
-                Enterprise-Grade Bleeding-Edge Multi-Agent API Platform.
-              </motion.p>
 
               {/* CTA Buttons */}
               <motion.div

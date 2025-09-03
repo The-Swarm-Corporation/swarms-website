@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { motion } from "framer-motion"
+import { motion, useReducedMotion } from "framer-motion"
 import { 
   ArrowRight, Zap, Cpu, Globe, ExternalLink, 
   Network, Shield, BookOpen, Code,
@@ -17,6 +17,37 @@ import { ScrollingTicker } from "@/components/scrolling-ticker"
 import Link from "next/link"
 
 export default function APIPage() {
+  const shouldReduceMotion = useReducedMotion()
+  
+  // Mobile-optimized animation variants
+  const mobileOptimizedVariants = {
+    hidden: { 
+      opacity: 0, 
+      y: shouldReduceMotion ? 0 : 20,
+      scale: shouldReduceMotion ? 1 : 0.98
+    },
+    visible: { 
+      opacity: 1, 
+      y: 0,
+      scale: 1,
+      transition: {
+        duration: shouldReduceMotion ? 0.3 : 0.6,
+        ease: "easeOut"
+      }
+    }
+  }
+
+  const staggeredContainer = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: shouldReduceMotion ? 0.05 : 0.1,
+        delayChildren: 0.1
+      }
+    }
+  }
+
   const tickerAnnouncements = [
     "Swarms API: The only multi-agent API in the world",
     "Rust-optimized: 100x faster than raw Python",
@@ -416,19 +447,18 @@ runAgent();`
         </div>
 
         <div className="container relative px-4 sm:px-6 h-screen">
-          <div className="flex flex-col items-center justify-center space-y-8 sm:space-y-12 md:space-y-16 lg:space-y-20 h-full text-center">
+          <div className="flex flex-col items-center justify-center space-y-6 sm:space-y-8 md:space-y-12 lg:space-y-16 h-full text-center">
             <motion.div
-              className="space-y-8 sm:space-y-12 md:space-y-16 lg:space-y-20"
-              initial={{ opacity: 0, y: 50 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 1 }}
+              className="space-y-6 sm:space-y-8 md:space-y-12 lg:space-y-16"
+              variants={staggeredContainer}
+              initial="hidden"
+              animate="visible"
+              viewport={{ once: true, margin: "-10%" }}
             >
               {/* Main Title */}
               <motion.h1
-                className="text-6xl font-black tracking-tighter sm:text-7xl md:text-8xl lg:text-9xl xl:text-[10rem] 2xl:text-[12rem] font-orbitron leading-none"
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.4, duration: 0.8 }}
+                className="text-4xl font-black tracking-tighter sm:text-6xl md:text-7xl lg:text-8xl xl:text-[8rem] 2xl:text-[10rem] font-orbitron leading-none"
+                variants={mobileOptimizedVariants}
               >
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 via-red-400 to-red-600 drop-shadow-2xl">
                   Swarms API
@@ -437,21 +467,19 @@ runAgent();`
 
               {/* Subtitle */}
               <motion.div
-                className="mx-auto text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.6, duration: 1 }}
+                className="mx-auto text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl font-bold"
+                variants={mobileOptimizedVariants}
               >
                 <TypingEffect
                   texts={[
-                    "Enterprise-Grade Bleeding-Edge Multi-Agent API Platform",
+                    "Enterprise-Grade Multi-Agent API Platform",
                     "Rust-optimized: 100x faster than Python",
                     "600+ models with MCP protocol support",
                     "Enterprise-grade infrastructure & reliability"
                   ]}
-                  typingSpeed={60}
-                  deletingSpeed={40}
-                  delayBetweenTexts={3000}
+                  typingSpeed={shouldReduceMotion ? 120 : 60}
+                  deletingSpeed={shouldReduceMotion ? 80 : 40}
+                  delayBetweenTexts={shouldReduceMotion ? 2000 : 3000}
                   className="text-white font-orbitron tracking-wider"
                 />
               </motion.div>
@@ -459,9 +487,7 @@ runAgent();`
               {/* CTA Buttons */}
               <motion.div
                 className="flex flex-col sm:flex-row gap-4 sm:gap-6 md:gap-8 items-center justify-center w-full px-4 sm:px-0"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 1, duration: 0.8 }}
+                variants={mobileOptimizedVariants}
               >
                 <Button
                   size="lg"
@@ -495,19 +521,19 @@ runAgent();`
       <ScrollingTicker announcements={tickerAnnouncements} />
 
       {/* Core Capabilities - Mobile-Optimized Single Feature Showcase */}
-      <section className="py-12 sm:py-16 md:py-20 lg:py-24 bg-black">
+      <section className="py-8 sm:py-12 md:py-16 lg:py-20 bg-black">
         <div className="container px-4 sm:px-6 lg:px-8">
           <motion.div
-            className="text-center sm:text-left mb-8 sm:mb-12 md:mb-16"
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            viewport={{ once: true }}
+            className="text-center sm:text-left mb-6 sm:mb-8 md:mb-12"
+            variants={mobileOptimizedVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-20%" }}
           >
-            <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-white mb-4 sm:mb-6 md:mb-8 font-orbitron leading-tight">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold text-white mb-3 sm:mb-4 md:mb-6 font-orbitron leading-tight">
               Core <span className="text-red-500">capabilities</span>
             </h2>
-            <p className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-3xl text-red-200 max-w-4xl mx-auto sm:mx-0 mb-6 sm:mb-8 md:mb-10 leading-relaxed px-2 sm:px-0">
+            <p className="text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl text-red-200 max-w-4xl mx-auto sm:mx-0 mb-4 sm:mb-6 md:mb-8 leading-relaxed px-2 sm:px-0">
               Discover the powerful features that make Swarms the world's most advanced multi-agent API platform
             </p>
           </motion.div>
@@ -517,21 +543,21 @@ runAgent();`
             {apiFeatures.map((feature, featureIndex) => (
               <motion.div
                 key={feature.title}
-                className="min-h-[80vh] sm:min-h-[85vh] md:min-h-screen flex items-center justify-center py-8 sm:py-12 md:py-16"
-                initial={{ opacity: 0, scale: 0.95 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.8, ease: "easeOut" }}
-                viewport={{ once: false, margin: "-15%" }}
+                className="min-h-[70vh] sm:min-h-[75vh] md:min-h-[80vh] lg:min-h-screen flex items-center justify-center py-6 sm:py-8 md:py-12"
+                variants={mobileOptimizedVariants}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, margin: "-25%" }}
               >
                 <div className="w-full max-w-7xl mx-auto">
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 md:gap-10 lg:gap-12 items-center">
                     {/* Left Side - Feature Content */}
                     <motion.div
-                      className="space-y-4 sm:space-y-6 md:space-y-8 order-2 lg:order-1"
-                      initial={{ opacity: 0, x: -50 }}
-                      whileInView={{ opacity: 1, x: 0 }}
-                      transition={{ duration: 0.7, delay: 0.1 }}
-                      viewport={{ once: false, margin: "-10%" }}
+                      className="space-y-3 sm:space-y-4 md:space-y-6 order-1 lg:order-1"
+                      variants={mobileOptimizedVariants}
+                      initial="hidden"
+                      whileInView="visible"
+                      viewport={{ once: true, margin: "-20%" }}
                     >
                       {/* Feature Progress */}
                       <div className="flex items-center space-x-3 sm:space-x-4 mb-4 sm:mb-6">
@@ -543,41 +569,55 @@ runAgent();`
                             className="h-full bg-gradient-to-r from-red-500 to-red-600"
                             initial={{ width: "0%" }}
                             whileInView={{ width: `${((featureIndex + 1) / apiFeatures.length) * 100}%` }}
-                            transition={{ duration: 0.8, delay: 0.3 }}
-                            viewport={{ once: false }}
+                            transition={{ 
+                              duration: shouldReduceMotion ? 0.4 : 0.8, 
+                              delay: shouldReduceMotion ? 0.1 : 0.3 
+                            }}
+                            viewport={{ once: true }}
                           />
                         </div>
                       </div>
 
                       {/* Feature Icon and Number */}
-                      <div className="flex items-center space-x-4 sm:space-x-6">
+                      <div className="flex items-center space-x-3 sm:space-x-4 md:space-x-6">
                         <motion.div
-                          className="flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 md:w-18 md:h-18 lg:w-20 lg:h-20 rounded-xl sm:rounded-2xl bg-gradient-to-br from-red-500 to-red-600 text-white font-bold text-lg sm:text-xl md:text-2xl shadow-lg shadow-red-500/25"
-                          initial={{ scale: 0 }}
+                          className="flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 lg:w-18 lg:h-18 rounded-xl sm:rounded-2xl bg-gradient-to-br from-red-500 to-red-600 text-white font-bold text-base sm:text-lg md:text-xl shadow-lg shadow-red-500/25"
+                          initial={{ scale: shouldReduceMotion ? 1 : 0 }}
                           whileInView={{ scale: 1 }}
-                          transition={{ duration: 0.5, delay: 0.2, type: "spring", bounce: 0.4 }}
-                          viewport={{ once: false }}
+                          transition={{ 
+                            duration: shouldReduceMotion ? 0.2 : 0.5, 
+                            delay: shouldReduceMotion ? 0 : 0.2, 
+                            type: shouldReduceMotion ? "tween" : "spring", 
+                            bounce: shouldReduceMotion ? 0 : 0.4 
+                          }}
+                          viewport={{ once: true }}
                         >
                           {featureIndex + 1}
                         </motion.div>
                         <motion.div
-                          className={`w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-lg sm:rounded-xl bg-gradient-to-br ${feature.gradient} flex items-center justify-center border border-red-500/30`}
-                          initial={{ scale: 0, rotate: -90 }}
+                          className={`w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-lg sm:rounded-xl bg-gradient-to-br ${feature.gradient} flex items-center justify-center border border-red-500/30`}
+                          initial={{ 
+                            scale: shouldReduceMotion ? 1 : 0, 
+                            rotate: shouldReduceMotion ? 0 : -90 
+                          }}
                           whileInView={{ scale: 1, rotate: 0 }}
-                          transition={{ duration: 0.5, delay: 0.4 }}
-                          viewport={{ once: false }}
+                          transition={{ 
+                            duration: shouldReduceMotion ? 0.2 : 0.5, 
+                            delay: shouldReduceMotion ? 0 : 0.4 
+                          }}
+                          viewport={{ once: true }}
                         >
-                          <feature.icon className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-white" />
+                          <feature.icon className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-white" />
                         </motion.div>
                       </div>
 
                       {/* Feature Title */}
                       <motion.h3
-                        className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white font-orbitron leading-tight"
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.6, delay: 0.3 }}
-                        viewport={{ once: false }}
+                        className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-white font-orbitron leading-tight"
+                        variants={mobileOptimizedVariants}
+                        initial="hidden"
+                        whileInView="visible"
+                        viewport={{ once: true }}
                       >
                         {feature.title}
                       </motion.h3>
@@ -585,10 +625,10 @@ runAgent();`
                       {/* Feature Description */}
                       <motion.p
                         className="text-sm sm:text-base md:text-lg lg:text-xl text-red-200 leading-relaxed"
-                        initial={{ opacity: 0, y: 15 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.6, delay: 0.5 }}
-                        viewport={{ once: false }}
+                        variants={mobileOptimizedVariants}
+                        initial="hidden"
+                        whileInView="visible"
+                        viewport={{ once: true }}
                       >
                         {feature.description}
                       </motion.p>
@@ -596,11 +636,11 @@ runAgent();`
                       {/* Feature-specific additional details */}
                       {featureIndex === 0 && (
                         <motion.div
-                          className="bg-red-950/20 border border-red-500/20 rounded-lg sm:rounded-xl p-4 sm:p-5 md:p-6"
-                          initial={{ opacity: 0, y: 15 }}
-                          whileInView={{ opacity: 1, y: 0 }}
-                          transition={{ duration: 0.6, delay: 0.7 }}
-                          viewport={{ once: false }}
+                          className="bg-red-950/20 border border-red-500/20 rounded-lg sm:rounded-xl p-3 sm:p-4 md:p-5"
+                          variants={mobileOptimizedVariants}
+                          initial="hidden"
+                          whileInView="visible"
+                          viewport={{ once: true }}
                         >
                           <h4 className="text-red-400 font-semibold text-sm sm:text-base mb-3">Supported Architectures:</h4>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
@@ -626,11 +666,11 @@ runAgent();`
 
                       {featureIndex === 2 && (
                         <motion.div
-                          className="bg-red-950/20 border border-red-500/20 rounded-lg sm:rounded-xl p-4 sm:p-5 md:p-6"
-                          initial={{ opacity: 0, y: 15 }}
-                          whileInView={{ opacity: 1, y: 0 }}
-                          transition={{ duration: 0.6, delay: 0.7 }}
-                          viewport={{ once: false }}
+                          className="bg-red-950/20 border border-red-500/20 rounded-lg sm:rounded-xl p-3 sm:p-4 md:p-5"
+                          variants={mobileOptimizedVariants}
+                          initial="hidden"
+                          whileInView="visible"
+                          viewport={{ once: true }}
                         >
                           <h4 className="text-red-400 font-semibold text-sm sm:text-base mb-3">Available Tools:</h4>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
@@ -657,30 +697,34 @@ runAgent();`
 
                     {/* Right Side - Visual Element */}
                     <motion.div
-                      className="order-1 lg:order-2 px-2 sm:px-4 lg:px-0"
-                      initial={{ opacity: 0, x: 50 }}
-                      whileInView={{ opacity: 1, x: 0 }}
-                      transition={{ duration: 0.7, delay: 0.2 }}
-                      viewport={{ once: false, margin: "-10%" }}
+                      className="order-2 lg:order-2 px-2 sm:px-4 lg:px-0"
+                      variants={mobileOptimizedVariants}
+                      initial="hidden"
+                      whileInView="visible"
+                      viewport={{ once: true, margin: "-30%" }}
                     >
                       <motion.div
                         className="relative"
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        whileInView={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 0.5, delay: 0.4 }}
-                        viewport={{ once: false }}
+                        variants={mobileOptimizedVariants}
+                        initial="hidden"
+                        whileInView="visible"
+                        viewport={{ once: true }}
                       >
                         {/* Feature Visualization Card */}
                         <Card className="bg-gradient-to-br from-red-900/20 to-red-800/10 border-red-500/40 shadow-lg shadow-red-500/10 backdrop-blur-sm">
                           <CardHeader className="p-4 sm:p-6 md:p-8">
                             <div className="text-center space-y-4 sm:space-y-6">
                               <motion.div
-                                className={`w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 mx-auto rounded-xl sm:rounded-2xl bg-gradient-to-br ${feature.gradient} flex items-center justify-center shadow-lg`}
-                                whileHover={{ scale: 1.05, rotate: 2 }}
-                                whileTap={{ scale: 0.95 }}
-                                transition={{ type: "spring", stiffness: 300 }}
+                                className={`w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 mx-auto rounded-xl sm:rounded-2xl bg-gradient-to-br ${feature.gradient} flex items-center justify-center shadow-lg`}
+                                whileHover={shouldReduceMotion ? {} : { scale: 1.05, rotate: 2 }}
+                                whileTap={shouldReduceMotion ? {} : { scale: 0.95 }}
+                                transition={{ 
+                                  type: shouldReduceMotion ? "tween" : "spring", 
+                                  stiffness: shouldReduceMotion ? 0 : 300,
+                                  duration: shouldReduceMotion ? 0.1 : undefined
+                                }}
                               >
-                                <feature.icon className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-white" />
+                                <feature.icon className="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 text-white" />
                               </motion.div>
                               
                               <div className="space-y-3 sm:space-y-4">
@@ -689,16 +733,28 @@ runAgent();`
                                 </h4>
                                 
                                 {/* Animated metrics or visual elements based on feature */}
-                                {featureIndex === 0 && (
+                                {featureIndex === 0 && !shouldReduceMotion && (
                                   <div className="flex justify-center space-x-2 sm:space-x-3 md:space-x-4">
                                     {[1, 2, 3, 4].map((i) => (
                                       <motion.div
                                         key={i}
                                         className="w-2 sm:w-3 bg-gradient-to-t from-red-600 to-red-400 rounded-full"
                                         initial={{ height: 8 }}
-                                        whileInView={{ height: Math.random() * 32 + 8 }}
-                                        transition={{ duration: 1, delay: i * 0.1, repeat: Infinity, repeatType: "reverse" }}
-                                        viewport={{ once: false }}
+                                        whileInView={{ height: Math.random() * 24 + 8 }}
+                                        transition={{ duration: 0.8, delay: i * 0.1, repeat: Infinity, repeatType: "reverse" }}
+                                        viewport={{ once: true }}
+                                      />
+                                    ))}
+                                  </div>
+                                )}
+                                
+                                {featureIndex === 0 && shouldReduceMotion && (
+                                  <div className="flex justify-center space-x-2 sm:space-x-3 md:space-x-4">
+                                    {[1, 2, 3, 4].map((i) => (
+                                      <div
+                                        key={i}
+                                        className="w-2 sm:w-3 bg-gradient-to-t from-red-600 to-red-400 rounded-full"
+                                        style={{ height: `${20 + i * 4}px` }}
                                       />
                                     ))}
                                   </div>
@@ -712,8 +768,11 @@ runAgent();`
                                         className="h-1.5 sm:h-2 bg-gradient-to-r from-red-500 to-red-400 rounded-full"
                                         initial={{ width: "0%" }}
                                         whileInView={{ width: `${60 + i * 15}%` }}
-                                        transition={{ duration: 1, delay: i * 0.2 }}
-                                        viewport={{ once: false }}
+                                        transition={{ 
+                                          duration: shouldReduceMotion ? 0.3 : 1, 
+                                          delay: shouldReduceMotion ? 0 : i * 0.2 
+                                        }}
+                                        viewport={{ once: true }}
                                       />
                                     ))}
                                   </div>
@@ -733,11 +792,11 @@ runAgent();`
 
                 {/* Mobile-Friendly Feature Navigation Indicator */}
                 <motion.div
-                  className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex md:hidden space-x-2"
-                  initial={{ opacity: 0 }}
-                  whileInView={{ opacity: 1 }}
-                  transition={{ duration: 0.6, delay: 0.6 }}
-                  viewport={{ once: false }}
+                  className="absolute bottom-3 left-1/2 transform -translate-x-1/2 flex md:hidden space-x-2"
+                  variants={mobileOptimizedVariants}
+                  initial="hidden"
+                  whileInView="visible"
+                  viewport={{ once: true }}
                 >
                   {apiFeatures.map((_, index) => (
                     <div
@@ -751,11 +810,11 @@ runAgent();`
 
                 {/* Desktop Feature Navigation Indicator */}
                 <motion.div
-                  className="absolute right-4 sm:right-6 lg:right-8 top-1/2 transform -translate-y-1/2 hidden md:flex flex-col space-y-2"
-                  initial={{ opacity: 0 }}
-                  whileInView={{ opacity: 1 }}
-                  transition={{ duration: 0.6, delay: 0.6 }}
-                  viewport={{ once: false }}
+                  className="absolute right-3 sm:right-4 lg:right-6 top-1/2 transform -translate-y-1/2 hidden md:flex flex-col space-y-2"
+                  variants={mobileOptimizedVariants}
+                  initial="hidden"
+                  whileInView="visible"
+                  viewport={{ once: true }}
                 >
                   {apiFeatures.map((_, index) => (
                     <div
@@ -773,41 +832,44 @@ runAgent();`
       </section>
 
       {/* Performance Specifications */}
-      <section className="py-12 sm:py-16 md:py-20 bg-black">
+      <section className="py-8 sm:py-12 md:py-16 bg-black">
         <div className="container px-4 sm:px-6">
           <motion.div
-            className="text-center mb-8 sm:mb-12 md:mb-16"
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            viewport={{ once: true }}
+            className="text-center mb-6 sm:mb-8 md:mb-12"
+            variants={mobileOptimizedVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-20%" }}
           >
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-3 sm:mb-4 md:mb-6 font-orbitron leading-tight">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-3 sm:mb-4 md:mb-6 font-orbitron leading-tight">
               Performance <span className="text-red-500">specifications</span>
             </h2>
-            <p className="text-lg sm:text-xl text-red-200 max-w-3xl mx-auto px-4 sm:px-0">
+            <p className="text-base sm:text-lg md:text-xl text-red-200 max-w-3xl mx-auto px-4 sm:px-0">
               Enterprise-grade performance metrics that scale with your needs
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 md:gap-8">
+          <motion.div 
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 md:gap-8"
+            variants={staggeredContainer}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-20%" }}
+          >
             {performanceSpecs.map((spec, index) => (
               <motion.div
                 key={spec.title}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: index * 0.1 }}
-                viewport={{ once: true }}
+                variants={mobileOptimizedVariants}
                 className="text-center"
               >
-                <div className="bg-gradient-to-br from-red-500/10 to-red-600/5 border border-red-500/20 rounded-xl p-4 sm:p-6 md:p-8 hover:border-red-500/40 transition-all duration-300 hover:scale-105">
-                  <div className="w-16 h-16 mx-auto mb-4 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center">
-                    <spec.icon className="w-8 h-8 text-white" />
+                <div className={`bg-gradient-to-br from-red-500/10 to-red-600/5 border border-red-500/20 rounded-xl p-3 sm:p-4 md:p-6 transition-all duration-300 ${shouldReduceMotion ? '' : 'hover:border-red-500/40 hover:scale-105'}`}>
+                  <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 mx-auto mb-3 sm:mb-4 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center">
+                    <spec.icon className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-white" />
                   </div>
-                  <div className="text-2xl sm:text-3xl font-bold text-red-400 mb-2 font-orbitron">
+                  <div className="text-xl sm:text-2xl md:text-3xl font-bold text-red-400 mb-2 font-orbitron">
                     {spec.value}
                   </div>
-                  <h3 className="text-base sm:text-lg font-semibold text-white mb-2">
+                  <h3 className="text-sm sm:text-base md:text-lg font-semibold text-white mb-2">
                     {spec.title}
                   </h3>
                   <p className="text-red-200 text-xs sm:text-sm">
@@ -816,26 +878,26 @@ runAgent();`
                 </div>
               </motion.div>
             ))}
-          </div>
+          </motion.div>
         </div>
       </section>
 
 
 
       {/* Step-by-Step Integration Guide */}
-      <section className="py-24 bg-black">
+      <section className="py-12 sm:py-16 md:py-20 bg-black">
         <div className="container px-4 sm:px-6">
           <motion.div
-            className="text-left mb-16"
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            viewport={{ once: true }}
+            className="text-left mb-8 sm:mb-12 md:mb-16"
+            variants={mobileOptimizedVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-20%" }}
           >
-            <h2 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-6 sm:mb-8 font-orbitron leading-tight">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-4 sm:mb-6 font-orbitron leading-tight">
               Integration <span className="text-red-500">guide</span>
             </h2>
-            <p className="text-xl sm:text-2xl md:text-3xl text-red-200 max-w-4xl mb-8 sm:mb-10 leading-relaxed">
+            <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-red-200 max-w-4xl mb-6 sm:mb-8 leading-relaxed">
               Follow our focused step-by-step guide to start building with the world's most advanced multi-agent API
             </p>
             
@@ -872,21 +934,21 @@ runAgent();`
             {integrationSteps.map((step, stepIndex) => (
               <motion.div
                 key={step.step}
-                className="min-h-screen flex items-center justify-center py-16"
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 1, ease: "easeOut" }}
-                viewport={{ once: false, margin: "-20%" }}
+                className="min-h-[70vh] sm:min-h-[80vh] md:min-h-screen flex items-center justify-center py-8 sm:py-12 md:py-16"
+                variants={mobileOptimizedVariants}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, margin: "-30%" }}
               >
                 <div className="w-full max-w-7xl">
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
                     {/* Left Side - Content */}
                     <motion.div
-                      className="space-y-8"
-                      initial={{ opacity: 0, x: -100 }}
-                      whileInView={{ opacity: 1, x: 0 }}
-                      transition={{ duration: 0.8, delay: 0.2 }}
-                      viewport={{ once: false, margin: "-10%" }}
+                      className="space-y-6 sm:space-y-8"
+                      variants={mobileOptimizedVariants}
+                      initial="hidden"
+                      whileInView="visible"
+                      viewport={{ once: true, margin: "-20%" }}
                     >
                       {/* Step Progress */}
                       <div className="flex items-center space-x-4 mb-6">
@@ -898,52 +960,66 @@ runAgent();`
                             className="h-full bg-gradient-to-r from-red-500 to-red-600"
                             initial={{ width: "0%" }}
                             whileInView={{ width: `${(step.step / 3) * 100}%` }}
-                            transition={{ duration: 1, delay: 0.4 }}
-                            viewport={{ once: false }}
+                            transition={{ 
+                              duration: shouldReduceMotion ? 0.4 : 1, 
+                              delay: shouldReduceMotion ? 0.1 : 0.4 
+                            }}
+                            viewport={{ once: true }}
                           />
                         </div>
                       </div>
 
                       {/* Step Number and Icon */}
-                      <div className="flex items-center space-x-6">
+                      <div className="flex items-center space-x-4 sm:space-x-6">
                         <motion.div
-                          className="flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-red-500 to-red-600 text-white font-bold text-2xl shadow-lg shadow-red-500/25"
-                          initial={{ scale: 0 }}
+                          className="flex items-center justify-center w-16 h-16 sm:w-18 sm:h-18 md:w-20 md:h-20 rounded-xl sm:rounded-2xl bg-gradient-to-br from-red-500 to-red-600 text-white font-bold text-lg sm:text-xl md:text-2xl shadow-lg shadow-red-500/25"
+                          initial={{ scale: shouldReduceMotion ? 1 : 0 }}
                           whileInView={{ scale: 1 }}
-                          transition={{ duration: 0.6, delay: 0.3, type: "spring", bounce: 0.4 }}
-                          viewport={{ once: false }}
+                          transition={{ 
+                            duration: shouldReduceMotion ? 0.2 : 0.6, 
+                            delay: shouldReduceMotion ? 0 : 0.3, 
+                            type: shouldReduceMotion ? "tween" : "spring", 
+                            bounce: shouldReduceMotion ? 0 : 0.4 
+                          }}
+                          viewport={{ once: true }}
                         >
                           {step.step}
                         </motion.div>
                         <motion.div
-                          className="w-16 h-16 rounded-xl bg-red-500/20 flex items-center justify-center border border-red-500/30"
-                          initial={{ scale: 0, rotate: -180 }}
+                          className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-lg sm:rounded-xl bg-red-500/20 flex items-center justify-center border border-red-500/30"
+                          initial={{ 
+                            scale: shouldReduceMotion ? 1 : 0, 
+                            rotate: shouldReduceMotion ? 0 : -180 
+                          }}
                           whileInView={{ scale: 1, rotate: 0 }}
-                          transition={{ duration: 0.6, delay: 0.5 }}
-                          viewport={{ once: false }}
+                          transition={{ 
+                            duration: shouldReduceMotion ? 0.2 : 0.6, 
+                            delay: shouldReduceMotion ? 0 : 0.5 
+                          }}
+                          viewport={{ once: true }}
                         >
-                          <step.icon className="w-8 h-8 text-red-400" />
+                          <step.icon className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-red-400" />
                         </motion.div>
                       </div>
 
                       {/* Title */}
                       <motion.h3
-                        className="text-4xl md:text-5xl font-bold text-white font-orbitron leading-tight"
-                        initial={{ opacity: 0, y: 30 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.8, delay: 0.4 }}
-                        viewport={{ once: false }}
+                        className="text-2xl sm:text-3xl md:text-4xl font-bold text-white font-orbitron leading-tight"
+                        variants={mobileOptimizedVariants}
+                        initial="hidden"
+                        whileInView="visible"
+                        viewport={{ once: true }}
                       >
                         {step.title}
                       </motion.h3>
 
                       {/* Description */}
                       <motion.p
-                        className="text-xl text-red-200 leading-relaxed"
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.8, delay: 0.6 }}
-                        viewport={{ once: false }}
+                        className="text-base sm:text-lg md:text-xl text-red-200 leading-relaxed"
+                        variants={mobileOptimizedVariants}
+                        initial="hidden"
+                        whileInView="visible"
+                        viewport={{ once: true }}
                       >
                         {step.description}
                       </motion.p>
@@ -952,10 +1028,10 @@ runAgent();`
                       {step.step === 1 && (
                         <motion.div
                           className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-3 sm:pt-4"
-                          initial={{ opacity: 0, y: 20 }}
-                          whileInView={{ opacity: 1, y: 0 }}
-                          transition={{ duration: 0.8, delay: 0.8 }}
-                          viewport={{ once: false }}
+                          variants={mobileOptimizedVariants}
+                          initial="hidden"
+                          whileInView="visible"
+                          viewport={{ once: true }}
                         >
                           <Button
                             className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white"
@@ -972,10 +1048,10 @@ runAgent();`
                       {step.step === 2 && (
                         <motion.div
                           className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-3 sm:pt-4"
-                          initial={{ opacity: 0, y: 20 }}
-                          whileInView={{ opacity: 1, y: 0 }}
-                          transition={{ duration: 0.8, delay: 0.8 }}
-                          viewport={{ once: false }}
+                          variants={mobileOptimizedVariants}
+                          initial="hidden"
+                          whileInView="visible"
+                          viewport={{ once: true }}
                         >
                           <Button
                             className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white"
@@ -994,16 +1070,16 @@ runAgent();`
                     {/* Right Side - Code Tabs */}
                     <motion.div
                       className="space-y-3 sm:space-y-4 px-4 sm:px-0"
-                      initial={{ opacity: 0, x: 100 }}
-                      whileInView={{ opacity: 1, x: 0 }}
-                      transition={{ duration: 0.8, delay: 0.4 }}
-                      viewport={{ once: false, margin: "-10%" }}
+                      variants={mobileOptimizedVariants}
+                      initial="hidden"
+                      whileInView="visible"
+                      viewport={{ once: true, margin: "-20%" }}
                     >
                       <motion.div
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        whileInView={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 0.6, delay: 0.6 }}
-                        viewport={{ once: false }}
+                        variants={mobileOptimizedVariants}
+                        initial="hidden"
+                        whileInView="visible"
+                        viewport={{ once: true }}
                       >
                         <Tabs defaultValue={step.codeExamples[0].language} className="w-full">
                           <TabsList className={`grid w-full bg-red-950/20 border border-red-500/20 text-sm sm:text-base ${step.codeExamples.length === 3 ? 'grid-cols-3' : 'grid-cols-2'}`}>
@@ -1037,11 +1113,11 @@ runAgent();`
 
                 {/* Step Navigation Indicator */}
                 <motion.div
-                  className="absolute right-4 sm:right-8 top-1/2 transform -translate-y-1/2 hidden md:flex flex-col space-y-2"
-                  initial={{ opacity: 0 }}
-                  whileInView={{ opacity: 1 }}
-                  transition={{ duration: 0.8, delay: 0.8 }}
-                  viewport={{ once: false }}
+                  className="absolute right-3 sm:right-6 md:right-8 top-1/2 transform -translate-y-1/2 hidden md:flex flex-col space-y-2"
+                  variants={mobileOptimizedVariants}
+                  initial="hidden"
+                  whileInView="visible"
+                  viewport={{ once: true }}
                 >
                   {integrationSteps.map((_, index) => (
                     <div
@@ -1058,11 +1134,11 @@ runAgent();`
 
           {/* Final CTA */}
           <motion.div
-            className="text-center mt-12 sm:mt-16 md:mt-24"
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            viewport={{ once: true }}
+            className="text-center mt-8 sm:mt-12 md:mt-16"
+            variants={mobileOptimizedVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-20%" }}
           >
             <div className="inline-flex items-center px-4 sm:px-6 py-2 sm:py-3 rounded-full bg-gradient-to-r from-red-500/20 to-red-600/20 border border-red-500/30 text-red-400 text-base sm:text-lg font-medium mb-4 sm:mb-6 mx-4 sm:mx-0">
               <CheckCircle className="w-5 h-5 mr-2" />
@@ -1096,33 +1172,36 @@ runAgent();`
       </section>
 
       {/* Resources Section */}
-      <section className="py-12 sm:py-16 md:py-20 bg-gradient-to-b from-red-950/20 to-black">
+      <section className="py-8 sm:py-12 md:py-16 bg-gradient-to-b from-red-950/20 to-black">
         <div className="container px-4 sm:px-6">
           <motion.div
-            className="text-center mb-8 sm:mb-12 md:mb-16"
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            viewport={{ once: true }}
+            className="text-center mb-6 sm:mb-8 md:mb-12"
+            variants={mobileOptimizedVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-20%" }}
           >
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-3 sm:mb-4 md:mb-6 font-orbitron leading-tight">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-3 sm:mb-4 md:mb-6 font-orbitron leading-tight">
               Developer <span className="text-red-500">resources</span>
             </h2>
-            <p className="text-lg sm:text-xl text-red-200 max-w-3xl mx-auto px-4 sm:px-0">
+            <p className="text-base sm:text-lg md:text-xl text-red-200 max-w-3xl mx-auto px-4 sm:px-0">
               Everything you need to get started with the world's most advanced multi-agent API
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8 max-w-6xl mx-auto px-4 sm:px-0">
+          <motion.div 
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8 max-w-6xl mx-auto px-4 sm:px-0"
+            variants={staggeredContainer}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-20%" }}
+          >
             <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
-              viewport={{ once: true }}
+              variants={mobileOptimizedVariants}
             >
-              <Card className="bg-black/50 border-red-900/30 hover:border-red-500/30 transition-all duration-300 hover:scale-105 group h-full">
+              <Card className={`bg-black/50 border-red-900/30 transition-all duration-300 group h-full ${shouldReduceMotion ? '' : 'hover:border-red-500/30 hover:scale-105'}`}>
                 <CardHeader className="text-center p-4 sm:p-6">
-                  <div className="w-12 sm:w-16 h-12 sm:h-16 mx-auto mb-3 sm:mb-4 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                  <div className={`w-12 sm:w-16 h-12 sm:h-16 mx-auto mb-3 sm:mb-4 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center transition-transform duration-300 ${shouldReduceMotion ? '' : 'group-hover:scale-110'}`}>
                     <BookOpen className="w-6 sm:w-8 h-6 sm:h-8 text-white" />
                   </div>
                   <CardTitle className="text-lg sm:text-xl font-bold text-white group-hover:text-red-400 transition-colors duration-300">
@@ -1146,14 +1225,11 @@ runAgent();`
             </motion.div>
 
             <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.1 }}
-              viewport={{ once: true }}
+              variants={mobileOptimizedVariants}
             >
-              <Card className="bg-black/50 border-red-900/30 hover:border-red-500/30 transition-all duration-300 hover:scale-105 group h-full">
+              <Card className={`bg-black/50 border-red-900/30 transition-all duration-300 group h-full ${shouldReduceMotion ? '' : 'hover:border-red-500/30 hover:scale-105'}`}>
                 <CardHeader className="text-center p-4 sm:p-6">
-                  <div className="w-12 sm:w-16 h-12 sm:h-16 mx-auto mb-3 sm:mb-4 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                  <div className={`w-12 sm:w-16 h-12 sm:h-16 mx-auto mb-3 sm:mb-4 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center transition-transform duration-300 ${shouldReduceMotion ? '' : 'group-hover:scale-110'}`}>
                     <Zap className="w-6 sm:w-8 h-6 sm:h-8 text-white" />
                   </div>
                   <CardTitle className="text-lg sm:text-xl font-bold text-white group-hover:text-red-400 transition-colors duration-300">
@@ -1177,14 +1253,11 @@ runAgent();`
             </motion.div>
 
             <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.2 }}
-              viewport={{ once: true }}
+              variants={mobileOptimizedVariants}
             >
-              <Card className="bg-black/50 border-red-900/30 hover:border-red-500/30 transition-all duration-300 hover:scale-105 group h-full">
+              <Card className={`bg-black/50 border-red-900/30 transition-all duration-300 group h-full ${shouldReduceMotion ? '' : 'hover:border-red-500/30 hover:scale-105'}`}>
                 <CardHeader className="text-center p-4 sm:p-6">
-                  <div className="w-12 sm:w-16 h-12 sm:h-16 mx-auto mb-3 sm:mb-4 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                  <div className={`w-12 sm:w-16 h-12 sm:h-16 mx-auto mb-3 sm:mb-4 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center transition-transform duration-300 ${shouldReduceMotion ? '' : 'group-hover:scale-110'}`}>
                     <Key className="w-6 sm:w-8 h-6 sm:h-8 text-white" />
                   </div>
                   <CardTitle className="text-lg sm:text-xl font-bold text-white group-hover:text-red-400 transition-colors duration-300">
@@ -1208,14 +1281,11 @@ runAgent();`
             </motion.div>
 
             <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.3 }}
-              viewport={{ once: true }}
+              variants={mobileOptimizedVariants}
             >
-              <Card className="bg-black/50 border-red-900/30 hover:border-red-500/30 transition-all duration-300 hover:scale-105 group h-full">
+              <Card className={`bg-black/50 border-red-900/30 transition-all duration-300 group h-full ${shouldReduceMotion ? '' : 'hover:border-red-500/30 hover:scale-105'}`}>
                 <CardHeader className="text-center p-4 sm:p-6">
-                  <div className="w-12 sm:w-16 h-12 sm:h-16 mx-auto mb-3 sm:mb-4 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                  <div className={`w-12 sm:w-16 h-12 sm:h-16 mx-auto mb-3 sm:mb-4 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center transition-transform duration-300 ${shouldReduceMotion ? '' : 'group-hover:scale-110'}`}>
                     <Code className="w-6 sm:w-8 h-6 sm:h-8 text-white" />
                   </div>
                   <CardTitle className="text-lg sm:text-xl font-bold text-white group-hover:text-red-400 transition-colors duration-300">
@@ -1239,14 +1309,11 @@ runAgent();`
             </motion.div>
 
             <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.4 }}
-              viewport={{ once: true }}
+              variants={mobileOptimizedVariants}
             >
-              <Card className="bg-black/50 border-red-900/30 hover:border-red-500/30 transition-all duration-300 hover:scale-105 group h-full">
+              <Card className={`bg-black/50 border-red-900/30 transition-all duration-300 group h-full ${shouldReduceMotion ? '' : 'hover:border-red-500/30 hover:scale-105'}`}>
                 <CardHeader className="text-center p-4 sm:p-6">
-                  <div className="w-12 sm:w-16 h-12 sm:h-16 mx-auto mb-3 sm:mb-4 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                  <div className={`w-12 sm:w-16 h-12 sm:h-16 mx-auto mb-3 sm:mb-4 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center transition-transform duration-300 ${shouldReduceMotion ? '' : 'group-hover:scale-110'}`}>
                     <Database className="w-6 sm:w-8 h-6 sm:h-8 text-white" />
                   </div>
                   <CardTitle className="text-lg sm:text-xl font-bold text-white group-hover:text-red-400 transition-colors duration-300">
@@ -1270,10 +1337,7 @@ runAgent();`
             </motion.div>
 
             <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.5 }}
-              viewport={{ once: true }}
+              variants={mobileOptimizedVariants}
             >
               <Card className="bg-black/50 border-red-900/30 hover:border-red-500/30 transition-all duration-300 hover:scale-105 group h-full">
                 <CardHeader className="text-center p-4 sm:p-6">
@@ -1299,36 +1363,39 @@ runAgent();`
                 </CardHeader>
               </Card>
             </motion.div>
-          </div>
+          </motion.div>
         </div>
       </section>
 
       {/* Service Tiers */}
-      <section className="py-12 sm:py-16 md:py-20 bg-gradient-to-b from-black to-red-950/10">
+      <section className="py-8 sm:py-12 md:py-16 bg-gradient-to-b from-black to-red-950/10">
         <div className="container px-4 sm:px-6">
           <motion.div
-            className="text-center mb-8 sm:mb-12 md:mb-16"
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            viewport={{ once: true }}
+            className="text-center mb-6 sm:mb-8 md:mb-12"
+            variants={mobileOptimizedVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-20%" }}
           >
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-3 sm:mb-4 md:mb-6 font-orbitron leading-tight">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-3 sm:mb-4 md:mb-6 font-orbitron leading-tight">
               Service <span className="text-red-500">tiers</span>
             </h2>
-            <p className="text-lg sm:text-xl text-red-200 max-w-3xl mx-auto px-4 sm:px-0">
+            <p className="text-base sm:text-lg md:text-xl text-red-200 max-w-3xl mx-auto px-4 sm:px-0">
               Choose the plan that fits your scale and performance requirements
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 md:gap-8 max-w-7xl mx-auto px-4 sm:px-0">
+          <motion.div 
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 md:gap-8 max-w-7xl mx-auto px-4 sm:px-0"
+            variants={staggeredContainer}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-20%" }}
+          >
             {rateLimits.map((tier, index) => (
               <motion.div
                 key={tier.tier}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: index * 0.1 }}
-                viewport={{ once: true }}
+                variants={mobileOptimizedVariants}
                 className="relative"
               >
                 {/* Premium tier highlight */}
@@ -1348,12 +1415,12 @@ runAgent();`
                   </div>
                 )}
                 
-                <div className={`relative overflow-hidden rounded-2xl border transition-all duration-300 hover:scale-105 ${
+                <div className={`relative overflow-hidden rounded-2xl border transition-all duration-300 ${shouldReduceMotion ? '' : 'hover:scale-105'} ${
                   index === 1 
                     ? 'bg-gradient-to-br from-green-900/20 to-green-800/10 border-green-500/40 shadow-lg shadow-green-500/10' 
                     : index === 2
                     ? 'bg-gradient-to-br from-amber-900/20 to-amber-800/10 border-amber-500/40 shadow-lg shadow-amber-500/10'
-                    : 'bg-black/40 border-red-900/30 hover:border-red-500/40'
+                    : `bg-black/40 border-red-900/30 ${shouldReduceMotion ? '' : 'hover:border-red-500/40'}`
                 } backdrop-blur-sm`}>
                   {/* Background pattern */}
                   <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(239,68,68,0.02)_50%,transparent_75%)] bg-[length:20px_20px]" />
@@ -1516,15 +1583,15 @@ runAgent();`
                 </div>
               </motion.div>
             ))}
-          </div>
+          </motion.div>
           
           {/* Promotional Banner */}
           <motion.div
-            className="text-center mt-12 sm:mt-16 md:mt-20"
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            viewport={{ once: true }}
+            className="text-center mt-8 sm:mt-12 md:mt-16"
+            variants={mobileOptimizedVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-20%" }}
           >
             <div className="inline-flex items-center px-6 sm:px-8 py-4 sm:py-5 rounded-2xl bg-gradient-to-r from-red-500/20 to-red-600/20 border border-red-500/30 text-red-400 text-lg sm:text-xl font-semibold mx-4 sm:mx-0 backdrop-blur-sm">
               <span className="text-2xl mr-3">🎉</span>
@@ -1538,25 +1605,25 @@ runAgent();`
       </section>
 
       {/* CTA Section */}
-      <section className="py-12 sm:py-16 md:py-20 bg-gradient-to-b from-black to-red-950/20">
+      <section className="py-8 sm:py-12 md:py-16 bg-gradient-to-b from-black to-red-950/20">
         <div className="container px-4 sm:px-6 text-center">
           <motion.div
             className="max-w-4xl mx-auto"
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            viewport={{ once: true }}
+            variants={mobileOptimizedVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-20%" }}
           >
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-4 sm:mb-6 font-orbitron leading-tight">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-4 sm:mb-6 font-orbitron leading-tight">
               Get started <span className="text-red-500">now</span>
             </h2>
-            <p className="text-lg sm:text-xl text-red-200 mb-6 sm:mb-8 max-w-2xl mx-auto px-4 sm:px-0">
+            <p className="text-base sm:text-lg md:text-xl text-red-200 mb-6 sm:mb-8 max-w-2xl mx-auto px-4 sm:px-0">
               Start orchestrating intelligent agent swarms today with the world's only multi-agent API platform
             </p>
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-center justify-center px-4 sm:px-0">
               <Button
                 size="lg"
-                className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-semibold rounded-lg border-0 shadow-lg hover:shadow-red-500/25 transition-all duration-300 hover:scale-105 w-full sm:w-auto"
+                className={`bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-semibold rounded-lg border-0 shadow-lg hover:shadow-red-500/25 transition-all duration-300 w-full sm:w-auto ${shouldReduceMotion ? '' : 'hover:scale-105'}`}
                 asChild
               >
                 <Link href="https://swarms.world/platform/api-keys" target="_blank">
@@ -1568,7 +1635,7 @@ runAgent();`
               <Button
                 size="lg"
                 variant="outline"
-                className="border-red-500/30 text-red-400 hover:bg-red-500/10 hover:border-red-500/50 px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-semibold rounded-lg transition-all duration-300 hover:scale-105 w-full sm:w-auto"
+                className={`border-red-500/30 text-red-400 hover:bg-red-500/10 hover:border-red-500/50 px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-semibold rounded-lg transition-all duration-300 w-full sm:w-auto ${shouldReduceMotion ? '' : 'hover:scale-105'}`}
                 asChild
               >
                 <Link href="https://docs.swarms.ai" target="_blank">

@@ -162,15 +162,10 @@ export function Navigation() {
                       <Github className="mr-3 h-4 w-4 text-red-500" />
                       Swarms Python
                     </a>
-                    <a
-                      href="https://docs.swarms.ai"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex cursor-pointer items-center border border-transparent hover:border-red-500/30 hover:bg-red-500/10 transition-all duration-300 p-2 rounded-md"
-                    >
+                    <Link href="/api" className="flex cursor-pointer items-center border border-transparent hover:border-red-500/30 hover:bg-red-500/10 transition-all duration-300 p-2 rounded-md">
                       <Code className="mr-3 h-4 w-4 text-red-500" />
                       Swarms API
-                    </a>
+                    </Link>
                     <a
                       href="https://github.com/The-Swarm-Corporation/swarms-rs"
                       target="_blank"
@@ -195,55 +190,7 @@ export function Navigation() {
             </AnimatePresence>
           </div>
 
-          {/* Programs Dropdown */}
-          <div 
-            className="relative"
-            onMouseEnter={() => setHoveredDropdown("programs")}
-            onMouseLeave={() => setHoveredDropdown(null)}
-          >
-            <button className="flex items-center text-sm font-medium transition-all duration-300 hover:text-red-500 border border-transparent hover:border-red-500/30 px-3 py-1.5 rounded-md hover:bg-red-500/5">
-              Programs
-              <ChevronDown className={`ml-1 h-4 w-4 transition-transform duration-300 ${hoveredDropdown === "programs" ? "rotate-180" : ""}`} />
-            </button>
-            
-            <AnimatePresence>
-              {hoveredDropdown === "programs" && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.2 }}
-                  className="absolute top-full right-0 mt-2 w-[240px] backdrop-blur-md bg-background/95 border-2 border-red-500/30 shadow-xl shadow-red-500/10 rounded-lg overflow-hidden z-50"
-                >
-                  <div className="p-2 space-y-1">
-                    <Link href="/programs" className="flex cursor-pointer items-center border border-transparent hover:border-red-500/30 hover:bg-red-500/10 transition-all duration-300 p-2 rounded-md">
-                      <Award className="mr-3 h-4 w-4 text-red-500" />
-                      Research Program
-                    </Link>
-                    <a
-                      href="https://www.swarms.ai/programs/startups"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex cursor-pointer items-center border border-transparent hover:border-red-500/30 hover:bg-red-500/10 transition-all duration-300 p-2 rounded-md"
-                    >
-                      <Rocket className="mr-3 h-4 w-4 text-red-500" />
-                      Startup Program
-                    </a>
-                    <a
-                      href="https://grants.swarms.world"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex cursor-pointer items-center border border-transparent hover:border-red-500/30 hover:bg-red-500/10 transition-all duration-300 p-2 rounded-md"
-                    >
-                      <DollarSign className="mr-3 h-4 w-4 text-red-500" />
-                      Grants Program
-                      <span className="ml-2 text-xs px-2 py-1 bg-red-500/20 text-red-500 rounded-full border border-red-500/30">New</span>
-                    </a>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
+
 
           {/* Resources Dropdown */}
           <div 
@@ -270,10 +217,11 @@ export function Navigation() {
 
                   <div className="p-4 relative">
                     <Tabs defaultValue="ecosystem" className="w-full" value={activeTab} onValueChange={setActiveTab}>
-                      <TabsList className="grid w-full grid-cols-3 mb-4 bg-background/30 backdrop-blur-md border-2 border-red-500/20 p-1 rounded-lg">
+                      <TabsList className="grid w-full grid-cols-4 mb-4 bg-background/30 backdrop-blur-md border-2 border-red-500/20 p-1 rounded-lg">
                         {[
                           { id: "ecosystem", label: "Ecosystem" },
                           { id: "community", label: "Community" },
+                          { id: "programs", label: "Programs" },
                           { id: "tutorials", label: "Tutorials" },
                         ].map((tab) => (
                           <TabsTrigger
@@ -355,6 +303,18 @@ export function Navigation() {
                             </FuturisticMenuItem>
                             <FuturisticMenuItem icon={Phone} href="https://cal.com/swarms">
                               Book a Call
+                            </FuturisticMenuItem>
+                          </TabsContent>
+
+                          <TabsContent value="programs" className="space-y-2 mt-2 relative">
+                            <FuturisticMenuItem icon={Award} href="/programs">
+                              Research Program
+                            </FuturisticMenuItem>
+                            <FuturisticMenuItem icon={Rocket} href="https://www.swarms.ai/programs/startups">
+                              Startup Program
+                            </FuturisticMenuItem>
+                            <FuturisticMenuItem icon={DollarSign} href="https://grants.swarms.world" isNew={true}>
+                              Grants Program
                             </FuturisticMenuItem>
                           </TabsContent>
 
@@ -558,37 +518,7 @@ export function Navigation() {
                     Swarms Marketplace
                   </Link>
                 </div>
-                <div className="space-y-3">
-                  <div className="text-sm font-medium px-3 flex items-center">
-                    <span>Programs</span>
-                    <div className="ml-2 h-px flex-1 bg-gradient-to-r from-red-500/30 to-transparent"></div>
-                  </div>
-                  <Link
-                    href="/programs"
-                    className="text-sm font-medium hover:text-red-500 transition-all duration-300 hover:bg-red-500/10 p-3 rounded-md block flex items-center border border-transparent hover:border-red-500/30 hover:shadow-[0_0_8px_rgba(239,68,68,0.2)]"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    <Award className="mr-3 h-4 w-4 text-red-500" />
-                    Research Program
-                  </Link>
-                  <Link
-                    href="https://www.swarms.ai/programs/startups"
-                    className="text-sm font-medium hover:text-red-500 transition-all duration-300 hover:bg-red-500/10 p-3 rounded-md block flex items-center border border-transparent hover:border-red-500/30 hover:shadow-[0_0_8px_rgba(239,68,68,0.2)]"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    <Rocket className="mr-3 h-4 w-4 text-red-500" />
-                    Startup Program
-                  </Link>
-                  <Link
-                    href="https://grants.swarms.world"
-                    className="text-sm font-medium hover:text-red-500 transition-all duration-300 hover:bg-red-500/10 p-3 rounded-md block flex items-center border border-transparent hover:border-red-500/30 hover:shadow-[0_0_8px_rgba(239,68,68,0.2)]"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    <DollarSign className="mr-3 h-4 w-4 text-red-500" />
-                    Grants Program
-                    <span className="ml-2 text-xs px-2 py-1 bg-red-500/20 text-red-500 rounded-full border border-red-500/30">New</span>
-                  </Link>
-                </div>
+
                 <Link
                   href="https://swarms.world"
                   className="text-sm font-medium hover:text-red-500 transition-all duration-300 hover:bg-red-500/10 p-3 rounded-md border border-transparent hover:border-red-500/30 hover:shadow-[0_0_8px_rgba(239,68,68,0.2)]"
@@ -613,7 +543,7 @@ export function Navigation() {
                   </div>
 
                   <Tabs defaultValue="ecosystem" className="w-full">
-                    <TabsList className="w-full grid grid-cols-3 bg-background/30 backdrop-blur-sm border-2 border-red-500/20 rounded-md mb-3">
+                    <TabsList className="w-full grid grid-cols-4 bg-background/30 backdrop-blur-sm border-2 border-red-500/20 rounded-md mb-3">
                       <TabsTrigger
                         value="ecosystem"
                         className="text-xs data-[state=active]:bg-red-500/10 data-[state=active]:text-red-500 data-[state=active]:border-red-500/30 border border-transparent hover:border-red-500/20 transition-all duration-300"
@@ -625,6 +555,12 @@ export function Navigation() {
                         className="text-xs data-[state=active]:bg-red-500/10 data-[state=active]:text-red-500 data-[state=active]:border-red-500/30 border border-transparent hover:border-red-500/20 transition-all duration-300"
                       >
                         Community
+                      </TabsTrigger>
+                      <TabsTrigger
+                        value="programs"
+                        className="text-xs data-[state=active]:bg-red-500/10 data-[state=active]:text-red-500 data-[state=active]:border-red-500/30 border border-transparent hover:border-red-500/20 transition-all duration-300"
+                      >
+                        Programs
                       </TabsTrigger>
                       <TabsTrigger
                         value="tutorials"
@@ -726,6 +662,34 @@ export function Navigation() {
                       >
                         <Phone className="mr-3 h-4 w-4 text-red-500" />
                         Book a Call
+                      </Link>
+                    </TabsContent>
+
+                    <TabsContent value="programs" className="space-y-2 mt-0">
+                      <Link
+                        href="/programs"
+                        className="text-sm font-medium hover:text-red-500 transition-all duration-300 hover:bg-red-500/10 p-3 rounded-md flex items-center border border-transparent hover:border-red-500/30 hover:shadow-[0_0_8px_rgba(239,68,68,0.2)]"
+                        onClick={() => setIsOpen(false)}
+                      >
+                        <Award className="mr-3 h-4 w-4 text-red-500" />
+                        Research Program
+                      </Link>
+                      <Link
+                        href="https://www.swarms.ai/programs/startups"
+                        className="text-sm font-medium hover:text-red-500 transition-all duration-300 hover:bg-red-500/10 p-3 rounded-md flex items-center border border-transparent hover:border-red-500/30 hover:shadow-[0_0_8px_rgba(239,68,68,0.2)]"
+                        onClick={() => setIsOpen(false)}
+                      >
+                        <Rocket className="mr-3 h-4 w-4 text-red-500" />
+                        Startup Program
+                      </Link>
+                      <Link
+                        href="https://grants.swarms.world"
+                        className="text-sm font-medium hover:text-red-500 transition-all duration-300 hover:bg-red-500/10 p-3 rounded-md flex items-center border border-transparent hover:border-red-500/30 hover:shadow-[0_0_8px_rgba(239,68,68,0.2)]"
+                        onClick={() => setIsOpen(false)}
+                      >
+                        <DollarSign className="mr-3 h-4 w-4 text-red-500" />
+                        Grants Program
+                        <span className="ml-2 text-xs px-2 py-1 bg-red-500/20 text-red-500 rounded-full border border-red-500/30">New</span>
                       </Link>
                     </TabsContent>
 

@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next"
 import { siteConfig } from "./metadata"
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const routes = ["", "/docs", "/tools", "/examples", "/ecosystem", "/community", "/blog", "/pricing"]
+  const routes = ["", "/docs", "/tools", "/examples", "/ecosystem", "/community", "/blog", "/pricing", "/api"]
 
   const baseUrl = siteConfig.url
 
@@ -11,7 +11,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ...routes.map((route) => ({
       url: `${baseUrl}${route}`,
       lastModified: new Date(),
-      changeFrequency: route === "" ? "daily" : "weekly",
+      changeFrequency: route === "" ? ("daily" as const) : ("weekly" as const),
       priority: route === "" ? 1 : 0.8,
     })),
 

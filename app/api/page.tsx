@@ -3,7 +3,6 @@
 import { Button } from "@/components/ui/button"
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { CardWrapper } from "@/components/card-wrapper"
 import { motion } from "framer-motion"
 import { 
   ArrowRight, Zap, Cpu, Globe, ExternalLink, 
@@ -105,7 +104,16 @@ export default function APIPage() {
       requests: "2,000 req/min",
       tokens: "2M tokens/agent",
       batch: "500 agents/batch",
-      gradient: "from-red-600 to-red-700"
+      gradient: "from-green-600 to-green-700"
+    },
+    {
+      tier: "On-Premise",
+      price: "$9,999/year",
+      requests: "Unlimited",
+      tokens: "Unlimited",
+      batch: "Unlimited",
+      gradient: "from-amber-600 to-amber-700",
+      isOnPremise: true
     },
     {
       tier: "Enterprise",
@@ -919,7 +927,7 @@ runAgent();`
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 md:gap-8 max-w-6xl mx-auto px-4 sm:px-0">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 md:gap-8 max-w-7xl mx-auto px-4 sm:px-0">
             {rateLimits.map((tier, index) => (
               <motion.div
                 key={tier.tier}
@@ -932,15 +940,25 @@ runAgent();`
                 {/* Premium tier highlight */}
                 {index === 1 && (
                   <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 z-10">
-                    <div className="bg-gradient-to-r from-red-500 to-red-600 text-white px-4 py-2 rounded-full text-sm font-semibold">
+                    <div className="bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-2 rounded-full text-sm font-semibold">
                       Most Popular
+                    </div>
+                  </div>
+                )}
+                {/* On-Premise tier highlight */}
+                {index === 2 && (
+                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 z-10">
+                    <div className="bg-gradient-to-r from-amber-500 to-amber-600 text-white px-4 py-2 rounded-full text-sm font-semibold">
+                      Self-Hosted
                     </div>
                   </div>
                 )}
                 
                 <div className={`relative overflow-hidden rounded-2xl border transition-all duration-300 hover:scale-105 ${
                   index === 1 
-                    ? 'bg-gradient-to-br from-red-900/20 to-red-800/10 border-red-500/40 shadow-lg shadow-red-500/10' 
+                    ? 'bg-gradient-to-br from-green-900/20 to-green-800/10 border-green-500/40 shadow-lg shadow-green-500/10' 
+                    : index === 2
+                    ? 'bg-gradient-to-br from-amber-900/20 to-amber-800/10 border-amber-500/40 shadow-lg shadow-amber-500/10'
                     : 'bg-black/40 border-red-900/30 hover:border-red-500/40'
                 } backdrop-blur-sm`}>
                   {/* Background pattern */}
@@ -953,7 +971,9 @@ runAgent();`
                         {tier.tier}
                       </h3>
                       {tier.price && (
-                        <div className="text-2xl sm:text-3xl font-bold text-red-400 mb-2 font-orbitron">
+                        <div className={`text-2xl sm:text-3xl font-bold mb-2 font-orbitron ${
+                          index === 1 ? 'text-green-400' : index === 2 ? 'text-amber-400' : 'text-red-400'
+                        }`}>
                           {tier.price}
                         </div>
                       )}
@@ -961,9 +981,12 @@ runAgent();`
                         <p className="text-red-300 text-sm">Perfect for getting started</p>
                       )}
                       {index === 1 && (
-                        <p className="text-red-300 text-sm">Best for growing businesses</p>
+                        <p className="text-green-300 text-sm">Best for growing businesses</p>
                       )}
                       {index === 2 && (
+                        <p className="text-amber-300 text-sm">Run on your own infrastructure</p>
+                      )}
+                      {index === 3 && (
                         <p className="text-red-300 text-sm">Unlimited scalability</p>
                       )}
                     </div>
@@ -971,23 +994,83 @@ runAgent();`
                     {/* Features list */}
                     <div className="space-y-4 sm:space-y-6 mb-6 sm:mb-8">
                       <div className="flex justify-between items-center py-2 sm:py-3 border-b border-red-900/20">
-                        <span className="text-sm sm:text-base text-red-200">Requests per minute</span>
-                        <span className="text-lg sm:text-2xl font-bold text-red-400 font-orbitron">
+                        <span className="text-xs sm:text-sm text-red-200">Requests per minute</span>
+                        <span className={`text-sm sm:text-lg font-bold font-orbitron ${
+                          index === 1 ? 'text-green-400' : index === 2 ? 'text-amber-400' : 'text-red-400'
+                        }`}>
                           {tier.requests}
                         </span>
                       </div>
                       <div className="flex justify-between items-center py-2 sm:py-3 border-b border-red-900/20">
-                        <span className="text-sm sm:text-base text-red-200">Tokens per agent</span>
-                        <span className="text-base sm:text-xl font-bold text-red-400 font-orbitron">
+                        <span className="text-xs sm:text-sm text-red-200">Tokens per agent</span>
+                        <span className={`text-sm sm:text-base font-bold font-orbitron ${
+                          index === 1 ? 'text-green-400' : index === 2 ? 'text-amber-400' : 'text-red-400'
+                        }`}>
                           {tier.tokens}
                         </span>
                       </div>
                       <div className="flex justify-between items-center py-2 sm:py-3">
-                        <span className="text-sm sm:text-base text-red-200">Agents per request</span>
-                        <span className="text-base sm:text-xl font-bold text-red-400 font-orbitron">
+                        <span className="text-xs sm:text-sm text-red-200">Agents per request</span>
+                        <span className={`text-sm sm:text-base font-bold font-orbitron ${
+                          index === 1 ? 'text-green-400' : index === 2 ? 'text-amber-400' : 'text-red-400'
+                        }`}>
                           {tier.batch}
                         </span>
                       </div>
+                      
+                      {/* Premium tier specific features */}
+                      {index === 1 && (
+                        <>
+                          <div className="border-t border-green-500/20 pt-4">
+                            <div className="text-green-400 font-semibold text-sm mb-3">Premium benefits:</div>
+                            <div className="space-y-2">
+                              <div className="flex items-center text-sm text-green-200">
+                                <div className="w-2 h-2 bg-green-400 rounded-full mr-2"></div>
+                                Priority customer support
+                              </div>
+                              <div className="flex items-center text-sm text-green-200">
+                                <div className="w-2 h-2 bg-green-400 rounded-full mr-2"></div>
+                                Increased rate limits
+                              </div>
+                              <div className="flex items-center text-sm text-green-200">
+                                <div className="w-2 h-2 bg-green-400 rounded-full mr-2"></div>
+                                Early access to new features
+                              </div>
+                              <div className="flex items-center text-sm text-green-200">
+                                <div className="w-2 h-2 bg-green-400 rounded-full mr-2"></div>
+                                Faster API response times
+                              </div>
+                            </div>
+                          </div>
+                        </>
+                      )}
+                      
+                      {/* On-premise specific features */}
+                      {index === 2 && (
+                        <>
+                          <div className="border-t border-amber-500/20 pt-4">
+                            <div className="text-amber-400 font-semibold text-sm mb-3">Included with license:</div>
+                            <div className="space-y-2">
+                              <div className="flex items-center text-sm text-amber-200">
+                                <div className="w-2 h-2 bg-amber-400 rounded-full mr-2"></div>
+                                Complete Docker deployment
+                              </div>
+                              <div className="flex items-center text-sm text-amber-200">
+                                <div className="w-2 h-2 bg-amber-400 rounded-full mr-2"></div>
+                                1-year enterprise license
+                              </div>
+                              <div className="flex items-center text-sm text-amber-200">
+                                <div className="w-2 h-2 bg-amber-400 rounded-full mr-2"></div>
+                                Full source code access
+                              </div>
+                              <div className="flex items-center text-sm text-amber-200">
+                                <div className="w-2 h-2 bg-amber-400 rounded-full mr-2"></div>
+                                Priority support & updates
+                              </div>
+                            </div>
+                          </div>
+                        </>
+                      )}
                     </div>
 
                     {/* CTA Button */}
@@ -1005,7 +1088,7 @@ runAgent();`
                       )}
                       {index === 1 && (
                         <Button
-                          className="w-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white py-4 sm:py-6 text-base sm:text-lg font-semibold"
+                          className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white py-4 sm:py-6 text-base sm:text-lg font-semibold"
                           asChild
                         >
                           <Link href="https://swarms.world/platform/account" target="_blank">
@@ -1014,6 +1097,16 @@ runAgent();`
                         </Button>
                       )}
                       {index === 2 && (
+                        <Button
+                          className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white py-4 sm:py-6 text-base sm:text-lg font-semibold"
+                          asChild
+                        >
+                          <Link href="https://buy.stripe.com/eVq4gz7Nph072rZ1J6aAw09" target="_blank">
+                            Purchase license
+                          </Link>
+                        </Button>
+                      )}
+                      {index === 3 && (
                         <Button
                           variant="outline"
                           className="w-full border-red-500/30 text-red-400 hover:bg-red-500/10 hover:border-red-500/50 py-4 sm:py-6 text-base sm:text-lg font-semibold"

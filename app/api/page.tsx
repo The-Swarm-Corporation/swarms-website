@@ -103,6 +103,7 @@ export default function APIPage() {
     },
     {
       tier: "Premium tier",
+      price: "$100/month",
       requests: "2,000 req/min",
       tokens: "2M tokens/agent",
       batch: "500 agents/batch",
@@ -372,16 +373,6 @@ runAgent();`
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 1 }}
             >
-              {/* API Badge */}
-              <motion.div
-                className="inline-flex items-center px-4 py-2 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-sm font-medium"
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.2, duration: 0.8 }}
-              >
-                <Terminal className="w-4 h-4 mr-2" />
-                API PLATFORM
-              </motion.div>
 
               {/* Main Title */}
               <motion.h1
@@ -423,8 +414,7 @@ runAgent();`
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.8, duration: 0.8 }}
               >
-                The world's only multi-agent orchestration API. Rust-optimized for 100x speed increase over Python, 
-                supporting 600+ models with MCP protocol. We handle all the orchestration logic - you just build the agents.
+                Enterprise-Grade Bleeding-Edge Multi-Agent API Platform.
               </motion.p>
 
               {/* CTA Buttons */}
@@ -565,41 +555,42 @@ runAgent();`
       <section className="py-24 bg-black">
         <div className="container px-4 sm:px-6">
           <motion.div
-            className="text-center mb-16"
+            className="text-left mb-16"
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
             viewport={{ once: true }}
           >
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-6 font-orbitron">
+            <h2 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-6 sm:mb-8 font-orbitron leading-tight">
               Integration <span className="text-red-500">guide</span>
             </h2>
-            <p className="text-xl text-red-200 max-w-3xl mx-auto">
+            <p className="text-xl sm:text-2xl md:text-3xl text-red-200 max-w-4xl mb-8 sm:mb-10 leading-relaxed">
               Follow our focused step-by-step guide to start building with the world's most advanced multi-agent API
             </p>
             
             {/* Quick Links */}
-            <div className="flex flex-col sm:flex-row gap-4 items-center justify-center mt-8">
+            <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 items-start sm:items-center">
               <Button
-                variant="outline"
-                className="border-red-500/30 text-red-400 hover:bg-red-500/10 hover:border-red-500/50"
+                size="lg"
+                className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-semibold rounded-lg transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-red-500/25 w-full sm:w-auto"
                 asChild
               >
                 <Link href="https://swarms.world/platform/api-keys" target="_blank">
-                  <Key className="w-4 h-4 mr-2" />
+                  <Key className="w-5 h-5 mr-2" />
                   Get API key
-                  <ExternalLink className="w-4 h-4 ml-2" />
+                  <ExternalLink className="w-5 h-5 ml-2" />
                 </Link>
               </Button>
               <Button
+                size="lg"
                 variant="outline"
-                className="border-red-500/30 text-red-400 hover:bg-red-500/10 hover:border-red-500/50"
+                className="border-red-500/30 text-red-400 hover:bg-red-500/10 hover:border-red-500/50 px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-semibold rounded-lg transition-all duration-300 hover:scale-105 w-full sm:w-auto"
                 asChild
               >
                 <Link href="https://docs.swarms.ai/resources/client-libraries" target="_blank">
-                  <Code className="w-4 h-4 mr-2" />
+                  <Code className="w-5 h-5 mr-2" />
                   Download SDKs
-                  <ExternalLink className="w-4 h-4 ml-2" />
+                  <ExternalLink className="w-5 h-5 ml-2" />
                 </Link>
               </Button>
             </div>
@@ -967,6 +958,11 @@ runAgent();`
                       <h3 className="text-xl sm:text-2xl font-bold text-white mb-2 font-orbitron">
                         {tier.tier}
                       </h3>
+                      {tier.price && (
+                        <div className="text-2xl sm:text-3xl font-bold text-red-400 mb-2 font-orbitron">
+                          {tier.price}
+                        </div>
+                      )}
                       {index === 0 && (
                         <p className="text-red-300 text-sm">Perfect for getting started</p>
                       )}
@@ -1040,6 +1036,23 @@ runAgent();`
               </motion.div>
             ))}
           </div>
+          
+          {/* Promotional Banner */}
+          <motion.div
+            className="text-center mt-12 sm:mt-16 md:mt-20"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true }}
+          >
+            <div className="inline-flex items-center px-6 sm:px-8 py-4 sm:py-5 rounded-2xl bg-gradient-to-r from-red-500/20 to-red-600/20 border border-red-500/30 text-red-400 text-lg sm:text-xl font-semibold mx-4 sm:mx-0 backdrop-blur-sm">
+              <span className="text-2xl mr-3">🎉</span>
+              Get $20 in free credits when you 
+              <Link href="https://swarms.world/platform/account" target="_blank" className="text-red-300 hover:text-red-200 underline decoration-red-400 ml-1">
+                sign up right now
+              </Link>
+            </div>
+          </motion.div>
         </div>
       </section>
 
@@ -1054,7 +1067,7 @@ runAgent();`
             viewport={{ once: true }}
           >
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-4 sm:mb-6 font-orbitron leading-tight">
-              Ready to build the <span className="text-red-500">future</span>?
+              Get started <span className="text-red-500">now</span>
             </h2>
             <p className="text-lg sm:text-xl text-red-200 mb-6 sm:mb-8 max-w-2xl mx-auto px-4 sm:px-0">
               Start orchestrating intelligent agent swarms today with the world's only multi-agent API platform

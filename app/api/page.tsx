@@ -7,7 +7,8 @@ import { motion } from "framer-motion"
 import { 
   ArrowRight, Zap, Cpu, Globe, ExternalLink, 
   Network, Shield, BookOpen, Code,
-  Calendar, Key, CheckCircle, Play, Database
+  Calendar, Key, CheckCircle, Play, Database,
+  Activity, MapPin, BarChart3, GitBranch, Brain, Wrench
 } from "lucide-react"
 import { TypingEffect } from "@/components/typing-effect"
 import { AnimatedBackground } from "@/components/animated-background"
@@ -26,15 +27,33 @@ export default function APIPage() {
 
   const apiFeatures = [
     {
-      icon: Globe,
-      title: "World's only multi-agent API",
-      description: "The first and only comprehensive multi-agent orchestration API platform available globally",
+      icon: GitBranch,
+      title: "Multi-agent architectures",
+      description: "Support for concurrent, sequential, hierarchical, and custom multi-agent workflow patterns",
       gradient: "from-red-500 to-red-600"
     },
     {
-      icon: Zap,
-      title: "Rust-optimized performance",
-      description: "100x speed increase over raw Python with sub-millisecond initialization and enterprise-grade reliability",
+      icon: Brain,
+      title: "Multi-agent memory",
+      description: "Persistent and shared memory systems enabling agents to collaborate and learn from interactions",
+      gradient: "from-red-600 to-red-700"
+    },
+    {
+      icon: Wrench,
+      title: "Pre-built tools ecosystem",
+      description: "Ready-to-use tools including search, web scraping, Yahoo Finance, and dozens of other integrations",
+      gradient: "from-red-700 to-red-800"
+    },
+    {
+      icon: Network,
+      title: "Orchestration handled",
+      description: "We handle all the complex orchestration logic - you focus on building and configuring your agents",
+      gradient: "from-red-500 to-red-600"
+    },
+    {
+      icon: Globe,
+      title: "World's only multi-agent API",
+      description: "The first and only comprehensive multi-agent orchestration API platform available globally",
       gradient: "from-red-600 to-red-700"
     },
     {
@@ -44,21 +63,39 @@ export default function APIPage() {
       gradient: "from-red-700 to-red-800"
     },
     {
+      icon: Activity,
+      title: "Streaming support",
+      description: "Real-time streaming responses for immediate feedback and enhanced user experience",
+      gradient: "from-red-500 to-red-600"
+    },
+    {
+      icon: Cpu,
+      title: "100 agents per request",
+      description: "Scale from 100 agents per request on free tier to unlimited enterprise deployments",
+      gradient: "from-red-600 to-red-700"
+    },
+    {
+      icon: Zap,
+      title: "Rust-optimized performance",
+      description: "100x speed increase over raw Python with sub-millisecond initialization and enterprise-grade reliability",
+      gradient: "from-red-700 to-red-800"
+    },
+    {
       icon: Shield,
       title: "Enterprise infrastructure",
       description: "Enterprise-grade infrastructure and reliability with advanced security and fault tolerance",
       gradient: "from-red-500 to-red-600"
     },
     {
-      icon: Network,
-      title: "Orchestration handled",
-      description: "We handle all the complex orchestration logic - you focus on building and configuring your agents",
+      icon: MapPin,
+      title: "Multi-region deployment",
+      description: "Global infrastructure with multi-region deployment for optimal performance and reliability",
       gradient: "from-red-600 to-red-700"
     },
     {
-      icon: Cpu,
-      title: "100 agents per request",
-      description: "Scale from 100 agents per request on free tier to unlimited enterprise deployments",
+      icon: BarChart3,
+      title: "Extensive telemetry & logging",
+      description: "Comprehensive monitoring, detailed analytics, and real-time logging for complete observability",
       gradient: "from-red-700 to-red-800"
     }
   ]
@@ -457,46 +494,278 @@ runAgent();`
       {/* Scrolling Ticker */}
       <ScrollingTicker announcements={tickerAnnouncements} />
 
-      {/* Features Grid */}
-      <section className="py-12 sm:py-16 md:py-20 bg-gradient-to-b from-black to-red-950/20">
-        <div className="container px-4 sm:px-6">
+      {/* Core Capabilities - Mobile-Optimized Single Feature Showcase */}
+      <section className="py-12 sm:py-16 md:py-20 lg:py-24 bg-black">
+        <div className="container px-4 sm:px-6 lg:px-8">
           <motion.div
-            className="text-center mb-8 sm:mb-12 md:mb-16"
+            className="text-center sm:text-left mb-8 sm:mb-12 md:mb-16"
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
             viewport={{ once: true }}
           >
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-3 sm:mb-4 md:mb-6 font-orbitron leading-tight">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-white mb-4 sm:mb-6 md:mb-8 font-orbitron leading-tight">
               Core <span className="text-red-500">capabilities</span>
             </h2>
-            <p className="text-lg sm:text-xl text-red-200 max-w-3xl mx-auto px-4 sm:px-0">
-              Comprehensive API endpoints for every aspect of multi-agent orchestration
+            <p className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-3xl text-red-200 max-w-4xl mx-auto sm:mx-0 mb-6 sm:mb-8 md:mb-10 leading-relaxed px-2 sm:px-0">
+              Discover the powerful features that make Swarms the world's most advanced multi-agent API platform
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
-            {apiFeatures.map((feature, index) => (
+          {/* Feature Showcase Container */}
+          <div className="relative">
+            {apiFeatures.map((feature, featureIndex) => (
               <motion.div
                 key={feature.title}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: index * 0.1 }}
-                viewport={{ once: true }}
+                className="min-h-[80vh] sm:min-h-[85vh] md:min-h-screen flex items-center justify-center py-8 sm:py-12 md:py-16"
+                initial={{ opacity: 0, scale: 0.95 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.8, ease: "easeOut" }}
+                viewport={{ once: false, margin: "-15%" }}
               >
-                <Card className="bg-black/50 border-red-900/30 hover:border-red-500/30 transition-all duration-300 hover:scale-105 group h-full">
-                  <CardHeader className="text-center p-4 sm:p-6">
-                    <div className={`w-12 sm:w-16 h-12 sm:h-16 mx-auto mb-3 sm:mb-4 rounded-xl bg-gradient-to-br ${feature.gradient} flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
-                      <feature.icon className="w-6 sm:w-8 h-6 sm:h-8 text-white" />
-                    </div>
-                    <CardTitle className="text-lg sm:text-xl font-bold text-white group-hover:text-red-400 transition-colors duration-300">
-                      {feature.title}
-                    </CardTitle>
-                    <CardDescription className="text-red-200 mt-2 text-sm sm:text-base">
-                      {feature.description}
-                    </CardDescription>
-                  </CardHeader>
-                </Card>
+                <div className="w-full max-w-7xl mx-auto">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 md:gap-10 lg:gap-12 items-center">
+                    {/* Left Side - Feature Content */}
+                    <motion.div
+                      className="space-y-4 sm:space-y-6 md:space-y-8 order-2 lg:order-1"
+                      initial={{ opacity: 0, x: -50 }}
+                      whileInView={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.7, delay: 0.1 }}
+                      viewport={{ once: false, margin: "-10%" }}
+                    >
+                      {/* Feature Progress */}
+                      <div className="flex items-center space-x-3 sm:space-x-4 mb-4 sm:mb-6">
+                        <div className="text-red-400 text-xs sm:text-sm font-medium whitespace-nowrap">
+                          Feature {featureIndex + 1} of {apiFeatures.length}
+                        </div>
+                        <div className="flex-1 h-1 bg-red-950 rounded-full overflow-hidden">
+                          <motion.div
+                            className="h-full bg-gradient-to-r from-red-500 to-red-600"
+                            initial={{ width: "0%" }}
+                            whileInView={{ width: `${((featureIndex + 1) / apiFeatures.length) * 100}%` }}
+                            transition={{ duration: 0.8, delay: 0.3 }}
+                            viewport={{ once: false }}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Feature Icon and Number */}
+                      <div className="flex items-center space-x-4 sm:space-x-6">
+                        <motion.div
+                          className="flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 md:w-18 md:h-18 lg:w-20 lg:h-20 rounded-xl sm:rounded-2xl bg-gradient-to-br from-red-500 to-red-600 text-white font-bold text-lg sm:text-xl md:text-2xl shadow-lg shadow-red-500/25"
+                          initial={{ scale: 0 }}
+                          whileInView={{ scale: 1 }}
+                          transition={{ duration: 0.5, delay: 0.2, type: "spring", bounce: 0.4 }}
+                          viewport={{ once: false }}
+                        >
+                          {featureIndex + 1}
+                        </motion.div>
+                        <motion.div
+                          className={`w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-lg sm:rounded-xl bg-gradient-to-br ${feature.gradient} flex items-center justify-center border border-red-500/30`}
+                          initial={{ scale: 0, rotate: -90 }}
+                          whileInView={{ scale: 1, rotate: 0 }}
+                          transition={{ duration: 0.5, delay: 0.4 }}
+                          viewport={{ once: false }}
+                        >
+                          <feature.icon className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-white" />
+                        </motion.div>
+                      </div>
+
+                      {/* Feature Title */}
+                      <motion.h3
+                        className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white font-orbitron leading-tight"
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.6, delay: 0.3 }}
+                        viewport={{ once: false }}
+                      >
+                        {feature.title}
+                      </motion.h3>
+
+                      {/* Feature Description */}
+                      <motion.p
+                        className="text-sm sm:text-base md:text-lg lg:text-xl text-red-200 leading-relaxed"
+                        initial={{ opacity: 0, y: 15 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.6, delay: 0.5 }}
+                        viewport={{ once: false }}
+                      >
+                        {feature.description}
+                      </motion.p>
+
+                      {/* Feature-specific additional details */}
+                      {featureIndex === 0 && (
+                        <motion.div
+                          className="bg-red-950/20 border border-red-500/20 rounded-lg sm:rounded-xl p-4 sm:p-5 md:p-6"
+                          initial={{ opacity: 0, y: 15 }}
+                          whileInView={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.6, delay: 0.7 }}
+                          viewport={{ once: false }}
+                        >
+                          <h4 className="text-red-400 font-semibold text-sm sm:text-base mb-3">Supported Architectures:</h4>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
+                            <div className="flex items-center text-red-200 text-xs sm:text-sm">
+                              <div className="w-2 h-2 bg-red-400 rounded-full mr-2 flex-shrink-0"></div>
+                              Concurrent workflows
+                            </div>
+                            <div className="flex items-center text-red-200 text-xs sm:text-sm">
+                              <div className="w-2 h-2 bg-red-400 rounded-full mr-2 flex-shrink-0"></div>
+                              Sequential pipelines
+                            </div>
+                            <div className="flex items-center text-red-200 text-xs sm:text-sm">
+                              <div className="w-2 h-2 bg-red-400 rounded-full mr-2 flex-shrink-0"></div>
+                              Hierarchical structures
+                            </div>
+                            <div className="flex items-center text-red-200 text-xs sm:text-sm">
+                              <div className="w-2 h-2 bg-red-400 rounded-full mr-2 flex-shrink-0"></div>
+                              Custom patterns
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+
+                      {featureIndex === 2 && (
+                        <motion.div
+                          className="bg-red-950/20 border border-red-500/20 rounded-lg sm:rounded-xl p-4 sm:p-5 md:p-6"
+                          initial={{ opacity: 0, y: 15 }}
+                          whileInView={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.6, delay: 0.7 }}
+                          viewport={{ once: false }}
+                        >
+                          <h4 className="text-red-400 font-semibold text-sm sm:text-base mb-3">Available Tools:</h4>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
+                            <div className="flex items-center text-red-200 text-xs sm:text-sm">
+                              <div className="w-2 h-2 bg-red-400 rounded-full mr-2 flex-shrink-0"></div>
+                              Web search & scraping
+                            </div>
+                            <div className="flex items-center text-red-200 text-xs sm:text-sm">
+                              <div className="w-2 h-2 bg-red-400 rounded-full mr-2 flex-shrink-0"></div>
+                              Yahoo Finance API
+                            </div>
+                            <div className="flex items-center text-red-200 text-xs sm:text-sm">
+                              <div className="w-2 h-2 bg-red-400 rounded-full mr-2 flex-shrink-0"></div>
+                              Document processing
+                            </div>
+                            <div className="flex items-center text-red-200 text-xs sm:text-sm">
+                              <div className="w-2 h-2 bg-red-400 rounded-full mr-2 flex-shrink-0"></div>
+                              Custom integrations
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+                    </motion.div>
+
+                    {/* Right Side - Visual Element */}
+                    <motion.div
+                      className="order-1 lg:order-2 px-2 sm:px-4 lg:px-0"
+                      initial={{ opacity: 0, x: 50 }}
+                      whileInView={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.7, delay: 0.2 }}
+                      viewport={{ once: false, margin: "-10%" }}
+                    >
+                      <motion.div
+                        className="relative"
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        whileInView={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.5, delay: 0.4 }}
+                        viewport={{ once: false }}
+                      >
+                        {/* Feature Visualization Card */}
+                        <Card className="bg-gradient-to-br from-red-900/20 to-red-800/10 border-red-500/40 shadow-lg shadow-red-500/10 backdrop-blur-sm">
+                          <CardHeader className="p-4 sm:p-6 md:p-8">
+                            <div className="text-center space-y-4 sm:space-y-6">
+                              <motion.div
+                                className={`w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 mx-auto rounded-xl sm:rounded-2xl bg-gradient-to-br ${feature.gradient} flex items-center justify-center shadow-lg`}
+                                whileHover={{ scale: 1.05, rotate: 2 }}
+                                whileTap={{ scale: 0.95 }}
+                                transition={{ type: "spring", stiffness: 300 }}
+                              >
+                                <feature.icon className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-white" />
+                              </motion.div>
+                              
+                              <div className="space-y-3 sm:space-y-4">
+                                <h4 className="text-lg sm:text-xl md:text-2xl font-bold text-white font-orbitron">
+                                  {feature.title}
+                                </h4>
+                                
+                                {/* Animated metrics or visual elements based on feature */}
+                                {featureIndex === 0 && (
+                                  <div className="flex justify-center space-x-2 sm:space-x-3 md:space-x-4">
+                                    {[1, 2, 3, 4].map((i) => (
+                                      <motion.div
+                                        key={i}
+                                        className="w-2 sm:w-3 bg-gradient-to-t from-red-600 to-red-400 rounded-full"
+                                        initial={{ height: 8 }}
+                                        whileInView={{ height: Math.random() * 32 + 8 }}
+                                        transition={{ duration: 1, delay: i * 0.1, repeat: Infinity, repeatType: "reverse" }}
+                                        viewport={{ once: false }}
+                                      />
+                                    ))}
+                                  </div>
+                                )}
+                                
+                                {featureIndex === 1 && (
+                                  <div className="space-y-1.5 sm:space-y-2">
+                                    {[1, 2, 3].map((i) => (
+                                      <motion.div
+                                        key={i}
+                                        className="h-1.5 sm:h-2 bg-gradient-to-r from-red-500 to-red-400 rounded-full"
+                                        initial={{ width: "0%" }}
+                                        whileInView={{ width: `${60 + i * 15}%` }}
+                                        transition={{ duration: 1, delay: i * 0.2 }}
+                                        viewport={{ once: false }}
+                                      />
+                                    ))}
+                                  </div>
+                                )}
+                                
+                                <p className="text-red-200 text-xs sm:text-sm leading-relaxed line-clamp-3">
+                                  {feature.description}
+                                </p>
+                              </div>
+                            </div>
+                          </CardHeader>
+                        </Card>
+                      </motion.div>
+                    </motion.div>
+                  </div>
+                </div>
+
+                {/* Mobile-Friendly Feature Navigation Indicator */}
+                <motion.div
+                  className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex md:hidden space-x-2"
+                  initial={{ opacity: 0 }}
+                  whileInView={{ opacity: 1 }}
+                  transition={{ duration: 0.6, delay: 0.6 }}
+                  viewport={{ once: false }}
+                >
+                  {apiFeatures.map((_, index) => (
+                    <div
+                      key={index}
+                      className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                        index === featureIndex ? 'bg-red-500' : 'bg-red-950'
+                      }`}
+                    />
+                  ))}
+                </motion.div>
+
+                {/* Desktop Feature Navigation Indicator */}
+                <motion.div
+                  className="absolute right-4 sm:right-6 lg:right-8 top-1/2 transform -translate-y-1/2 hidden md:flex flex-col space-y-2"
+                  initial={{ opacity: 0 }}
+                  whileInView={{ opacity: 1 }}
+                  transition={{ duration: 0.6, delay: 0.6 }}
+                  viewport={{ once: false }}
+                >
+                  {apiFeatures.map((_, index) => (
+                    <div
+                      key={index}
+                      className={`w-1.5 sm:w-2 h-6 sm:h-8 rounded-full transition-all duration-300 ${
+                        index === featureIndex ? 'bg-red-500' : 'bg-red-950'
+                      }`}
+                    />
+                  ))}
+                </motion.div>
               </motion.div>
             ))}
           </div>
@@ -844,7 +1113,7 @@ runAgent();`
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 md:gap-8 max-w-4xl mx-auto px-4 sm:px-0">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8 max-w-6xl mx-auto px-4 sm:px-0">
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -863,7 +1132,8 @@ runAgent();`
                     Comprehensive API reference with endpoints, examples, and integration guides
                   </CardDescription>
                   <Button
-                    className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white"
+                    variant="outline"
+                    className="border-red-500/30 text-red-400 hover:bg-red-500/10 hover:border-red-500/50"
                     asChild
                   >
                     <Link href="https://docs.swarms.ai/api-reference/root" target="_blank">
@@ -879,6 +1149,130 @@ runAgent();`
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.1 }}
+              viewport={{ once: true }}
+            >
+              <Card className="bg-black/50 border-red-900/30 hover:border-red-500/30 transition-all duration-300 hover:scale-105 group h-full">
+                <CardHeader className="text-center p-4 sm:p-6">
+                  <div className="w-12 sm:w-16 h-12 sm:h-16 mx-auto mb-3 sm:mb-4 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                    <Zap className="w-6 sm:w-8 h-6 sm:h-8 text-white" />
+                  </div>
+                  <CardTitle className="text-lg sm:text-xl font-bold text-white group-hover:text-red-400 transition-colors duration-300">
+                    Quickstart guide
+                  </CardTitle>
+                  <CardDescription className="text-red-200 mt-2 mb-3 sm:mb-4 text-sm sm:text-base">
+                    Get started quickly with examples and step-by-step instructions
+                  </CardDescription>
+                  <Button
+                    variant="outline"
+                    className="border-red-500/30 text-red-400 hover:bg-red-500/10 hover:border-red-500/50"
+                    asChild
+                  >
+                    <Link href="https://docs.swarms.ai/getting-started/quickstart" target="_blank">
+                      <Play className="w-4 h-4 mr-2" />
+                      Start guide
+                    </Link>
+                  </Button>
+                </CardHeader>
+              </Card>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+              viewport={{ once: true }}
+            >
+              <Card className="bg-black/50 border-red-900/30 hover:border-red-500/30 transition-all duration-300 hover:scale-105 group h-full">
+                <CardHeader className="text-center p-4 sm:p-6">
+                  <div className="w-12 sm:w-16 h-12 sm:h-16 mx-auto mb-3 sm:mb-4 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                    <Key className="w-6 sm:w-8 h-6 sm:h-8 text-white" />
+                  </div>
+                  <CardTitle className="text-lg sm:text-xl font-bold text-white group-hover:text-red-400 transition-colors duration-300">
+                    API key setup
+                  </CardTitle>
+                  <CardDescription className="text-red-200 mt-2 mb-3 sm:mb-4 text-sm sm:text-base">
+                    Step-by-step guide for setting up your API authentication
+                  </CardDescription>
+                  <Button
+                    variant="outline"
+                    className="border-red-500/30 text-red-400 hover:bg-red-500/10 hover:border-red-500/50"
+                    asChild
+                  >
+                    <Link href="https://docs.swarms.ai/getting-started/api-key-setup" target="_blank">
+                      <Key className="w-4 h-4 mr-2" />
+                      Setup guide
+                    </Link>
+                  </Button>
+                </CardHeader>
+              </Card>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.3 }}
+              viewport={{ once: true }}
+            >
+              <Card className="bg-black/50 border-red-900/30 hover:border-red-500/30 transition-all duration-300 hover:scale-105 group h-full">
+                <CardHeader className="text-center p-4 sm:p-6">
+                  <div className="w-12 sm:w-16 h-12 sm:h-16 mx-auto mb-3 sm:mb-4 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                    <Code className="w-6 sm:w-8 h-6 sm:h-8 text-white" />
+                  </div>
+                  <CardTitle className="text-lg sm:text-xl font-bold text-white group-hover:text-red-400 transition-colors duration-300">
+                    Setup & configuration
+                  </CardTitle>
+                  <CardDescription className="text-red-200 mt-2 mb-3 sm:mb-4 text-sm sm:text-base">
+                    Advanced configuration and deployment instructions
+                  </CardDescription>
+                  <Button
+                    variant="outline"
+                    className="border-red-500/30 text-red-400 hover:bg-red-500/10 hover:border-red-500/50"
+                    asChild
+                  >
+                    <Link href="https://docs.swarms.ai/getting-started/setup" target="_blank">
+                      <Code className="w-4 h-4 mr-2" />
+                      View setup
+                    </Link>
+                  </Button>
+                </CardHeader>
+              </Card>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.4 }}
+              viewport={{ once: true }}
+            >
+              <Card className="bg-black/50 border-red-900/30 hover:border-red-500/30 transition-all duration-300 hover:scale-105 group h-full">
+                <CardHeader className="text-center p-4 sm:p-6">
+                  <div className="w-12 sm:w-16 h-12 sm:h-16 mx-auto mb-3 sm:mb-4 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                    <Database className="w-6 sm:w-8 h-6 sm:h-8 text-white" />
+                  </div>
+                  <CardTitle className="text-lg sm:text-xl font-bold text-white group-hover:text-red-400 transition-colors duration-300">
+                    Telemetry & logs
+                  </CardTitle>
+                  <CardDescription className="text-red-200 mt-2 mb-3 sm:mb-4 text-sm sm:text-base">
+                    Monitor your API usage and view detailed request logs
+                  </CardDescription>
+                  <Button
+                    variant="outline"
+                    className="border-red-500/30 text-red-400 hover:bg-red-500/10 hover:border-red-500/50"
+                    asChild
+                  >
+                    <Link href="https://swarms.world/platform/telemetry" target="_blank">
+                      <Database className="w-4 h-4 mr-2" />
+                      View logs
+                    </Link>
+                  </Button>
+                </CardHeader>
+              </Card>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.5 }}
               viewport={{ once: true }}
             >
               <Card className="bg-black/50 border-red-900/30 hover:border-red-500/30 transition-all duration-300 hover:scale-105 group h-full">

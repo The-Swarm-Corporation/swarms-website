@@ -4,11 +4,12 @@ import { Button } from "@/components/ui/button"
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { motion, useReducedMotion } from "framer-motion"
+import { useState, useEffect } from "react"
 import { 
   ArrowRight, Zap, Cpu, Globe, ExternalLink, 
   Network, Shield, BookOpen, Code,
   Calendar, Key, CheckCircle, Play, Database,
-  Activity, MapPin, BarChart3, GitBranch, Brain, Wrench
+  Activity, MapPin, BarChart3, GitBranch, Brain, Wrench, Puzzle
 } from "lucide-react"
 import { TypingEffect } from "@/components/typing-effect"
 import { AnimatedBackground } from "@/components/animated-background"
@@ -18,6 +19,47 @@ import Link from "next/link"
 
 export default function APIPage() {
   const shouldReduceMotion = useReducedMotion()
+  const [currentFeatureIndex, setCurrentFeatureIndex] = useState(0)
+  const [showProgressIndicator, setShowProgressIndicator] = useState(false)
+  
+  // Scroll detection for progress tracking
+  useEffect(() => {
+    const handleScroll = () => {
+      const featureElements = document.querySelectorAll('[data-feature-index]')
+      const featuresSection = document.querySelector('[data-section="features"]')
+      
+      if (!featuresSection || featureElements.length === 0) return
+      
+      const scrollPosition = window.scrollY + window.innerHeight / 2
+      const featuresSectionRect = featuresSection.getBoundingClientRect()
+      const featuresSectionTop = featuresSectionRect.top + window.scrollY
+      const featuresSectionBottom = featuresSectionTop + featuresSectionRect.height
+      
+      // Check if we're in the features section
+      const isInFeaturesSection = scrollPosition >= featuresSectionTop && scrollPosition <= featuresSectionBottom
+      setShowProgressIndicator(isInFeaturesSection)
+      
+      if (isInFeaturesSection) {
+        let activeIndex = 0
+        featureElements.forEach((element, index) => {
+          const rect = element.getBoundingClientRect()
+          const elementTop = rect.top + window.scrollY
+          const elementBottom = elementTop + rect.height
+          
+          if (scrollPosition >= elementTop && scrollPosition <= elementBottom) {
+            activeIndex = index
+          }
+        })
+        
+        setCurrentFeatureIndex(activeIndex)
+      }
+    }
+
+    window.addEventListener('scroll', handleScroll)
+    handleScroll() // Initial check
+    
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
   
   // Mobile-optimized animation variants
   const mobileOptimizedVariants = {
@@ -51,7 +93,8 @@ export default function APIPage() {
   const tickerAnnouncements = [
     "Swarms API: The only multi-agent API in the world",
     "Rust-optimized: 100x faster than raw Python",
-    "600+ model support with MCP protocol",
+    "600+ models: OpenAI, Anthropic, Gemini & more",
+    "MCP protocol: Integrate any platform seamlessly",
     "Enterprise-grade infrastructure & reliability",
     "100 agents per request for free users"
   ]
@@ -90,8 +133,14 @@ export default function APIPage() {
     {
       icon: Database,
       title: "600+ model support",
-      description: "Comprehensive model ecosystem with MCP (Model Context Protocol) support for maximum flexibility",
+      description: "Support for leading AI models including OpenAI, Anthropic, Gemini, and hundreds of others for maximum flexibility",
       gradient: "from-red-700 to-red-800"
+    },
+    {
+      icon: Puzzle,
+      title: "MCP protocol integration",
+      description: "Model Context Protocol enables seamless integration with any platform including Notion, Supabase, and countless other tools",
+      gradient: "from-red-500 to-red-600"
     },
     {
       icon: Activity,
@@ -474,7 +523,8 @@ runAgent();`
                   texts={[
                     "Enterprise-Grade Multi-Agent API Platform",
                     "Rust-optimized: 100x faster than Python",
-                    "600+ models with MCP protocol support",
+                    "600+ models: OpenAI, Anthropic, Gemini & more",
+                    "MCP protocol: Integrate any platform seamlessly",
                     "Enterprise-grade infrastructure & reliability"
                   ]}
                   typingSpeed={shouldReduceMotion ? 120 : 60}
@@ -521,7 +571,7 @@ runAgent();`
       <ScrollingTicker announcements={tickerAnnouncements} />
 
       {/* Core Capabilities - Mobile-Optimized Single Feature Showcase */}
-      <section className="py-8 sm:py-12 md:py-16 lg:py-20 bg-black">
+      <section className="py-8 sm:py-12 md:py-16 lg:py-20 bg-black" data-section="features">
         <div className="container px-4 sm:px-6 lg:px-8">
           <motion.div
             className="text-center sm:text-left mb-6 sm:mb-8 md:mb-12"
@@ -538,11 +588,63 @@ runAgent();`
             </p>
           </motion.div>
 
+          {/* Fixed Scroll Progress Indicator */}
+          <motion.div 
+            className="fixed left-1/2 bottom-8 transform -translate-x-1/2 z-[100] flex flex-row items-center space-x-3 bg-black/90 backdrop-blur-sm rounded-full px-6 py-3 border border-red-500/30 shadow-lg shadow-red-500/20"
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ 
+              opacity: showProgressIndicator ? 1 : 0,
+              y: showProgressIndicator ? 0 : 50
+            }}
+            transition={{ duration: 0.4, ease: "easeInOut" }}
+            style={{ display: showProgressIndicator ? 'flex' : 'none' }}
+          >
+            {/* Progress Text */}
+            <div className="text-red-400 text-sm font-medium font-orbitron">
+              {currentFeatureIndex + 1}/{apiFeatures.length}
+            </div>
+            
+            {/* Progress Bar */}
+            <div className="flex items-center space-x-2">
+              {apiFeatures.map((_, index) => (
+                <motion.div
+                  key={index}
+                  className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                    index === currentFeatureIndex 
+                      ? 'bg-red-500 shadow-lg shadow-red-500/50 scale-125' 
+                      : index < currentFeatureIndex
+                      ? 'bg-red-600/80'
+                      : 'bg-red-950/60'
+                  }`}
+                  whileHover={{ scale: index === currentFeatureIndex ? 1.4 : 1.2 }}
+                  initial={{ opacity: 0, scale: 0 }}
+                  animate={{ opacity: 1, scale: index === currentFeatureIndex ? 1.25 : 1 }}
+                  transition={{ delay: index * 0.03, duration: 0.3 }}
+                >
+                  {index === currentFeatureIndex && (
+                    <motion.div
+                      className="absolute inset-0 bg-red-400 rounded-full animate-pulse"
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ duration: 0.3 }}
+                    />
+                  )}
+                </motion.div>
+              ))}
+            </div>
+            
+            {/* Feature Label */}
+            <div className="text-red-300/80 text-xs font-medium">
+              Features
+            </div>
+          </motion.div>
+
           {/* Feature Showcase Container */}
           <div className="relative">
             {apiFeatures.map((feature, featureIndex) => (
               <motion.div
                 key={feature.title}
+                data-feature-index={featureIndex}
                 className="min-h-[70vh] sm:min-h-[75vh] md:min-h-[80vh] lg:min-h-screen flex items-center justify-center py-6 sm:py-8 md:py-12"
                 variants={mobileOptimizedVariants}
                 initial="hidden"
@@ -559,24 +661,7 @@ runAgent();`
                       whileInView="visible"
                       viewport={{ once: true, margin: "-20%" }}
                     >
-                      {/* Feature Progress */}
-                      <div className="flex items-center space-x-3 sm:space-x-4 mb-4 sm:mb-6">
-                        <div className="text-red-400 text-xs sm:text-sm font-medium whitespace-nowrap">
-                          Feature {featureIndex + 1} of {apiFeatures.length}
-                        </div>
-                        <div className="flex-1 h-1 bg-red-950 rounded-full overflow-hidden">
-                          <motion.div
-                            className="h-full bg-gradient-to-r from-red-500 to-red-600"
-                            initial={{ width: "0%" }}
-                            whileInView={{ width: `${((featureIndex + 1) / apiFeatures.length) * 100}%` }}
-                            transition={{ 
-                              duration: shouldReduceMotion ? 0.4 : 0.8, 
-                              delay: shouldReduceMotion ? 0.1 : 0.3 
-                            }}
-                            viewport={{ once: true }}
-                          />
-                        </div>
-                      </div>
+                      
 
                       {/* Feature Icon and Number */}
                       <div className="flex items-center space-x-3 sm:space-x-4 md:space-x-6">
@@ -689,6 +774,66 @@ runAgent();`
                             <div className="flex items-center text-red-200 text-xs sm:text-sm">
                               <div className="w-2 h-2 bg-red-400 rounded-full mr-2 flex-shrink-0"></div>
                               Custom integrations
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+
+                      {featureIndex === 5 && (
+                        <motion.div
+                          className="bg-red-950/20 border border-red-500/20 rounded-lg sm:rounded-xl p-3 sm:p-4 md:p-5"
+                          variants={mobileOptimizedVariants}
+                          initial="hidden"
+                          whileInView="visible"
+                          viewport={{ once: true }}
+                        >
+                          <h4 className="text-red-400 font-semibold text-sm sm:text-base mb-3">Supported Models:</h4>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
+                            <div className="flex items-center text-red-200 text-xs sm:text-sm">
+                              <div className="w-2 h-2 bg-red-400 rounded-full mr-2 flex-shrink-0"></div>
+                              OpenAI (GPT-4, GPT-3.5)
+                            </div>
+                            <div className="flex items-center text-red-200 text-xs sm:text-sm">
+                              <div className="w-2 h-2 bg-red-400 rounded-full mr-2 flex-shrink-0"></div>
+                              Anthropic (Claude)
+                            </div>
+                            <div className="flex items-center text-red-200 text-xs sm:text-sm">
+                              <div className="w-2 h-2 bg-red-400 rounded-full mr-2 flex-shrink-0"></div>
+                              Google (Gemini)
+                            </div>
+                            <div className="flex items-center text-red-200 text-xs sm:text-sm">
+                              <div className="w-2 h-2 bg-red-400 rounded-full mr-2 flex-shrink-0"></div>
+                              And 600+ more models
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+
+                      {featureIndex === 6 && (
+                        <motion.div
+                          className="bg-red-950/20 border border-red-500/20 rounded-lg sm:rounded-xl p-3 sm:p-4 md:p-5"
+                          variants={mobileOptimizedVariants}
+                          initial="hidden"
+                          whileInView="visible"
+                          viewport={{ once: true }}
+                        >
+                          <h4 className="text-red-400 font-semibold text-sm sm:text-base mb-3">MCP Integrations:</h4>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
+                            <div className="flex items-center text-red-200 text-xs sm:text-sm">
+                              <div className="w-2 h-2 bg-red-400 rounded-full mr-2 flex-shrink-0"></div>
+                              Notion workspace
+                            </div>
+                            <div className="flex items-center text-red-200 text-xs sm:text-sm">
+                              <div className="w-2 h-2 bg-red-400 rounded-full mr-2 flex-shrink-0"></div>
+                              Supabase database
+                            </div>
+                            <div className="flex items-center text-red-200 text-xs sm:text-sm">
+                              <div className="w-2 h-2 bg-red-400 rounded-full mr-2 flex-shrink-0"></div>
+                              GitHub repositories
+                            </div>
+                            <div className="flex items-center text-red-200 text-xs sm:text-sm">
+                              <div className="w-2 h-2 bg-red-400 rounded-full mr-2 flex-shrink-0"></div>
+                              Any platform via MCP
                             </div>
                           </div>
                         </motion.div>
@@ -808,23 +953,7 @@ runAgent();`
                   ))}
                 </motion.div>
 
-                {/* Desktop Feature Navigation Indicator */}
-                <motion.div
-                  className="absolute right-3 sm:right-4 lg:right-6 top-1/2 transform -translate-y-1/2 hidden md:flex flex-col space-y-2"
-                  variants={mobileOptimizedVariants}
-                  initial="hidden"
-                  whileInView="visible"
-                  viewport={{ once: true }}
-                >
-                  {apiFeatures.map((_, index) => (
-                    <div
-                      key={index}
-                      className={`w-1.5 sm:w-2 h-6 sm:h-8 rounded-full transition-all duration-300 ${
-                        index === featureIndex ? 'bg-red-500' : 'bg-red-950'
-                      }`}
-                    />
-                  ))}
-                </motion.div>
+
               </motion.div>
             ))}
           </div>

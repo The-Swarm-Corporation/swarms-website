@@ -9,7 +9,8 @@ import {
   ArrowRight, Zap, Cpu, Globe, ExternalLink, 
   Network, Shield, BookOpen, Code,
   Calendar, Key, CheckCircle, Play, Database,
-  Activity, MapPin, BarChart3, GitBranch, Brain, Wrench, Puzzle
+  Activity, MapPin, BarChart3, GitBranch, Brain, Wrench, Puzzle,
+  HelpCircle, ChevronDown, ChevronUp, DollarSign
 } from "lucide-react"
 import { TypingEffect } from "@/components/typing-effect"
 import { AnimatedBackground } from "@/components/animated-background"
@@ -21,6 +22,7 @@ export default function APIPage() {
   const shouldReduceMotion = useReducedMotion()
   const [currentFeatureIndex, setCurrentFeatureIndex] = useState(0)
   const [showProgressIndicator, setShowProgressIndicator] = useState(false)
+  const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null)
   
   // Scroll detection for progress tracking
   useEffect(() => {
@@ -217,7 +219,7 @@ export default function APIPage() {
     },
     {
       tier: "Premium tier",
-      price: "$100/month",
+      price: "$100/user/month",
       requests: "2,000 req/min",
       tokens: "2M tokens/agent",
       batch: "500 agents/batch",
@@ -461,6 +463,57 @@ async function runAgent() {
 runAgent();`
         }
       ]
+    }
+  ]
+
+  const faqData = [
+    {
+      question: "What makes Swarms API different from other AI APIs?",
+      answer: "Swarms API is the world's only comprehensive multi-agent orchestration platform. Unlike single-agent APIs, we handle complex multi-agent workflows, memory management, and tool integration out of the box. Our Rust-optimized infrastructure delivers 100x faster performance than traditional Python-based solutions."
+    },
+    {
+      question: "How does pricing work for the Premium tier?",
+      answer: "Premium tier is $100 per user per month. This includes significantly increased rate limits (2,000 req/min), 2M tokens per agent, 500 agents per batch, 24/7 premium support through email, calls, and Discord channels, latest access to new features, closest availability zone priority, and many more enterprise features."
+    },
+    {
+      question: "What kind of support do Premium users get?",
+      answer: "Premium users receive 24/7 premium support through multiple channels: dedicated email support with faster response times, scheduled phone/video calls with our technical team, access to exclusive Discord channels with direct engineer support, and priority handling for all technical issues."
+    },
+    {
+      question: "Can I start with the free tier and upgrade later?",
+      answer: "Absolutely! You can start with our generous free tier (100 req/min, 200K tokens/agent, 100 agents/request) and upgrade to Premium at any time. Your API keys remain the same, and the upgrade takes effect immediately with no downtime."
+    },
+    {
+      question: "What models and tools are supported?",
+      answer: "We support 600+ AI models including OpenAI (GPT-4, GPT-3.5), Anthropic (Claude), Google (Gemini), and hundreds more. Our pre-built tools ecosystem includes web search, scraping, Yahoo Finance, document processing, and dozens of integrations. Plus, MCP protocol support enables seamless integration with any platform."
+    },
+    {
+      question: "How does the multi-agent orchestration work?",
+      answer: "Our platform handles complex orchestration patterns including concurrent workflows, sequential pipelines, hierarchical structures, and custom patterns. Agents can share memory, collaborate on tasks, and use tools dynamically. All orchestration logic is managed by our Rust-optimized engine for maximum performance."
+    },
+    {
+      question: "Is there an on-premise option?",
+      answer: "Yes! Our on-premise license is $9,999/year and includes complete Docker deployment, full source code access, unlimited usage, and 1-year enterprise license with priority support and updates. Perfect for organizations requiring data sovereignty and custom deployments."
+    },
+    {
+      question: "What are the rate limits and how do they scale?",
+      answer: "Free tier: 100 req/min, Premium: 2,000 req/min, On-premise: unlimited. Rate limits are per API key and reset every minute. Premium users also get priority processing and access to the closest availability zones for optimal performance."
+    },
+    {
+      question: "How quickly can I get started?",
+      answer: "You can start building in minutes! Simply: 1) Install our SDK (Python, TypeScript, Go, Java), 2) Get your free API key from our platform, 3) Run your first agent. Our quickstart guide and comprehensive documentation make integration seamless."
+    },
+    {
+      question: "What happens if I exceed my rate limits?",
+      answer: "Requests that exceed rate limits receive a 429 status code with retry-after headers. Free tier users can upgrade to Premium for higher limits, or contact sales for Enterprise solutions with custom limits. Our platform includes automatic retry logic with exponential backoff."
+    },
+    {
+      question: "Do you offer custom enterprise solutions?",
+      answer: "Yes! Our Enterprise tier offers custom rate limits, unlimited tokens and agents, dedicated infrastructure, custom SLA agreements, white-label options, and direct integration support. Contact our sales team to discuss your specific requirements."
+    },
+    {
+      question: "How secure is the Swarms API platform?",
+      answer: "We implement enterprise-grade security including encrypted data transmission, secure API key management, comprehensive audit logging, SOC 2 compliance, and multi-region redundancy. On-premise deployments give you complete control over your data and security policies."
     }
   ]
 
@@ -1509,9 +1562,22 @@ runAgent();`
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-3 sm:mb-4 md:mb-6 font-orbitron leading-tight">
               Service <span className="text-red-500">tiers</span>
             </h2>
-            <p className="text-base sm:text-lg md:text-xl text-red-200 max-w-3xl mx-auto px-4 sm:px-0">
+            <p className="text-base sm:text-lg md:text-xl text-red-200 max-w-3xl mx-auto px-4 sm:px-0 mb-4 sm:mb-6">
               Choose the plan that fits your scale and performance requirements
             </p>
+            <div className="flex justify-center">
+              <Button
+                variant="outline"
+                className="border-red-500/30 text-red-400 hover:bg-red-500/10 hover:border-red-500/50 px-6 py-3 text-base font-semibold rounded-lg transition-all duration-300"
+                asChild
+              >
+                <Link href="/pricing">
+                  <DollarSign className="w-5 h-5 mr-2" />
+                  View detailed pricing
+                  <ExternalLink className="w-5 h-5 ml-2" />
+                </Link>
+              </Button>
+            </div>
           </motion.div>
 
           <motion.div 
@@ -1561,14 +1627,14 @@ runAgent();`
                         {tier.tier}
                       </h3>
                       {tier.price && (
-                        <div className={`text-2xl sm:text-3xl font-bold mb-2 font-orbitron ${
+                        <div className={`text-lg sm:text-xl font-bold mb-2 font-orbitron ${
                           index === 1 ? 'text-green-400' : index === 2 ? 'text-amber-400' : 'text-red-400'
                         }`}>
                           {tier.price}
                         </div>
                       )}
                       {index === 0 && (
-                        <p className="text-red-300 text-sm">Perfect for getting started</p>
+                        <p className="text-red-300 text-sm">Pay as you go • Perfect for getting started</p>
                       )}
                       {index === 1 && (
                         <p className="text-green-300 text-sm">Best for growing businesses</p>
@@ -1616,19 +1682,23 @@ runAgent();`
                             <div className="space-y-2">
                               <div className="flex items-center text-sm text-green-200">
                                 <div className="w-2 h-2 bg-green-400 rounded-full mr-2"></div>
-                                Priority customer support
+                                24/7 premium support (email, calls, Discord)
                               </div>
                               <div className="flex items-center text-sm text-green-200">
                                 <div className="w-2 h-2 bg-green-400 rounded-full mr-2"></div>
-                                Increased rate limits
+                                Significantly increased rate limits
                               </div>
                               <div className="flex items-center text-sm text-green-200">
                                 <div className="w-2 h-2 bg-green-400 rounded-full mr-2"></div>
-                                Early access to new features
+                                Latest access to new features
                               </div>
                               <div className="flex items-center text-sm text-green-200">
                                 <div className="w-2 h-2 bg-green-400 rounded-full mr-2"></div>
-                                Faster API response times
+                                Closest availability zone priority
+                              </div>
+                              <div className="flex items-center text-sm text-green-200">
+                                <div className="w-2 h-2 bg-green-400 rounded-full mr-2"></div>
+                                And much more enterprise features
                               </div>
                             </div>
                           </div>
@@ -1728,6 +1798,122 @@ runAgent();`
               <Link href="https://swarms.world/platform/account" target="_blank" className="text-red-300 hover:text-red-200 underline decoration-red-400 ml-1">
                 sign up right now
               </Link>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section className="py-12 sm:py-16 md:py-20 bg-gradient-to-b from-red-950/10 to-black">
+        <div className="container px-4 sm:px-6">
+          <motion.div
+            className="text-center mb-8 sm:mb-12 md:mb-16"
+            variants={mobileOptimizedVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-20%" }}
+          >
+            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-4 sm:mb-6 font-orbitron leading-tight">
+              Frequently asked <span className="text-red-500">questions</span>
+            </h2>
+            <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-red-200 max-w-4xl mx-auto leading-relaxed px-4 sm:px-0">
+              Everything you need to know about Swarms API pricing, features, and implementation
+            </p>
+          </motion.div>
+
+          <motion.div
+            className="max-w-4xl mx-auto"
+            variants={staggeredContainer}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-20%" }}
+          >
+            {faqData.map((faq, index) => (
+              <motion.div
+                key={index}
+                variants={mobileOptimizedVariants}
+                className="mb-4 sm:mb-6"
+              >
+                <Card className="bg-black/50 border-red-900/30 hover:border-red-500/30 transition-all duration-300 overflow-hidden">
+                  <CardHeader
+                    className="cursor-pointer p-4 sm:p-6 transition-all duration-300 hover:bg-red-950/10"
+                    onClick={() => setOpenFaqIndex(openFaqIndex === index ? null : index)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3 sm:space-x-4 flex-1">
+                        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center flex-shrink-0">
+                          <HelpCircle className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                        </div>
+                        <h3 className="text-base sm:text-lg md:text-xl font-semibold text-white text-left leading-tight">
+                          {faq.question}
+                        </h3>
+                      </div>
+                      <motion.div
+                        animate={{ rotate: openFaqIndex === index ? 180 : 0 }}
+                        transition={{ duration: 0.3 }}
+                        className="flex-shrink-0 ml-2"
+                      >
+                        <ChevronDown className="w-5 h-5 sm:w-6 sm:h-6 text-red-400" />
+                      </motion.div>
+                    </div>
+                  </CardHeader>
+
+                  <motion.div
+                    initial={false}
+                    animate={{
+                      height: openFaqIndex === index ? "auto" : 0,
+                      opacity: openFaqIndex === index ? 1 : 0
+                    }}
+                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                    className="overflow-hidden"
+                  >
+                    <div className="px-4 sm:px-6 pb-4 sm:pb-6">
+                      <div className="ml-11 sm:ml-14">
+                        <p className="text-sm sm:text-base md:text-lg text-red-200 leading-relaxed">
+                          {faq.answer}
+                        </p>
+                      </div>
+                    </div>
+                  </motion.div>
+                </Card>
+              </motion.div>
+            ))}
+          </motion.div>
+
+          {/* FAQ CTA */}
+          <motion.div
+            className="text-center mt-8 sm:mt-12 md:mt-16"
+            variants={mobileOptimizedVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-20%" }}
+          >
+            <div className="inline-flex items-center px-4 sm:px-6 py-2 sm:py-3 rounded-full bg-gradient-to-r from-red-500/20 to-red-600/20 border border-red-500/30 text-red-400 text-base sm:text-lg font-medium mb-4 sm:mb-6 mx-4 sm:mx-0">
+              <HelpCircle className="w-5 h-5 mr-2" />
+              Have more questions?
+            </div>
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-center justify-center px-4 sm:px-0">
+              <Button
+                size="lg"
+                className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-semibold rounded-lg w-full sm:w-auto"
+                asChild
+              >
+                <Link href="https://cal.com/swarms/swarms-onboarding-session" target="_blank">
+                  <Calendar className="w-5 h-5 mr-2" />
+                  Schedule consultation
+                </Link>
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                className="border-red-500/30 text-red-400 hover:bg-red-500/10 hover:border-red-500/50 px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-semibold rounded-lg w-full sm:w-auto"
+                asChild
+              >
+                <Link href="https://docs.swarms.ai" target="_blank">
+                  <BookOpen className="w-5 h-5 mr-2" />
+                  Read documentation
+                </Link>
+              </Button>
             </div>
           </motion.div>
         </div>

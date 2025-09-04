@@ -16,6 +16,7 @@ import {
   Search,
   GitBranch,
   ExternalLink,
+  ShoppingBag,
 } from "lucide-react"
 import Image from "next/image"
 
@@ -153,7 +154,7 @@ export default function SimulationsPage() {
           </motion.div>
 
           <motion.div
-            className="grid gap-6 sm:gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 relative z-10"
+            className="grid gap-6 sm:gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 relative z-10"
             variants={container}
             initial="hidden"
             whileInView="show"
@@ -186,6 +187,15 @@ export default function SimulationsPage() {
                 capabilities: ["Medical Decision Trees", "Patient Care Coordination", "Resource Optimization", "Emergency Protocols"],
                 image: "/generation-c179a831-b828-467c-b51b-730fcfe8d4ef.png",
                 imageAlt: "Healthcare Agent Coordination System"
+              },
+              {
+                icon: ShoppingBag,
+                title: "PRODUCT MARKETING AGENCY",
+                description: "Multi-agent marketing system generating professional product images and content. Specialized agents collaborate to create comprehensive marketing campaigns with diverse visual styles.",
+                gradient: "from-red-500 to-red-700",
+                capabilities: ["10 Specialized Image Types", "Multi-Agent Workflows", "Campaign Analytics", "Content Generation"],
+                image: "product_agency.jpg",
+                imageAlt: "Product Marketing Agent Network"
               }
             ].map((domain, index) => {
               const Icon = domain.icon
@@ -266,7 +276,25 @@ export default function SimulationsPage() {
                               asChild
                             >
                               <a
-                                href="https://github.com/kyegomez/swarms/blob/master/examples/sims/simulation_vote_example.py"
+                                href="https://github.com/kyegomez/swarms"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center justify-center space-x-2"
+                              >
+                                <span>GET STARTED</span>
+                                <ExternalLink className="h-3 w-3 sm:h-4 sm:w-4" />
+                              </a>
+                            </Button>
+                          )}
+                          
+                          {index === 3 && ( // Product Marketing Agency
+                            <Button
+                              size="sm"
+                              className="bg-red-600 hover:bg-red-700 hover:scale-105 transform transition-all duration-300 font-bold text-xs sm:text-sm px-4 py-2 border border-red-500 shadow-lg shadow-red-500/25 font-orbitron w-full"
+                              asChild
+                            >
+                              <a
+                                href="https://github.com/The-Swarm-Corporation/Product-Marketing-Agency"
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="flex items-center justify-center space-x-2"

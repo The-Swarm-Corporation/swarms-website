@@ -162,6 +162,7 @@ export function Footer() {
 
               <div className="grid gap-1 sm:gap-2">
                 {[
+                  { name: "Pricing", icon: DollarSign, url: "/pricing" },
                   { name: "Book a Call", icon: Phone, url: "https://cal.com/swarms" },
                   { name: "Careers", icon: Users, url: "/hiring" },
                   { name: "Status Page", icon: Activity, url: "https://status.swarms.ai" },

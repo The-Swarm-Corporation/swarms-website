@@ -16,6 +16,7 @@ export function NewsletterSignupForm() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
   const [isHidden, setIsHidden] = useState(false)
+  const [error, setError] = useState("")
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -28,17 +29,38 @@ export function NewsletterSignupForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
+    setError("")
 
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500))
+    try {
+      const response = await fetch("/api/newsletter", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: formData.email.trim(),
+          firstName: formData.firstName.trim(),
+          lastName: formData.lastName.trim(),
+        }),
+      })
 
-    setIsSubmitting(false)
-    setShowSuccess(true)
+      const data = await response.json()
 
-    // Hide the form after showing success
-    setTimeout(() => {
-      setIsHidden(true)
-    }, 3000)
+      if (response.ok) {
+        setShowSuccess(true)
+        // Hide the form after showing success
+        setTimeout(() => {
+          setIsHidden(true)
+        }, 4000)
+      } else {
+        setError(data.error || "Something went wrong")
+      }
+    } catch (err) {
+      console.error("Newsletter signup error:", err)
+      setError("Network error. Please try again.")
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   if (isHidden) {
@@ -87,7 +109,7 @@ export function NewsletterSignupForm() {
                     transition={{ delay: 0.4 }}
                     className="text-gray-300 mb-6 font-sans"
                   >
-                    Thank you for signing up! You'll receive your <span className="text-red-400 font-bold">$20 in free credits</span> and exclusive updates soon.
+                    Thank you for signing up! Check your email for your <span className="text-red-400 font-bold">$20 welcome credits</span> and next steps to get started.
                   </motion.p>
                   
                   <motion.div
@@ -167,6 +189,16 @@ export function NewsletterSignupForm() {
                 />
               </div>
             </div>
+
+            {error && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg"
+              >
+                <p className="text-red-400 text-sm text-center font-sans">{error}</p>
+              </motion.div>
+            )}
             
             <Button
               type="submit"

@@ -2,15 +2,14 @@
 
 import { Button } from "@/components/ui/button"
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { motion, useReducedMotion } from "framer-motion"
 import { useState } from "react"
 import { 
-  ArrowRight, Zap, Cpu, Globe, ExternalLink, 
-  Network, Shield, BookOpen, Code,
-  Calendar, Key, CheckCircle, Database,
-  Activity, MapPin, BarChart3, DollarSign, Clock, Moon,
-  HelpCircle, ChevronDown, CreditCard, Users, Timer
+  ArrowRight, Zap, Globe,
+  BookOpen, Code,
+  Calendar, Key, Database,
+  Activity, BarChart3, DollarSign, Moon,
+  HelpCircle, ChevronDown, CreditCard, Users
 } from "lucide-react"
 import { Navigation } from "@/components/navigation"
 import Link from "next/link"
@@ -188,19 +187,19 @@ export default function PricingPage() {
       <Navigation />
       
       {/* Hero Section */}
-      <div className="relative overflow-hidden bg-black">
+      <div className="relative overflow-hidden bg-black min-h-screen flex items-center">
         {/* Background Image */}
         <div 
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-40"
-          style={{ backgroundImage: 'url(/generation-c179a831-b828-467c-b51b-730fcfe8d4ef.png)' }}
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-50"
+          style={{ backgroundImage: 'url(/product_agency.jpg)' }}
         />
         {/* Dark overlay for better text readability */}
-        <div className="absolute inset-0 bg-black/60" />
+        <div className="absolute inset-0 bg-black/70" />
         {/* Cyberpunk grid background */}
         <div className="absolute inset-0 bg-[linear-gradient(rgba(239,68,68,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(239,68,68,0.1)_1px,transparent_1px)] bg-[size:50px_50px] opacity-20" aria-hidden="true" />
         <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-red-950/20 to-black/50" aria-hidden="true" />
 
-        <div className="container relative px-4 sm:px-6 py-16 sm:py-20 md:py-24 lg:py-32">
+        <div className="container relative px-4 sm:px-6 py-16 sm:py-20 md:py-24 lg:py-32 w-full">
           <div className="text-center space-y-6 sm:space-y-8">
             <motion.h1
               className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tighter font-orbitron leading-none"
@@ -219,7 +218,7 @@ export default function PricingPage() {
               initial="hidden"
               animate="visible"
             >
-              Transparent usage-based pricing and service tiers for the world's most advanced multi-agent API platform
+              Transparent usage-based pricing and service tiers for The Swarms API.
             </motion.p>
 
             <motion.div
@@ -245,7 +244,7 @@ export default function PricingPage() {
                 className="border-red-500/40 text-red-400 hover:bg-red-500/10 hover:border-red-500/60 px-8 py-4 text-lg font-semibold rounded-xl"
                 asChild
               >
-                <Link href="/api">
+                <Link href="https://docs.swarms.ai/resources/pricing">
                   <Code className="w-5 h-5 mr-2" />
                   View API docs
                 </Link>

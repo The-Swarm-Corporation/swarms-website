@@ -124,6 +124,8 @@ export function Navigation() {
         {/* Desktop Navigation */}
         <div className="hidden lg:flex lg:space-x-4 xl:space-x-6">
           
+          <NavLink href="/pricing">Pricing</NavLink>
+          
           {/* Products Dropdown */}
           <div 
             className="relative"
@@ -449,6 +451,13 @@ export function Navigation() {
                   onClick={() => setIsOpen(false)}
                 >
                   Home
+                </Link>
+                <Link
+                  href="/pricing"
+                  className="text-sm font-medium hover:text-red-500 transition-all duration-300 hover:bg-red-500/10 p-3 rounded-md border border-transparent hover:border-red-500/30 hover:shadow-[0_0_8px_rgba(239,68,68,0.2)]"
+                  onClick={() => setIsOpen(false)}
+                >
+                  Pricing
                 </Link>
                 <Link
                   href="https://docs.swarms.world"

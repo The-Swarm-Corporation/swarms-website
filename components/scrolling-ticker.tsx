@@ -86,21 +86,21 @@ export function ScrollingTicker({ announcements, speed = 50, className = "" }: S
 
     switch (lang) {
       case "en":
-        return <span className="mr-2 text-xs text-red-400/70">[EN]</span>
+        return <span className="mr-2 text-xs text-slate-400/70">[EN]</span>
       case "zh":
-        return <span className="mr-2 text-xs text-red-400/70">[中文]</span>
+        return <span className="mr-2 text-xs text-slate-400/70">[中文]</span>
       case "ja":
-        return <span className="mr-2 text-xs text-red-400/70">[日本語]</span>
+        return <span className="mr-2 text-xs text-slate-400/70">[日本語]</span>
       case "ru":
-        return <span className="mr-2 text-xs text-red-400/70">[РУ]</span>
+        return <span className="mr-2 text-xs text-slate-400/70">[РУ]</span>
       case "es":
-        return <span className="mr-2 text-xs text-red-400/70">[ES]</span>
+        return <span className="mr-2 text-xs text-slate-400/70">[ES]</span>
       case "de":
-        return <span className="mr-2 text-xs text-red-400/70">[DE]</span>
+        return <span className="mr-2 text-xs text-slate-400/70">[DE]</span>
       case "fr":
-        return <span className="mr-2 text-xs text-red-400/70">[FR]</span>
+        return <span className="mr-2 text-xs text-slate-400/70">[FR]</span>
       case "hi":
-        return <span className="mr-2 text-xs text-red-400/70">[हिं]</span>
+        return <span className="mr-2 text-xs text-slate-400/70">[हिं]</span>
       default:
         return <ArrowRight className="mr-2 h-4 w-4" />
     }
@@ -111,7 +111,7 @@ export function ScrollingTicker({ announcements, speed = 50, className = "" }: S
       <div ref={tickerRef} className="whitespace-nowrap inline-flex items-center" style={{ willChange: "transform" }}>
         <div className="ticker-content inline-flex items-center">
           {announcements.map((announcement, index) => (
-            <div key={index} className="inline-flex items-center mx-4 text-sm text-red-400">
+            <div key={index} className="inline-flex items-center mx-4 text-sm text-slate-400">
               {getLanguageIndicator(announcement)}
               <span>{announcement}</span>
             </div>

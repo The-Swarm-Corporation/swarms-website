@@ -92,6 +92,7 @@ export function Footer() {
                 {[
                   { name: "Documentation", icon: BookOpen, url: "https://docs.swarms.world" },
                   { name: "Research Program", icon: Award, url: "/programs" },
+                  { name: "Research", icon: BookOpen, url: "/research" },
                   { name: "Startup Program", icon: Rocket, url: "https://www.swarms.ai/programs/startups" },
                   { name: "Grants Program", icon: DollarSign, url: "https://grants.swarms.world", isNew: true },
                   { name: "Ecosystem Hub", icon: BookOpen, url: "https://ecosystem.swarms.world" },

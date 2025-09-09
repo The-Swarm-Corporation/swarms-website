@@ -291,6 +291,9 @@ export function Navigation() {
                             <FuturisticMenuItem icon={Sparkles} href="/applications">
                               Applications
                             </FuturisticMenuItem>
+                            <FuturisticMenuItem icon={BookOpen} href="/research">
+                              Research
+                            </FuturisticMenuItem>
                           </TabsContent>
 
                           <TabsContent value="community" className="space-y-2 mt-2 relative">
@@ -636,6 +639,14 @@ export function Navigation() {
                       >
                         <Sparkles className="mr-3 h-4 w-4 text-red-500" />
                         Applications
+                      </Link>
+                      <Link
+                        href="/research"
+                        className="text-sm font-medium hover:text-red-500 transition-all duration-300 hover:bg-red-500/10 p-3 rounded-md flex items-center border border-transparent hover:border-red-500/30 hover:shadow-[0_0_8px_rgba(239,68,68,0.2)]"
+                        onClick={() => setIsOpen(false)}
+                      >
+                        <BookOpen className="mr-3 h-4 w-4 text-red-500" />
+                        Research
                       </Link>
                     </TabsContent>
 

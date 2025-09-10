@@ -346,7 +346,7 @@ export default function ResearchPage() {
               </h2>
               
               <p className={styles.subheading}>
-                Groundbreaking initiatives pushing the boundaries of artificial intelligence and autonomous systems
+                Learn more about our past and present research projects in multi-agent collaboration and and multimodal intelligence.
               </p>
             </motion.div>
 

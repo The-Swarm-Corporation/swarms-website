@@ -385,146 +385,533 @@ export default function Home() {
           </motion.div>
         </div>
 
-        {/* Swarms Stack Section */}
-        <div className="container py-20 md:py-32 px-4 sm:px-6 bg-black relative">
-          {/* Cyberpunk grid background */}
-          <div className="absolute inset-0 bg-[linear-gradient(rgba(239,68,68,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(239,68,68,0.03)_1px,transparent_1px)] bg-[size:40px_40px]" />
-          
-          {/* Floating elements */}
-          <div className="absolute inset-0 pointer-events-none overflow-hidden">
-            <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-red-500 animate-pulse" />
-            <div className="absolute top-1/3 right-1/3 w-1 h-1 bg-red-400 animate-pulse" style={{ animationDelay: "1s" }} />
-            <div className="absolute bottom-1/4 left-1/3 w-1 h-1 bg-red-600 animate-pulse" style={{ animationDelay: "2s" }} />
+        {/* Swarms Stack Section - Individual Product Showcases */}
+        <div className="bg-black relative">
+          {/* Section Header */}
+          <div className="container py-20 px-4 sm:px-6 relative">
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+              viewport={{ once: true }}
+              className="text-center space-y-6 mb-20 relative z-10"
+            >
+              <h2 className="text-4xl font-black tracking-tighter sm:text-5xl md:text-6xl text-white font-orbitron">
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-red-400">
+                  The Swarms Stack
+                </span>
+              </h2>
+              <div className="w-32 h-1 bg-gradient-to-r from-red-500 to-red-600 mx-auto" />
+              <p className="text-xl text-gray-300 max-w-3xl mx-auto font-light font-sans">
+                A complete ecosystem for building, deploying, and scaling multi-agent systems
+              </p>
+            </motion.div>
           </div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            viewport={{ once: true }}
-            className="text-center space-y-6 mb-16 md:mb-20 relative z-10"
-          >
-            <h2 className="text-4xl font-black tracking-tighter sm:text-5xl md:text-6xl text-white font-orbitron">
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-red-400">
-                The Swarms Stack
-              </span>
-            </h2>
-            <div className="w-32 h-1 bg-gradient-to-r from-red-500 to-red-600 mx-auto" />
-            <p className="text-xl text-gray-300 max-w-3xl mx-auto font-light font-sans">
-              A complete ecosystem for building, deploying, and scaling multi-agent systems
-            </p>
-          </motion.div>
+          {/* Product 1: Swarms Python */}
+          <div className="relative min-h-screen flex items-center py-20">
+            {/* Background */}
+            <div className="absolute inset-0 bg-[linear-gradient(rgba(239,68,68,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(239,68,68,0.05)_1px,transparent_1px)] bg-[size:50px_50px]" />
+            <div className="absolute inset-0 bg-gradient-to-r from-red-950/20 via-transparent to-transparent" />
+            
+            <div className="container px-4 sm:px-6 relative z-10">
+              <div className="grid lg:grid-cols-2 gap-12 items-center">
+                {/* Content */}
+                <motion.div
+                  initial={{ opacity: 0, x: -50 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.8 }}
+                  viewport={{ once: true }}
+                  className="space-y-8"
+                >
+                  <div className="flex items-center space-x-4 mb-6">
+                    <div className="w-16 h-16 rounded-xl bg-gradient-to-r from-red-500 to-red-600 flex items-center justify-center shadow-lg shadow-red-500/25">
+                      <Zap className="h-8 w-8 text-white" />
+                    </div>
+                    <div className="bg-red-500/20 border border-red-500/30 px-4 py-2 rounded-full">
+                      <span className="text-sm font-orbitron text-red-400 tracking-wider">PYTHON</span>
+                    </div>
+                  </div>
+                  
+                  <h3 className="text-4xl font-black text-white font-orbitron tracking-tighter">
+                    SWARMS PYTHON
+                  </h3>
+                  <p className="text-xl text-red-400 font-semibold tracking-wide font-sans">
+                    Core Swarms Python Framework
+                  </p>
+                  <p className="text-lg text-gray-300 leading-relaxed font-sans">
+                    The original Swarms framework in Python with full backwards compatibility with LangChain, AutoGen, and other popular frameworks. Build complex multi-agent workflows with just a few lines of code.
+                  </p>
+                  
+                  <div className="flex gap-4">
+                    <Button
+                      size="lg"
+                      className="bg-red-600 hover:bg-red-700 hover:scale-105 transform transition-all duration-300 font-bold px-6 py-3 border-2 border-red-500 shadow-lg shadow-red-500/25 font-orbitron"
+                      asChild
+                    >
+                      <a
+                        href="https://github.com/kyegomez/swarms"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center space-x-2"
+                      >
+                        <span>GET STARTED</span>
+                        <ExternalLink className="h-4 w-4" />
+                      </a>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      className="border-2 border-red-500/50 text-red-400 hover:bg-red-500/10 hover:border-red-500 transition-all duration-300 font-orbitron px-6 py-3"
+                      asChild
+                    >
+                      <a
+                        href="https://docs.swarms.world"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center space-x-2"
+                      >
+                        <span>DOCS</span>
+                        <ExternalLink className="h-4 w-4" />
+                      </a>
+                    </Button>
+                  </div>
+                </motion.div>
 
-          <motion.div
-            className="grid gap-8 md:grid-cols-2 relative z-10"
-            variants={container}
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true, margin: "-100px" }}
-          >
-            {swarmsStack.map((item, index) => {
-              const Icon = item.icon
-              return (
-                <motion.div key={index} variants={item}>
-                  <CardWrapper className="h-full transition-all duration-500 hover:translate-y-[-8px] hover:scale-[1.02] group">
-                    <Card className="border-2 border-red-500/20 bg-black/50 backdrop-blur-sm h-full relative overflow-hidden">
-                      {/* Animated border */}
-                      <div className="absolute inset-0 bg-gradient-to-r from-red-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                {/* Code Example */}
+                <motion.div
+                  initial={{ opacity: 0, x: 50 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.8, delay: 0.2 }}
+                  viewport={{ once: true }}
+                  className="relative"
+                >
+                  <div className="bg-black/80 border-2 border-red-500/30 rounded-xl p-6 backdrop-blur-sm">
+                    <div className="flex items-center space-x-2 mb-4">
+                      <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                      <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                      <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                      <span className="text-gray-400 text-sm ml-4 font-mono">swarms_python.py</span>
+                    </div>
+                    <pre className="text-green-400 font-mono text-sm leading-relaxed overflow-x-auto">
+{`from swarms import Agent, SequentialWorkflow
+
+# Agent 1: The Researcher
+researcher = Agent(
+    agent_name="Researcher",
+    system_prompt="Your job is to research the provided topic and provide a detailed summary.",
+    model_name="gpt-4o-mini",
+)
+
+# Agent 2: The Writer
+writer = Agent(
+    agent_name="Writer",
+    system_prompt="Your job is to take the research summary and write a beautiful, engaging blog post about it.",
+    model_name="gpt-4o-mini",
+)
+
+# Create a sequential workflow where the researcher's output feeds into the writer's input
+workflow = SequentialWorkflow(agents=[researcher, writer])
+
+# Run the workflow on a task
+final_post = workflow.run("The history and future of artificial intelligence")
+print(final_post)`}
+                    </pre>
+                  </div>
+                </motion.div>
+              </div>
+            </div>
+          </div>
+
+          {/* Product 2: Swarms Rust */}
+          <div className="relative min-h-screen flex items-center py-20 bg-gradient-to-b from-black to-red-950/10">
+            {/* Background */}
+            <div className="absolute inset-0 bg-[linear-gradient(rgba(239,68,68,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(239,68,68,0.03)_1px,transparent_1px)] bg-[size:40px_40px]" />
+            <div className="absolute inset-0 bg-gradient-to-l from-red-950/20 via-transparent to-transparent" />
+            
+            <div className="container px-4 sm:px-6 relative z-10">
+              <div className="grid lg:grid-cols-2 gap-12 items-center">
+                {/* Code Example */}
+                <motion.div
+                  initial={{ opacity: 0, x: -50 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.8 }}
+                  viewport={{ once: true }}
+                  className="relative order-2 lg:order-1"
+                >
+                  <div className="bg-black/80 border-2 border-red-500/30 rounded-xl p-6 backdrop-blur-sm">
+                    <div className="flex items-center space-x-2 mb-4">
+                      <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                      <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                      <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                      <span className="text-gray-400 text-sm ml-4 font-mono">swarms_rust.rs</span>
+                    </div>
+                    <pre className="text-blue-400 font-mono text-sm leading-relaxed overflow-x-auto">
+{`use std::env;
+use anyhow::Result;
+use swarms_rs::llm::provider::openai::OpenAI;
+use swarms_rs::structs::concurrent_workflow::ConcurrentWorkflow;
+
+#[tokio::main]
+async fn main() -> Result<()> {
+    let client = OpenAI::from_url(base_url, api_key)
+        .set_model("deepseek-chat");
+
+    // Create specialized trading agents
+    let market_analysis_agent = client
+        .agent_builder()
+        .agent_name("Market Analysis Agent")
+        .system_prompt("You are a market analysis specialist...")
+        .max_loops(1)
+        .temperature(0.2)
+        .build();
+
+    // Create concurrent workflow
+    let workflow = ConcurrentWorkflow::builder()
+        .name("Trading Strategy Workflow")
+        .agents(vec![
+            Box::new(market_analysis_agent),
+            Box::new(trade_strategy_agent),
+            Box::new(risk_assessment_agent),
+        ])
+        .build();
+
+    let result = workflow.run("BTC/USD analysis...").await?;
+    println!("{}", serde_json::to_string_pretty(&result)?);
+    Ok(())
+}`}
+                    </pre>
+                  </div>
+                </motion.div>
+
+                {/* Content */}
+                <motion.div
+                  initial={{ opacity: 0, x: 50 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.8, delay: 0.2 }}
+                  viewport={{ once: true }}
+                  className="space-y-8 order-1 lg:order-2"
+                >
+                  <div className="flex items-center space-x-4 mb-6">
+                    <div className="w-16 h-16 rounded-xl bg-gradient-to-r from-red-600 to-red-700 flex items-center justify-center shadow-lg shadow-red-500/25">
+                      <Cpu className="h-8 w-8 text-white" />
+                    </div>
+                    <div className="bg-red-500/20 border border-red-500/30 px-4 py-2 rounded-full">
+                      <span className="text-sm font-orbitron text-red-400 tracking-wider">RUST</span>
+                    </div>
+                  </div>
+                  
+                  <h3 className="text-4xl font-black text-white font-orbitron tracking-tighter">
+                    SWARMS-RS
+                  </h3>
+                  <p className="text-xl text-red-400 font-semibold tracking-wide font-sans">
+                    The First Multi-Agent Framework in Rust
+                  </p>
+                  <p className="text-lg text-gray-300 leading-relaxed font-sans">
+                    Ultra-fast, memory-safe, and production-ready multi-agent framework built in Rust for maximum performance and reliability. Perfect for high-throughput enterprise applications.
+                  </p>
+                  
+                  <div className="flex gap-4">
+                    <Button
+                      size="lg"
+                      className="bg-red-600 hover:bg-red-700 hover:scale-105 transform transition-all duration-300 font-bold px-6 py-3 border-2 border-red-500 shadow-lg shadow-red-500/25 font-orbitron"
+                      asChild
+                    >
+                      <a
+                        href="https://crates.io/crates/swarms-rs"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center space-x-2"
+                      >
+                        <span>GET STARTED</span>
+                        <ExternalLink className="h-4 w-4" />
+                      </a>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      className="border-2 border-red-500/50 text-red-400 hover:bg-red-500/10 hover:border-red-500 transition-all duration-300 font-orbitron px-6 py-3"
+                      asChild
+                    >
+                      <a
+                        href="https://docs.swarms.world"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center space-x-2"
+                      >
+                        <span>DOCS</span>
+                        <ExternalLink className="h-4 w-4" />
+                      </a>
+                    </Button>
+                  </div>
+                </motion.div>
+              </div>
+            </div>
+          </div>
+
+          {/* Product 3: Swarms API */}
+          <div className="relative min-h-screen flex items-center py-20">
+            {/* Background */}
+            <div className="absolute inset-0 bg-[linear-gradient(rgba(239,68,68,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(239,68,68,0.05)_1px,transparent_1px)] bg-[size:50px_50px]" />
+            <div className="absolute inset-0 bg-gradient-to-r from-red-950/20 via-transparent to-transparent" />
+            
+            <div className="container px-4 sm:px-6 relative z-10">
+              <div className="grid lg:grid-cols-2 gap-12 items-center">
+                {/* Content */}
+                <motion.div
+                  initial={{ opacity: 0, x: -50 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.8 }}
+                  viewport={{ once: true }}
+                  className="space-y-8"
+                >
+                  <div className="flex items-center space-x-4 mb-6">
+                    <div className="w-16 h-16 rounded-xl bg-gradient-to-r from-red-700 to-red-800 flex items-center justify-center shadow-lg shadow-red-500/25">
+                      <Globe className="h-8 w-8 text-white" />
+                    </div>
+                    <div className="bg-red-500/20 border border-red-500/30 px-4 py-2 rounded-full">
+                      <span className="text-sm font-orbitron text-red-400 tracking-wider">API</span>
+                    </div>
+                  </div>
+                  
+                  <h3 className="text-4xl font-black text-white font-orbitron tracking-tighter">
+                    SWARMS API
+                  </h3>
+                  <p className="text-xl text-red-400 font-semibold tracking-wide font-sans">
+                    Ultra-Optimized Hosted Runtime
+                  </p>
+                  <p className="text-lg text-gray-300 leading-relaxed font-sans">
+                    Enterprise-grade hosted API with ultra-optimized runtime for deploying and scaling your agent swarms in production. No infrastructure management required.
+                  </p>
+                  
+                  <div className="flex gap-4">
+                    <Button
+                      size="lg"
+                      className="bg-red-600 hover:bg-red-700 hover:scale-105 transform transition-all duration-300 font-bold px-6 py-3 border-2 border-red-500 shadow-lg shadow-red-500/25 font-orbitron"
+                      asChild
+                    >
+                      <a
+                        href="https://docs.swarms.ai"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center space-x-2"
+                      >
+                        <span>GET STARTED</span>
+                        <ExternalLink className="h-4 w-4" />
+                      </a>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      className="border-2 border-red-500/50 text-red-400 hover:bg-red-500/10 hover:border-red-500 transition-all duration-300 font-orbitron px-6 py-3"
+                      asChild
+                    >
+                      <a
+                        href="https://docs.swarms.ai"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center space-x-2"
+                      >
+                        <span>DOCS</span>
+                        <ExternalLink className="h-4 w-4" />
+                      </a>
+                    </Button>
+                  </div>
+                </motion.div>
+
+                {/* Code Example */}
+                <motion.div
+                  initial={{ opacity: 0, x: 50 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.8, delay: 0.2 }}
+                  viewport={{ once: true }}
+                  className="relative"
+                >
+                  <div className="bg-black/80 border-2 border-red-500/30 rounded-xl p-6 backdrop-blur-sm">
+                    <div className="flex items-center space-x-2 mb-4">
+                      <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                      <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                      <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                      <span className="text-gray-400 text-sm ml-4 font-mono">api_request.sh</span>
+                    </div>
+                    <pre className="text-yellow-400 font-mono text-sm leading-relaxed overflow-x-auto">
+{`curl -X POST "https://api.swarms.world/v1/swarm/completions" \\
+  -H "x-api-key: $SWARMS_API_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "name": "Content Creation Pipeline",
+    "description": "Sequential content creation from research to final output",
+    "swarm_type": "SequentialWorkflow",
+    "task": "Create a comprehensive blog post about the future of renewable energy",
+    "agents": [
+      {
+        "agent_name": "Research Specialist",
+        "description": "Conducts thorough research on the topic",
+        "system_prompt": "You are a research specialist...",
+        "model_name": "gpt-4o",
+        "max_loops": 1,
+        "temperature": 0.3
+      },
+      {
+        "agent_name": "Content Writer",
+        "description": "Creates engaging written content",
+        "system_prompt": "You are a skilled content writer...",
+        "model_name": "gpt-4o",
+        "max_loops": 1,
+        "temperature": 0.6
+      }
+    ],
+    "max_loops": 1
+  }'`}
+                    </pre>
+                  </div>
+                </motion.div>
+              </div>
+            </div>
+          </div>
+
+          {/* Product 4: Swarms Marketplace */}
+          <div className="relative min-h-screen flex items-center py-20 bg-gradient-to-b from-black to-red-950/10">
+            {/* Background */}
+            <div className="absolute inset-0 bg-[linear-gradient(rgba(239,68,68,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(239,68,68,0.03)_1px,transparent_1px)] bg-[size:40px_40px]" />
+            <div className="absolute inset-0 bg-gradient-to-l from-red-950/20 via-transparent to-transparent" />
+            
+            <div className="container px-4 sm:px-6 relative z-10">
+              <div className="grid lg:grid-cols-2 gap-12 items-center">
+                {/* Marketplace Banner */}
+                <motion.div
+                  initial={{ opacity: 0, x: -50 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.8 }}
+                  viewport={{ once: true }}
+                  className="relative order-2 lg:order-1"
+                >
+                  <div className="relative group">
+                    {/* Banner Image */}
+                    <div className="relative overflow-hidden rounded-2xl border-2 border-red-500/30 bg-black/50 backdrop-blur-sm">
+                      <img
+                        src="/marketplace_banner.png"
+                        alt="Swarms Marketplace - Buy & Sell AI Agents"
+                        className="w-full h-auto object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                      {/* Overlay gradient */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                       
-                      <CardHeader className="relative z-10">
-                        <div className="flex items-start justify-between mb-6">
-                          <div className="relative">
-                            <div className={`w-16 h-16 rounded-xl bg-gradient-to-r ${item.gradient} flex items-center justify-center shadow-lg shadow-red-500/25 group-hover:scale-110 transition-transform duration-300`}>
-                              <Icon className="h-8 w-8 text-white" />
-                            </div>
-                            <div className="absolute -inset-2 bg-red-500/20 blur-xl rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                          </div>
-                          <div className="bg-red-500/20 border border-red-500/30 px-3 py-1 rounded-full">
-                            <span className="text-xs font-orbitron text-red-400 tracking-wider">{item.badge}</span>
-                          </div>
-                        </div>
-                        
-                        <CardTitle className="text-2xl text-white font-black mb-2 tracking-wider font-orbitron">
-                          {item.title}
-                        </CardTitle>
-                        <p className="text-red-400 font-semibold mb-4 tracking-wide font-sans">
-                          {item.subtitle}
-                        </p>
-                        <CardDescription className="text-gray-300 leading-relaxed text-base font-sans">
-                          {item.description}
-                        </CardDescription>
-                      </CardHeader>
-                      
-                      <div className="p-6 pt-0 relative z-10">
-                        <div className="flex gap-3">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="border-red-500/30 text-red-400 hover:bg-red-500/10 hover:border-red-500 transition-all duration-300 font-orbitron tracking-wider"
-                            asChild
-                          >
-                            <a
-                              href={item.link}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center space-x-2"
-                            >
-                              <span>GET STARTED</span>
-                              <ExternalLink className="h-4 w-4" />
-                            </a>
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="border-red-500/30 text-red-400 hover:bg-red-500/10 hover:border-red-500 transition-all duration-300 font-orbitron tracking-wider"
-                            asChild
-                          >
-                            <a
-                              href={item.docsLink}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center space-x-2"
-                            >
-                              <span>DOCS</span>
-                              <ExternalLink className="h-4 w-4" />
-                            </a>
-                          </Button>
-                        </div>
+                      {/* Floating elements */}
+                      <div className="absolute top-4 right-4 bg-red-500/20 border border-red-500/30 px-3 py-1 rounded-full backdrop-blur-sm">
+                        <span className="text-xs font-orbitron text-red-400 tracking-wider">LIVE</span>
                       </div>
                       
-                      {/* Hover effect line */}
-                      <div className="absolute bottom-0 left-0 w-0 h-1 bg-gradient-to-r from-red-500 to-red-600 group-hover:w-full transition-all duration-500" />
-                    </Card>
-                  </CardWrapper>
+                      <div className="absolute bottom-4 left-4 right-4">
+                        <div className="bg-black/80 backdrop-blur-sm rounded-lg p-4 border border-red-500/20">
+                          <h4 className="text-white font-bold text-lg font-orbitron mb-2">Marketplace Stats</h4>
+                          <div className="grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                              <div className="text-red-400 font-semibold">500+</div>
+                              <div className="text-gray-400">Agents Available</div>
+                            </div>
+                            <div>
+                              <div className="text-red-400 font-semibold">10k+</div>
+                              <div className="text-gray-400">Downloads</div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </motion.div>
-              )
-            })}
-          </motion.div>
+
+                {/* Content */}
+                <motion.div
+                  initial={{ opacity: 0, x: 50 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.8, delay: 0.2 }}
+                  viewport={{ once: true }}
+                  className="space-y-8 order-1 lg:order-2"
+                >
+                  <div className="flex items-center space-x-4 mb-6">
+                    <div className="w-16 h-16 rounded-xl bg-gradient-to-r from-red-600 to-red-700 flex items-center justify-center shadow-lg shadow-red-500/25">
+                      <Store className="h-8 w-8 text-white" />
+                    </div>
+                    <div className="bg-red-500/20 border border-red-500/30 px-4 py-2 rounded-full">
+                      <span className="text-sm font-orbitron text-red-400 tracking-wider">MARKETPLACE</span>
+                    </div>
+                  </div>
+                  
+                  <h3 className="text-4xl font-black text-white font-orbitron tracking-tighter">
+                    SWARMS MARKETPLACE
+                  </h3>
+                  <p className="text-xl text-red-400 font-semibold tracking-wide font-sans">
+                    Buy & Sell Agents, Prompts & More
+                  </p>
+                  <p className="text-lg text-gray-300 leading-relaxed font-sans">
+                    Discover, buy, and sell agents, prompts, tools, and components on swarms.world - the premier marketplace for AI agents. Monetize your creations and access specialized agents built by the community.
+                  </p>
+                  
+                  <div className="flex gap-4">
+                    <Button
+                      size="lg"
+                      className="bg-red-600 hover:bg-red-700 hover:scale-105 transform transition-all duration-300 font-bold px-6 py-3 border-2 border-red-500 shadow-lg shadow-red-500/25 font-orbitron"
+                      asChild
+                    >
+                      <a
+                        href="https://swarms.world"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center space-x-2"
+                      >
+                        <span>EXPLORE MARKETPLACE</span>
+                        <ExternalLink className="h-4 w-4" />
+                      </a>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      className="border-2 border-red-500/50 text-red-400 hover:bg-red-500/10 hover:border-red-500 transition-all duration-300 font-orbitron px-6 py-3"
+                      asChild
+                    >
+                      <a
+                        href="https://swarms.world"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center space-x-2"
+                      >
+                        <span>SELL AGENTS</span>
+                        <ExternalLink className="h-4 w-4" />
+                      </a>
+                    </Button>
+                  </div>
+                </motion.div>
+              </div>
+            </div>
+          </div>
 
           {/* Bottom CTA */}
-          <motion.div
-            className="mt-16 text-center relative z-10"
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            transition={{ delay: 0.5, duration: 0.8 }}
-            viewport={{ once: true }}
-          >
-            <Button
-              size="lg"
-              className="bg-red-600 hover:bg-red-700 hover:scale-105 transform transition-all duration-300 font-bold text-lg px-8 py-6 border-2 border-red-500 shadow-lg shadow-red-500/25 font-orbitron"
-              asChild
+          <div className="container py-20 px-4 sm:px-6 relative">
+            <motion.div
+              className="text-center relative z-10"
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              transition={{ delay: 0.5, duration: 0.8 }}
+              viewport={{ once: true }}
             >
-              <a
-                href="https://github.com/kyegomez/swarms"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center space-x-3"
+              <Button
+                size="lg"
+                className="bg-red-600 hover:bg-red-700 hover:scale-105 transform transition-all duration-300 font-bold text-lg px-8 py-6 border-2 border-red-500 shadow-lg shadow-red-500/25 font-orbitron"
+                asChild
               >
-                <span>START BUILDING WITH SWARMS</span>
-                <ArrowRight className="h-5 w-5" />
-              </a>
-            </Button>
-          </motion.div>
+                <a
+                  href="https://github.com/kyegomez/swarms"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center space-x-3"
+                >
+                  <span>START BUILDING WITH SWARMS</span>
+                  <ArrowRight className="h-5 w-5" />
+                </a>
+              </Button>
+            </motion.div>
+          </div>
         </div>
 
         {/* Features Section */}

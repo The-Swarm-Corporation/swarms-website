@@ -428,8 +428,15 @@ export default function Home() {
                     <div className="w-16 h-16 rounded-xl bg-gradient-to-r from-red-500 to-red-600 flex items-center justify-center shadow-lg shadow-red-500/25">
                       <Zap className="h-8 w-8 text-white" />
                     </div>
-                    <div className="bg-red-500/20 border border-red-500/30 px-4 py-2 rounded-full">
-                      <span className="text-sm font-orbitron text-red-400 tracking-wider">PYTHON</span>
+                    <div className="flex items-center space-x-3">
+                      <div className="bg-red-500/20 border border-red-500/30 px-4 py-2 rounded-full">
+                        <span className="text-sm font-orbitron text-red-400 tracking-wider">PYTHON</span>
+                      </div>
+                      <div className="flex items-center space-x-2 bg-gray-800/50 border border-gray-700/50 px-3 py-2 rounded-full">
+                        <Github className="h-4 w-4 text-gray-400" />
+                        <span className="text-sm font-mono text-gray-300">5.2k</span>
+                        <span className="text-xs text-gray-500">stars</span>
+                      </div>
                     </div>
                   </div>
                   
@@ -596,8 +603,15 @@ async fn main() -> Result<()> {
                     <div className="w-16 h-16 rounded-xl bg-gradient-to-r from-red-600 to-red-700 flex items-center justify-center shadow-lg shadow-red-500/25">
                       <Cpu className="h-8 w-8 text-white" />
                     </div>
-                    <div className="bg-red-500/20 border border-red-500/30 px-4 py-2 rounded-full">
-                      <span className="text-sm font-orbitron text-red-400 tracking-wider">RUST</span>
+                    <div className="flex items-center space-x-3">
+                      <div className="bg-red-500/20 border border-red-500/30 px-4 py-2 rounded-full">
+                        <span className="text-sm font-orbitron text-red-400 tracking-wider">RUST</span>
+                      </div>
+                      <div className="flex items-center space-x-2 bg-gray-800/50 border border-gray-700/50 px-3 py-2 rounded-full">
+                        <Github className="h-4 w-4 text-gray-400" />
+                        <span className="text-sm font-mono text-gray-300">73</span>
+                        <span className="text-xs text-gray-500">stars</span>
+                      </div>
                     </div>
                   </div>
                   

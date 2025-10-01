@@ -105,7 +105,7 @@ export function Navigation() {
   )
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b-2 border-red-500/30 bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/60 shadow-lg shadow-red-500/10">
+    <header className="sticky top-0 z-[9998] w-full border-b-2 border-red-500/30 bg-black/95 backdrop-blur-md supports-[backdrop-filter]:bg-black/95 shadow-lg shadow-red-500/10">
       <div className="container flex h-16 items-center px-4 sm:px-6 lg:px-8">
         <div className="mr-6 flex">
           <Link href="/" className="flex items-center group">
@@ -140,51 +140,92 @@ export function Navigation() {
             <AnimatePresence>
               {hoveredDropdown === "products" && (
                 <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.2 }}
-                  className="absolute top-full left-0 mt-2 w-[280px] backdrop-blur-md bg-background/95 border-2 border-red-500/30 shadow-xl shadow-red-500/10 rounded-lg overflow-hidden z-50"
+                  initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                  transition={{ duration: 0.3, ease: "easeOut" }}
+                  className="absolute top-full left-0 mt-3 w-[320px] backdrop-blur-xl bg-black border-2 border-red-500/40 shadow-2xl shadow-red-500/20 rounded-xl overflow-hidden z-[9999]"
                 >
-                  <div className="p-2 space-y-1">
-                    <Link href="/products" className="flex cursor-pointer items-center border border-transparent hover:border-red-500/30 hover:bg-red-500/10 transition-all duration-300 p-2 rounded-md">
-                      <Package className="mr-3 h-4 w-4 text-red-500" />
-                      Products Overview
+                  {/* Enhanced background effects */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-red-950/30 via-black/0 to-red-950/20 pointer-events-none"></div>
+                  <div className="absolute top-0 left-0 w-24 h-24 bg-red-500/10 blur-2xl rounded-full pointer-events-none"></div>
+                  <div className="absolute bottom-0 right-0 w-32 h-32 bg-red-600/5 blur-3xl rounded-full pointer-events-none"></div>
+                  
+                  <div className="p-4 space-y-2 relative">
+                    <Link href="/products" className="group flex cursor-pointer items-center border border-transparent hover:border-red-500/40 hover:bg-red-500/15 transition-all duration-300 p-3 rounded-lg hover:shadow-lg hover:shadow-red-500/10 relative overflow-hidden">
+                      <div className="absolute inset-0 bg-gradient-to-r from-red-500/0 via-red-500/5 to-red-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                      <div className="mr-4 h-8 w-8 flex items-center justify-center rounded-lg bg-red-500/10 border border-red-500/20 group-hover:bg-red-500/20 group-hover:border-red-500/40 group-hover:shadow-lg group-hover:shadow-red-500/20 transition-all duration-300">
+                        <Package className="h-4 w-4 text-red-500 group-hover:text-red-400 transition-colors duration-300" />
+                      </div>
+                      <div className="flex-1">
+                        <span className="text-sm font-medium text-white group-hover:text-red-400 transition-colors duration-300">Products Overview</span>
+                        <p className="text-xs text-gray-400 group-hover:text-gray-300 transition-colors duration-300">Explore all products</p>
+                      </div>
                     </Link>
-                    <Link href="/simulations" className="flex cursor-pointer items-center border border-transparent hover:border-red-500/30 hover:bg-red-500/10 transition-all duration-300 p-2 rounded-md">
-                      <Network className="mr-3 h-4 w-4 text-red-500" />
-                      Simulations
+                    <Link href="/simulations" className="group flex cursor-pointer items-center border border-transparent hover:border-red-500/40 hover:bg-red-500/15 transition-all duration-300 p-3 rounded-lg hover:shadow-lg hover:shadow-red-500/10 relative overflow-hidden">
+                      <div className="absolute inset-0 bg-gradient-to-r from-red-500/0 via-red-500/5 to-red-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                      <div className="mr-4 h-8 w-8 flex items-center justify-center rounded-lg bg-red-500/10 border border-red-500/20 group-hover:bg-red-500/20 group-hover:border-red-500/40 group-hover:shadow-lg group-hover:shadow-red-500/20 transition-all duration-300">
+                        <Network className="h-4 w-4 text-red-500 group-hover:text-red-400 transition-colors duration-300" />
+                      </div>
+                      <div className="flex-1">
+                        <span className="text-sm font-medium text-white group-hover:text-red-400 transition-colors duration-300">Simulations</span>
+                        <p className="text-xs text-gray-400 group-hover:text-gray-300 transition-colors duration-300">Multi-agent simulations</p>
+                      </div>
                     </Link>
                     <a
                       href="https://github.com/kyegomez/swarms"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex cursor-pointer items-center border border-transparent hover:border-red-500/30 hover:bg-red-500/10 transition-all duration-300 p-2 rounded-md"
+                      className="group flex cursor-pointer items-center border border-transparent hover:border-red-500/40 hover:bg-red-500/15 transition-all duration-300 p-3 rounded-lg hover:shadow-lg hover:shadow-red-500/10 relative overflow-hidden"
                     >
-                      <Github className="mr-3 h-4 w-4 text-red-500" />
-                      Swarms Python
+                      <div className="absolute inset-0 bg-gradient-to-r from-red-500/0 via-red-500/5 to-red-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                      <div className="mr-4 h-8 w-8 flex items-center justify-center rounded-lg bg-red-500/10 border border-red-500/20 group-hover:bg-red-500/20 group-hover:border-red-500/40 group-hover:shadow-lg group-hover:shadow-red-500/20 transition-all duration-300">
+                        <Github className="h-4 w-4 text-red-500 group-hover:text-red-400 transition-colors duration-300" />
+                      </div>
+                      <div className="flex-1">
+                        <span className="text-sm font-medium text-white group-hover:text-red-400 transition-colors duration-300">Swarms Python</span>
+                        <p className="text-xs text-gray-400 group-hover:text-gray-300 transition-colors duration-300">Core Python framework</p>
+                      </div>
                     </a>
-                    <Link href="/api" className="flex cursor-pointer items-center border border-transparent hover:border-red-500/30 hover:bg-red-500/10 transition-all duration-300 p-2 rounded-md">
-                      <Code className="mr-3 h-4 w-4 text-red-500" />
-                      Swarms API
+                    <Link href="/api" className="group flex cursor-pointer items-center border border-transparent hover:border-red-500/40 hover:bg-red-500/15 transition-all duration-300 p-3 rounded-lg hover:shadow-lg hover:shadow-red-500/10 relative overflow-hidden">
+                      <div className="absolute inset-0 bg-gradient-to-r from-red-500/0 via-red-500/5 to-red-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                      <div className="mr-4 h-8 w-8 flex items-center justify-center rounded-lg bg-red-500/10 border border-red-500/20 group-hover:bg-red-500/20 group-hover:border-red-500/40 group-hover:shadow-lg group-hover:shadow-red-500/20 transition-all duration-300">
+                        <Code className="h-4 w-4 text-red-500 group-hover:text-red-400 transition-colors duration-300" />
+                      </div>
+                      <div className="flex-1">
+                        <span className="text-sm font-medium text-white group-hover:text-red-400 transition-colors duration-300">Swarms API</span>
+                        <p className="text-xs text-gray-400 group-hover:text-gray-300 transition-colors duration-300">Hosted API service</p>
+                      </div>
                     </Link>
                     <a
                       href="https://github.com/The-Swarm-Corporation/swarms-rs"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex cursor-pointer items-center border border-transparent hover:border-red-500/30 hover:bg-red-500/10 transition-all duration-300 p-2 rounded-md"
+                      className="group flex cursor-pointer items-center border border-transparent hover:border-red-500/40 hover:bg-red-500/15 transition-all duration-300 p-3 rounded-lg hover:shadow-lg hover:shadow-red-500/10 relative overflow-hidden"
                     >
-                      <Rocket className="mr-3 h-4 w-4 text-red-500" />
-                      Swarms RS
+                      <div className="absolute inset-0 bg-gradient-to-r from-red-500/0 via-red-500/5 to-red-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                      <div className="mr-4 h-8 w-8 flex items-center justify-center rounded-lg bg-red-500/10 border border-red-500/20 group-hover:bg-red-500/20 group-hover:border-red-500/40 group-hover:shadow-lg group-hover:shadow-red-500/20 transition-all duration-300">
+                        <Rocket className="h-4 w-4 text-red-500 group-hover:text-red-400 transition-colors duration-300" />
+                      </div>
+                      <div className="flex-1">
+                        <span className="text-sm font-medium text-white group-hover:text-red-400 transition-colors duration-300">Swarms RS</span>
+                        <p className="text-xs text-gray-400 group-hover:text-gray-300 transition-colors duration-300">Rust framework</p>
+                      </div>
                     </a>
                     <a
                       href="https://swarms.world"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex cursor-pointer items-center border border-transparent hover:border-red-500/30 hover:bg-red-500/10 transition-all duration-300 p-2 rounded-md"
+                      className="group flex cursor-pointer items-center border border-transparent hover:border-red-500/40 hover:bg-red-500/15 transition-all duration-300 p-3 rounded-lg hover:shadow-lg hover:shadow-red-500/10 relative overflow-hidden"
                     >
-                      <Sparkles className="mr-3 h-4 w-4 text-red-500" />
-                      Swarms Marketplace
+                      <div className="absolute inset-0 bg-gradient-to-r from-red-500/0 via-red-500/5 to-red-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                      <div className="mr-4 h-8 w-8 flex items-center justify-center rounded-lg bg-red-500/10 border border-red-500/20 group-hover:bg-red-500/20 group-hover:border-red-500/40 group-hover:shadow-lg group-hover:shadow-red-500/20 transition-all duration-300">
+                        <Sparkles className="h-4 w-4 text-red-500 group-hover:text-red-400 transition-colors duration-300" />
+                      </div>
+                      <div className="flex-1">
+                        <span className="text-sm font-medium text-white group-hover:text-red-400 transition-colors duration-300">Swarms Marketplace</span>
+                        <p className="text-xs text-gray-400 group-hover:text-gray-300 transition-colors duration-300">Buy & sell agents</p>
+                      </div>
                     </a>
                   </div>
                 </motion.div>
@@ -208,18 +249,20 @@ export function Navigation() {
             <AnimatePresence>
               {hoveredDropdown === "resources" && (
                 <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.2 }}
-                  className="absolute top-full right-0 mt-2 w-[360px] backdrop-blur-md bg-background/80 border-2 border-red-500/30 shadow-xl shadow-red-500/10 rounded-lg overflow-hidden z-50"
+                  initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                  transition={{ duration: 0.3, ease: "easeOut" }}
+                  className="absolute top-full right-0 mt-3 w-[400px] backdrop-blur-xl bg-black border-2 border-red-500/40 shadow-2xl shadow-red-500/20 rounded-xl overflow-hidden z-[9999]"
                 >
-                  <div className="absolute inset-0 bg-gradient-to-br from-red-950/20 via-background/0 to-background/0 pointer-events-none"></div>
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/5 blur-[80px] rounded-full pointer-events-none"></div>
+                  {/* Enhanced background effects */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-red-950/30 via-black/0 to-red-950/20 pointer-events-none"></div>
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/10 blur-2xl rounded-full pointer-events-none"></div>
+                  <div className="absolute bottom-0 left-0 w-24 h-24 bg-red-600/5 blur-3xl rounded-full pointer-events-none"></div>
 
-                  <div className="p-4 relative">
+                  <div className="p-6 relative">
                     <Tabs defaultValue="ecosystem" className="w-full" value={activeTab} onValueChange={setActiveTab}>
-                      <TabsList className="grid w-full grid-cols-4 mb-4 bg-background/30 backdrop-blur-md border-2 border-red-500/20 p-1 rounded-lg">
+                      <TabsList className="grid w-full grid-cols-4 mb-6 bg-black backdrop-blur-xl border-2 border-red-500/30 p-1.5 rounded-xl shadow-lg shadow-red-500/10">
                         {[
                           { id: "ecosystem", label: "Ecosystem" },
                           { id: "community", label: "Community" },
@@ -230,18 +273,22 @@ export function Navigation() {
                             key={tab.id}
                             value={tab.id}
                             className={`
-                              data-[state=active]:bg-red-500/10 
-                              data-[state=active]:text-red-500 
-                              data-[state=active]:shadow-[0_0_10px_rgba(239,68,68,0.2)] 
-                              data-[state=active]:border-red-500/30
+                              data-[state=active]:bg-red-500/20 
+                              data-[state=active]:text-red-400 
+                              data-[state=active]:shadow-[0_0_15px_rgba(239,68,68,0.3)] 
+                              data-[state=active]:border-red-500/40
                               data-[state=active]:backdrop-blur-md
+                              data-[state=active]:scale-105
                               transition-all duration-300 ease-in-out
                               border border-transparent
-                              rounded-md
+                              rounded-lg
                               relative
                               overflow-hidden
                               text-xs
-                              hover:border-red-500/20
+                              font-medium
+                              hover:border-red-500/30
+                              hover:bg-red-500/5
+                              hover:scale-102
                             `}
                           >
                             {tab.label}
@@ -386,48 +433,77 @@ export function Navigation() {
             <AnimatePresence>
               {hoveredDropdown === "socials" && (
                 <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.2 }}
-                  className="absolute top-full right-0 mt-2 w-[200px] backdrop-blur-md bg-background/95 border-2 border-red-500/30 shadow-xl shadow-red-500/10 rounded-lg overflow-hidden z-50"
+                  initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                  transition={{ duration: 0.3, ease: "easeOut" }}
+                  className="absolute top-full right-0 mt-3 w-[240px] backdrop-blur-xl bg-black border-2 border-red-500/40 shadow-2xl shadow-red-500/20 rounded-xl overflow-hidden z-[9999]"
                 >
-                  <div className="p-2 space-y-1">
+                  {/* Enhanced background effects */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-red-950/30 via-black/0 to-red-950/20 pointer-events-none"></div>
+                  <div className="absolute top-0 right-0 w-20 h-20 bg-red-500/10 blur-2xl rounded-full pointer-events-none"></div>
+                  <div className="absolute bottom-0 left-0 w-16 h-16 bg-red-600/5 blur-3xl rounded-full pointer-events-none"></div>
+                  
+                  <div className="p-4 space-y-2 relative">
                     <a
                       href="https://x.com/swarms_corp"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex cursor-pointer items-center border border-transparent hover:border-red-500/30 hover:bg-red-500/10 transition-all duration-300 p-2 rounded-md"
+                      className="group flex cursor-pointer items-center border border-transparent hover:border-red-500/40 hover:bg-red-500/15 transition-all duration-300 p-3 rounded-lg hover:shadow-lg hover:shadow-red-500/10 relative overflow-hidden"
                     >
-                      <Twitter className="mr-3 h-4 w-4 text-red-500" />
-                      Twitter/X
+                      <div className="absolute inset-0 bg-gradient-to-r from-red-500/0 via-red-500/5 to-red-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                      <div className="mr-4 h-8 w-8 flex items-center justify-center rounded-lg bg-red-500/10 border border-red-500/20 group-hover:bg-red-500/20 group-hover:border-red-500/40 group-hover:shadow-lg group-hover:shadow-red-500/20 transition-all duration-300">
+                        <Twitter className="h-4 w-4 text-red-500 group-hover:text-red-400 transition-colors duration-300" />
+                      </div>
+                      <div className="flex-1">
+                        <span className="text-sm font-medium text-white group-hover:text-red-400 transition-colors duration-300">Twitter/X</span>
+                        <p className="text-xs text-gray-400 group-hover:text-gray-300 transition-colors duration-300">Follow us</p>
+                      </div>
                     </a>
                     <a
                       href="https://discord.gg/EamjgSaEQf"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex cursor-pointer items-center border border-transparent hover:border-red-500/30 hover:bg-red-500/10 transition-all duration-300 p-2 rounded-md"
+                      className="group flex cursor-pointer items-center border border-transparent hover:border-red-500/40 hover:bg-red-500/15 transition-all duration-300 p-3 rounded-lg hover:shadow-lg hover:shadow-red-500/10 relative overflow-hidden"
                     >
-                      <Discord className="mr-3 h-4 w-4 text-red-500" />
-                      Discord
+                      <div className="absolute inset-0 bg-gradient-to-r from-red-500/0 via-red-500/5 to-red-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                      <div className="mr-4 h-8 w-8 flex items-center justify-center rounded-lg bg-red-500/10 border border-red-500/20 group-hover:bg-red-500/20 group-hover:border-red-500/40 group-hover:shadow-lg group-hover:shadow-red-500/20 transition-all duration-300">
+                        <Discord className="h-4 w-4 text-red-500 group-hover:text-red-400 transition-colors duration-300" />
+                      </div>
+                      <div className="flex-1">
+                        <span className="text-sm font-medium text-white group-hover:text-red-400 transition-colors duration-300">Discord</span>
+                        <p className="text-xs text-gray-400 group-hover:text-gray-300 transition-colors duration-300">Join community</p>
+                      </div>
                     </a>
                     <a
                       href="https://www.linkedin.com/company/swarms-corp/"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex cursor-pointer items-center border border-transparent hover:border-red-500/30 hover:bg-red-500/10 transition-all duration-300 p-2 rounded-md"
+                      className="group flex cursor-pointer items-center border border-transparent hover:border-red-500/40 hover:bg-red-500/15 transition-all duration-300 p-3 rounded-lg hover:shadow-lg hover:shadow-red-500/10 relative overflow-hidden"
                     >
-                      <Building className="mr-3 h-4 w-4 text-red-500" />
-                      LinkedIn
+                      <div className="absolute inset-0 bg-gradient-to-r from-red-500/0 via-red-500/5 to-red-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                      <div className="mr-4 h-8 w-8 flex items-center justify-center rounded-lg bg-red-500/10 border border-red-500/20 group-hover:bg-red-500/20 group-hover:border-red-500/40 group-hover:shadow-lg group-hover:shadow-red-500/20 transition-all duration-300">
+                        <Building className="h-4 w-4 text-red-500 group-hover:text-red-400 transition-colors duration-300" />
+                      </div>
+                      <div className="flex-1">
+                        <span className="text-sm font-medium text-white group-hover:text-red-400 transition-colors duration-300">LinkedIn</span>
+                        <p className="text-xs text-gray-400 group-hover:text-gray-300 transition-colors duration-300">Professional network</p>
+                      </div>
                     </a>
                     <a
                       href="https://www.youtube.com/@kyegomez3242"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex cursor-pointer items-center border border-transparent hover:border-red-500/30 hover:bg-red-500/10 transition-all duration-300 p-2 rounded-md"
+                      className="group flex cursor-pointer items-center border border-transparent hover:border-red-500/40 hover:bg-red-500/15 transition-all duration-300 p-3 rounded-lg hover:shadow-lg hover:shadow-red-500/10 relative overflow-hidden"
                     >
-                      <MessageCircle className="mr-3 h-4 w-4 text-red-500" />
-                      YouTube
+                      <div className="absolute inset-0 bg-gradient-to-r from-red-500/0 via-red-500/5 to-red-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                      <div className="mr-4 h-8 w-8 flex items-center justify-center rounded-lg bg-red-500/10 border border-red-500/20 group-hover:bg-red-500/20 group-hover:border-red-500/40 group-hover:shadow-lg group-hover:shadow-red-500/20 transition-all duration-300">
+                        <MessageCircle className="h-4 w-4 text-red-500 group-hover:text-red-400 transition-colors duration-300" />
+                      </div>
+                      <div className="flex-1">
+                        <span className="text-sm font-medium text-white group-hover:text-red-400 transition-colors duration-300">YouTube</span>
+                        <p className="text-xs text-gray-400 group-hover:text-gray-300 transition-colors duration-300">Watch tutorials</p>
+                      </div>
                     </a>
                   </div>
                 </motion.div>
@@ -445,7 +521,7 @@ export function Navigation() {
             </SheetTrigger>
             <SheetContent
               side="right"
-              className="w-[85vw] sm:w-[400px] border-2 border-red-500/30 bg-background/95 backdrop-blur-md shadow-xl shadow-red-500/10"
+              className="w-[85vw] sm:w-[400px] border-2 border-red-500/30 bg-black backdrop-blur-md shadow-xl shadow-red-500/10"
             >
               <SheetHeader>
                 <SheetTitle className="cyber-text border-b-2 border-red-500/30 pb-2">Menu</SheetTitle>
@@ -558,7 +634,7 @@ export function Navigation() {
                   </div>
 
                   <Tabs defaultValue="ecosystem" className="w-full">
-                    <TabsList className="w-full grid grid-cols-4 bg-background/30 backdrop-blur-sm border-2 border-red-500/20 rounded-md mb-3">
+                    <TabsList className="w-full grid grid-cols-4 bg-black backdrop-blur-sm border-2 border-red-500/20 rounded-md mb-3">
                       <TabsTrigger
                         value="ecosystem"
                         className="text-xs data-[state=active]:bg-red-500/10 data-[state=active]:text-red-500 data-[state=active]:border-red-500/30 border border-transparent hover:border-red-500/20 transition-all duration-300"

@@ -48,7 +48,7 @@ export function Features() {
     },
     {
       icon: Cpu,
-      title: "RADICALLY SIMPLE TO USE",
+      title: "Simple",
       description: "Backwards compatible with every framework - LangChain, AutoGen, tools, MCP integration, RAG integration",
       gradient: "from-red-600 to-red-700"
     },

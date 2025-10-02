@@ -180,13 +180,16 @@ export default function Home() {
           className="relative overflow-hidden bg-black min-h-screen flex items-center"
           style={{ opacity: heroOpacity, scale: heroScale }}
         >
-          {/* Background Image - Optimized for mobile */}
-          <div
-            className="absolute inset-0 w-full h-full bg-cover bg-center bg-no-repeat opacity-40 md:opacity-60 z-0"
-            style={{
-              backgroundImage: "url('/ba.png')"
-            }}
-          />
+          {/* Background Video - Optimized for mobile */}
+          <video
+            className="absolute inset-0 w-full h-full object-cover opacity-40 md:opacity-60 z-0"
+            autoPlay
+            muted
+            loop
+            playsInline
+          >
+            <source src="/swarms_characters_video.mp4" type="video/mp4" />
+          </video>
 
           {/* Overlay for better text readability - Mobile optimized */}
           <div className="absolute inset-0 w-full h-full bg-black/40 md:bg-black/30 z-10" />

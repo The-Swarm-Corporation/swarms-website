@@ -550,6 +550,21 @@ export function Navigation() {
                       </div>
                     </a>
                     <a
+                      href="https://medium.com/@kyeg"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group flex cursor-pointer items-center border border-transparent hover:border-red-500/40 hover:bg-red-500/15 transition-all duration-300 p-3 rounded-lg hover:shadow-lg hover:shadow-red-500/10 relative overflow-hidden"
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-r from-red-500/0 via-red-500/5 to-red-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                      <div className="mr-4 h-8 w-8 flex items-center justify-center rounded-lg bg-red-500/10 border border-red-500/20 group-hover:bg-red-500/20 group-hover:border-red-500/40 group-hover:shadow-lg group-hover:shadow-red-500/20 transition-all duration-300">
+                        <FileText className="h-4 w-4 text-red-500 group-hover:text-red-400 transition-colors duration-300" />
+                      </div>
+                      <div className="flex-1">
+                        <span className="text-sm font-medium text-white group-hover:text-red-400 transition-colors duration-300">Medium</span>
+                        <p className="text-xs text-gray-400 group-hover:text-gray-300 transition-colors duration-300">@kyeg</p>
+                      </div>
+                    </a>
+                    <a
                       href="https://www.youtube.com/@kyegomez3242"
                       target="_blank"
                       rel="noopener noreferrer"

@@ -126,6 +126,66 @@ export function Navigation() {
           
           <NavLink href="/pricing">Pricing</NavLink>
           
+          {/* Docs Dropdown */}
+          <div 
+            className="relative"
+            onMouseEnter={() => setHoveredDropdown("docs")}
+            onMouseLeave={() => setHoveredDropdown(null)}
+          >
+            <button className="flex items-center text-sm font-medium transition-all duration-300 hover:text-red-500 border border-transparent hover:border-red-500/30 px-3 py-1.5 rounded-md hover:bg-red-500/5">
+              Docs
+              <ChevronDown className={`ml-1 h-4 w-4 transition-transform duration-300 ${hoveredDropdown === "docs" ? "rotate-180" : ""}`} />
+            </button>
+            <AnimatePresence>
+              {hoveredDropdown === "docs" && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                  transition={{ duration: 0.3, ease: "easeOut" }}
+                  className="absolute top-full left-0 mt-3 w-[280px] backdrop-blur-xl bg-black border-2 border-red-500/40 shadow-2xl shadow-red-500/20 rounded-xl overflow-hidden z-[9999]"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-br from-red-950/30 via-black/0 to-red-950/20 pointer-events-none"></div>
+                  <div className="absolute top-0 left-0 w-24 h-24 bg-red-500/10 blur-2xl rounded-full pointer-events-none"></div>
+                  <div className="absolute bottom-0 right-0 w-24 h-24 bg-red-600/5 blur-3xl rounded-full pointer-events-none"></div>
+
+                  <div className="p-4 space-y-2 relative">
+                    <a
+                      href="https://docs.swarms.world"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group flex cursor-pointer items-center border border-transparent hover:border-red-500/40 hover:bg-red-500/15 transition-all duration-300 p-3 rounded-lg hover:shadow-lg hover:shadow-red-500/10 relative overflow-hidden"
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-r from-red-500/0 via-red-500/5 to-red-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                      <div className="mr-4 h-8 w-8 flex items-center justify-center rounded-lg bg-red-500/10 border border-red-500/20 group-hover:bg-red-500/20 group-hover:border-red-500/40 group-hover:shadow-lg group-hover:shadow-red-500/20 transition-all duration-300">
+                        <BookOpen className="h-4 w-4 text-red-500 group-hover:text-red-400 transition-colors duration-300" />
+                      </div>
+                      <div className="flex-1">
+                        <span className="text-sm font-medium text-white group-hover:text-red-400 transition-colors duration-300">Swarms Python Docs</span>
+                        <p className="text-xs text-gray-400 group-hover:text-gray-300 transition-colors duration-300">Framework documentation</p>
+                      </div>
+                    </a>
+                    <a
+                      href="https://docs.swarms.ai"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group flex cursor-pointer items-center border border-transparent hover:border-red-500/40 hover:bg-red-500/15 transition-all duration-300 p-3 rounded-lg hover:shadow-lg hover:shadow-red-500/10 relative overflow-hidden"
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-r from-red-500/0 via-red-500/5 to-red-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                      <div className="mr-4 h-8 w-8 flex items-center justify-center rounded-lg bg-red-500/10 border border-red-500/20 group-hover:bg-red-500/20 group-hover:border-red-500/40 group-hover:shadow-lg group-hover:shadow-red-500/20 transition-all duration-300">
+                        <Code className="h-4 w-4 text-red-500 group-hover:text-red-400 transition-colors duration-300" />
+                      </div>
+                      <div className="flex-1">
+                        <span className="text-sm font-medium text-white group-hover:text-red-400 transition-colors duration-300">Swarms API Docs</span>
+                        <p className="text-xs text-gray-400 group-hover:text-gray-300 transition-colors duration-300">API reference at docs.swarms.ai</p>
+                      </div>
+                    </a>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
           {/* Products Dropdown */}
           <div 
             className="relative"
@@ -409,15 +469,14 @@ export function Navigation() {
             </a>
           </Button>
 
-          <Button
-            variant="ghost"
-            className="hidden md:inline-flex hover:bg-red-500/10 hover:text-red-500 transition-all duration-300 border border-transparent hover:border-red-500/40 hover:shadow-[0_0_8px_rgba(239,68,68,0.3)]"
-            asChild
-          >
-            <a href="https://docs.swarms.world" target="_blank" rel="noopener noreferrer">
-              Docs
+          <Button variant="outline" className="hidden md:inline-flex border-white/20 hover:border-white/40 hover:bg-white/10 hover:text-white transition-all duration-300" asChild>
+            <a href="https://cal.com/swarms/swarms-onboarding-session?overlayCalendar=true" target="_blank" rel="noopener noreferrer">
+              <Calendar className="mr-2 h-4 w-4" />
+              Get demo
             </a>
           </Button>
+
+          
 
           {/* Socials Dropdown */}
           <div 

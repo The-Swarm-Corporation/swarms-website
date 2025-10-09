@@ -19,6 +19,10 @@ const researchPapers = [
   {
     title: "Agent Orchestration Protocol (AOP): A Distributed Framework for Large-Scale Multi-Agent Collaboration",
     link: "https://github.com/The-Swarm-Corporation/AOP-Paper",
+  },
+  {
+    title: "SenatorAssembly: A Multi-Agent Simulation Framework for Modeling US Senate Deliberative Processes",
+    link: "https://github.com/The-Swarm-Corporation/SenatorAssembly-Paper",
   }
 ]
 

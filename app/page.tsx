@@ -21,6 +21,7 @@ export default function Home() {
   const [isMobile, setIsMobile] = useState(false)
   const [isTablet, setIsTablet] = useState(false)
   const [mounted, setMounted] = useState(false)
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false)
 
   // Mobile detection and responsive state management
   useEffect(() => {
@@ -31,9 +32,22 @@ export default function Home() {
       setIsTablet(width >= 768 && width < 1024)
     }
 
+    // Check for reduced motion preference
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
+    setPrefersReducedMotion(mediaQuery.matches)
+
+    const handleMotionChange = (e: MediaQueryListEvent) => {
+      setPrefersReducedMotion(e.matches)
+    }
+
+    mediaQuery.addEventListener('change', handleMotionChange)
+
     checkDevice()
     window.addEventListener('resize', checkDevice)
-    return () => window.removeEventListener('resize', checkDevice)
+    return () => {
+      window.removeEventListener('resize', checkDevice)
+      mediaQuery.removeEventListener('change', handleMotionChange)
+    }
   }, [])
 
   // Scroll-based animations for mobile performance
@@ -178,7 +192,10 @@ export default function Home() {
         {/* Hero Section - Mobile Optimized */}
         <motion.div
           className="relative overflow-hidden bg-black min-h-screen flex items-center"
-          style={{ opacity: heroOpacity, scale: heroScale }}
+          style={{
+            opacity: heroOpacity,
+            scale: heroScale
+          }}
         >
           {/* Background Video - Optimized for mobile */}
           <video
@@ -187,6 +204,7 @@ export default function Home() {
             muted
             loop
             playsInline
+            preload={isMobile ? "metadata" : "auto"}
           >
             <source src="/swarms_characters_video.mp4" type="video/mp4" />
           </video>
@@ -194,21 +212,24 @@ export default function Home() {
           {/* Overlay for better text readability - Mobile optimized */}
           <div className="absolute inset-0 w-full h-full bg-black/40 md:bg-black/30 z-10" />
 
-          {/* Cyberpunk grid background - Reduced on mobile for performance */}
-          <div className="absolute inset-0 bg-[linear-gradient(rgba(239,68,68,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(239,68,68,0.08)_1px,transparent_1px)] bg-[size:30px_30px] md:bg-[size:50px_50px] opacity-10 z-20" aria-hidden="true" />
+          {/* Cyberpunk grid background - Simplified for mobile performance */}
+          <div
+            className={`absolute inset-0 bg-[linear-gradient(rgba(239,68,68,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(239,68,68,0.08)_1px,transparent_1px)] ${isMobile ? 'bg-[size:20px_20px]' : 'bg-[size:50px_50px]'} opacity-10 z-20`}
+            aria-hidden="true"
+          />
           <div className="absolute inset-0 bg-gradient-to-b from-black via-red-950/20 to-black z-30" aria-hidden="true" />
 
-          {/* AnimatedBackground - Conditional for mobile performance */}
-          {!isMobile && <AnimatedBackground particleColor="rgba(239, 68, 68, 0.3)" className="opacity-30 z-40" />}
+          {/* AnimatedBackground - Completely disabled for mobile performance */}
+          {!isMobile && !isTablet && <AnimatedBackground particleColor="rgba(239, 68, 68, 0.3)" className="opacity-30 z-40" />}
 
-          {/* Dynamic cyberpunk elements - Simplified for mobile */}
+          {/* Dynamic cyberpunk elements - Further simplified for mobile */}
           <div className="absolute inset-0 pointer-events-none overflow-hidden">
             <motion.div
-              className="absolute w-[200px] h-[200px] md:w-[400px] md:h-[400px] rounded-full bg-red-600/10 blur-[50px] md:blur-[100px] animate-pulse"
+              className={`absolute ${isMobile ? 'w-[150px] h-[150px]' : 'w-[400px] h-[400px]'} rounded-full bg-red-600/10 ${isMobile ? 'blur-[30px]' : 'blur-[100px]'} animate-pulse`}
               style={{ top: "10%", left: "5%" }}
             />
             <motion.div
-              className="absolute w-[150px] h-[150px] md:w-[300px] md:h-[300px] rounded-full bg-red-500/5 blur-[40px] md:blur-[80px] animate-pulse"
+              className={`absolute ${isMobile ? 'w-[100px] h-[100px]' : 'w-[300px] h-[300px]'} rounded-full bg-red-500/5 ${isMobile ? 'blur-[20px]' : 'blur-[80px]'} animate-pulse`}
               style={{ top: "70%", right: "10%", animationDelay: "1s" }}
             />
           </div>
@@ -239,23 +260,23 @@ export default function Home() {
                     style={{ userSelect: 'text', WebkitUserSelect: 'text', MozUserSelect: 'text', msUserSelect: 'text' }}
                   >
                     <span
-                      className="font-orbitron text-6xl sm:text-8xl md:text-[10rem] lg:text-[12rem] xl:text-[14rem] text-transparent bg-clip-text bg-gradient-to-r from-red-500 via-red-400 to-red-600 animate-pulse select-text leading-none block"
+                      className={`font-orbitron ${isMobile ? 'text-5xl sm:text-6xl' : 'text-6xl sm:text-8xl md:text-[10rem] lg:text-[12rem] xl:text-[14rem]'} text-transparent bg-clip-text bg-gradient-to-r from-red-500 via-red-400 to-red-600 animate-pulse select-text leading-none block`}
                       style={{
                         userSelect: 'text',
                         WebkitUserSelect: 'text',
                         MozUserSelect: 'text',
                         msUserSelect: 'text',
-                        fontSize: isMobile ? 'clamp(3rem, 15vw, 6rem)' : 'clamp(5rem, 12vw, 14rem)'
+                        fontSize: isMobile ? 'clamp(2.5rem, 12vw, 5rem)' : 'clamp(5rem, 12vw, 14rem)'
                       }}
                     >
                       swarms
                     </span>
                   </h1>
-                  <div className="absolute -bottom-1 md:-bottom-2 left-1/2 transform -translate-x-1/2 w-16 md:w-24 h-0.5 md:h-1 bg-gradient-to-r from-transparent via-red-500 to-transparent animate-pulse" />
+                  <div className={`absolute -bottom-1 md:-bottom-2 left-1/2 transform -translate-x-1/2 ${isMobile ? 'w-12 md:w-16' : 'w-16 md:w-24'} h-0.5 md:h-1 bg-gradient-to-r from-transparent via-red-500 to-transparent animate-pulse`} />
                 </motion.div>
 
                 <motion.p
-                  className="text-base sm:text-lg md:text-2xl lg:text-4xl text-gray-300 max-w-4xl mx-auto font-light font-orbitron select-text px-4 leading-tight"
+                  className={`text-base sm:text-lg md:text-2xl lg:text-4xl text-gray-300 max-w-4xl mx-auto font-light font-orbitron select-text ${isMobile ? 'px-6' : 'px-4'} leading-tight`}
                   initial={{ opacity: 0 }}
                   animate={mounted ? { opacity: 1 } : {}}
                   transition={{ delay: 0.4, duration: 0.8 }}
@@ -265,14 +286,14 @@ export default function Home() {
               </motion.div>
 
               <motion.div
-                className="flex flex-col sm:flex-row gap-4 sm:gap-6 w-full max-w-2xl mx-auto relative z-10 px-4 justify-center items-center"
+                className={`flex flex-col sm:flex-row gap-4 sm:gap-6 w-full max-w-2xl mx-auto relative z-10 ${isMobile ? 'px-6' : 'px-4'} justify-center items-center`}
                 initial={{ opacity: 0, y: 20 }}
                 animate={mounted ? { opacity: 1, y: 0 } : {}}
                 transition={{ delay: 0.6, duration: 0.8 }}
               >
                 <Button
                   size="lg"
-                  className="bg-red-600 hover:bg-red-700 hover:scale-[1.02] active:scale-95 transform transition-all duration-200 w-full sm:w-auto font-bold text-base sm:text-lg px-6 sm:px-8 py-4 sm:py-6 border-2 border-red-500 shadow-lg shadow-red-500/25 font-orbitron relative z-20 touch-manipulation min-h-[48px]"
+                  className={`bg-red-600 hover:bg-red-700 hover:scale-[1.02] active:scale-95 transform transition-all duration-200 w-full sm:w-auto font-bold ${isMobile ? 'text-base px-8 py-5 min-h-[56px]' : 'text-base sm:text-lg px-6 sm:px-8 py-4 sm:py-6 min-h-[48px]'} border-2 border-red-500 shadow-lg shadow-red-500/25 font-orbitron relative z-20 touch-manipulation`}
                   asChild
                 >
                   <a
@@ -282,17 +303,17 @@ export default function Home() {
                     aria-label="Get started with Swarms AI on GitHub"
                     className="flex items-center justify-center space-x-2 pointer-events-auto"
                   >
-                    <Zap className="h-4 w-4 sm:h-5 sm:w-5" />
+                    <Zap className={`h-4 w-4 ${isMobile ? 'sm:h-5 sm:w-5' : 'sm:h-5 sm:w-5'}`} />
                     <span>Get Started</span>
-                    <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5" />
+                    <ArrowRight className={`h-4 w-4 ${isMobile ? 'sm:h-5 sm:w-5' : 'sm:h-5 sm:w-5'}`} />
                   </a>
                 </Button>
                 <Button
                   size="lg"
                   variant="outline"
-                  className="border-2 border-red-500 text-red-500 hover:bg-red-500/10 hover:scale-[1.02] active:scale-95 transform transition-all duration-200 w-full sm:w-auto font-mono text-sm sm:text-lg px-6 sm:px-8 py-4 sm:py-6 bg-black/50 backdrop-blur-sm font-orbitron relative z-20 touch-manipulation min-h-[48px]"
+                  className={`border-2 border-red-500 text-red-500 hover:bg-red-500/10 hover:scale-[1.02] active:scale-95 transform transition-all duration-200 w-full sm:w-auto ${isMobile ? 'font-mono text-sm px-8 py-5 min-h-[56px]' : 'font-mono text-sm sm:text-lg px-6 sm:px-8 py-4 sm:py-6 min-h-[48px]'} bg-black/50 backdrop-blur-sm font-orbitron relative z-20 touch-manipulation`}
                 >
-                  <Terminal className="mr-2 sm:mr-3 h-4 w-4 sm:h-5 sm:w-5" aria-hidden="true" />
+                  <Terminal className={`mr-2 sm:mr-3 h-4 w-4 ${isMobile ? 'sm:h-5 sm:w-5' : 'sm:h-5 sm:w-5'}`} aria-hidden="true" />
                   <span aria-label="Installation command" className="text-center">pip install -U swarms</span>
                 </Button>
               </motion.div>
@@ -302,11 +323,11 @@ export default function Home() {
         </motion.div>
 
         {/* Features Section - Mobile Optimized */}
-        <div className="container py-16 md:py-20 lg:py-32 px-4 sm:px-6 bg-black relative overflow-hidden">
+        <div className={`container ${isMobile ? 'py-12 md:py-16' : 'py-16 md:py-20 lg:py-32'} ${isMobile ? 'px-4' : 'px-4 sm:px-6'} bg-black relative overflow-hidden`}>
           {/* Static Grid Canvas Background - Mobile optimized */}
           <div className="absolute inset-0">
-            {/* Static grid lines - Reduced complexity on mobile */}
-            <div className="absolute inset-0 bg-[linear-gradient(rgba(239,68,68,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(239,68,68,0.03)_1px,transparent_1px)] bg-[size:30px_30px] md:bg-[size:50px_50px]" />
+            {/* Static grid lines - Further reduced complexity on mobile */}
+            <div className={`absolute inset-0 bg-[linear-gradient(rgba(239,68,68,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(239,68,68,0.03)_1px,transparent_1px)] ${isMobile ? 'bg-[size:20px_20px]' : 'bg-[size:50px_50px]'}`} />
           </div>
 
           <motion.div
@@ -314,15 +335,15 @@ export default function Home() {
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             viewport={{ once: true }}
-            className="text-center space-y-4 md:space-y-6 mb-12 md:mb-16 lg:mb-20 relative z-10"
+            className={`text-center ${isMobile ? 'space-y-3 md:space-y-4 mb-8 md:mb-12' : 'space-y-4 md:space-y-6 mb-12 md:mb-16 lg:mb-20'} relative z-10`}
           >
-            <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tighter text-white font-orbitron leading-tight">
+            <h2 className={`text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tighter text-white font-orbitron leading-tight`}>
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-red-400">
                 Features
               </span>
             </h2>
-            <div className="w-16 md:w-24 h-0.5 md:h-1 bg-gradient-to-r from-red-500 to-red-600 mx-auto" />
-            <p className="text-base sm:text-lg md:text-xl text-gray-300 max-w-3xl mx-auto font-light font-sans px-4 leading-relaxed">
+            <div className={`${isMobile ? 'w-12 md:w-16' : 'w-16 md:w-24'} h-0.5 md:h-1 bg-gradient-to-r from-red-500 to-red-600 mx-auto`} />
+            <p className={`text-base sm:text-lg md:text-xl text-gray-300 max-w-3xl mx-auto font-light font-sans ${isMobile ? 'px-2 leading-relaxed' : 'px-4 leading-relaxed'}`}>
               Swarms has pioneered world-class infrastructure for multi-agent collaboration such as communication protocols, optimized runtimes, memory systems, and simulation environments.
             </p>
           </motion.div>
@@ -330,7 +351,7 @@ export default function Home() {
           {/* Dynamic Grid Layout - Mobile optimized */}
           <div className="relative z-10">
             <motion.div
-              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8 max-w-7xl mx-auto"
+              className={`grid ${isMobile ? 'grid-cols-1 gap-4' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8'} max-w-7xl mx-auto`}
               variants={container}
               initial="hidden"
               whileInView="show"
@@ -378,13 +399,15 @@ export default function Home() {
                   key={index}
                   variants={item}
                 >
-                  <CardWrapper className="h-full transition-all duration-300 hover:translate-y-[-4px] md:hover:translate-y-[-8px] lg:hover:translate-y-[-12px] hover:scale-[1.02] group touch-manipulation">
-                    <Card className="border-2 border-red-500/30 bg-black/60 backdrop-blur-md h-full relative overflow-hidden p-4 md:p-6 lg:p-8">
-                      {/* Animated border glow - Reduced on mobile */}
-                      <div className="absolute inset-0 bg-gradient-to-r from-red-500/20 via-transparent to-red-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 md:duration-700" />
-
-                      {/* Floating particles - Simplified for mobile */}
+                  <CardWrapper className={`h-full transition-all duration-300 ${isMobile ? 'hover:translate-y-[-2px]' : 'hover:translate-y-[-4px] md:hover:translate-y-[-8px] lg:hover:translate-y-[-12px]'} hover:scale-[1.02] group touch-manipulation`}>
+                    <Card className={`border-2 border-red-500/30 bg-black/60 backdrop-blur-md h-full relative overflow-hidden ${isMobile ? 'p-4' : 'p-4 md:p-6 lg:p-8'}`}>
+                      {/* Animated border glow - Disabled on mobile */}
                       {!isMobile && (
+                        <div className="absolute inset-0 bg-gradient-to-r from-red-500/20 via-transparent to-red-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 md:duration-700" />
+                      )}
+
+                      {/* Floating particles - Completely disabled for mobile performance */}
+                      {!isMobile && !isTablet && (
                         <div className="absolute inset-0 pointer-events-none">
                           <motion.div
                             className="absolute w-1.5 h-1.5 md:w-2 md:h-2 bg-red-500 rounded-full"
@@ -417,21 +440,21 @@ export default function Home() {
                         </div>
                       )}
 
-                      <CardHeader className="relative z-10 text-center p-0">
-                        <div className="text-3xl md:text-4xl mb-3 md:mb-4">{feature.icon}</div>
-                        <CardTitle className="text-lg md:text-xl text-white font-black mb-3 md:mb-4 tracking-wider font-orbitron leading-tight">
+                      <CardHeader className={`relative z-10 text-center ${isMobile ? 'p-0' : 'p-0'}`}>
+                        <div className={`text-3xl md:text-4xl ${isMobile ? 'mb-2 md:mb-3' : 'mb-3 md:mb-4'}`}>{feature.icon}</div>
+                        <CardTitle className={`text-lg md:text-xl text-white font-black ${isMobile ? 'mb-2 md:mb-3' : 'mb-3 md:mb-4'} tracking-wider font-orbitron leading-tight`}>
                           {feature.title}
                         </CardTitle>
-                        <CardDescription className="text-sm md:text-base text-gray-300 leading-relaxed font-sans">
+                        <CardDescription className={`text-sm md:text-base text-gray-300 leading-relaxed font-sans`}>
                           {feature.description}
                         </CardDescription>
                       </CardHeader>
 
-                      <div className="p-0 pt-4 md:pt-6 relative z-10">
+                      <div className={`p-0 ${isMobile ? 'pt-3 md:pt-4' : 'pt-4 md:pt-6'} relative z-10`}>
                         <Button
                           variant="outline"
                           size="lg"
-                          className="w-full border-2 border-red-500/50 text-red-400 hover:bg-red-500/20 hover:border-red-500 hover:text-white transition-all duration-300 md:duration-500 font-orbitron tracking-wider group-hover:scale-105 touch-manipulation min-h-[44px] text-sm md:text-base"
+                          className={`w-full border-2 border-red-500/50 text-red-400 hover:bg-red-500/20 hover:border-red-500 hover:text-white transition-all duration-300 md:duration-500 font-orbitron tracking-wider ${isMobile ? 'group-hover:scale-105 touch-manipulation min-h-[48px] text-sm' : 'group-hover:scale-105 touch-manipulation min-h-[44px] text-sm md:text-base'}`}
                           asChild
                         >
                           <a
@@ -441,7 +464,7 @@ export default function Home() {
                             className="flex items-center justify-center space-x-2"
                           >
                             <span>EXPLORE FEATURE</span>
-                            <ExternalLink className="h-3 w-3 md:h-5 md:w-5 group-hover:rotate-12 transition-transform duration-300" />
+                            <ExternalLink className={`h-3 w-3 md:h-5 md:w-5 ${isMobile ? '' : 'group-hover:rotate-12'} transition-transform duration-300`} />
                           </a>
                         </Button>
                       </div>
@@ -465,7 +488,7 @@ export default function Home() {
 
           {/* Bottom CTA - Mobile optimized */}
           <motion.div
-            className="mt-12 md:mt-16 lg:mt-20 text-center relative z-10 px-4"
+            className={`${isMobile ? 'mt-8 md:mt-12' : 'mt-12 md:mt-16 lg:mt-20'} text-center relative z-10 ${isMobile ? 'px-4' : 'px-4'}`}
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             transition={{ delay: 0.3, duration: 0.6 }}
@@ -473,7 +496,7 @@ export default function Home() {
           >
             <Button
               size="lg"
-              className="bg-red-600 hover:bg-red-700 hover:scale-[1.02] active:scale-95 transform transition-all duration-200 font-bold text-base md:text-lg px-6 md:px-8 py-4 md:py-6 border-2 border-red-500 shadow-lg shadow-red-500/25 font-orbitron touch-manipulation min-h-[48px] w-full sm:w-auto max-w-sm mx-auto"
+              className={`bg-red-600 hover:bg-red-700 hover:scale-[1.02] active:scale-95 transform transition-all duration-200 font-bold ${isMobile ? 'text-base px-8 py-5 min-h-[56px]' : 'text-base md:text-lg px-6 md:px-8 py-4 md:py-6 min-h-[48px]'} border-2 border-red-500 shadow-lg shadow-red-500/25 font-orbitron touch-manipulation w-full sm:w-auto max-w-sm mx-auto`}
               asChild
             >
               <a
@@ -483,7 +506,7 @@ export default function Home() {
                 className="flex items-center justify-center space-x-2"
               >
                 <span>GET STARTED ON GITHUB</span>
-                <ArrowRight className="h-4 w-4 md:h-5 md:w-5" />
+                <ArrowRight className={`h-4 w-4 ${isMobile ? 'md:h-5 md:w-5' : 'md:h-5 md:w-5'}`} />
               </a>
             </Button>
           </motion.div>
@@ -493,26 +516,26 @@ export default function Home() {
         <div className="bg-black relative">
 
           {/* Installation Section - Mobile Optimized */}
-          <div className="relative min-h-screen flex items-center py-12 md:py-20 bg-gradient-to-b from-black to-red-950/10">
+          <div className={`relative ${isMobile ? 'min-h-screen' : 'min-h-screen'} flex items-center ${isMobile ? 'py-8 md:py-12' : 'py-12 md:py-20'} bg-gradient-to-b from-black to-red-950/10`}>
             {/* Background - Optimized for mobile */}
-            <div className="absolute inset-0 bg-[linear-gradient(rgba(239,68,68,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(239,68,68,0.03)_1px,transparent_1px)] bg-[size:30px_30px] md:bg-[size:50px_50px]" />
+            <div className={`absolute inset-0 bg-[linear-gradient(rgba(239,68,68,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(239,68,68,0.03)_1px,transparent_1px)] ${isMobile ? 'bg-[size:20px_20px]' : 'bg-[size:50px_50px]'}`} />
             <div className="absolute inset-0 bg-gradient-to-r from-red-950/20 via-transparent to-transparent" />
 
-            <div className="container px-4 sm:px-6 relative z-10 w-full">
+            <div className={`container ${isMobile ? 'px-4' : 'px-4 sm:px-6'} relative z-10 w-full`}>
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6 }}
                 viewport={{ once: true }}
-                className="text-center space-y-4 md:space-y-6 mb-8 md:mb-16 relative z-10"
+                className={`text-center ${isMobile ? 'space-y-3 md:space-y-4 mb-6 md:mb-8' : 'space-y-4 md:space-y-6 mb-8 md:mb-16'} relative z-10`}
               >
-                <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tighter text-white font-orbitron leading-tight">
+                <h2 className={`text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tighter text-white font-orbitron leading-tight`}>
                   <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-red-400">
                     Installation
                   </span>
                 </h2>
-                <div className="w-16 md:w-32 h-0.5 md:h-1 bg-gradient-to-r from-red-500 to-red-600 mx-auto" />
-                <p className="text-base sm:text-lg md:text-xl text-gray-300 max-w-3xl mx-auto font-light font-sans px-4 leading-relaxed">
+                <div className={`${isMobile ? 'w-12 md:w-16' : 'w-16 md:w-32'} h-0.5 md:h-1 bg-gradient-to-r from-red-500 to-red-600 mx-auto`} />
+                <p className={`text-base sm:text-lg md:text-xl text-gray-300 max-w-3xl mx-auto font-light font-sans ${isMobile ? 'px-2 leading-relaxed' : 'px-4 leading-relaxed'}`}>
                   Get started with Swarms in seconds. Choose your preferred language and install the framework.
                 </p>
               </motion.div>
@@ -522,65 +545,65 @@ export default function Home() {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.2 }}
                 viewport={{ once: true }}
-                className="max-w-4xl mx-auto"
+                className={`${isMobile ? 'max-w-full' : 'max-w-4xl'} mx-auto`}
               >
                 <Tabs defaultValue="python" className="w-full">
-                  <TabsList className="grid w-full grid-cols-2 bg-black/50 border border-red-500/30 backdrop-blur-sm h-12 md:h-auto">
+                  <TabsList className={`grid w-full grid-cols-2 bg-black/50 border border-red-500/30 backdrop-blur-sm ${isMobile ? 'h-14' : 'h-12 md:h-auto'}`}>
                     <TabsTrigger
                       value="python"
-                      className="data-[state=active]:bg-red-600 data-[state=active]:text-white text-gray-400 font-orbitron tracking-wider text-sm md:text-base touch-manipulation min-h-[44px] md:min-h-auto"
+                      className={`data-[state=active]:bg-red-600 data-[state=active]:text-white text-gray-400 font-orbitron tracking-wider ${isMobile ? 'text-sm min-h-[48px]' : 'text-sm md:text-base touch-manipulation min-h-[44px] md:min-h-auto'}`}
                     >
-                      <Zap className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
+                      <Zap className={`h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2`} />
                       Python
                     </TabsTrigger>
                     <TabsTrigger
                       value="rust"
-                      className="data-[state=active]:bg-red-600 data-[state=active]:text-white text-gray-400 font-orbitron tracking-wider text-sm md:text-base touch-manipulation min-h-[44px] md:min-h-auto"
+                      className={`data-[state=active]:bg-red-600 data-[state=active]:text-white text-gray-400 font-orbitron tracking-wider ${isMobile ? 'text-sm min-h-[48px]' : 'text-sm md:text-base touch-manipulation min-h-[44px] md:min-h-auto'}`}
                     >
-                      <Cpu className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
+                      <Cpu className={`h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2`} />
                       Rust
                     </TabsTrigger>
                   </TabsList>
 
-                  <TabsContent value="python" className="mt-6 md:mt-8">
+                  <TabsContent value="python" className={`${isMobile ? 'mt-4 md:mt-6' : 'mt-6 md:mt-8'}`}>
                     <motion.div
                       initial={{ opacity: 0, y: 10 }}
                       whileInView={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.4 }}
                       viewport={{ once: true }}
-                      className="space-y-4 md:space-y-8"
+                      className={`${isMobile ? 'space-y-3 md:space-y-6' : 'space-y-4 md:space-y-8'}`}
                     >
-                      <div className="flex items-center space-x-3 md:space-x-4 mb-4 md:mb-6">
-                        <div className="w-12 h-12 md:w-16 md:h-16 rounded-xl bg-gradient-to-r from-red-500 to-red-600 flex items-center justify-center shadow-lg shadow-red-500/25">
-                          <Zap className="h-6 w-6 md:h-8 md:w-8 text-white" />
+                      <div className={`flex items-center ${isMobile ? 'space-x-2 md:space-x-3 mb-3 md:mb-4' : 'space-x-3 md:space-x-4 mb-4 md:mb-6'}`}>
+                        <div className={`w-12 h-12 md:w-16 md:h-16 rounded-xl bg-gradient-to-r from-red-500 to-red-600 flex items-center justify-center shadow-lg shadow-red-500/25`}>
+                          <Zap className={`h-6 w-6 md:h-8 md:w-8 text-white`} />
                         </div>
                         <div className="flex-1">
-                          <h3 className="text-xl md:text-3xl font-black text-white font-orbitron tracking-tighter">
+                          <h3 className={`text-xl md:text-3xl font-black text-white font-orbitron tracking-tighter`}>
                             Python Installation
                           </h3>
-                          <p className="text-sm md:text-lg text-gray-300 leading-relaxed font-sans mt-1 md:mt-0">
+                          <p className={`text-sm md:text-lg text-gray-300 leading-relaxed font-sans ${isMobile ? 'mt-0 md:mt-1' : 'mt-1 md:mt-0'}`}>
                             Install the core Swarms Python framework with pip.
                           </p>
                         </div>
                       </div>
 
                       {/* Installation Command - Mobile optimized */}
-                      <div className="bg-black/80 border-2 border-red-500/30 rounded-lg md:rounded-xl p-4 md:p-6 backdrop-blur-sm">
-                        <div className="flex items-center space-x-2 mb-3 md:mb-4">
-                          <div className="w-2 h-2 md:w-3 md:h-3 bg-red-500 rounded-full"></div>
-                          <div className="w-2 h-2 md:w-3 md:h-3 bg-yellow-500 rounded-full"></div>
-                          <div className="w-2 h-2 md:w-3 md:h-3 bg-green-500 rounded-full"></div>
-                          <span className="text-gray-400 text-xs md:text-sm ml-2 md:ml-4 font-mono">terminal</span>
+                      <div className={`bg-black/80 border-2 border-red-500/30 ${isMobile ? 'rounded-lg p-3 md:p-4' : 'rounded-lg md:rounded-xl p-4 md:p-6'} backdrop-blur-sm`}>
+                        <div className={`flex items-center space-x-2 ${isMobile ? 'mb-2 md:mb-3' : 'mb-3 md:mb-4'}`}>
+                          <div className={`w-2 h-2 md:w-3 md:h-3 bg-red-500 rounded-full`}></div>
+                          <div className={`w-2 h-2 md:w-3 md:h-3 bg-yellow-500 rounded-full`}></div>
+                          <div className={`w-2 h-2 md:w-3 md:h-3 bg-green-500 rounded-full`}></div>
+                          <span className={`text-gray-400 ${isMobile ? 'text-xs ml-1 md:ml-2' : 'text-xs md:text-sm ml-2 md:ml-4'} font-mono`}>terminal</span>
                         </div>
-                        <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
-                          <span className="text-green-400 font-mono text-sm md:text-lg self-start sm:self-auto">$</span>
-                          <code className="text-green-400 font-mono text-sm md:text-lg select-all flex-1 break-all">
+                        <div className={`flex flex-col ${isMobile ? 'sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-2' : 'sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3'}`}>
+                          <span className={`text-green-400 font-mono ${isMobile ? 'text-sm md:text-base' : 'text-sm md:text-lg'} self-start sm:self-auto`}>$</span>
+                          <code className={`text-green-400 font-mono ${isMobile ? 'text-sm md:text-base' : 'text-sm md:text-lg'} select-all flex-1 break-all`}>
                             pip3 install -U swarms
                           </code>
                           <Button
                             size="sm"
                             variant="outline"
-                            className="border-gray-600 text-gray-400 hover:bg-gray-800/50 hover:border-gray-500 transition-all duration-300 self-start sm:self-auto touch-manipulation min-h-[36px] text-xs md:text-sm"
+                            className={`border-gray-600 text-gray-400 hover:bg-gray-800/50 hover:border-gray-500 transition-all duration-300 self-start sm:self-auto touch-manipulation ${isMobile ? 'min-h-[40px] text-xs' : 'min-h-[36px] text-xs md:text-sm'}`}
                             onClick={() => navigator.clipboard.writeText('pip3 install -U swarms')}
                           >
                             Copy
@@ -588,10 +611,10 @@ export default function Home() {
                         </div>
                       </div>
 
-                      <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
+                      <div className={`flex flex-col sm:flex-row ${isMobile ? 'gap-2 md:gap-3' : 'gap-3 md:gap-4'}`}>
                         <Button
                           size="lg"
-                          className="bg-red-600 hover:bg-red-700 hover:scale-[1.02] active:scale-95 transform transition-all duration-200 font-bold px-4 md:px-6 py-3 md:py-3 border-2 border-red-500 shadow-lg shadow-red-500/25 font-orbitron w-full sm:w-auto touch-manipulation min-h-[48px]"
+                          className={`bg-red-600 hover:bg-red-700 hover:scale-[1.02] active:scale-95 transform transition-all duration-200 font-bold ${isMobile ? 'px-6 py-4 min-h-[52px] text-base' : 'px-4 md:px-6 py-3 md:py-3 min-h-[48px] text-sm md:text-base'} border-2 border-red-500 shadow-lg shadow-red-500/25 font-orbitron w-full sm:w-auto touch-manipulation`}
                           asChild
                         >
                           <a
@@ -600,14 +623,14 @@ export default function Home() {
                             rel="noopener noreferrer"
                             className="flex items-center justify-center space-x-2"
                           >
-                            <span className="text-sm md:text-base">GET STARTED</span>
-                            <ExternalLink className="h-3 w-3 md:h-4 md:w-4" />
+                            <span className={`${isMobile ? 'text-base' : 'text-sm md:text-base'}`}>GET STARTED</span>
+                            <ExternalLink className={`h-3 w-3 md:h-4 md:w-4`} />
                           </a>
                         </Button>
                         <Button
                           variant="outline"
                           size="lg"
-                          className="border-2 border-red-500/50 text-red-400 hover:bg-red-500/10 hover:border-red-500 transition-all duration-300 font-orbitron px-4 md:px-6 py-3 md:py-3 w-full sm:w-auto touch-manipulation min-h-[48px]"
+                          className={`border-2 border-red-500/50 text-red-400 hover:bg-red-500/10 hover:border-red-500 transition-all duration-300 font-orbitron ${isMobile ? 'px-6 py-4 min-h-[52px] text-base' : 'px-4 md:px-6 py-3 md:py-3 min-h-[48px] text-sm md:text-base'} w-full sm:w-auto touch-manipulation`}
                           asChild
                         >
                           <a
@@ -616,53 +639,53 @@ export default function Home() {
                             rel="noopener noreferrer"
                             className="flex items-center justify-center space-x-2"
                           >
-                            <span className="text-sm md:text-base">DOCS</span>
-                            <ExternalLink className="h-3 w-3 md:h-4 md:w-4" />
+                            <span className={`${isMobile ? 'text-base' : 'text-sm md:text-base'}`}>DOCS</span>
+                            <ExternalLink className={`h-3 w-3 md:h-4 md:w-4`} />
                           </a>
                         </Button>
                       </div>
                     </motion.div>
                   </TabsContent>
 
-                  <TabsContent value="rust" className="mt-6 md:mt-8">
+                  <TabsContent value="rust" className={`${isMobile ? 'mt-4 md:mt-6' : 'mt-6 md:mt-8'}`}>
                     <motion.div
                       initial={{ opacity: 0, y: 10 }}
                       whileInView={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.4 }}
                       viewport={{ once: true }}
-                      className="space-y-4 md:space-y-8"
+                      className={`${isMobile ? 'space-y-3 md:space-y-6' : 'space-y-4 md:space-y-8'}`}
                     >
-                      <div className="flex items-center space-x-3 md:space-x-4 mb-4 md:mb-6">
-                        <div className="w-12 h-12 md:w-16 md:h-16 rounded-xl bg-gradient-to-r from-red-600 to-red-700 flex items-center justify-center shadow-lg shadow-red-500/25">
-                          <Cpu className="h-6 w-6 md:h-8 md:w-8 text-white" />
+                      <div className={`flex items-center ${isMobile ? 'space-x-2 md:space-x-3 mb-3 md:mb-4' : 'space-x-3 md:space-x-4 mb-4 md:mb-6'}`}>
+                        <div className={`w-12 h-12 md:w-16 md:h-16 rounded-xl bg-gradient-to-r from-red-600 to-red-700 flex items-center justify-center shadow-lg shadow-red-500/25`}>
+                          <Cpu className={`h-6 w-6 md:h-8 md:w-8 text-white`} />
                         </div>
                         <div className="flex-1">
-                          <h3 className="text-xl md:text-3xl font-black text-white font-orbitron tracking-tighter">
+                          <h3 className={`text-xl md:text-3xl font-black text-white font-orbitron tracking-tighter`}>
                             Rust Installation
                           </h3>
-                          <p className="text-sm md:text-lg text-gray-300 leading-relaxed font-sans mt-1 md:mt-0">
+                          <p className={`text-sm md:text-lg text-gray-300 leading-relaxed font-sans ${isMobile ? 'mt-0 md:mt-1' : 'mt-1 md:mt-0'}`}>
                             Add the ultra-fast Swarms Rust framework to your Cargo.toml.
                           </p>
                         </div>
                       </div>
 
                       {/* Installation Command - Mobile optimized */}
-                      <div className="bg-black/80 border-2 border-red-500/30 rounded-lg md:rounded-xl p-4 md:p-6 backdrop-blur-sm">
-                        <div className="flex items-center space-x-2 mb-3 md:mb-4">
-                          <div className="w-2 h-2 md:w-3 md:h-3 bg-red-500 rounded-full"></div>
-                          <div className="w-2 h-2 md:w-3 md:h-3 bg-yellow-500 rounded-full"></div>
-                          <div className="w-2 h-2 md:w-3 md:h-3 bg-green-500 rounded-full"></div>
-                          <span className="text-gray-400 text-xs md:text-sm ml-2 md:ml-4 font-mono">terminal</span>
+                      <div className={`bg-black/80 border-2 border-red-500/30 ${isMobile ? 'rounded-lg p-3 md:p-4' : 'rounded-lg md:rounded-xl p-4 md:p-6'} backdrop-blur-sm`}>
+                        <div className={`flex items-center space-x-2 ${isMobile ? 'mb-2 md:mb-3' : 'mb-3 md:mb-4'}`}>
+                          <div className={`w-2 h-2 md:w-3 md:h-3 bg-red-500 rounded-full`}></div>
+                          <div className={`w-2 h-2 md:w-3 md:h-3 bg-yellow-500 rounded-full`}></div>
+                          <div className={`w-2 h-2 md:w-3 md:h-3 bg-green-500 rounded-full`}></div>
+                          <span className={`text-gray-400 ${isMobile ? 'text-xs ml-1 md:ml-2' : 'text-xs md:text-sm ml-2 md:ml-4'} font-mono`}>terminal</span>
                         </div>
-                        <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
-                          <span className="text-blue-400 font-mono text-sm md:text-lg self-start sm:self-auto">$</span>
-                          <code className="text-blue-400 font-mono text-sm md:text-lg select-all flex-1 break-all">
+                        <div className={`flex flex-col ${isMobile ? 'sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-2' : 'sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3'}`}>
+                          <span className={`text-blue-400 font-mono ${isMobile ? 'text-sm md:text-base' : 'text-sm md:text-lg'} self-start sm:self-auto`}>$</span>
+                          <code className={`text-blue-400 font-mono ${isMobile ? 'text-sm md:text-base' : 'text-sm md:text-lg'} select-all flex-1 break-all`}>
                             cargo add swarms-rs
                           </code>
                           <Button
                             size="sm"
                             variant="outline"
-                            className="border-gray-600 text-gray-400 hover:bg-gray-800/50 hover:border-gray-500 transition-all duration-300 self-start sm:self-auto touch-manipulation min-h-[36px] text-xs md:text-sm"
+                            className={`border-gray-600 text-gray-400 hover:bg-gray-800/50 hover:border-gray-500 transition-all duration-300 self-start sm:self-auto touch-manipulation ${isMobile ? 'min-h-[40px] text-xs' : 'min-h-[36px] text-xs md:text-sm'}`}
                             onClick={() => navigator.clipboard.writeText('cargo add swarms-rs')}
                           >
                             Copy
@@ -670,10 +693,10 @@ export default function Home() {
                         </div>
                       </div>
 
-                      <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
+                      <div className={`flex flex-col sm:flex-row ${isMobile ? 'gap-2 md:gap-3' : 'gap-3 md:gap-4'}`}>
                         <Button
                           size="lg"
-                          className="bg-red-600 hover:bg-red-700 hover:scale-[1.02] active:scale-95 transform transition-all duration-200 font-bold px-4 md:px-6 py-3 md:py-3 border-2 border-red-500 shadow-lg shadow-red-500/25 font-orbitron w-full sm:w-auto touch-manipulation min-h-[48px]"
+                          className={`bg-red-600 hover:bg-red-700 hover:scale-[1.02] active:scale-95 transform transition-all duration-200 font-bold ${isMobile ? 'px-6 py-4 min-h-[52px] text-base' : 'px-4 md:px-6 py-3 md:py-3 min-h-[48px] text-sm md:text-base'} border-2 border-red-500 shadow-lg shadow-red-500/25 font-orbitron w-full sm:w-auto touch-manipulation`}
                           asChild
                         >
                           <a
@@ -682,14 +705,14 @@ export default function Home() {
                             rel="noopener noreferrer"
                             className="flex items-center justify-center space-x-2"
                           >
-                            <span className="text-sm md:text-base">GET STARTED</span>
-                            <ExternalLink className="h-3 w-3 md:h-4 md:w-4" />
+                            <span className={`${isMobile ? 'text-base' : 'text-sm md:text-base'}`}>GET STARTED</span>
+                            <ExternalLink className={`h-3 w-3 md:h-4 md:w-4`} />
                           </a>
                         </Button>
                         <Button
                           variant="outline"
                           size="lg"
-                          className="border-2 border-red-500/50 text-red-400 hover:bg-red-500/10 hover:border-red-500 transition-all duration-300 font-orbitron px-4 md:px-6 py-3 md:py-3 w-full sm:w-auto touch-manipulation min-h-[48px]"
+                          className={`border-2 border-red-500/50 text-red-400 hover:bg-red-500/10 hover:border-red-500 transition-all duration-300 font-orbitron ${isMobile ? 'px-6 py-4 min-h-[52px] text-base' : 'px-4 md:px-6 py-3 md:py-3 min-h-[48px] text-sm md:text-base'} w-full sm:w-auto touch-manipulation`}
                           asChild
                         >
                           <a
@@ -698,8 +721,8 @@ export default function Home() {
                             rel="noopener noreferrer"
                             className="flex items-center justify-center space-x-2"
                           >
-                            <span className="text-sm md:text-base">DOCS</span>
-                            <ExternalLink className="h-3 w-3 md:h-4 md:w-4" />
+                            <span className={`${isMobile ? 'text-base' : 'text-sm md:text-base'}`}>DOCS</span>
+                            <ExternalLink className={`h-3 w-3 md:h-4 md:w-4`} />
                           </a>
                         </Button>
                       </div>
@@ -737,15 +760,15 @@ export default function Home() {
             <div className="absolute inset-0 bg-[linear-gradient(rgba(239,68,68,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(239,68,68,0.03)_1px,transparent_1px)] bg-[size:30px_30px] md:bg-[size:50px_50px]" />
             <div className="absolute inset-0 bg-gradient-to-r from-red-950/20 via-transparent to-transparent" />
 
-            <div className="container px-4 sm:px-6 relative z-10 w-full">
-              <div className="grid lg:grid-cols-2 gap-8 md:gap-12 items-center">
+            <div className={`container ${isMobile ? 'px-4' : 'px-4 sm:px-6'} relative z-10 w-full`}>
+              <div className={`grid ${isMobile ? 'grid-cols-1' : 'lg:grid-cols-2'} gap-8 md:gap-12 items-center`}>
                 {/* Content - Mobile optimized */}
                 <motion.div
                   initial={{ opacity: 0, x: isMobile ? 0 : -50, y: isMobile ? 30 : 0 }}
                   whileInView={{ opacity: 1, x: 0, y: 0 }}
                   transition={{ duration: 0.6 }}
                   viewport={{ once: true }}
-                  className="space-y-4 md:space-y-8 order-2 lg:order-1"
+                  className={`space-y-4 md:space-y-8 ${isMobile ? 'order-1' : 'order-2 lg:order-1'}`}
                 >
                   <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-3 sm:space-y-0 sm:space-x-4 mb-4 md:mb-6">
                     <div className="w-12 h-12 md:w-16 md:h-16 rounded-xl bg-gradient-to-r from-red-500 to-red-600 flex items-center justify-center shadow-lg shadow-red-500/25">
@@ -816,7 +839,7 @@ export default function Home() {
                   whileInView={{ opacity: 1, x: 0, y: 0 }}
                   transition={{ duration: 0.6, delay: 0.2 }}
                   viewport={{ once: true }}
-                  className="relative order-1 lg:order-2"
+                  className={`relative ${isMobile ? 'order-2' : 'order-1 lg:order-2'}`}
                 >
                   <div className="bg-black/80 border-2 border-red-500/30 rounded-lg md:rounded-xl p-4 md:p-6 backdrop-blur-sm">
                     <div className="flex items-center space-x-2 mb-3 md:mb-4">
@@ -861,15 +884,15 @@ print(final_post)`}
             <div className="absolute inset-0 bg-[linear-gradient(rgba(239,68,68,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(239,68,68,0.03)_1px,transparent_1px)] bg-[size:30px_30px] md:bg-[size:40px_40px]" />
             <div className="absolute inset-0 bg-gradient-to-l from-red-950/20 via-transparent to-transparent" />
 
-            <div className="container px-4 sm:px-6 relative z-10 w-full">
-              <div className="grid lg:grid-cols-2 gap-8 md:gap-12 items-center">
+            <div className={`container ${isMobile ? 'px-4' : 'px-4 sm:px-6'} relative z-10 w-full`}>
+              <div className={`grid ${isMobile ? 'grid-cols-1' : 'lg:grid-cols-2'} gap-8 md:gap-12 items-center`}>
                 {/* Code Example - Mobile optimized */}
                 <motion.div
                   initial={{ opacity: 0, x: isMobile ? 0 : -50, y: isMobile ? 30 : 0 }}
                   whileInView={{ opacity: 1, x: 0, y: 0 }}
                   transition={{ duration: 0.6 }}
                   viewport={{ once: true }}
-                  className="relative order-1 lg:order-1"
+                  className={`relative ${isMobile ? 'order-2' : 'order-2 lg:order-1'}`}
                 >
                   <div className="bg-black/80 border-2 border-red-500/30 rounded-lg md:rounded-xl p-4 md:p-6 backdrop-blur-sm">
                     <div className="flex items-center space-x-2 mb-3 md:mb-4">
@@ -922,7 +945,7 @@ async fn main() -> Result<()> {
                   whileInView={{ opacity: 1, x: 0, y: 0 }}
                   transition={{ duration: 0.6, delay: 0.2 }}
                   viewport={{ once: true }}
-                  className="space-y-4 md:space-y-8 order-2 lg:order-2"
+                  className={`space-y-4 md:space-y-8 ${isMobile ? 'order-1' : 'order-1 lg:order-2'}`}
                 >
                   <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-3 sm:space-y-0 sm:space-x-4 mb-4 md:mb-6">
                     <div className="w-12 h-12 md:w-16 md:h-16 rounded-xl bg-gradient-to-r from-red-600 to-red-700 flex items-center justify-center shadow-lg shadow-red-500/25">

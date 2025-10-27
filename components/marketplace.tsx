@@ -90,22 +90,6 @@ export function Marketplace() {
         </p>
       </motion.div>
 
-      {/* Marketplace Stats */}
-      <motion.div
-        className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-20 relative z-10"
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3, duration: 0.8 }}
-        viewport={{ once: true }}
-      >
-        {marketplaceStats.map((stat, index) => (
-          <div key={index} className="text-center">
-            <div className="text-3xl md:text-4xl font-black text-red-500 mb-2 font-orbitron">{stat.value}</div>
-            <div className="text-sm text-gray-400 font-orbitron tracking-wider">{stat.label}</div>
-          </div>
-        ))}
-      </motion.div>
-
       {/* Marketplace Features Grid */}
       <motion.div
         className="grid gap-8 md:grid-cols-2 relative z-10"

@@ -8,7 +8,7 @@ import { motion, useScroll, useTransform } from "framer-motion"
 import {
   Terminal, ArrowRight, Zap, Cpu, Globe, Store, ExternalLink,
   Network, Rocket, Eye, Shield, BookOpen, Code, FileText, Github,
-  Calendar, Clock, User, Tag, Menu, X
+  Calendar, Clock, User, Tag, Menu, X, MessageCircle, Twitter, Users
 } from "lucide-react"
 import { TypingEffect } from "@/components/typing-effect"
 import { AnimatedBackground } from "@/components/animated-background"
@@ -312,12 +312,20 @@ export default function Home() {
                   size="lg"
                   variant="outline"
                   className={`border-2 border-red-500 text-red-500 hover:bg-red-500/10 hover:scale-[1.02] active:scale-95 transform transition-all duration-200 w-full sm:w-auto ${isMobile ? 'font-mono text-sm px-8 py-5 min-h-[56px]' : 'font-mono text-sm sm:text-lg px-6 sm:px-8 py-4 sm:py-6 min-h-[48px]'} bg-black/50 backdrop-blur-sm font-orbitron relative z-20 touch-manipulation`}
+                  asChild
                 >
-                  <Terminal className={`mr-2 sm:mr-3 h-4 w-4 ${isMobile ? 'sm:h-5 sm:w-5' : 'sm:h-5 sm:w-5'}`} aria-hidden="true" />
-                  <span aria-label="Installation command" className="text-center">pip install -U swarms</span>
+                  <a
+                    href="https://docs.swarms.world"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Swarms Installation Documentation"
+                    className="flex items-center justify-center"
+                  >
+                    <Terminal className={`mr-2 sm:mr-3 h-4 w-4 ${isMobile ? 'sm:h-5 sm:w-5' : 'sm:h-5 sm:w-5'}`} aria-hidden="true" />
+                    <span aria-label="Installation command" className="text-center">pip install -U swarms</span>
+                  </a>
                 </Button>
               </motion.div>
-
             </div>
           </div>
         </motion.div>
@@ -399,88 +407,63 @@ export default function Home() {
                   key={index}
                   variants={item}
                 >
-                  <CardWrapper className={`h-full transition-all duration-300 ${isMobile ? 'hover:translate-y-[-2px]' : 'hover:translate-y-[-4px] md:hover:translate-y-[-8px] lg:hover:translate-y-[-12px]'} hover:scale-[1.02] group touch-manipulation`}>
-                    <Card className={`border-2 border-red-500/30 bg-black/60 backdrop-blur-md h-full relative overflow-hidden ${isMobile ? 'p-4' : 'p-4 md:p-6 lg:p-8'}`}>
-                      {/* Animated border glow - Disabled on mobile */}
-                      {!isMobile && (
-                        <div className="absolute inset-0 bg-gradient-to-r from-red-500/20 via-transparent to-red-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 md:duration-700" />
-                      )}
-
-                      {/* Floating particles - Completely disabled for mobile performance */}
-                      {!isMobile && !isTablet && (
-                        <div className="absolute inset-0 pointer-events-none">
-                          <motion.div
-                            className="absolute w-1.5 h-1.5 md:w-2 md:h-2 bg-red-500 rounded-full"
-                            animate={{
-                              x: [0, 80, 0],
-                              y: [0, -40, 0],
-                              opacity: [0, 1, 0],
-                            }}
-                            transition={{
-                              duration: 4,
-                              repeat: Number.POSITIVE_INFINITY,
-                              delay: index * 0.5,
-                            }}
-                            style={{ top: "20%", left: "10%" }}
-                          />
-                          <motion.div
-                            className="absolute w-1 h-1 bg-red-400 rounded-full"
-                            animate={{
-                              x: [0, -60, 0],
-                              y: [0, 45, 0],
-                              opacity: [0, 1, 0],
-                            }}
-                            transition={{
-                              duration: 3,
-                              repeat: Number.POSITIVE_INFINITY,
-                              delay: index * 0.7,
-                            }}
-                            style={{ top: "70%", right: "15%" }}
-                          />
+                  <motion.div 
+                    className="h-full group cursor-pointer"
+                    whileHover={{ y: -16, scale: 1.02 }}
+                    transition={{ duration: 0.4, ease: "easeOut" }}
+                  >
+                    <div className="relative h-full">
+                      {/* Glassomorphic Card */}
+                      <div className="relative h-full rounded-3xl overflow-hidden">
+                        {/* Glass effect with gradient border */}
+                        <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-black/40 via-black/20 to-transparent backdrop-blur-2xl border-2 border-red-500/30 group-hover:border-red-500/60 transition-all duration-500" />
+                        
+                        {/* Inner glow effect */}
+                        <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-red-500/5 via-transparent to-red-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                        
+                        {/* Shine effect on hover */}
+                        <div className="absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-red-500/40 to-transparent" />
+                          <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-red-500/40 to-transparent" />
                         </div>
-                      )}
-
-                      <CardHeader className={`relative z-10 text-center ${isMobile ? 'p-0' : 'p-0'}`}>
-                        <div className={`text-3xl md:text-4xl ${isMobile ? 'mb-2 md:mb-3' : 'mb-3 md:mb-4'}`}>{feature.icon}</div>
-                        <CardTitle className={`text-lg md:text-xl text-white font-black ${isMobile ? 'mb-2 md:mb-3' : 'mb-3 md:mb-4'} tracking-wider font-orbitron leading-tight`}>
-                          {feature.title}
-                        </CardTitle>
-                        <CardDescription className={`text-sm md:text-base text-gray-300 leading-relaxed font-sans`}>
-                          {feature.description}
-                        </CardDescription>
-                      </CardHeader>
-
-                      <div className={`p-0 ${isMobile ? 'pt-3 md:pt-4' : 'pt-4 md:pt-6'} relative z-10`}>
-                        <Button
-                          variant="outline"
-                          size="lg"
-                          className={`w-full border-2 border-red-500/50 text-red-400 hover:bg-red-500/20 hover:border-red-500 hover:text-white transition-all duration-300 md:duration-500 font-orbitron tracking-wider ${isMobile ? 'group-hover:scale-105 touch-manipulation min-h-[48px] text-sm' : 'group-hover:scale-105 touch-manipulation min-h-[44px] text-sm md:text-base'}`}
-                          asChild
-                        >
-                          <a
-                            href={feature.link}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center justify-center space-x-2"
-                          >
-                            <span>EXPLORE FEATURE</span>
-                            <ExternalLink className={`h-3 w-3 md:h-5 md:w-5 ${isMobile ? '' : 'group-hover:rotate-12'} transition-transform duration-300`} />
-                          </a>
-                        </Button>
+                        
+                        {/* Content */}
+                        <div className="relative z-10 p-8 md:p-10 flex flex-col items-center text-center space-y-6 h-full">
+                          {/* Icon with glass effect */}
+                          <div className="relative">
+                            <div className="absolute inset-0 rounded-2xl bg-red-500/20 blur-2xl group-hover:blur-3xl transition-all duration-500" />
+                            <div className="relative w-20 h-20 md:w-24 md:h-24 rounded-2xl bg-gradient-to-br from-black/60 to-black/40 backdrop-blur-md border border-red-500/30 flex items-center justify-center group-hover:scale-110 group-hover:border-red-400/50 transition-all duration-500 shadow-2xl shadow-red-500/20">
+                              <span className="text-4xl md:text-5xl">{feature.icon}</span>
+                            </div>
+                          </div>
+                          
+                          {/* Text content */}
+                          <div className="space-y-3 flex-1 flex flex-col justify-center">
+                            <h3 className="text-xl md:text-2xl font-black text-white font-orbitron tracking-wider group-hover:text-red-400 transition-colors duration-300 leading-tight">
+                              {feature.title}
+                            </h3>
+                            
+                            <p className="text-gray-300 leading-relaxed font-sans text-sm md:text-base group-hover:text-gray-200 transition-colors duration-300">
+                              {feature.description}
+                            </p>
+                          </div>
+                          
+                          {/* Button with glass effect */}
+                          <div className="w-full">
+                            <a
+                              href={feature.link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center justify-center space-x-2 w-full px-6 py-3 md:py-4 rounded-xl bg-gradient-to-r from-black/60 to-black/40 backdrop-blur-sm border border-red-500/30 font-orbitron font-bold text-red-400 tracking-wider hover:from-red-500/20 hover:to-red-600/20 hover:border-red-400/50 hover:text-red-300 hover:scale-105 transition-all duration-300 touch-manipulation text-sm"
+                            >
+                              <span>LEARN MORE</span>
+                              <ExternalLink className="h-4 w-4" />
+                            </a>
+                          </div>
+                        </div>
                       </div>
-
-                      {/* Animated progress bar - Simplified for mobile */}
-                      <div className="absolute bottom-0 left-0 w-full h-0.5 md:h-1 bg-red-500/20">
-                        <motion.div
-                          className="h-full bg-gradient-to-r from-red-500 to-red-600"
-                          initial={{ width: "0%" }}
-                          whileInView={{ width: "100%" }}
-                          transition={{ duration: 1.5, delay: index * 0.1 }}
-                          viewport={{ once: true }}
-                        />
-                      </div>
-                    </Card>
-                  </CardWrapper>
+                    </div>
+                  </motion.div>
                 </motion.div>
               ))}
             </motion.div>
@@ -505,7 +488,7 @@ export default function Home() {
                 rel="noopener noreferrer"
                 className="flex items-center justify-center space-x-2"
               >
-                <span>GET STARTED ON GITHUB</span>
+                <span>GET STARTED</span>
                 <ArrowRight className={`h-4 w-4 ${isMobile ? 'md:h-5 md:w-5' : 'md:h-5 md:w-5'}`} />
               </a>
             </Button>
@@ -1166,21 +1149,6 @@ async fn main() -> Result<()> {
                         <span className="text-xs font-orbitron text-red-400 tracking-wider">LIVE</span>
                       </div>
                       
-                      <div className="absolute bottom-4 left-4 right-4">
-                        <div className="bg-black/80 backdrop-blur-sm rounded-lg p-4 border border-red-500/20">
-                          <h4 className="text-white font-bold text-lg font-orbitron mb-2">Marketplace Stats</h4>
-                          <div className="grid grid-cols-2 gap-4 text-sm">
-                            <div>
-                              <div className="text-red-400 font-semibold">500+</div>
-                              <div className="text-gray-400">Agents Available</div>
-                            </div>
-                            <div>
-                              <div className="text-red-400 font-semibold">10k+</div>
-                              <div className="text-gray-400">Downloads</div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
                     </div>
                   </div>
                 </motion.div>
@@ -1549,6 +1517,257 @@ async fn main() -> Result<()> {
                 className="relative"
               >
                 <NewsletterSignupForm />
+              </motion.div>
+            </motion.div>
+          </div>
+        </div>
+
+        {/* Community Section */}
+        <div className="relative min-h-screen flex items-center justify-center bg-black border-t-2 border-red-500/20 overflow-hidden">
+          {/* Cyberpunk grid background */}
+          <div className="absolute inset-0 bg-[linear-gradient(rgba(239,68,68,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(239,68,68,0.05)_1px,transparent_1px)] bg-[size:50px_50px]" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black via-red-950/10 to-black" />
+          
+          {/* Animated background elements */}
+          <div className="absolute inset-0 pointer-events-none overflow-hidden">
+            <motion.div
+              className="absolute w-[600px] h-[600px] rounded-full bg-red-500/10 blur-[120px]"
+              animate={{
+                scale: [1, 1.2, 1],
+                opacity: [0.3, 0.5, 0.3],
+              }}
+              transition={{
+                duration: 8,
+                repeat: Number.POSITIVE_INFINITY,
+                repeatType: "reverse",
+              }}
+              style={{ top: "20%", left: "10%" }}
+            />
+            <motion.div
+              className="absolute w-[400px] h-[400px] rounded-full bg-red-600/10 blur-[100px]"
+              animate={{
+                scale: [1, 1.3, 1],
+                opacity: [0.2, 0.4, 0.2],
+              }}
+              transition={{
+                duration: 10,
+                repeat: Number.POSITIVE_INFINITY,
+                repeatType: "reverse",
+                delay: 2,
+              }}
+              style={{ bottom: "20%", right: "10%" }}
+            />
+          </div>
+
+          {!isMobile && !isTablet && <AnimatedBackground particleColor="rgba(239, 68, 68, 0.3)" className="opacity-20" />}
+
+          <div className="container relative z-10 px-4 sm:px-6 py-20">
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+              viewport={{ once: true }}
+              className="text-center space-y-6 mb-16"
+            >
+              <h2 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tighter text-white font-orbitron">
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-red-400">
+                  Join The Community
+                </span>
+              </h2>
+              <div className="w-32 h-1 bg-gradient-to-r from-red-500 to-red-600 mx-auto" />
+              <p className="text-lg md:text-xl lg:text-2xl text-gray-300 max-w-3xl mx-auto font-light font-sans leading-relaxed">
+                Connect with agent engineers, discover the best multi-agent papers, and stay updated on the latest from Swarms.
+              </p>
+            </motion.div>
+
+            <motion.div
+              className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-10 max-w-7xl mx-auto"
+              variants={container}
+              initial="hidden"
+              whileInView="show"
+              viewport={{ once: true, margin: "-50px" }}
+            >
+              {/* Discord */}
+              <motion.div variants={item}>
+                <motion.div 
+                  className="h-full group cursor-pointer"
+                  whileHover={{ y: -16, scale: 1.02 }}
+                  transition={{ duration: 0.4, ease: "easeOut" }}
+                >
+                  <div className="relative h-full">
+                    {/* Glassomorphic Card */}
+                    <div className="relative h-full rounded-3xl overflow-hidden">
+                      {/* Glass effect with gradient border */}
+                      <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-black/40 via-black/20 to-transparent backdrop-blur-2xl border-2 border-red-500/30 group-hover:border-red-500/60 transition-all duration-500" />
+                      
+                      {/* Inner glow effect */}
+                      <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-red-500/5 via-transparent to-red-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                      
+                      {/* Shine effect on hover */}
+                      <div className="absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-red-500/40 to-transparent" />
+                        <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-red-500/40 to-transparent" />
+                      </div>
+                      
+                      {/* Content */}
+                      <div className="relative z-10 p-10 flex flex-col items-center text-center space-y-6 h-full">
+                        {/* Icon with glass effect */}
+                        <div className="relative">
+                          <div className="absolute inset-0 rounded-2xl bg-red-500/20 blur-2xl group-hover:blur-3xl transition-all duration-500" />
+                          <div className="relative w-24 h-24 rounded-2xl bg-gradient-to-br from-black/60 to-black/40 backdrop-blur-md border border-red-500/30 flex items-center justify-center group-hover:scale-110 group-hover:border-red-400/50 transition-all duration-500 shadow-2xl shadow-red-500/20">
+                            <MessageCircle className="h-12 w-12 text-red-400 group-hover:text-red-300 transition-colors duration-300" strokeWidth={1.5} />
+                          </div>
+                        </div>
+                        
+                        {/* Text content */}
+                        <div className="space-y-4 flex-1 flex flex-col justify-center">
+                          <h3 className="text-3xl font-black text-white font-orbitron tracking-wider group-hover:text-red-400 transition-colors duration-300">
+                            Discord
+                          </h3>
+                          
+                          <p className="text-gray-300 leading-relaxed font-sans text-base group-hover:text-gray-200 transition-colors duration-300">
+                            Join our vibrant Discord community to chat with developers, get help, and collaborate on projects
+                          </p>
+                        </div>
+                        
+                        {/* Button with glass effect */}
+                        <div className="w-full">
+                          <a
+                            href="https://discord.gg/EamjgSaEQf"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center justify-center space-x-2 w-full px-6 py-4 rounded-xl bg-gradient-to-r from-black/60 to-black/40 backdrop-blur-sm border border-red-500/30 font-orbitron font-bold text-red-400 tracking-wider hover:from-red-500/20 hover:to-red-600/20 hover:border-red-400/50 hover:text-red-300 hover:scale-105 transition-all duration-300 touch-manipulation"
+                          >
+                            <span>JOIN DISCORD</span>
+                            <ExternalLink className="h-4 w-4" />
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              </motion.div>
+
+              {/* Twitter */}
+              <motion.div variants={item}>
+                <motion.div 
+                  className="h-full group cursor-pointer"
+                  whileHover={{ y: -16, scale: 1.02 }}
+                  transition={{ duration: 0.4, ease: "easeOut" }}
+                >
+                  <div className="relative h-full">
+                    {/* Glassomorphic Card */}
+                    <div className="relative h-full rounded-3xl overflow-hidden">
+                      {/* Glass effect with gradient border */}
+                      <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-black/40 via-black/20 to-transparent backdrop-blur-2xl border-2 border-red-500/30 group-hover:border-red-500/60 transition-all duration-500" />
+                      
+                      {/* Inner glow effect */}
+                      <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-red-500/5 via-transparent to-red-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                      
+                      {/* Shine effect on hover */}
+                      <div className="absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-red-500/40 to-transparent" />
+                        <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-red-500/40 to-transparent" />
+                      </div>
+                      
+                      {/* Content */}
+                      <div className="relative z-10 p-10 flex flex-col items-center text-center space-y-6 h-full">
+                        {/* Icon with glass effect */}
+                        <div className="relative">
+                          <div className="absolute inset-0 rounded-2xl bg-red-500/20 blur-2xl group-hover:blur-3xl transition-all duration-500" />
+                          <div className="relative w-24 h-24 rounded-2xl bg-gradient-to-br from-black/60 to-black/40 backdrop-blur-md border border-red-500/30 flex items-center justify-center group-hover:scale-110 group-hover:border-red-400/50 transition-all duration-500 shadow-2xl shadow-red-500/20">
+                            <Twitter className="h-12 w-12 text-red-400 group-hover:text-red-300 transition-colors duration-300" strokeWidth={1.5} />
+                          </div>
+                        </div>
+                        
+                        {/* Text content */}
+                        <div className="space-y-4 flex-1 flex flex-col justify-center">
+                          <h3 className="text-3xl font-black text-white font-orbitron tracking-wider group-hover:text-red-400 transition-colors duration-300">
+                            Twitter
+                          </h3>
+                          
+                          <p className="text-gray-300 leading-relaxed font-sans text-base group-hover:text-gray-200 transition-colors duration-300">
+                            Follow us on Twitter for the latest updates, announcements, and insights from the Swarms team
+                          </p>
+                        </div>
+                        
+                        {/* Button with glass effect */}
+                        <div className="w-full">
+                          <a
+                            href="https://twitter.com/swarms_corp"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center justify-center space-x-2 w-full px-6 py-4 rounded-xl bg-gradient-to-r from-black/60 to-black/40 backdrop-blur-sm border border-red-500/30 font-orbitron font-bold text-red-400 tracking-wider hover:from-red-500/20 hover:to-red-600/20 hover:border-red-400/50 hover:text-red-300 hover:scale-105 transition-all duration-300 touch-manipulation"
+                          >
+                            <span>FOLLOW US</span>
+                            <ExternalLink className="h-4 w-4" />
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              </motion.div>
+
+              {/* Events */}
+              <motion.div variants={item}>
+                <motion.div 
+                  className="h-full group cursor-pointer"
+                  whileHover={{ y: -16, scale: 1.02 }}
+                  transition={{ duration: 0.4, ease: "easeOut" }}
+                >
+                  <div className="relative h-full">
+                    {/* Glassomorphic Card */}
+                    <div className="relative h-full rounded-3xl overflow-hidden">
+                      {/* Glass effect with gradient border */}
+                      <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-black/40 via-black/20 to-transparent backdrop-blur-2xl border-2 border-red-500/30 group-hover:border-red-500/60 transition-all duration-500" />
+                      
+                      {/* Inner glow effect */}
+                      <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-red-500/5 via-transparent to-red-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                      
+                      {/* Shine effect on hover */}
+                      <div className="absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-red-500/40 to-transparent" />
+                        <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-red-500/40 to-transparent" />
+                      </div>
+                      
+                      {/* Content */}
+                      <div className="relative z-10 p-10 flex flex-col items-center text-center space-y-6 h-full">
+                        {/* Icon with glass effect */}
+                        <div className="relative">
+                          <div className="absolute inset-0 rounded-2xl bg-red-500/20 blur-2xl group-hover:blur-3xl transition-all duration-500" />
+                          <div className="relative w-24 h-24 rounded-2xl bg-gradient-to-br from-black/60 to-black/40 backdrop-blur-md border border-red-500/30 flex items-center justify-center group-hover:scale-110 group-hover:border-red-400/50 transition-all duration-500 shadow-2xl shadow-red-500/20">
+                            <Calendar className="h-12 w-12 text-red-400 group-hover:text-red-300 transition-colors duration-300" strokeWidth={1.5} />
+                          </div>
+                        </div>
+                        
+                        {/* Text content */}
+                        <div className="space-y-4 flex-1 flex flex-col justify-center">
+                          <h3 className="text-3xl font-black text-white font-orbitron tracking-wider group-hover:text-red-400 transition-colors duration-300">
+                            Events
+                          </h3>
+                          
+                          <p className="text-gray-300 leading-relaxed font-sans text-base group-hover:text-gray-200 transition-colors duration-300">
+                            Discover upcoming events, webinars, and meetups to learn more about Swarms and multi-agent systems
+                          </p>
+                        </div>
+                        
+                        {/* Button with glass effect */}
+                        <div className="w-full">
+                          <a
+                            href="https://lu.ma/swarms"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center justify-center space-x-2 w-full px-6 py-4 rounded-xl bg-gradient-to-r from-black/60 to-black/40 backdrop-blur-sm border border-red-500/30 font-orbitron font-bold text-red-400 tracking-wider hover:from-red-500/20 hover:to-red-600/20 hover:border-red-400/50 hover:text-red-300 hover:scale-105 transition-all duration-300 touch-manipulation"
+                          >
+                            <span>VIEW EVENTS</span>
+                            <ExternalLink className="h-4 w-4" />
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
               </motion.div>
             </motion.div>
           </div>

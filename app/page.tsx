@@ -1638,7 +1638,7 @@ async fn main() -> Result<()> {
                             rel="noopener noreferrer"
                             className="flex items-center justify-center space-x-2 w-full px-6 py-4 rounded-xl bg-gradient-to-r from-black/60 to-black/40 backdrop-blur-sm border border-red-500/30 font-orbitron font-bold text-red-400 tracking-wider hover:from-red-500/20 hover:to-red-600/20 hover:border-red-400/50 hover:text-red-300 hover:scale-105 transition-all duration-300 touch-manipulation"
                           >
-                            <span>JOIN DISCORD</span>
+                            <span>JOIN US</span>
                             <ExternalLink className="h-4 w-4" />
                           </a>
                         </div>
@@ -1737,30 +1737,30 @@ async fn main() -> Result<()> {
                         <div className="relative">
                           <div className="absolute inset-0 rounded-2xl bg-red-500/20 blur-2xl group-hover:blur-3xl transition-all duration-500" />
                           <div className="relative w-24 h-24 rounded-2xl bg-gradient-to-br from-black/60 to-black/40 backdrop-blur-md border border-red-500/30 flex items-center justify-center group-hover:scale-110 group-hover:border-red-400/50 transition-all duration-500 shadow-2xl shadow-red-500/20">
-                            <Calendar className="h-12 w-12 text-red-400 group-hover:text-red-300 transition-colors duration-300" strokeWidth={1.5} />
+                            <Users className="h-12 w-12 text-red-400 group-hover:text-red-300 transition-colors duration-300" strokeWidth={1.5} />
                           </div>
                         </div>
                         
                         {/* Text content */}
                         <div className="space-y-4 flex-1 flex flex-col justify-center">
                           <h3 className="text-3xl font-black text-white font-orbitron tracking-wider group-hover:text-red-400 transition-colors duration-300">
-                            Events
+                            Join our X Community
                           </h3>
                           
                           <p className="text-gray-300 leading-relaxed font-sans text-base group-hover:text-gray-200 transition-colors duration-300">
-                            Discover upcoming events, webinars, and meetups to learn more about Swarms and multi-agent systems
+                            Connect with fellow developers, share insights, and stay updated on the latest in multi-agent systems
                           </p>
                         </div>
                         
                         {/* Button with glass effect */}
                         <div className="w-full">
                           <a
-                            href="https://lu.ma/swarms"
+                            href="https://x.com/i/communities/1875452887414804745"
                             target="_blank"
                             rel="noopener noreferrer"
                             className="flex items-center justify-center space-x-2 w-full px-6 py-4 rounded-xl bg-gradient-to-r from-black/60 to-black/40 backdrop-blur-sm border border-red-500/30 font-orbitron font-bold text-red-400 tracking-wider hover:from-red-500/20 hover:to-red-600/20 hover:border-red-400/50 hover:text-red-300 hover:scale-105 transition-all duration-300 touch-manipulation"
                           >
-                            <span>VIEW EVENTS</span>
+                            <span>JOIN US</span>
                             <ExternalLink className="h-4 w-4" />
                           </a>
                         </div>

@@ -499,10 +499,9 @@ export default function Home() {
         <div className="bg-black relative">
 
           {/* Installation Section - Mobile Optimized */}
-          <div className={`relative ${isMobile ? 'min-h-screen' : 'min-h-screen'} flex items-center ${isMobile ? 'py-8 md:py-12' : 'py-12 md:py-20'} bg-gradient-to-b from-black to-red-950/10`}>
+          <div className={`relative ${isMobile ? 'min-h-screen' : 'min-h-screen'} flex items-center ${isMobile ? 'py-8 md:py-12' : 'py-12 md:py-20'} bg-black`}>
             {/* Background - Optimized for mobile */}
             <div className={`absolute inset-0 bg-[linear-gradient(rgba(239,68,68,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(239,68,68,0.03)_1px,transparent_1px)] ${isMobile ? 'bg-[size:20px_20px]' : 'bg-[size:50px_50px]'}`} />
-            <div className="absolute inset-0 bg-gradient-to-r from-red-950/20 via-transparent to-transparent" />
 
             <div className={`container ${isMobile ? 'px-4' : 'px-4 sm:px-6'} relative z-10 w-full`}>
               <motion.div
@@ -727,21 +726,20 @@ export default function Home() {
             >
               <h2 className="text-4xl font-black tracking-tighter sm:text-5xl md:text-6xl text-white font-orbitron">
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-red-400">
-                  Code Examples
+                  Products
                 </span>
               </h2>
               <div className="w-32 h-1 bg-gradient-to-r from-red-500 to-red-600 mx-auto" />
               <p className="text-xl text-gray-300 max-w-3xl mx-auto font-light font-sans">
-                See Swarms in action with real-world examples and production-ready code snippets
+                We provide a range of frameworks, interfaces, and cloud services to help you build your own multi-agent systems.
               </p>
             </motion.div>
           </div>
 
           {/* Product 1: Swarms Python - Mobile Optimized */}
-          <div className="relative min-h-screen flex items-center py-12 md:py-20">
+          <div className="relative min-h-screen flex items-center py-12 md:py-20 bg-black">
             {/* Background - Mobile optimized */}
             <div className="absolute inset-0 bg-[linear-gradient(rgba(239,68,68,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(239,68,68,0.03)_1px,transparent_1px)] bg-[size:30px_30px] md:bg-[size:50px_50px]" />
-            <div className="absolute inset-0 bg-gradient-to-r from-red-950/20 via-transparent to-transparent" />
 
             <div className={`container ${isMobile ? 'px-4' : 'px-4 sm:px-6'} relative z-10 w-full`}>
               <div className={`grid ${isMobile ? 'grid-cols-1' : 'lg:grid-cols-2'} gap-8 md:gap-12 items-center`}>
@@ -862,10 +860,9 @@ print(final_post)`}
           </div>
 
           {/* Product 2: Swarms Rust - Mobile Optimized */}
-          <div className="relative min-h-screen flex items-center py-12 md:py-20 bg-gradient-to-b from-black to-red-950/10">
+          <div className="relative min-h-screen flex items-center py-12 md:py-20 bg-black">
             {/* Background - Mobile optimized */}
             <div className="absolute inset-0 bg-[linear-gradient(rgba(239,68,68,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(239,68,68,0.03)_1px,transparent_1px)] bg-[size:30px_30px] md:bg-[size:40px_40px]" />
-            <div className="absolute inset-0 bg-gradient-to-l from-red-950/20 via-transparent to-transparent" />
 
             <div className={`container ${isMobile ? 'px-4' : 'px-4 sm:px-6'} relative z-10 w-full`}>
               <div className={`grid ${isMobile ? 'grid-cols-1' : 'lg:grid-cols-2'} gap-8 md:gap-12 items-center`}>
@@ -997,10 +994,9 @@ async fn main() -> Result<()> {
           </div>
 
           {/* Product 3: Swarms API */}
-          <div className="relative min-h-screen flex items-center py-20">
+          <div className="relative min-h-screen flex items-center py-20 bg-black">
             {/* Background */}
             <div className="absolute inset-0 bg-[linear-gradient(rgba(239,68,68,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(239,68,68,0.05)_1px,transparent_1px)] bg-[size:50px_50px]" />
-            <div className="absolute inset-0 bg-gradient-to-r from-red-950/20 via-transparent to-transparent" />
             
             <div className="container px-4 sm:px-6 relative z-10">
               <div className="grid lg:grid-cols-2 gap-12 items-center">
@@ -1118,10 +1114,9 @@ async fn main() -> Result<()> {
           </div>
 
           {/* Product 4: Swarms Marketplace */}
-          <div className="relative min-h-screen flex items-center py-20 bg-gradient-to-b from-black to-red-950/10">
+          <div className="relative min-h-screen flex items-center py-20 bg-black">
             {/* Background */}
             <div className="absolute inset-0 bg-[linear-gradient(rgba(239,68,68,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(239,68,68,0.03)_1px,transparent_1px)] bg-[size:40px_40px]" />
-            <div className="absolute inset-0 bg-gradient-to-l from-red-950/20 via-transparent to-transparent" />
             
             <div className="container px-4 sm:px-6 relative z-10">
               <div className="grid lg:grid-cols-2 gap-12 items-center">
@@ -1372,29 +1367,6 @@ async fn main() -> Result<()> {
           {/* Cyberpunk grid background - Mobile optimized */}
           <div className="absolute inset-0 bg-[linear-gradient(rgba(239,68,68,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(239,68,68,0.03)_1px,transparent_1px)] bg-[size:25px_25px] md:bg-[size:30px_30px]" />
 
-          {/* Animated background elements - Simplified for mobile */}
-          <div className="absolute inset-0 pointer-events-none overflow-hidden">
-            <motion.div
-              className="absolute w-[300px] h-[300px] md:w-[600px] md:h-[600px] lg:w-[800px] lg:h-[800px] rounded-full bg-red-500/5 blur-[100px] md:blur-[150px]"
-              animate={{
-                scale: [1, 1.1, 1],
-                opacity: [0.2, 0.4, 0.2],
-              }}
-              transition={{
-                duration: 6,
-                repeat: Number.POSITIVE_INFINITY,
-                repeatType: "reverse",
-              }}
-              style={{ top: "50%", left: "50%", transform: "translate(-50%, -50%)" }}
-            />
-            {!isMobile && (
-              <>
-                <div className="absolute top-1/4 left-1/4 w-1 h-12 md:h-16 bg-gradient-to-b from-red-500 to-transparent animate-pulse" />
-                <div className="absolute bottom-1/4 right-1/4 w-1 h-8 md:h-12 bg-gradient-to-b from-red-500 to-transparent animate-pulse" style={{ animationDelay: "1s" }} />
-              </>
-            )}
-          </div>
-
           <motion.div
             className="relative overflow-hidden rounded-xl md:rounded-2xl border-2 border-red-500/20 bg-black/50 backdrop-blur-sm px-4 md:px-8 py-8 md:py-12 lg:py-16"
             initial={{ opacity: 0, y: 30 }}
@@ -1479,11 +1451,348 @@ async fn main() -> Result<()> {
           </motion.div>
         </div>
 
+        {/* API Pricing Section */}
+        <div className="relative overflow-hidden bg-black border-t-2 border-red-500/20">
+          <div className="absolute inset-0 bg-[linear-gradient(rgba(239,68,68,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(239,68,68,0.05)_1px,transparent_1px)] bg-[size:50px_50px] opacity-20" />
+          
+          <div className="container relative px-4 sm:px-6 py-24 md:py-32">
+            <motion.div
+              className="max-w-7xl mx-auto"
+              initial={{ opacity: 0, y: 50 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+              viewport={{ once: true }}
+            >
+              {/* Section Header */}
+              <motion.div
+                className="text-center mb-12 md:mb-16"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6 }}
+                viewport={{ once: true }}
+              >
+                <h2 className="text-4xl md:text-6xl font-black text-white font-orbitron tracking-tighter mb-6">
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 via-red-400 to-red-600">
+                    API Pricing
+                  </span>
+                </h2>
+                <p className="text-gray-300 text-lg md:text-xl max-w-3xl mx-auto font-sans mb-8">
+                  Flexible subscription plans that scale with your needs. From free to enterprise.
+                </p>
+                
+                {/* Billing Toggle */}
+                <div className="flex justify-center gap-4 mb-8">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-red-500/30 text-red-400 hover:bg-red-500/10 hover:border-red-500/50 font-orbitron"
+                  >
+                    Monthly
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-red-500/30 text-gray-400 hover:bg-red-500/10 hover:border-red-500/50 font-orbitron"
+                  >
+                    Annually
+                    <span className="ml-2 text-xs text-green-400">-15%</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-red-500/30 text-gray-400 hover:bg-red-500/10 hover:border-red-500/50 font-orbitron"
+                  >
+                    Lifetime
+                  </Button>
+                </div>
+              </motion.div>
+
+              {/* Pricing Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
+                {/* Free Plan */}
+                <motion.div
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.1 }}
+                  viewport={{ once: true }}
+                >
+                  <Card className="h-full border-2 border-red-500/20 bg-black/50 backdrop-blur-sm hover:border-red-500/40 transition-all duration-300">
+                    <CardHeader className="text-center pb-4">
+                      <CardTitle className="text-2xl font-black text-white font-orbitron mb-2">Free</CardTitle>
+                      <CardDescription className="text-gray-400 text-sm mb-4">
+                        Get started with Swarms Cloud. No fees pay only for what you use.
+                      </CardDescription>
+                      <div className="mt-4">
+                        <span className="text-4xl font-black text-white font-orbitron">$0</span>
+                        <span className="text-gray-400 text-lg ml-2">/month</span>
+                      </div>
+                    </CardHeader>
+                    <div className="px-6 pb-6">
+                      <Button
+                        className="w-full bg-red-600 hover:bg-red-700 font-orbitron"
+                        asChild
+                      >
+                        <a href="https://swarms.world/platform/account" target="_blank" rel="noopener noreferrer">
+                          Get Started
+                        </a>
+                      </Button>
+                      <div className="mt-6 space-y-3 text-sm text-gray-300">
+                        <div className="flex items-center">
+                          <span className="text-red-400 mr-2">✓</span>
+                          <span>Sign-up Bonus</span>
+                        </div>
+                        <div className="flex items-center">
+                          <span className="text-red-400 mr-2">✓</span>
+                          <span>Basic Access</span>
+                        </div>
+                        <div className="flex items-center">
+                          <span className="text-red-400 mr-2">✓</span>
+                          <span>Pay-Per-Use Pricing</span>
+                        </div>
+                        <div className="flex items-center">
+                          <span className="text-red-400 mr-2">✓</span>
+                          <span>Community Support</span>
+                        </div>
+                        <div className="flex items-center">
+                          <span className="text-red-400 mr-2">✓</span>
+                          <span>Standard Processing Speed</span>
+                        </div>
+                        <div className="flex items-center">
+                          <span className="text-red-400 mr-2">✓</span>
+                          <span>Access to the Marketplace</span>
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                </motion.div>
+
+                {/* Pro Plan */}
+                <motion.div
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.2 }}
+                  viewport={{ once: true }}
+                  className="relative pt-8 md:pt-10"
+                >
+                  <div className="absolute top-0 left-1/2 transform -translate-x-1/2 z-20">
+                    <span className="bg-red-600 text-white text-xs font-bold px-4 py-1.5 rounded-full font-orbitron shadow-lg shadow-red-600/50 whitespace-nowrap">
+                      Most Popular
+                    </span>
+                  </div>
+                  <Card className="h-full border-2 border-red-500 bg-black/50 backdrop-blur-sm hover:border-red-500 hover:bg-black/60 transition-all duration-300 scale-105 md:scale-110">
+                    <CardHeader className="text-center pb-4">
+                      <CardTitle className="text-2xl font-black text-white font-orbitron mb-2">Pro</CardTitle>
+                      <CardDescription className="text-gray-300 text-sm mb-4">
+                        Perfect for professionals who need more power and features.
+                      </CardDescription>
+                      <div className="mt-4">
+                        <span className="text-4xl font-black text-white font-orbitron">$19.99</span>
+                        <span className="text-gray-400 text-lg ml-2">/month</span>
+                      </div>
+                    </CardHeader>
+                    <div className="px-6 pb-6">
+                      <Button
+                        className="w-full bg-red-600 hover:bg-red-700 font-orbitron"
+                        asChild
+                      >
+                        <a href="https://swarms.world/platform/account" target="_blank" rel="noopener noreferrer">
+                          Get Started
+                        </a>
+                      </Button>
+                      <div className="mt-6 space-y-3 text-sm text-gray-300">
+                        <div className="text-white font-semibold mb-2">Everything in Free, plus</div>
+                        <div className="flex items-center">
+                          <span className="text-red-400 mr-2">✓</span>
+                          <span>Global Availability</span>
+                        </div>
+                        <div className="flex items-center">
+                          <span className="text-red-400 mr-2">✓</span>
+                          <span>Exclusive Multi-Agent Architectures</span>
+                        </div>
+                        <div className="flex items-center">
+                          <span className="text-red-400 mr-2">✓</span>
+                          <span>Accelerated Hardware</span>
+                        </div>
+                        <div className="flex items-center">
+                          <span className="text-red-400 mr-2">✓</span>
+                          <span>API Telemetry Platform</span>
+                        </div>
+                        <div className="flex items-center">
+                          <span className="text-red-400 mr-2">✓</span>
+                          <span>Priority Support</span>
+                        </div>
+                        <div className="flex items-center">
+                          <span className="text-red-400 mr-2">✓</span>
+                          <span>Pro Models</span>
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                </motion.div>
+
+                {/* Premium Plan */}
+                <motion.div
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.3 }}
+                  viewport={{ once: true }}
+                >
+                  <Card className="h-full border-2 border-red-500/20 bg-black/50 backdrop-blur-sm hover:border-red-500/40 transition-all duration-300">
+                    <CardHeader className="text-center pb-4">
+                      <CardTitle className="text-2xl font-black text-white font-orbitron mb-2">Premium</CardTitle>
+                      <CardDescription className="text-gray-400 text-sm mb-4">
+                        Subscribe annually and save 15%, with a reduced rate of $1,020/year.
+                      </CardDescription>
+                      <div className="mt-4">
+                        <span className="text-4xl font-black text-white font-orbitron">$100</span>
+                        <span className="text-gray-400 text-lg ml-2">/month</span>
+                      </div>
+                    </CardHeader>
+                    <div className="px-6 pb-6">
+                      <Button
+                        className="w-full bg-red-600 hover:bg-red-700 font-orbitron"
+                        asChild
+                      >
+                        <a href="https://swarms.world/platform/account" target="_blank" rel="noopener noreferrer">
+                          Get Started
+                        </a>
+                      </Button>
+                      <div className="mt-6 space-y-3 text-sm text-gray-300">
+                        <div className="text-white font-semibold mb-2">Everything in Pro, plus</div>
+                        <div className="flex items-center">
+                          <span className="text-red-400 mr-2">✓</span>
+                          <span>Premium Models</span>
+                        </div>
+                        <div className="flex items-center">
+                          <span className="text-red-400 mr-2">✓</span>
+                          <span>More Agents Per Request</span>
+                        </div>
+                        <div className="flex items-center">
+                          <span className="text-red-400 mr-2">✓</span>
+                          <span>More Completions</span>
+                        </div>
+                        <div className="flex items-center">
+                          <span className="text-red-400 mr-2">✓</span>
+                          <span>Increased Rate Limits</span>
+                        </div>
+                        <div className="flex items-center">
+                          <span className="text-red-400 mr-2">✓</span>
+                          <span>SOC 2 Compliance</span>
+                        </div>
+                        <div className="flex items-center">
+                          <span className="text-red-400 mr-2">✓</span>
+                          <span>Priority Support</span>
+                        </div>
+                        <div className="flex items-center">
+                          <span className="text-red-400 mr-2">✓</span>
+                          <span>Enhanced Security Features</span>
+                        </div>
+                        <div className="flex items-center">
+                          <span className="text-red-400 mr-2">✓</span>
+                          <span>Fetch Agents from the Marketplace</span>
+                        </div>
+                        <div className="flex items-center">
+                          <span className="text-red-400 mr-2">✓</span>
+                          <span>View Previous Agent Configurations</span>
+                        </div>
+                        <div className="flex items-center">
+                          <span className="text-red-400 mr-2">✓</span>
+                          <span>Everything in Pro</span>
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                </motion.div>
+
+                {/* Enterprise Plan */}
+                <motion.div
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.4 }}
+                  viewport={{ once: true }}
+                >
+                  <Card className="h-full border-2 border-red-500/20 bg-black/50 backdrop-blur-sm hover:border-red-500/40 transition-all duration-300">
+                    <CardHeader className="text-center pb-4">
+                      <CardTitle className="text-2xl font-black text-white font-orbitron mb-2">Enterprise</CardTitle>
+                      <CardDescription className="text-gray-400 text-sm mb-4">
+                        Critical support, compliance, and control for large-scale enterprises.
+                      </CardDescription>
+
+                    </CardHeader>
+                    <div className="px-6 pb-6">
+                      <Button
+                        variant="outline"
+                        className="w-full border-red-500/50 text-red-400 hover:bg-red-500/10 hover:border-red-500 font-orbitron"
+                        asChild
+                      >
+                        <a href="https://cal.com/swarms/swarms-strategy-session" target="_blank" rel="noopener noreferrer">
+                          Contact Sales
+                        </a>
+                      </Button>
+                      <div className="mt-6 space-y-3 text-sm text-gray-300">
+                        <div className="text-white font-semibold mb-2">Everything in Premium, plus</div>
+                        <div className="flex items-center">
+                          <span className="text-red-400 mr-2">✓</span>
+                          <span>Dedicated 24/7 Support</span>
+                        </div>
+                        <div className="flex items-center">
+                          <span className="text-red-400 mr-2">✓</span>
+                          <span>Custom Solutions Engineering</span>
+                        </div>
+                        <div className="flex items-center">
+                          <span className="text-red-400 mr-2">✓</span>
+                          <span>Onsite Training and Onboarding</span>
+                        </div>
+                        <div className="flex items-center">
+                          <span className="text-red-400 mr-2">✓</span>
+                          <span>Priority Support</span>
+                        </div>
+                        <div className="flex items-center">
+                          <span className="text-red-400 mr-2">✓</span>
+                          <span>Custom Agent Development</span>
+                        </div>
+                        <div className="flex items-center">
+                          <span className="text-red-400 mr-2">✓</span>
+                          <span>No Rate Limits</span>
+                        </div>
+                        <div className="flex items-center">
+                          <span className="text-red-400 mr-2">✓</span>
+                          <span>Access to Experimental Features</span>
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                </motion.div>
+              </div>
+
+              {/* Footer Note */}
+              <motion.div
+                className="text-center mt-12"
+                initial={{ opacity: 0 }}
+                whileInView={{ opacity: 1 }}
+                transition={{ duration: 0.6, delay: 0.5 }}
+                viewport={{ once: true }}
+              >
+                <p className="text-gray-400 text-sm md:text-base">
+                  All plans include 24/7 support and 99.9% uptime guarantee
+                </p>
+                <Button
+                  variant="link"
+                  className="text-red-400 hover:text-red-300 mt-4 font-orbitron"
+                  asChild
+                >
+                  <a href="/pricing">
+                    Learn more
+                  </a>
+                </Button>
+              </motion.div>
+            </motion.div>
+          </div>
+        </div>
+
         {/* Newsletter Signup Section */}
         <div className="relative overflow-hidden bg-black border-t-2 border-red-500/20">
           <div className="absolute inset-0 bg-[linear-gradient(rgba(239,68,68,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(239,68,68,0.1)_1px,transparent_1px)] bg-[size:50px_50px] opacity-20" />
-          <div className="absolute inset-0 bg-gradient-to-b from-black via-red-950/20 to-black" />
-          <AnimatedBackground particleColor="rgba(239, 68, 68, 0.3)" className="opacity-30" />
           
           <div className="container relative px-4 sm:px-6 py-24 md:py-32">
             <motion.div
@@ -1526,40 +1835,6 @@ async fn main() -> Result<()> {
         <div className="relative min-h-screen flex items-center justify-center bg-black border-t-2 border-red-500/20 overflow-hidden">
           {/* Cyberpunk grid background */}
           <div className="absolute inset-0 bg-[linear-gradient(rgba(239,68,68,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(239,68,68,0.05)_1px,transparent_1px)] bg-[size:50px_50px]" />
-          <div className="absolute inset-0 bg-gradient-to-b from-black via-red-950/10 to-black" />
-          
-          {/* Animated background elements */}
-          <div className="absolute inset-0 pointer-events-none overflow-hidden">
-            <motion.div
-              className="absolute w-[600px] h-[600px] rounded-full bg-red-500/10 blur-[120px]"
-              animate={{
-                scale: [1, 1.2, 1],
-                opacity: [0.3, 0.5, 0.3],
-              }}
-              transition={{
-                duration: 8,
-                repeat: Number.POSITIVE_INFINITY,
-                repeatType: "reverse",
-              }}
-              style={{ top: "20%", left: "10%" }}
-            />
-            <motion.div
-              className="absolute w-[400px] h-[400px] rounded-full bg-red-600/10 blur-[100px]"
-              animate={{
-                scale: [1, 1.3, 1],
-                opacity: [0.2, 0.4, 0.2],
-              }}
-              transition={{
-                duration: 10,
-                repeat: Number.POSITIVE_INFINITY,
-                repeatType: "reverse",
-                delay: 2,
-              }}
-              style={{ bottom: "20%", right: "10%" }}
-            />
-          </div>
-
-          {!isMobile && !isTablet && <AnimatedBackground particleColor="rgba(239, 68, 68, 0.3)" className="opacity-20" />}
 
           <div className="container relative z-10 px-4 sm:px-6 py-20">
             <motion.div

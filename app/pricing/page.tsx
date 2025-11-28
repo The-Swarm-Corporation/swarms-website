@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { motion, useReducedMotion } from "framer-motion"
 import { useState } from "react"
 import { 
@@ -87,7 +88,7 @@ export default function PricingPage() {
     }
   ]
 
-  const serviceTiers = [
+  const cloudTiers = [
     {
       tier: "Free tier",
       requests: "100 req/min",
@@ -95,6 +96,23 @@ export default function PricingPage() {
       batch: "100 agents/request",
       gradient: "from-black to-red-950",
       description: "Pay as you go • Perfect for getting started"
+    },
+    {
+      tier: "Pro",
+      price: "$19.99/month",
+      requests: "500 req/min",
+      tokens: "500K tokens/agent",
+      batch: "200 agents/request",
+      gradient: "from-red-500 to-red-600",
+      description: "Perfect for professionals who need more power and features",
+      benefits: [
+        "Global Availability",
+        "Exclusive Multi-Agent Architectures",
+        "Accelerated Hardware",
+        "API Telemetry Platform",
+        "Priority Support",
+        "Pro Models"
+      ]
     },
     {
       tier: "Premium tier",
@@ -113,6 +131,17 @@ export default function PricingPage() {
       ]
     },
     {
+      tier: "Enterprise",
+      requests: "Custom limits",
+      tokens: "Unlimited",
+      batch: "Unlimited",
+      gradient: "from-red-800 to-red-900",
+      description: "Unlimited scalability"
+    }
+  ]
+
+  const onPremiseTiers = [
+    {
       tier: "On-Premise",
       price: "$9,999/year",
       requests: "Unlimited",
@@ -125,16 +154,12 @@ export default function PricingPage() {
         "Complete Docker deployment",
         "1-year enterprise license",
         "Full source code access",
-        "Priority support & updates"
+        "Priority support & updates",
+        "Unlimited usage on your infrastructure",
+        "Custom integrations and configurations",
+        "Data sovereignty and compliance",
+        "Dedicated technical support"
       ]
-    },
-    {
-      tier: "Enterprise",
-      requests: "Custom limits",
-      tokens: "Unlimited",
-      batch: "Unlimited",
-      gradient: "from-red-800 to-red-900",
-      description: "Unlimited scalability"
     }
   ]
 
@@ -445,187 +470,453 @@ export default function PricingPage() {
         </div>
       </section>
 
-      {/* Service Tiers */}
-      <section className="py-12 sm:py-16 bg-gradient-to-b from-red-950/10 to-black">
-        <div className="container px-4 sm:px-6">
+      {/* API Pricing Section */}
+      <div className="relative overflow-hidden bg-black border-t-2 border-red-500/20">
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(239,68,68,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(239,68,68,0.05)_1px,transparent_1px)] bg-[size:50px_50px] opacity-20" />
+        
+        <div className="container relative px-4 sm:px-6 py-24 md:py-32">
           <motion.div
-            className="text-center mb-8 sm:mb-12"
-            variants={mobileOptimizedVariants}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-20%" }}
+            className="max-w-7xl mx-auto"
+            initial={{ opacity: 0, y: 50 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true }}
           >
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-4 font-orbitron">
-              Service <span className="text-red-500">tiers</span>
-            </h2>
-            <p className="text-base sm:text-lg md:text-xl text-red-200 max-w-3xl mx-auto">
-              Choose the plan that fits your scale and performance requirements
-            </p>
-          </motion.div>
+            {/* Section Header */}
+            <motion.div
+              className="text-center mb-12 md:mb-16"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              viewport={{ once: true }}
+            >
+              <h2 className="text-4xl md:text-6xl font-black text-white font-orbitron tracking-tighter mb-6">
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 via-red-400 to-red-600">
+                  API Pricing
+                </span>
+              </h2>
+              <p className="text-gray-300 text-lg md:text-xl max-w-3xl mx-auto font-sans mb-8">
+                Flexible subscription plans that scale with your needs. From free to enterprise.
+              </p>
+              
+              {/* Billing Toggle */}
+              <div className="flex justify-center gap-4 mb-8">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-red-500/30 text-red-400 hover:bg-red-500/10 hover:border-red-500/50 font-orbitron"
+                >
+                  Monthly
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-red-500/30 text-gray-400 hover:bg-red-500/10 hover:border-red-500/50 font-orbitron"
+                >
+                  Annually
+                  <span className="ml-2 text-xs text-green-400">-15%</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-red-500/30 text-gray-400 hover:bg-red-500/10 hover:border-red-500/50 font-orbitron"
+                >
+                  Lifetime
+                </Button>
+              </div>
+            </motion.div>
 
-          <motion.div 
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto"
-            variants={staggeredContainer}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-20%" }}
-          >
-            {serviceTiers.map((tier, index) => (
-              <motion.div
-                key={tier.tier}
-                variants={mobileOptimizedVariants}
-                className="relative"
-              >
-                {/* Premium tier highlight */}
-                {index === 1 && (
-                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 z-10">
-                    <div className="bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-2 rounded-full text-sm font-semibold">
-                      Most Popular
-                    </div>
-                  </div>
-                )}
-                {/* On-Premise tier highlight */}
-                {index === 2 && (
-                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 z-10">
-                    <div className="bg-gradient-to-r from-amber-500 to-amber-600 text-white px-4 py-2 rounded-full text-sm font-semibold">
-                      Self-Hosted
-                    </div>
-                  </div>
-                )}
-                
-                <div className={`relative overflow-hidden rounded-2xl border transition-all duration-300 ${shouldReduceMotion ? '' : 'hover:scale-105'} ${
-                  index === 1 
-                    ? 'bg-gradient-to-br from-green-900/20 to-green-800/10 border-green-500/40 shadow-lg shadow-green-500/10' 
-                    : index === 2
-                    ? 'bg-gradient-to-br from-amber-900/20 to-amber-800/10 border-amber-500/40 shadow-lg shadow-amber-500/10'
-                    : `bg-black/40 border-red-900/30 ${shouldReduceMotion ? '' : 'hover:border-red-500/40'}`
-                } backdrop-blur-sm h-full`}>
-                  
-                  <div className="relative p-6">
-                    {/* Tier name */}
-                    <div className="text-center mb-6">
-                      <h3 className="text-xl font-bold text-white mb-2 font-orbitron">
-                        {tier.tier}
-                      </h3>
-                      {tier.price && (
-                        <div className={`text-lg font-bold mb-2 font-orbitron ${
-                          index === 1 ? 'text-green-400' : index === 2 ? 'text-amber-400' : 'text-red-400'
-                        }`}>
-                          {tier.price}
+            <Tabs defaultValue="cloud" className="w-full">
+              <div className="flex justify-center mb-12 md:mb-16">
+                <TabsList className="bg-black/50 border border-red-500/30 backdrop-blur-sm">
+                  <TabsTrigger 
+                    value="cloud" 
+                    className="data-[state=active]:bg-red-600 data-[state=active]:text-white text-gray-400 font-orbitron tracking-wider px-6 py-3"
+                  >
+                    <Globe className="w-4 h-4 mr-2" />
+                    Cloud
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="on-premise" 
+                    className="data-[state=active]:bg-red-600 data-[state=active]:text-white text-gray-400 font-orbitron tracking-wider px-6 py-3"
+                  >
+                    <Zap className="w-4 h-4 mr-2" />
+                    On-Premise
+                  </TabsTrigger>
+                </TabsList>
+              </div>
+
+              <TabsContent value="cloud" className="mt-0">
+                {/* Pricing Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
+                  {/* Free Plan */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 30 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 0.1 }}
+                    viewport={{ once: true }}
+                  >
+                    <Card className="h-full border-2 border-red-500/20 bg-black/50 backdrop-blur-sm hover:border-red-500/40 transition-all duration-300">
+                      <CardHeader className="text-center pb-4">
+                        <CardTitle className="text-2xl font-black text-white font-orbitron mb-2">Free</CardTitle>
+                        <CardDescription className="text-gray-400 text-sm mb-4">
+                          Get started with Swarms Cloud. No fees pay only for what you use.
+                        </CardDescription>
+                        <div className="mt-4">
+                          <span className="text-4xl font-black text-white font-orbitron">$0</span>
+                          <span className="text-gray-400 text-lg ml-2">/month</span>
                         </div>
-                      )}
-                      <p className={`text-sm ${
-                        index === 1 ? 'text-green-300' : index === 2 ? 'text-amber-300' : 'text-red-300'
-                      }`}>
-                        {tier.description}
-                      </p>
-                    </div>
-
-                    {/* Features list */}
-                    <div className="space-y-4 mb-6">
-                      <div className="flex justify-between items-center py-2 border-b border-red-900/20">
-                        <span className="text-sm text-red-200">Requests per minute</span>
-                        <span className={`text-sm font-bold font-orbitron ${
-                          index === 1 ? 'text-green-400' : index === 2 ? 'text-amber-400' : 'text-red-400'
-                        }`}>
-                          {tier.requests}
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center py-2 border-b border-red-900/20">
-                        <span className="text-sm text-red-200">Tokens per agent</span>
-                        <span className={`text-sm font-bold font-orbitron ${
-                          index === 1 ? 'text-green-400' : index === 2 ? 'text-amber-400' : 'text-red-400'
-                        }`}>
-                          {tier.tokens}
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center py-2">
-                        <span className="text-sm text-red-200">Agents per request</span>
-                        <span className={`text-sm font-bold font-orbitron ${
-                          index === 1 ? 'text-green-400' : index === 2 ? 'text-amber-400' : 'text-red-400'
-                        }`}>
-                          {tier.batch}
-                        </span>
-                      </div>
-                      
-                      {/* Tier-specific benefits */}
-                      {tier.benefits && (
-                        <div className={`border-t pt-4 ${
-                          index === 1 ? 'border-green-500/20' : 'border-amber-500/20'
-                        }`}>
-                          <div className={`font-semibold text-sm mb-3 ${
-                            index === 1 ? 'text-green-400' : 'text-amber-400'
-                          }`}>
-                            {index === 1 ? 'Premium benefits:' : 'Included with license:'}
+                      </CardHeader>
+                      <div className="px-6 pb-6">
+                        <Button
+                          className="w-full bg-red-600 hover:bg-red-700 font-orbitron"
+                          asChild
+                        >
+                          <a href="https://swarms.world/platform/account" target="_blank" rel="noopener noreferrer">
+                            Get Started
+                          </a>
+                        </Button>
+                        <div className="mt-6 space-y-3 text-sm text-gray-300">
+                          <div className="flex items-center">
+                            <span className="text-red-400 mr-2">✓</span>
+                            <span>Sign-up Bonus</span>
                           </div>
-                          <div className="space-y-2">
-                            {tier.benefits.map((benefit, benefitIndex) => (
-                              <div key={benefitIndex} className={`flex items-center text-sm ${
-                                index === 1 ? 'text-green-200' : 'text-amber-200'
-                              }`}>
-                                <div className={`w-2 h-2 rounded-full mr-2 ${
-                                  index === 1 ? 'bg-green-400' : 'bg-amber-400'
-                                }`}></div>
-                                {benefit}
-                              </div>
-                            ))}
+                          <div className="flex items-center">
+                            <span className="text-red-400 mr-2">✓</span>
+                            <span>Basic Access</span>
+                          </div>
+                          <div className="flex items-center">
+                            <span className="text-red-400 mr-2">✓</span>
+                            <span>Pay-Per-Use Pricing</span>
+                          </div>
+                          <div className="flex items-center">
+                            <span className="text-red-400 mr-2">✓</span>
+                            <span>Community Support</span>
+                          </div>
+                          <div className="flex items-center">
+                            <span className="text-red-400 mr-2">✓</span>
+                            <span>Standard Processing Speed</span>
+                          </div>
+                          <div className="flex items-center">
+                            <span className="text-red-400 mr-2">✓</span>
+                            <span>Access to the Marketplace</span>
                           </div>
                         </div>
-                      )}
-                    </div>
+                      </div>
+                    </Card>
+                  </motion.div>
 
-                    {/* CTA Button */}
-                    <div className="text-center">
-                      {index === 0 && (
+                  {/* Pro Plan */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 30 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 0.2 }}
+                    viewport={{ once: true }}
+                    className="relative pt-8 md:pt-10"
+                  >
+                    <div className="absolute top-0 left-1/2 transform -translate-x-1/2 z-20">
+                      <span className="bg-red-600 text-white text-xs font-bold px-4 py-1.5 rounded-full font-orbitron shadow-lg shadow-red-600/50 whitespace-nowrap">
+                        Most Popular
+                      </span>
+                    </div>
+                    <Card className="h-full border-2 border-red-500 bg-black/50 backdrop-blur-sm hover:border-red-500 hover:bg-black/60 transition-all duration-300 scale-105 md:scale-110">
+                      <CardHeader className="text-center pb-4">
+                        <CardTitle className="text-2xl font-black text-white font-orbitron mb-2">Pro</CardTitle>
+                        <CardDescription className="text-gray-300 text-sm mb-4">
+                          Perfect for professionals who need more power and features.
+                        </CardDescription>
+                        <div className="mt-4">
+                          <span className="text-4xl font-black text-white font-orbitron">$19.99</span>
+                          <span className="text-gray-400 text-lg ml-2">/month</span>
+                        </div>
+                      </CardHeader>
+                      <div className="px-6 pb-6">
+                        <Button
+                          className="w-full bg-red-600 hover:bg-red-700 font-orbitron"
+                          asChild
+                        >
+                          <a href="https://swarms.world/platform/account" target="_blank" rel="noopener noreferrer">
+                            Get Started
+                          </a>
+                        </Button>
+                        <div className="mt-6 space-y-3 text-sm text-gray-300">
+                          <div className="text-white font-semibold mb-2">Everything in Free, plus</div>
+                          <div className="flex items-center">
+                            <span className="text-red-400 mr-2">✓</span>
+                            <span>Global Availability</span>
+                          </div>
+                          <div className="flex items-center">
+                            <span className="text-red-400 mr-2">✓</span>
+                            <span>Exclusive Multi-Agent Architectures</span>
+                          </div>
+                          <div className="flex items-center">
+                            <span className="text-red-400 mr-2">✓</span>
+                            <span>Accelerated Hardware</span>
+                          </div>
+                          <div className="flex items-center">
+                            <span className="text-red-400 mr-2">✓</span>
+                            <span>API Telemetry Platform</span>
+                          </div>
+                          <div className="flex items-center">
+                            <span className="text-red-400 mr-2">✓</span>
+                            <span>Priority Support</span>
+                          </div>
+                          <div className="flex items-center">
+                            <span className="text-red-400 mr-2">✓</span>
+                            <span>Pro Models</span>
+                          </div>
+                        </div>
+                      </div>
+                    </Card>
+                  </motion.div>
+
+                  {/* Premium Plan */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 30 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 0.3 }}
+                    viewport={{ once: true }}
+                  >
+                    <Card className="h-full border-2 border-red-500/20 bg-black/50 backdrop-blur-sm hover:border-red-500/40 transition-all duration-300">
+                      <CardHeader className="text-center pb-4">
+                        <CardTitle className="text-2xl font-black text-white font-orbitron mb-2">Premium</CardTitle>
+                        <CardDescription className="text-gray-400 text-sm mb-4">
+                          Subscribe annually and save 15%, with a reduced rate of $1,020/year.
+                        </CardDescription>
+                        <div className="mt-4">
+                          <span className="text-4xl font-black text-white font-orbitron">$100</span>
+                          <span className="text-gray-400 text-lg ml-2">/month</span>
+                        </div>
+                      </CardHeader>
+                      <div className="px-6 pb-6">
+                        <Button
+                          className="w-full bg-red-600 hover:bg-red-700 font-orbitron"
+                          asChild
+                        >
+                          <a href="https://swarms.world/platform/account" target="_blank" rel="noopener noreferrer">
+                            Get Started
+                          </a>
+                        </Button>
+                        <div className="mt-6 space-y-3 text-sm text-gray-300">
+                          <div className="text-white font-semibold mb-2">Everything in Pro, plus</div>
+                          <div className="flex items-center">
+                            <span className="text-red-400 mr-2">✓</span>
+                            <span>Premium Models</span>
+                          </div>
+                          <div className="flex items-center">
+                            <span className="text-red-400 mr-2">✓</span>
+                            <span>More Agents Per Request</span>
+                          </div>
+                          <div className="flex items-center">
+                            <span className="text-red-400 mr-2">✓</span>
+                            <span>More Completions</span>
+                          </div>
+                          <div className="flex items-center">
+                            <span className="text-red-400 mr-2">✓</span>
+                            <span>Increased Rate Limits</span>
+                          </div>
+                          <div className="flex items-center">
+                            <span className="text-red-400 mr-2">✓</span>
+                            <span>SOC 2 Compliance</span>
+                          </div>
+                          <div className="flex items-center">
+                            <span className="text-red-400 mr-2">✓</span>
+                            <span>Priority Support</span>
+                          </div>
+                          <div className="flex items-center">
+                            <span className="text-red-400 mr-2">✓</span>
+                            <span>Enhanced Security Features</span>
+                          </div>
+                          <div className="flex items-center">
+                            <span className="text-red-400 mr-2">✓</span>
+                            <span>Fetch Agents from the Marketplace</span>
+                          </div>
+                          <div className="flex items-center">
+                            <span className="text-red-400 mr-2">✓</span>
+                            <span>View Previous Agent Configurations</span>
+                          </div>
+                          <div className="flex items-center">
+                            <span className="text-red-400 mr-2">✓</span>
+                            <span>Everything in Pro</span>
+                          </div>
+                        </div>
+                      </div>
+                    </Card>
+                  </motion.div>
+
+                  {/* Enterprise Plan */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 30 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 0.4 }}
+                    viewport={{ once: true }}
+                  >
+                    <Card className="h-full border-2 border-red-500/20 bg-black/50 backdrop-blur-sm hover:border-red-500/40 transition-all duration-300">
+                      <CardHeader className="text-center pb-4">
+                        <CardTitle className="text-2xl font-black text-white font-orbitron mb-2">Enterprise</CardTitle>
+                        <CardDescription className="text-gray-400 text-sm mb-4">
+                          Critical support, compliance, and control for large-scale enterprises.
+                        </CardDescription>
+
+                      </CardHeader>
+                      <div className="px-6 pb-6">
                         <Button
                           variant="outline"
-                          className="w-full border-red-500/30 text-red-400 hover:bg-red-500/10 hover:border-red-500/50 py-4 text-base font-semibold"
+                          className="w-full border-red-500/50 text-red-400 hover:bg-red-500/10 hover:border-red-500 font-orbitron"
                           asChild
                         >
-                          <Link href="https://swarms.world/platform/api-keys" target="_blank">
-                            Get started free
-                          </Link>
+                          <a href="https://cal.com/swarms/swarms-strategy-session" target="_blank" rel="noopener noreferrer">
+                            Contact Sales
+                          </a>
                         </Button>
-                      )}
-                      {index === 1 && (
-                        <Button
-                          className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white py-4 text-base font-semibold"
-                          asChild
-                        >
-                          <Link href="https://swarms.world/platform/account" target="_blank">
-                            Upgrade to premium
-                          </Link>
-                        </Button>
-                      )}
-                      {index === 2 && (
-                        <Button
-                          className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white py-4 text-base font-semibold"
-                          asChild
-                        >
-                          <Link href="https://buy.stripe.com/eVq4gz7Nph072rZ1J6aAw09" target="_blank">
-                            Purchase license
-                          </Link>
-                        </Button>
-                      )}
-                      {index === 3 && (
-                        <Button
-                          variant="outline"
-                          className="w-full border-red-500/30 text-red-400 hover:bg-red-500/10 hover:border-red-500/50 py-4 text-base font-semibold"
-                          asChild
-                        >
-                          <Link href="https://cal.com/swarms/swarms-onboarding-session" target="_blank">
-                            Contact sales
-                          </Link>
-                        </Button>
-                      )}
-                    </div>
-                  </div>
+                        <div className="mt-6 space-y-3 text-sm text-gray-300">
+                          <div className="text-white font-semibold mb-2">Everything in Premium, plus</div>
+                          <div className="flex items-center">
+                            <span className="text-red-400 mr-2">✓</span>
+                            <span>Dedicated 24/7 Support</span>
+                          </div>
+                          <div className="flex items-center">
+                            <span className="text-red-400 mr-2">✓</span>
+                            <span>Custom Solutions Engineering</span>
+                          </div>
+                          <div className="flex items-center">
+                            <span className="text-red-400 mr-2">✓</span>
+                            <span>Onsite Training and Onboarding</span>
+                          </div>
+                          <div className="flex items-center">
+                            <span className="text-red-400 mr-2">✓</span>
+                            <span>Priority Support</span>
+                          </div>
+                          <div className="flex items-center">
+                            <span className="text-red-400 mr-2">✓</span>
+                            <span>Custom Agent Development</span>
+                          </div>
+                          <div className="flex items-center">
+                            <span className="text-red-400 mr-2">✓</span>
+                            <span>No Rate Limits</span>
+                          </div>
+                          <div className="flex items-center">
+                            <span className="text-red-400 mr-2">✓</span>
+                            <span>Access to Experimental Features</span>
+                          </div>
+                        </div>
+                      </div>
+                    </Card>
+                  </motion.div>
                 </div>
+
+                {/* Footer Note */}
+                <motion.div
+                  className="text-center mt-12"
+                  initial={{ opacity: 0 }}
+                  whileInView={{ opacity: 1 }}
+                  transition={{ duration: 0.6, delay: 0.5 }}
+                  viewport={{ once: true }}
+                >
+                  <p className="text-gray-400 text-sm md:text-base">
+                    All plans include 24/7 support and 99.9% uptime guarantee
+                  </p>
+                </motion.div>
+              </TabsContent>
+
+            <TabsContent value="on-premise" className="mt-0">
+              <motion.div 
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10 lg:gap-12 max-w-5xl mx-auto"
+                variants={staggeredContainer}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, margin: "-20%" }}
+              >
+                {onPremiseTiers.map((tier, index) => (
+                  <motion.div
+                    key={tier.tier}
+                    variants={mobileOptimizedVariants}
+                    className="relative pt-8 md:pt-10"
+                  >
+                    {/* On-Premise tier highlight */}
+                    <div className="absolute top-0 left-1/2 transform -translate-x-1/2 z-20">
+                      <div className="bg-gradient-to-r from-amber-600 to-amber-700 text-white px-4 py-1.5 rounded-full text-xs font-bold font-orbitron shadow-lg shadow-amber-600/50 whitespace-nowrap">
+                        Self-Hosted
+                      </div>
+                    </div>
+                    
+                    <div className={`relative overflow-hidden rounded-3xl border-2 transition-all duration-300 ${shouldReduceMotion ? '' : 'hover:scale-[1.02]'} bg-gradient-to-br from-amber-900/20 to-amber-800/10 border-amber-500/50 shadow-2xl shadow-amber-500/20 backdrop-blur-sm h-full`}>
+                      <div className="relative p-8 md:p-10">
+                        {/* Tier name */}
+                        <div className="text-center mb-8">
+                          <h3 className="text-2xl md:text-3xl font-bold text-white mb-3 font-orbitron">
+                            {tier.tier}
+                          </h3>
+                          {tier.price && (
+                            <div className="text-2xl md:text-3xl font-bold mb-3 font-orbitron text-amber-400">
+                              {tier.price}
+                            </div>
+                          )}
+                          <p className="text-sm md:text-base leading-relaxed text-amber-300">
+                            {tier.description}
+                          </p>
+                        </div>
+
+                        {/* Features list */}
+                        <div className="space-y-6 mb-10">
+                          <div className="flex justify-between items-center py-3 border-b border-red-900/30">
+                            <span className="text-sm md:text-base text-red-200 font-medium">Requests per minute</span>
+                            <span className="text-sm md:text-base font-bold font-orbitron text-amber-400">
+                              {tier.requests}
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center py-3 border-b border-red-900/30">
+                            <span className="text-sm md:text-base text-red-200 font-medium">Tokens per agent</span>
+                            <span className="text-sm md:text-base font-bold font-orbitron text-amber-400">
+                              {tier.tokens}
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center py-3">
+                            <span className="text-sm md:text-base text-red-200 font-medium">Agents per request</span>
+                            <span className="text-sm md:text-base font-bold font-orbitron text-amber-400">
+                              {tier.batch}
+                            </span>
+                          </div>
+                          
+                          {/* Tier-specific benefits */}
+                          {tier.benefits && (
+                            <div className="border-t pt-6 mt-6 border-amber-500/30">
+                              <div className="font-semibold text-base mb-4 text-amber-400">
+                                Included with license:
+                              </div>
+                              <div className="space-y-3">
+                                {tier.benefits.map((benefit, benefitIndex) => (
+                                  <div key={benefitIndex} className="flex items-start text-sm md:text-base leading-relaxed text-amber-200">
+                                    <div className="w-2 h-2 rounded-full mr-3 mt-2 flex-shrink-0 bg-amber-400"></div>
+                                    <span>{benefit}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* CTA Button */}
+                        <div className="text-center mt-8">
+                          <Button
+                            className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white py-5 text-base md:text-lg font-semibold shadow-lg shadow-amber-500/30 transition-all duration-300"
+                            asChild
+                          >
+                            <Link href="https://buy.stripe.com/eVq4gz7Nph072rZ1J6aAw09" target="_blank">
+                              Purchase license
+                            </Link>
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
               </motion.div>
-            ))}
-          </motion.div>
+            </TabsContent>
+          </Tabs>
+            </motion.div>
+          </div>
         </div>
-      </section>
 
       {/* FAQ Section */}
       <section className="py-12 sm:py-16 md:py-20 bg-gradient-to-b from-black to-red-950/10">

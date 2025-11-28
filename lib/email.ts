@@ -37,7 +37,7 @@ export async function sendWelcomeEmail({ email, firstName, lastName }: WelcomeEm
     const { data, error } = await resend.emails.send({
       from: 'Kye Gomez <kye@swarms.world>',
       to: [email],
-      subject: 'Welcome to Swarms - Your $20 Credits Await!',
+      subject: 'Welcome to Swarms - Your $10 Credits Await!',
       html: `
         <!DOCTYPE html>
         <html>
@@ -240,7 +240,7 @@ export async function sendWelcomeEmail({ email, firstName, lastName }: WelcomeEm
               </div>
 
               <div class="highlight">
-                <h3>Your $20 Free Credits Are Waiting</h3>
+                <h3>Your $10 Free Credits Are Waiting</h3>
                 <p>Complete your account setup to claim your credits and start building immediately.</p>
               </div>
 

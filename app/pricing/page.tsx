@@ -50,27 +50,82 @@ export default function PricingPage() {
 
   const pricingItems = [
     {
-      item: "Base cost per agent",
+      item: "Agent cost",
       standardCost: "$0.01 per agent",
       flexCost: "$0.01 per agent",
-      notes: "Charged for each agent in a swarm",
+      notes: "Charged for each agent (swarm, workflow, etc.)",
       icon: Users
     },
     {
-      item: "Input tokens (swarm)",
+      item: "Swarm completions input tokens",
       standardCost: "$3.00 per 1M tokens",
-      flexCost: "$0.75 per 1M tokens",
-      notes: "75% discount in Flex mode",
+      flexCost: "$1.50 per 1M tokens",
+      notes: "50% discount in Flex mode",
       icon: Database,
       highlight: "flex"
     },
     {
-      item: "Output tokens (swarm)",
+      item: "Swarm completions output tokens",
       standardCost: "$15.00 per 1M tokens",
-      flexCost: "$3.75 per 1M tokens",
-      notes: "75% discount in Flex mode",
+      flexCost: "$7.50 per 1M tokens",
+      notes: "50% discount in Flex mode",
       icon: Activity,
       highlight: "flex"
+    },
+    {
+      item: "Agent/Workflow completions input tokens",
+      standardCost: "$4.00 per 1M tokens",
+      flexCost: "$2.00 per 1M tokens",
+      notes: "50% discount in Flex mode",
+      icon: Database,
+      highlight: "flex"
+    },
+    {
+      item: "Agent/Workflow completions output tokens",
+      standardCost: "$12.50 per 1M tokens",
+      flexCost: "$6.25 per 1M tokens",
+      notes: "50% discount in Flex mode",
+      icon: Activity,
+      highlight: "flex"
+    },
+    {
+      item: "Advanced research input tokens",
+      standardCost: "$20.00 per 1M tokens",
+      flexCost: "$10.00 per 1M tokens",
+      notes: "50% discount in Flex mode",
+      icon: Database,
+      highlight: "flex"
+    },
+    {
+      item: "Advanced research output tokens",
+      standardCost: "$60.00 per 1M tokens",
+      flexCost: "$30.00 per 1M tokens",
+      notes: "50% discount in Flex mode",
+      icon: Activity,
+      highlight: "flex"
+    },
+    {
+      item: "Auto swarm builder input tokens",
+      standardCost: "$6.00 per 1M tokens",
+      flexCost: "$3.00 per 1M tokens",
+      notes: "50% discount in Flex mode",
+      icon: Database,
+      highlight: "flex"
+    },
+    {
+      item: "Auto swarm builder output tokens",
+      standardCost: "$18.00 per 1M tokens",
+      flexCost: "$9.00 per 1M tokens",
+      notes: "50% discount in Flex mode",
+      icon: Activity,
+      highlight: "flex"
+    },
+    {
+      item: "Image processing",
+      standardCost: "$0.25 per image",
+      flexCost: "$0.25 per image",
+      notes: "Charged for each image processed",
+      icon: BarChart3
     },
     {
       item: "MCP cost",
@@ -78,13 +133,6 @@ export default function PricingPage() {
       flexCost: "$0.10 per call",
       notes: "Charged if an agent uses an MCP URL",
       icon: Globe
-    },
-    {
-      item: "Image cost",
-      standardCost: "$0.25 per image",
-      flexCost: "$0.25 per image",
-      notes: "Charged for each image processed",
-      icon: BarChart3
     }
   ]
 
@@ -170,11 +218,11 @@ export default function PricingPage() {
     },
     {
       question: "What's the difference between Standard and Flex pricing?",
-      answer: "Flex tier offers a 75% discount on token costs but may have higher latency or require retries. Standard tier provides consistent performance with standard pricing. Flex is perfect for non-time-sensitive workloads where cost savings are prioritized over speed."
+      answer: "Flex tier offers a 50% discount on token costs but may have higher latency or require retries. Standard tier provides consistent performance with standard pricing. Flex is perfect for non-time-sensitive workloads where cost savings are prioritized over speed."
     },
     {
       question: "How does the night-time discount work?",
-      answer: "You get a 75% discount on token costs between 8pm and 6am California time. This applies to both Standard and Flex pricing tiers and is automatically applied to eligible API calls during these hours."
+      answer: "You get a 50% discount on token costs between 8pm and 6am California time. This applies to both Standard and Flex pricing tiers and is automatically applied to eligible API calls during these hours."
     },
     {
       question: "What are MCP costs and when are they charged?",
@@ -182,7 +230,7 @@ export default function PricingPage() {
     },
     {
       question: "How are swarm vs single agent costs different?",
-      answer: "Swarm operations use different token pricing ($3.00/$15.00 per 1M input/output tokens in Standard, $0.75/$3.75 in Flex) plus $0.01 per agent. Single agent completions use $2.00/$4.50 per 1M input/output tokens and don't include the per-agent base cost."
+      answer: "Swarm completions use token pricing ($3.00/$15.00 per 1M input/output tokens in Standard, $1.50/$7.50 in Flex) plus $0.01 per agent. Agent completions (single agent) use $4.00/$12.50 per 1M input/output tokens ($2.00/$6.25 in Flex) and don't include the per-agent base cost. Advanced research uses $20.00/$60.00 per 1M tokens ($10.00/$30.00 in Flex), and auto swarm builder uses $6.00/$18.00 per 1M tokens ($3.00/$9.00 in Flex)."
     },
     {
       question: "Can I switch between pricing tiers?",
@@ -227,7 +275,7 @@ export default function PricingPage() {
         <div className="container relative px-4 sm:px-6 py-16 sm:py-20 md:py-24 lg:py-32 w-full">
           <div className="text-center space-y-6 sm:space-y-8">
             <motion.h1
-              className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tighter font-orbitron leading-none"
+              className="text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-black tracking-tighter font-orbitron leading-none"
               variants={mobileOptimizedVariants}
               initial="hidden"
               animate="visible"
@@ -366,7 +414,7 @@ export default function PricingPage() {
                     </div>
                     <div>
                       <CardTitle className="text-green-400 text-xl font-bold">Flex Tier</CardTitle>
-                      <CardDescription className="text-green-200">75% discount on token costs</CardDescription>
+                      <CardDescription className="text-green-200">50% discount on token costs</CardDescription>
                     </div>
                   </div>
                   <p className="text-green-100 text-sm leading-relaxed">
@@ -386,11 +434,11 @@ export default function PricingPage() {
                     </div>
                     <div>
                       <CardTitle className="text-blue-400 text-xl font-bold">Night-time Discount</CardTitle>
-                      <CardDescription className="text-blue-200">75% off token costs</CardDescription>
+                      <CardDescription className="text-blue-200">50% off token costs</CardDescription>
                     </div>
                   </div>
                   <p className="text-blue-100 text-sm leading-relaxed">
-                    Automatic 75% discount on token costs between 8pm–6am California time. 
+                    Automatic 50% discount on token costs between 8pm–6am California time. 
                     Applies to both Standard and Flex pricing tiers for maximum savings during off-peak hours.
                   </p>
                 </CardHeader>
@@ -401,10 +449,10 @@ export default function PricingPage() {
       </section>
 
       {/* Credit Deductions */}
-      <section className="py-12 sm:py-16 bg-gradient-to-b from-black to-red-950/10">
+      <section className="pt-20 sm:pt-28 md:pt-32 pb-16 sm:pb-20 md:pb-24 bg-gradient-to-b from-black to-red-950/10">
         <div className="container px-4 sm:px-6">
           <motion.div
-            className="text-center mb-8 sm:mb-12"
+            className="text-center mb-12 sm:mb-16"
             variants={mobileOptimizedVariants}
             initial="hidden"
             whileInView="visible"
@@ -471,7 +519,7 @@ export default function PricingPage() {
       </section>
 
       {/* API Pricing Section */}
-      <div className="relative overflow-hidden bg-black border-t-2 border-red-500/20">
+      <div className="relative overflow-hidden bg-black">
         <div className="absolute inset-0 bg-[linear-gradient(rgba(239,68,68,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(239,68,68,0.05)_1px,transparent_1px)] bg-[size:50px_50px] opacity-20" />
         
         <div className="container relative px-4 sm:px-6 py-24 md:py-32">
@@ -995,81 +1043,45 @@ export default function PricingPage() {
             ))}
           </motion.div>
 
-          {/* FAQ CTA */}
-          <motion.div
-            className="text-center mt-12"
-            variants={mobileOptimizedVariants}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-20%" }}
-          >
-            <div className="inline-flex items-center px-6 py-3 rounded-full bg-gradient-to-r from-red-500/20 to-red-600/20 border border-red-500/30 text-red-400 text-lg font-medium mb-6">
-              <HelpCircle className="w-5 h-5 mr-2" />
-              Have more questions?
-            </div>
-            <div className="flex flex-col sm:flex-row gap-4 items-center justify-center">
-              <Button
-                size="lg"
-                className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-8 py-4 text-lg font-semibold rounded-lg"
-                asChild
-              >
-                <Link href="https://cal.com/swarms/swarms-onboarding-session" target="_blank">
-                  <Calendar className="w-5 h-5 mr-2" />
-                  Schedule consultation
-                </Link>
-              </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                className="border-red-500/30 text-red-400 hover:bg-red-500/10 hover:border-red-500/50 px-8 py-4 text-lg font-semibold rounded-lg"
-                asChild
-              >
-                <Link href="https://docs.swarms.ai" target="_blank">
-                  <BookOpen className="w-5 h-5 mr-2" />
-                  Read documentation
-                </Link>
-              </Button>
-            </div>
-          </motion.div>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="py-12 sm:py-16 bg-gradient-to-b from-red-950/10 to-black">
+      <section className="pt-24 sm:pt-32 md:pt-40 pb-16 sm:pb-20 md:pb-24 bg-gradient-to-b from-red-950/10 to-black">
         <div className="container px-4 sm:px-6 text-center">
           <motion.div
-            className="max-w-4xl mx-auto"
+            className="max-w-5xl mx-auto space-y-8 sm:space-y-10 md:space-y-12"
             variants={mobileOptimizedVariants}
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true, margin: "-20%" }}
           >
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-6 font-orbitron">
-              Start building <span className="text-red-500">today</span>
+            <h2 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-white font-orbitron leading-tight">
+              Start building <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 via-red-400 to-red-600">today</span>
             </h2>
-            <p className="text-base sm:text-lg md:text-xl text-red-200 mb-8 max-w-2xl mx-auto">
+            <p className="text-xl sm:text-2xl md:text-3xl lg:text-4xl text-red-200 max-w-3xl mx-auto leading-relaxed font-medium">
               Get started with transparent pricing and pay only for what you use
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 items-center justify-center">
+            <div className="flex flex-col sm:flex-row gap-6 items-center justify-center pt-4">
               <Button
                 size="lg"
-                className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-8 py-4 text-lg font-semibold rounded-lg"
+                className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-10 py-6 text-xl font-semibold rounded-xl shadow-lg shadow-red-500/30 hover:shadow-red-500/50 transition-all duration-300"
                 asChild
               >
                 <Link href="https://swarms.world/platform/api-keys" target="_blank">
-                  <Key className="w-5 h-5 mr-2" />
+                  <Key className="w-6 h-6 mr-2" />
                   Get API key
-                  <ArrowRight className="w-5 h-5 ml-2" />
+                  <ArrowRight className="w-6 h-6 ml-2" />
                 </Link>
               </Button>
               <Button
                 size="lg"
                 variant="outline"
-                className="border-red-500/30 text-red-400 hover:bg-red-500/10 hover:border-red-500/50 px-8 py-4 text-lg font-semibold rounded-lg"
+                className="border-red-500/40 text-red-400 hover:bg-red-500/10 hover:border-red-500/60 px-10 py-6 text-xl font-semibold rounded-xl transition-all duration-300"
                 asChild
               >
                 <Link href="/api">
-                  <Code className="w-5 h-5 mr-2" />
+                  <Code className="w-6 h-6 mr-2" />
                   View API docs
                 </Link>
               </Button>

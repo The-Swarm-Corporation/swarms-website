@@ -1794,7 +1794,7 @@ runAgent();`
           >
             <div className="inline-flex items-center px-6 sm:px-8 py-4 sm:py-5 rounded-2xl bg-gradient-to-r from-red-500/20 to-red-600/20 border border-red-500/30 text-red-400 text-lg sm:text-xl font-semibold mx-4 sm:mx-0 backdrop-blur-sm">
               <span className="text-2xl mr-3">🎉</span>
-              Get $20 in free credits when you 
+              Get $5 in free credits when you 
               <Link href="https://swarms.world/platform/account" target="_blank" className="text-red-300 hover:text-red-200 underline decoration-red-400 ml-1">
                 sign up right now
               </Link>

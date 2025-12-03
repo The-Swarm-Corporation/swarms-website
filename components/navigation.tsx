@@ -26,6 +26,7 @@ import {
   Building,
   MessageCircle,
   Network,
+  Star,
 } from "lucide-react"
 import Image from "next/image"
 import { motion, AnimatePresence } from "framer-motion"
@@ -107,7 +108,7 @@ export function Navigation() {
   return (
     <header className="sticky top-0 z-[9998] w-full border-b-2 border-red-500/30 bg-black/95 backdrop-blur-md supports-[backdrop-filter]:bg-black/95 shadow-lg shadow-red-500/10">
       <div className="container flex h-16 items-center px-4 sm:px-6 lg:px-8">
-        <div className="mr-6 flex">
+        <div className="mr-6 flex items-center space-x-4">
           <Link href="/" className="flex items-center group">
             <div className="relative w-8 h-8 transition-transform duration-300 group-hover:scale-110">
               <Image
@@ -119,6 +120,113 @@ export function Navigation() {
               />
             </div>
           </Link>
+
+          {/* Socials Dropdown - Moved to Left */}
+          <div 
+            className="relative hidden lg:block"
+            onMouseEnter={() => setHoveredDropdown("socials")}
+            onMouseLeave={() => setHoveredDropdown(null)}
+          >
+            <button className="flex items-center text-sm font-medium transition-all duration-300 hover:text-red-500 border border-transparent hover:border-red-500/30 px-3 py-1.5 rounded-md hover:bg-red-500/5">
+              Socials
+              <ChevronDown className={`ml-1 h-4 w-4 transition-transform duration-300 ${hoveredDropdown === "socials" ? "rotate-180" : ""}`} />
+            </button>
+            
+            <AnimatePresence>
+              {hoveredDropdown === "socials" && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                  transition={{ duration: 0.3, ease: "easeOut" }}
+                  className="absolute top-full left-0 mt-3 w-[240px] backdrop-blur-xl bg-black border-2 border-red-500/40 shadow-2xl shadow-red-500/20 rounded-xl overflow-hidden z-[9999]"
+                >
+                  {/* Enhanced background effects */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-red-950/30 via-black/0 to-red-950/20 pointer-events-none"></div>
+                  <div className="absolute top-0 left-0 w-20 h-20 bg-red-500/10 blur-2xl rounded-full pointer-events-none"></div>
+                  <div className="absolute bottom-0 left-0 w-16 h-16 bg-red-600/5 blur-3xl rounded-full pointer-events-none"></div>
+                  
+                  <div className="p-4 space-y-2 relative">
+                    <a
+                      href="https://x.com/swarms_corp"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group flex cursor-pointer items-center border border-transparent hover:border-red-500/40 hover:bg-red-500/15 transition-all duration-300 p-3 rounded-lg hover:shadow-lg hover:shadow-red-500/10 relative overflow-hidden"
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-r from-red-500/0 via-red-500/5 to-red-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                      <div className="mr-4 h-8 w-8 flex items-center justify-center rounded-lg bg-red-500/10 border border-red-500/20 group-hover:bg-red-500/20 group-hover:border-red-500/40 group-hover:shadow-lg group-hover:shadow-red-500/20 transition-all duration-300">
+                        <Twitter className="h-4 w-4 text-red-500 group-hover:text-red-400 transition-colors duration-300" />
+                      </div>
+                      <div className="flex-1">
+                        <span className="text-sm font-medium text-white group-hover:text-red-400 transition-colors duration-300">Twitter/X</span>
+                        <p className="text-xs text-gray-400 group-hover:text-gray-300 transition-colors duration-300">Follow us</p>
+                      </div>
+                    </a>
+                    <a
+                      href="https://discord.gg/EamjgSaEQf"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group flex cursor-pointer items-center border border-transparent hover:border-red-500/40 hover:bg-red-500/15 transition-all duration-300 p-3 rounded-lg hover:shadow-lg hover:shadow-red-500/10 relative overflow-hidden"
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-r from-red-500/0 via-red-500/5 to-red-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                      <div className="mr-4 h-8 w-8 flex items-center justify-center rounded-lg bg-red-500/10 border border-red-500/20 group-hover:bg-red-500/20 group-hover:border-red-500/40 group-hover:shadow-lg group-hover:shadow-red-500/20 transition-all duration-300">
+                        <Discord className="h-4 w-4 text-red-500 group-hover:text-red-400 transition-colors duration-300" />
+                      </div>
+                      <div className="flex-1">
+                        <span className="text-sm font-medium text-white group-hover:text-red-400 transition-colors duration-300">Discord</span>
+                        <p className="text-xs text-gray-400 group-hover:text-gray-300 transition-colors duration-300">Join community</p>
+                      </div>
+                    </a>
+                    <a
+                      href="https://www.linkedin.com/company/swarms-corp/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group flex cursor-pointer items-center border border-transparent hover:border-red-500/40 hover:bg-red-500/15 transition-all duration-300 p-3 rounded-lg hover:shadow-lg hover:shadow-red-500/10 relative overflow-hidden"
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-r from-red-500/0 via-red-500/5 to-red-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                      <div className="mr-4 h-8 w-8 flex items-center justify-center rounded-lg bg-red-500/10 border border-red-500/20 group-hover:bg-red-500/20 group-hover:border-red-500/40 group-hover:shadow-lg group-hover:shadow-red-500/20 transition-all duration-300">
+                        <Building className="h-4 w-4 text-red-500 group-hover:text-red-400 transition-colors duration-300" />
+                      </div>
+                      <div className="flex-1">
+                        <span className="text-sm font-medium text-white group-hover:text-red-400 transition-colors duration-300">LinkedIn</span>
+                        <p className="text-xs text-gray-400 group-hover:text-gray-300 transition-colors duration-300">Professional network</p>
+                      </div>
+                    </a>
+                    <a
+                      href="https://medium.com/@kyeg"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group flex cursor-pointer items-center border border-transparent hover:border-red-500/40 hover:bg-red-500/15 transition-all duration-300 p-3 rounded-lg hover:shadow-lg hover:shadow-red-500/10 relative overflow-hidden"
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-r from-red-500/0 via-red-500/5 to-red-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                      <div className="mr-4 h-8 w-8 flex items-center justify-center rounded-lg bg-red-500/10 border border-red-500/20 group-hover:bg-red-500/20 group-hover:border-red-500/40 group-hover:shadow-lg group-hover:shadow-red-500/20 transition-all duration-300">
+                        <FileText className="h-4 w-4 text-red-500 group-hover:text-red-400 transition-colors duration-300" />
+                      </div>
+                      <div className="flex-1">
+                        <span className="text-sm font-medium text-white group-hover:text-red-400 transition-colors duration-300">Medium</span>
+                        <p className="text-xs text-gray-400 group-hover:text-gray-300 transition-colors duration-300">@kyeg</p>
+                      </div>
+                    </a>
+                    <a
+                      href="https://www.youtube.com/@kyegomez3242"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group flex cursor-pointer items-center border border-transparent hover:border-red-500/40 hover:bg-red-500/15 transition-all duration-300 p-3 rounded-lg hover:shadow-lg hover:shadow-red-500/10 relative overflow-hidden"
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-r from-red-500/0 via-red-500/5 to-red-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                      <div className="mr-4 h-8 w-8 flex items-center justify-center rounded-lg bg-red-500/10 border border-red-500/20 group-hover:bg-red-500/20 group-hover:border-red-500/40 group-hover:shadow-lg group-hover:shadow-red-500/20 transition-all duration-300">
+                        <MessageCircle className="h-4 w-4 text-red-500 group-hover:text-red-400 transition-colors duration-300" />
+                      </div>
+                      <div className="flex-1">
+                        <span className="text-sm font-medium text-white group-hover:text-red-400 transition-colors duration-300">YouTube</span>
+                        <p className="text-xs text-gray-400 group-hover:text-gray-300 transition-colors duration-300">Watch tutorials</p>
+                      </div>
+                    </a>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
 
         {/* Desktop Navigation */}
@@ -462,10 +570,13 @@ export function Navigation() {
 
         <div className="flex flex-1 items-center justify-end space-x-2">
 
-          <Button className="hidden md:inline-flex bg-red-600 hover:bg-red-700 neon-glow border-2 border-red-500/50 hover:border-red-400/70 transition-all duration-300 hover:shadow-[0_0_15px_rgba(239,68,68,0.5)]" asChild>
-            <a href="https://github.com/kyegomez/swarms" target="_blank" rel="noopener noreferrer">
-              <Github className="mr-2 h-4 w-4" />
-              GitHub
+          <Button 
+            className="hidden md:inline-flex bg-[#1f2328] hover:bg-[#2a2e35] border border-[#30363d] rounded-lg px-3 py-1.5 transition-all duration-300 hover:border-[#484f58]" 
+            asChild
+          >
+            <a href="https://github.com/kyegomez/swarms" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5">
+              <Github className="h-4 w-4 text-[#e6edf3]" />
+              <span className="text-[#e6edf3] text-sm font-medium">5.5k</span>
             </a>
           </Button>
 
@@ -475,115 +586,6 @@ export function Navigation() {
               Get demo
             </a>
           </Button>
-
-          
-
-          {/* Socials Dropdown */}
-          <div 
-            className="relative"
-            onMouseEnter={() => setHoveredDropdown("socials")}
-            onMouseLeave={() => setHoveredDropdown(null)}
-          >
-            <button className="flex items-center text-sm font-medium transition-all duration-300 hover:text-red-500 border border-transparent hover:border-red-500/30 px-3 py-1.5 rounded-md hover:bg-red-500/5">
-              Socials
-              <ChevronDown className={`ml-1 h-4 w-4 transition-transform duration-300 ${hoveredDropdown === "socials" ? "rotate-180" : ""}`} />
-            </button>
-            
-            <AnimatePresence>
-              {hoveredDropdown === "socials" && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                  transition={{ duration: 0.3, ease: "easeOut" }}
-                  className="absolute top-full right-0 mt-3 w-[240px] backdrop-blur-xl bg-black border-2 border-red-500/40 shadow-2xl shadow-red-500/20 rounded-xl overflow-hidden z-[9999]"
-                >
-                  {/* Enhanced background effects */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-red-950/30 via-black/0 to-red-950/20 pointer-events-none"></div>
-                  <div className="absolute top-0 right-0 w-20 h-20 bg-red-500/10 blur-2xl rounded-full pointer-events-none"></div>
-                  <div className="absolute bottom-0 left-0 w-16 h-16 bg-red-600/5 blur-3xl rounded-full pointer-events-none"></div>
-                  
-                  <div className="p-4 space-y-2 relative">
-                    <a
-                      href="https://x.com/swarms_corp"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="group flex cursor-pointer items-center border border-transparent hover:border-red-500/40 hover:bg-red-500/15 transition-all duration-300 p-3 rounded-lg hover:shadow-lg hover:shadow-red-500/10 relative overflow-hidden"
-                    >
-                      <div className="absolute inset-0 bg-gradient-to-r from-red-500/0 via-red-500/5 to-red-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                      <div className="mr-4 h-8 w-8 flex items-center justify-center rounded-lg bg-red-500/10 border border-red-500/20 group-hover:bg-red-500/20 group-hover:border-red-500/40 group-hover:shadow-lg group-hover:shadow-red-500/20 transition-all duration-300">
-                        <Twitter className="h-4 w-4 text-red-500 group-hover:text-red-400 transition-colors duration-300" />
-                      </div>
-                      <div className="flex-1">
-                        <span className="text-sm font-medium text-white group-hover:text-red-400 transition-colors duration-300">Twitter/X</span>
-                        <p className="text-xs text-gray-400 group-hover:text-gray-300 transition-colors duration-300">Follow us</p>
-                      </div>
-                    </a>
-                    <a
-                      href="https://discord.gg/EamjgSaEQf"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="group flex cursor-pointer items-center border border-transparent hover:border-red-500/40 hover:bg-red-500/15 transition-all duration-300 p-3 rounded-lg hover:shadow-lg hover:shadow-red-500/10 relative overflow-hidden"
-                    >
-                      <div className="absolute inset-0 bg-gradient-to-r from-red-500/0 via-red-500/5 to-red-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                      <div className="mr-4 h-8 w-8 flex items-center justify-center rounded-lg bg-red-500/10 border border-red-500/20 group-hover:bg-red-500/20 group-hover:border-red-500/40 group-hover:shadow-lg group-hover:shadow-red-500/20 transition-all duration-300">
-                        <Discord className="h-4 w-4 text-red-500 group-hover:text-red-400 transition-colors duration-300" />
-                      </div>
-                      <div className="flex-1">
-                        <span className="text-sm font-medium text-white group-hover:text-red-400 transition-colors duration-300">Discord</span>
-                        <p className="text-xs text-gray-400 group-hover:text-gray-300 transition-colors duration-300">Join community</p>
-                      </div>
-                    </a>
-                    <a
-                      href="https://www.linkedin.com/company/swarms-corp/"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="group flex cursor-pointer items-center border border-transparent hover:border-red-500/40 hover:bg-red-500/15 transition-all duration-300 p-3 rounded-lg hover:shadow-lg hover:shadow-red-500/10 relative overflow-hidden"
-                    >
-                      <div className="absolute inset-0 bg-gradient-to-r from-red-500/0 via-red-500/5 to-red-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                      <div className="mr-4 h-8 w-8 flex items-center justify-center rounded-lg bg-red-500/10 border border-red-500/20 group-hover:bg-red-500/20 group-hover:border-red-500/40 group-hover:shadow-lg group-hover:shadow-red-500/20 transition-all duration-300">
-                        <Building className="h-4 w-4 text-red-500 group-hover:text-red-400 transition-colors duration-300" />
-                      </div>
-                      <div className="flex-1">
-                        <span className="text-sm font-medium text-white group-hover:text-red-400 transition-colors duration-300">LinkedIn</span>
-                        <p className="text-xs text-gray-400 group-hover:text-gray-300 transition-colors duration-300">Professional network</p>
-                      </div>
-                    </a>
-                    <a
-                      href="https://medium.com/@kyeg"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="group flex cursor-pointer items-center border border-transparent hover:border-red-500/40 hover:bg-red-500/15 transition-all duration-300 p-3 rounded-lg hover:shadow-lg hover:shadow-red-500/10 relative overflow-hidden"
-                    >
-                      <div className="absolute inset-0 bg-gradient-to-r from-red-500/0 via-red-500/5 to-red-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                      <div className="mr-4 h-8 w-8 flex items-center justify-center rounded-lg bg-red-500/10 border border-red-500/20 group-hover:bg-red-500/20 group-hover:border-red-500/40 group-hover:shadow-lg group-hover:shadow-red-500/20 transition-all duration-300">
-                        <FileText className="h-4 w-4 text-red-500 group-hover:text-red-400 transition-colors duration-300" />
-                      </div>
-                      <div className="flex-1">
-                        <span className="text-sm font-medium text-white group-hover:text-red-400 transition-colors duration-300">Medium</span>
-                        <p className="text-xs text-gray-400 group-hover:text-gray-300 transition-colors duration-300">@kyeg</p>
-                      </div>
-                    </a>
-                    <a
-                      href="https://www.youtube.com/@kyegomez3242"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="group flex cursor-pointer items-center border border-transparent hover:border-red-500/40 hover:bg-red-500/15 transition-all duration-300 p-3 rounded-lg hover:shadow-lg hover:shadow-red-500/10 relative overflow-hidden"
-                    >
-                      <div className="absolute inset-0 bg-gradient-to-r from-red-500/0 via-red-500/5 to-red-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                      <div className="mr-4 h-8 w-8 flex items-center justify-center rounded-lg bg-red-500/10 border border-red-500/20 group-hover:bg-red-500/20 group-hover:border-red-500/40 group-hover:shadow-lg group-hover:shadow-red-500/20 transition-all duration-300">
-                        <MessageCircle className="h-4 w-4 text-red-500 group-hover:text-red-400 transition-colors duration-300" />
-                      </div>
-                      <div className="flex-1">
-                        <span className="text-sm font-medium text-white group-hover:text-red-400 transition-colors duration-300">YouTube</span>
-                        <p className="text-xs text-gray-400 group-hover:text-gray-300 transition-colors duration-300">Watch tutorials</p>
-                      </div>
-                    </a>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
 
           {/* Mobile Menu */}
           <Sheet open={isOpen} onOpenChange={setIsOpen}>

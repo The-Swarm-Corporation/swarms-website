@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(
       {
-        message: "Successfully subscribed to Swarms updates! Check your email for your $20 welcome credits.",
+        message: "Successfully subscribed to Swarms updates! Check your email for your $5 welcome credits.",
         contact: { email, firstName, lastName },
       },
       { status: 200 },

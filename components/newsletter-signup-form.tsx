@@ -109,7 +109,7 @@ export function NewsletterSignupForm() {
                     transition={{ delay: 0.4 }}
                     className="text-gray-300 mb-6 font-sans"
                   >
-                    Thank you for signing up! Check your email for your <span className="text-red-400 font-bold">$20 welcome credits</span> and next steps to get started.
+                    Thank you for signing up! Check your email for your <span className="text-red-400 font-bold">$5 welcome credits</span> and next steps to get started.
                   </motion.p>
                   
                   <motion.div
@@ -214,7 +214,7 @@ export function NewsletterSignupForm() {
               ) : (
                 <>
                   <Send className="mr-2 h-5 w-5" />
-                  SIGN UP & GET $20 CREDITS
+                  SIGN UP & GET $5 CREDITS
                 </>
               )}
             </Button>

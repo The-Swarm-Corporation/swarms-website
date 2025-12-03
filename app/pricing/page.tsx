@@ -627,7 +627,7 @@ export default function PricingPage() {
                         <div className="mt-6 space-y-3 text-sm text-gray-300">
                           <div className="flex items-center">
                             <span className="text-red-400 mr-2">✓</span>
-                            <span>Sign-up Bonus</span>
+                            <span>$5 in free credits when you sign up</span>
                           </div>
                           <div className="flex items-center">
                             <span className="text-red-400 mr-2">✓</span>

@@ -1539,7 +1539,7 @@ async fn main() -> Result<()> {
                       <div className="mt-6 space-y-3 text-sm text-gray-300">
                         <div className="flex items-center">
                           <span className="text-red-400 mr-2">✓</span>
-                          <span>Sign-up Bonus</span>
+                          <span>$5 in free credits when you sign up</span>
                         </div>
                         <div className="flex items-center">
                           <span className="text-red-400 mr-2">✓</span>
@@ -1814,7 +1814,7 @@ async fn main() -> Result<()> {
                   </span>
                 </h2>
                 <p className="text-gray-400 text-lg md:text-xl max-w-2xl mx-auto font-sans">
-                  Sign up for our newsletter and get <span className="text-red-400 font-bold">$20 in free credits</span>, plus exclusive updates, technical guides, blogs, and more!
+                  Sign up for our newsletter and get <span className="text-red-400 font-bold">$5 in free credits</span>, plus exclusive updates, technical guides, blogs, and more!
                 </p>
               </motion.div>
 

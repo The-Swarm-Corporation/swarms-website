@@ -35,35 +35,35 @@ export function HomeHero() {
       <div className="absolute inset-0 w-full h-full bg-black/20 md:bg-black/15 z-10" />
 
       <div className="container relative px-4 sm:px-6 lg:px-8 z-50 w-full">
-        <div className="flex flex-col items-center justify-center space-y-8 md:space-y-12 py-16 md:py-24 text-center max-w-6xl mx-auto">
+        <div className="flex flex-col items-center justify-center space-y-6 sm:space-y-8 md:space-y-12 py-12 sm:py-16 md:py-24 text-center max-w-6xl mx-auto">
           <motion.div
-            className="space-y-6 md:space-y-8 select-text w-full"
+            className="space-y-4 sm:space-y-6 md:space-y-8 select-text w-full px-2 sm:px-0"
             initial={{ opacity: 0, y: 30 }}
             animate={mounted ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.8, ease: "easeOut" }}
           >
             <h1
               id="hero-title"
-              className="text-6xl sm:text-8xl md:text-[10rem] lg:text-[12rem] xl:text-[14rem] font-bold text-white leading-none"
-              style={{ fontSize: 'clamp(3rem, 12vw, 14rem)' }}
+              className="text-5xl xs:text-6xl sm:text-7xl md:text-8xl lg:text-[10rem] xl:text-[12rem] 2xl:text-[14rem] font-bold text-white leading-[0.9] sm:leading-none px-2 sm:px-0"
+              style={{ fontSize: 'clamp(2.5rem, 10vw, 14rem)' }}
             >
               swarms
             </h1>
 
-            <p className="text-xl md:text-2xl lg:text-4xl text-white/80 max-w-4xl mx-auto font-medium leading-tight">
+            <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl text-white/80 max-w-4xl mx-auto font-medium leading-tight px-2 sm:px-0">
               The Enterprise-Grade Multi-Agent Infrastructure Stack
             </p>
           </motion.div>
 
           <motion.div
-            className="flex flex-col sm:flex-row gap-4 sm:gap-6 w-full max-w-2xl mx-auto relative z-10 justify-center items-center"
+            className="flex flex-col sm:flex-row gap-3 sm:gap-4 md:gap-6 w-full max-w-2xl mx-auto relative z-10 justify-center items-center px-4 sm:px-0"
             initial={{ opacity: 0, y: 20 }}
             animate={mounted ? { opacity: 1, y: 0 } : {}}
             transition={{ delay: 0.6, duration: 0.8 }}
           >
             <Button
               size="lg"
-              className="bg-white text-black hover:bg-white/90 w-full sm:w-auto font-bold text-base sm:text-lg px-8 sm:px-10 py-6 sm:py-7"
+              className="bg-white text-black hover:bg-white/90 w-full sm:w-auto font-bold text-sm sm:text-base md:text-lg px-6 sm:px-8 md:px-10 py-5 sm:py-6 md:py-7"
               asChild
             >
               <a
@@ -73,13 +73,13 @@ export function HomeHero() {
                 aria-label="Get started with Swarms AI on GitHub"
               >
                 <span>Get Started</span>
-                <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5" />
+                <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5 ml-2" />
               </a>
             </Button>
             <Button
               size="lg"
               variant="outline"
-              className="border-2 border-white/20 text-white hover:bg-white/10 w-full sm:w-auto font-normal text-base sm:text-lg px-8 sm:px-10 py-6 sm:py-7 bg-transparent backdrop-blur-sm"
+              className="border-2 border-white/20 text-white hover:bg-white/10 w-full sm:w-auto font-normal text-sm sm:text-base md:text-lg px-6 sm:px-8 md:px-10 py-5 sm:py-6 md:py-7 bg-transparent backdrop-blur-sm"
               asChild
             >
               <a

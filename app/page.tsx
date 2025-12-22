@@ -11,10 +11,10 @@ import { HomeCommunity } from "@/components/home-community"
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-black smooth-scroll">
+    <div className="min-h-screen bg-black smooth-scroll overflow-x-hidden">
       <Navigation />
       
-      <main id="main-content" role="main" className="select-text scroll-optimized">
+      <main id="main-content" role="main" className="select-text scroll-optimized w-full">
         <div className="sr-only">
           <h1>Swarms AI - Enterprise Multi-Agent Framework</h1>
           <p>Build, deploy, and scale autonomous AI agent swarms with unprecedented control and efficiency</p>

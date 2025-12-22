@@ -108,12 +108,12 @@ export function Navigation() {
   }
 
   return (
-    <header className="sticky top-0 z-[9998] w-full pt-4 pb-4 scroll-optimized">
-      <div className="container mx-auto max-w-[1600px] px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 items-center px-6 rounded-2xl bg-neutral-800/50 backdrop-blur-md border border-neutral-700/40 shadow-xl">
-        <div className="mr-6 flex">
+    <header className="sticky top-0 z-[9998] w-full pt-2 sm:pt-3 md:pt-4 pb-2 sm:pb-3 md:pb-4 scroll-optimized">
+      <div className="container mx-auto max-w-[1600px] px-3 sm:px-4 md:px-6 lg:px-8">
+        <div className="flex h-14 sm:h-16 items-center px-3 sm:px-4 md:px-6 rounded-xl sm:rounded-2xl bg-neutral-800/50 backdrop-blur-md border border-neutral-700/40 shadow-xl">
+        <div className="mr-3 sm:mr-4 md:mr-6 flex">
           <Link href="/" className="flex items-center group">
-            <div className="relative w-8 h-8 transition-transform duration-300 group-hover:scale-110">
+            <div className="relative w-7 h-7 sm:w-8 sm:h-8 transition-transform duration-300 group-hover:scale-110">
               <Image
                 src="/logo.svg"
                 alt="Swarms Logo"
@@ -546,11 +546,11 @@ export function Navigation() {
           </div>
         </div>
 
-        <div className="flex flex-1 items-center justify-end space-x-2">
+        <div className="flex flex-1 items-center justify-end space-x-1 sm:space-x-2">
 
           <Button 
             variant="outline"
-            className="hidden md:inline-flex rounded-xl" 
+            className="hidden md:inline-flex rounded-xl text-xs sm:text-sm" 
             asChild
           >
             <a href="https://github.com/kyegomez/swarms" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5">
@@ -559,7 +559,7 @@ export function Navigation() {
             </a>
           </Button>
 
-          <Button variant="outline" className="hidden md:inline-flex rounded-xl" asChild>
+          <Button variant="outline" className="hidden md:inline-flex rounded-xl text-xs sm:text-sm px-3 sm:px-4" asChild>
             <a href="https://cal.com/swarms/swarms-onboarding-session?overlayCalendar=true" target="_blank" rel="noopener noreferrer">
               <Calendar className="mr-2 h-4 w-4" />
               Get demo
@@ -569,19 +569,19 @@ export function Navigation() {
           {/* Mobile Menu */}
           <Sheet open={isOpen} onOpenChange={setIsOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="md:hidden hover:bg-red-500/10 border border-transparent hover:border-red-500/40 transition-all duration-300 hover:shadow-[0_0_8px_rgba(239,68,68,0.3)]">
+              <Button variant="ghost" size="icon" className="md:hidden hover:bg-red-500/10 border border-transparent hover:border-red-500/40 transition-all duration-300 hover:shadow-[0_0_8px_rgba(239,68,68,0.3)] h-9 w-9 sm:h-10 sm:w-10">
                 <Menu className="h-5 w-5" />
                 <span className="sr-only">Toggle menu</span>
               </Button>
             </SheetTrigger>
             <SheetContent
               side="right"
-              className="w-[85vw] sm:w-[400px] border-2 border-red-500/30 bg-black backdrop-blur-md shadow-xl shadow-red-500/10"
+              className="w-[85vw] sm:w-[400px] border-2 border-red-500/30 bg-black backdrop-blur-md shadow-xl shadow-red-500/10 overflow-y-auto"
             >
               <SheetHeader>
-                <SheetTitle className="cyber-text border-b-2 border-red-500/30 pb-2">Menu</SheetTitle>
+                <SheetTitle className="cyber-text border-b-2 border-red-500/30 pb-2 text-lg sm:text-xl">Menu</SheetTitle>
               </SheetHeader>
-              <div className="grid gap-4 py-6">
+              <div className="grid gap-3 sm:gap-4 py-4 sm:py-6">
                 <Link
                   href="/"
                   className="text-sm font-medium hover:text-red-500 transition-all duration-300 hover:bg-red-500/10 p-3 rounded-md border border-transparent hover:border-red-500/30 hover:shadow-[0_0_8px_rgba(239,68,68,0.2)]"
@@ -689,7 +689,7 @@ export function Navigation() {
                   </div>
 
                   <Tabs defaultValue="platform" className="w-full">
-                    <TabsList className="w-full grid grid-cols-2 gap-1 bg-black backdrop-blur-sm border-2 border-red-500/20 rounded-md mb-3 h-auto p-1">
+                    <TabsList className="w-full grid grid-cols-2 sm:grid-cols-3 gap-1 bg-black backdrop-blur-sm border-2 border-red-500/20 rounded-md mb-3 h-auto p-1">
                       <TabsTrigger
                         value="platform"
                         className="text-xs data-[state=active]:bg-red-500/10 data-[state=active]:text-red-500 data-[state=active]:border-red-500/30 border border-transparent hover:border-red-500/20 transition-all duration-300"

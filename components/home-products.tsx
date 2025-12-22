@@ -124,7 +124,7 @@ export function HomeProducts() {
   return (
     <>
       {/* Products Section Header */}
-      <div className="container py-20 px-4 sm:px-6 relative">
+      <div className="container py-12 sm:py-16 md:py-20 px-4 sm:px-6 relative">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -133,10 +133,10 @@ export function HomeProducts() {
             ease: [0.22, 1, 0.36, 1],
           }}
           viewport={{ once: true, margin: "-100px" }}
-          className="text-center space-y-6"
+          className="text-center space-y-4 sm:space-y-6 px-2 sm:px-0"
         >
           <motion.h2 
-            className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-white"
+            className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-white"
             initial={{ opacity: 0, scale: 0.95 }}
             whileInView={{ opacity: 1, scale: 1 }}
             transition={{ 
@@ -148,7 +148,7 @@ export function HomeProducts() {
             Products
           </motion.h2>
           <motion.p 
-            className="text-xl text-white/60 max-w-3xl mx-auto font-normal"
+            className="text-base sm:text-lg md:text-xl text-white/60 max-w-3xl mx-auto font-normal px-2 sm:px-0"
             initial={{ opacity: 0, y: 10 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ 
@@ -192,7 +192,7 @@ function ProductSection({ product, index, isEven }: { product: typeof swarmsStac
   return (
     <motion.div 
       ref={sectionRef}
-      className="relative h-screen flex items-center py-24 md:py-32 bg-black overflow-hidden scroll-optimized"
+      className="relative min-h-screen flex items-center py-12 sm:py-16 md:py-24 lg:py-32 bg-black overflow-hidden scroll-optimized"
       style={{ opacity }}
     >
       {/* Subtle background gradient */}
@@ -206,7 +206,7 @@ function ProductSection({ product, index, isEven }: { product: typeof swarmsStac
 
       <div className="container px-4 sm:px-6 relative z-10 w-full">
         <motion.div 
-          className="grid lg:grid-cols-2 gap-12 md:gap-16 items-center max-w-7xl mx-auto"
+          className="grid lg:grid-cols-2 gap-8 sm:gap-10 md:gap-12 lg:gap-16 items-center max-w-7xl mx-auto"
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: "-100px" }}
@@ -215,14 +215,14 @@ function ProductSection({ product, index, isEven }: { product: typeof swarmsStac
           {/* Content Section */}
           <motion.div
             variants={itemVariants}
-            className={`space-y-6 md:space-y-8 ${isEven ? 'lg:order-1' : 'lg:order-2'}`}
+            className={`space-y-4 sm:space-y-6 md:space-y-8 ${isEven ? 'lg:order-1' : 'lg:order-2'}`}
           >
             <motion.div
               variants={itemVariants}
-              className="space-y-4"
+              className="space-y-3 sm:space-y-4"
             >
               <motion.h3 
-                className="text-3xl sm:text-4xl md:text-5xl font-bold text-white tracking-tight leading-tight"
+                className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white tracking-tight leading-tight"
                 initial={{ opacity: 0, x: isEven ? -30 : 30 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 transition={{ 
@@ -234,7 +234,7 @@ function ProductSection({ product, index, isEven }: { product: typeof swarmsStac
                 {product.title}
               </motion.h3>
               <motion.p 
-                className="text-lg md:text-xl text-white/60 font-medium"
+                className="text-base sm:text-lg md:text-xl text-white/60 font-medium"
                 initial={{ opacity: 0, x: isEven ? -30 : 30 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 transition={{ 
@@ -249,7 +249,7 @@ function ProductSection({ product, index, isEven }: { product: typeof swarmsStac
             </motion.div>
 
             <motion.p 
-              className="text-base md:text-lg text-white/60 leading-relaxed max-w-2xl"
+              className="text-sm sm:text-base md:text-lg text-white/60 leading-relaxed max-w-2xl"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ 
@@ -263,7 +263,7 @@ function ProductSection({ product, index, isEven }: { product: typeof swarmsStac
             </motion.p>
 
             <motion.div 
-              className="flex flex-col sm:flex-row gap-4 pt-4"
+              className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-2 sm:pt-4"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ 
@@ -275,7 +275,7 @@ function ProductSection({ product, index, isEven }: { product: typeof swarmsStac
             >
               <Button 
                 size="lg" 
-                className="bg-gradient-to-r from-red-900 via-red-800 to-red-900 text-white hover:from-red-800 hover:via-red-700 hover:to-red-800 font-bold w-full sm:w-auto transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-red-900/50 group border-0" 
+                className="bg-gradient-to-r from-red-900 via-red-800 to-red-900 text-white hover:from-red-800 hover:via-red-700 hover:to-red-800 font-bold w-full sm:w-auto transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-red-900/50 group border-0 text-sm sm:text-base px-4 sm:px-6 py-5 sm:py-6" 
                 asChild
               >
                 <a href={product.link} target="_blank" rel="noopener noreferrer">
@@ -286,7 +286,7 @@ function ProductSection({ product, index, isEven }: { product: typeof swarmsStac
               <Button 
                 variant="outline" 
                 size="lg" 
-                className="border-white/20 text-white hover:bg-white/10 hover:border-white/40 w-full sm:w-auto transition-all duration-300 hover:scale-105 group" 
+                className="border-white/20 text-white hover:bg-white/10 hover:border-white/40 w-full sm:w-auto transition-all duration-300 hover:scale-105 group text-sm sm:text-base px-4 sm:px-6 py-5 sm:py-6" 
                 asChild
               >
                 <a href={product.docsLink} target="_blank" rel="noopener noreferrer">
@@ -300,7 +300,7 @@ function ProductSection({ product, index, isEven }: { product: typeof swarmsStac
           {/* Code/Image Card Section */}
           <motion.div
             variants={itemVariants}
-            className={`relative ${isEven ? 'lg:order-2' : 'lg:order-1'}`}
+            className={`relative ${isEven ? 'lg:order-2' : 'lg:order-1'} mt-8 lg:mt-0`}
             initial={{ opacity: 0, x: isEven ? 50 : -50, scale: 0.95 }}
             whileInView={{ opacity: 1, x: 0, scale: 1 }}
             transition={{ 
@@ -329,8 +329,8 @@ function ProductSection({ product, index, isEven }: { product: typeof swarmsStac
                 </div>
               ) : (
                 <Card className="bg-white/[0.02] border border-white/10 backdrop-blur-sm hover:border-white/20 transition-all duration-500 hover:shadow-2xl hover:shadow-red-500/10">
-                  <div className="p-6">
-                    <div className="flex items-center space-x-2 mb-4">
+                  <div className="p-4 sm:p-5 md:p-6">
+                    <div className="flex items-center space-x-2 mb-3 sm:mb-4">
                       <motion.div 
                         className="w-2 h-2 bg-white/40 rounded-full"
                         animate={{ opacity: [0.4, 1, 0.4] }}
@@ -361,7 +361,7 @@ function ProductSection({ product, index, isEven }: { product: typeof swarmsStac
                       <span className="text-white/40 text-xs ml-4 font-mono">code</span>
                     </div>
                     <motion.pre 
-                      className="text-white/80 font-mono text-sm leading-relaxed overflow-x-auto"
+                      className="text-white/80 font-mono text-xs sm:text-sm leading-relaxed overflow-x-auto"
                       initial={{ opacity: 0 }}
                       whileInView={{ opacity: 1 }}
                       transition={{ 

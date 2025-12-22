@@ -58,19 +58,19 @@ export function HomeMission() {
       <div className="container px-4 sm:px-6 lg:px-8 w-full relative z-10">
         <motion.div
           style={{ opacity: contentOpacity, y: contentY, scale: contentScale }}
-          className="max-w-5xl mx-auto text-center"
+          className="max-w-5xl mx-auto text-center px-2 sm:px-0"
         >
-          <div className="flex flex-col items-center gap-4 md:gap-5 mb-10 md:mb-14">
-            <div className="flex items-center gap-3">
-              <span className="h-px w-10 bg-gradient-to-r from-transparent to-white/20" />
-              <p className="text-sm md:text-base text-white/55 tracking-[0.24em] uppercase font-semibold">
+          <div className="flex flex-col items-center gap-3 sm:gap-4 md:gap-5 mb-8 sm:mb-10 md:mb-14">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <span className="h-px w-6 sm:w-8 md:w-10 bg-gradient-to-r from-transparent to-white/20" />
+              <p className="text-xs sm:text-sm md:text-base text-white/55 tracking-[0.2em] sm:tracking-[0.24em] uppercase font-semibold">
                 <span className="text-white font-bold">Our mission</span>
               </p>
-              <span className="h-px w-10 bg-gradient-to-l from-transparent to-white/20" />
+              <span className="h-px w-6 sm:w-8 md:w-10 bg-gradient-to-l from-transparent to-white/20" />
             </div>
           </div>
 
-          <h2 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-light leading-[1.06] tracking-tight text-white">
+          <h2 className="text-3xl xs:text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-light leading-[1.1] sm:leading-[1.06] tracking-tight text-white px-2 sm:px-0">
             <motion.span
               className="block"
               initial={prefersReducedMotion ? false : { opacity: 0, filter: "blur(10px)" }}
@@ -81,7 +81,7 @@ export function HomeMission() {
               Build the infrastructure
             </motion.span>
             <motion.span
-              className="block text-white/55 font-light mt-3 md:mt-5"
+              className="block text-white/55 font-light mt-2 sm:mt-3 md:mt-5"
               initial={prefersReducedMotion ? false : { opacity: 0, y: 8, filter: "blur(10px)" }}
               whileInView={prefersReducedMotion ? undefined : { opacity: 1, y: 0, filter: "blur(0px)" }}
               viewport={{ once: true, amount: 0.6 }}
@@ -90,7 +90,7 @@ export function HomeMission() {
               necessary for the
             </motion.span>
             <motion.span
-              className="block mt-6 md:mt-9"
+              className="block mt-4 sm:mt-6 md:mt-9"
               initial={prefersReducedMotion ? false : { opacity: 0, y: 10, filter: "blur(14px)" }}
               whileInView={prefersReducedMotion ? undefined : { opacity: 1, y: 0, filter: "blur(0px)" }}
               viewport={{ once: true, amount: 0.6 }}
@@ -107,7 +107,7 @@ export function HomeMission() {
                   multi-trillion dollar
                 </span>
               </span>
-              <span className="block mt-2 md:mt-4">
+              <span className="block mt-1 sm:mt-2 md:mt-4">
                 <span className="font-semibold bg-gradient-to-b from-white via-white to-white/70 bg-clip-text text-transparent">
                   agent economy
                 </span>
@@ -115,7 +115,7 @@ export function HomeMission() {
             </motion.span>
           </h2>
 
-          <p className="mt-10 md:mt-14 text-base md:text-lg text-white/45 max-w-2xl mx-auto font-normal leading-relaxed">
+          <p className="mt-8 sm:mt-10 md:mt-14 text-sm sm:text-base md:text-lg text-white/45 max-w-2xl mx-auto font-normal leading-relaxed px-4 sm:px-0">
             Our stack prioritizes performance, reliability, and scalability, serving as the foundation for teams shipping production-grade autonomous systems.
           </p>
         </motion.div>

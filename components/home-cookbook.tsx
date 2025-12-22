@@ -87,25 +87,25 @@ export function HomeCookbook() {
   }
 
   return (
-    <div className="container py-24 md:py-32 px-4 sm:px-6 bg-black">
+    <div className="container py-16 sm:py-20 md:py-24 lg:py-32 px-4 sm:px-6 bg-black">
       <motion.div
         initial={{ opacity: 0, y: 30 }}
         whileInView={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8 }}
         viewport={{ once: true }}
-        className="text-center space-y-6 mb-16 md:mb-20"
+        className="text-center space-y-4 sm:space-y-6 mb-12 sm:mb-16 md:mb-20 px-2 sm:px-0"
       >
-        <h2 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-white">
+        <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-white">
           Cookbook & Templates
         </h2>
-        <p className="text-xl text-white/60 max-w-3xl mx-auto font-normal">
+        <p className="text-base sm:text-lg md:text-xl text-white/60 max-w-3xl mx-auto font-normal">
           Get started quickly with curated examples, templates, and implementation guides
         </p>
       </motion.div>
 
       {/* Carousel Container */}
-      <div className="relative max-w-4xl mx-auto">
-        <div className="relative overflow-hidden rounded-3xl">
+      <div className="relative max-w-4xl mx-auto px-4 sm:px-0">
+        <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl">
           <AnimatePresence initial={false} custom={direction} mode="wait">
             <motion.div
               key={currentIndex}
@@ -134,26 +134,26 @@ export function HomeCookbook() {
               className="w-full"
             >
               <Card className="h-full apple-card-hover border-white/10 bg-white/[0.02] mx-auto max-w-2xl">
-                <CardHeader className="p-8 md:p-10">
-                  <div className="flex items-start justify-between mb-6">
-                    <div className="bg-white/10 border border-white/20 px-3 py-1 rounded-full">
+                <CardHeader className="p-6 sm:p-8 md:p-10">
+                  <div className="flex items-start justify-between mb-4 sm:mb-6">
+                    <div className="bg-white/10 border border-white/20 px-2.5 sm:px-3 py-1 rounded-full">
                       <span className="text-xs font-bold text-white">
                         {cookbookResources[currentIndex].badge}
                       </span>
                     </div>
                   </div>
-                  <CardTitle className="text-2xl text-white font-bold mb-3">
+                  <CardTitle className="text-xl sm:text-2xl text-white font-bold mb-2 sm:mb-3">
                     {cookbookResources[currentIndex].title}
                   </CardTitle>
-                  <CardDescription className="text-white/60 leading-relaxed text-base">
+                  <CardDescription className="text-white/60 leading-relaxed text-sm sm:text-base">
                     {cookbookResources[currentIndex].description}
                   </CardDescription>
                 </CardHeader>
-                <div className="px-8 md:px-10 pb-8 md:pb-10">
+                <div className="px-6 sm:px-8 md:px-10 pb-6 sm:pb-8 md:pb-10">
                   <Button 
                     variant="ghost" 
                     size="sm" 
-                    className="rounded-xl text-white/90 hover:text-white hover:bg-white/10 border border-white/20 bg-white/5 px-6 py-2.5 font-medium transition-all duration-200 hover:border-white/30 hover:scale-105" 
+                    className="rounded-xl text-white/90 hover:text-white hover:bg-white/10 border border-white/20 bg-white/5 px-4 sm:px-6 py-2 sm:py-2.5 font-medium transition-all duration-200 hover:border-white/30 hover:scale-105 text-sm sm:text-base" 
                     asChild
                   >
                     <a 
@@ -175,17 +175,17 @@ export function HomeCookbook() {
         {/* Navigation Arrows */}
         <button
           onClick={() => paginate(-1)}
-          className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 md:-translate-x-12 z-10 w-12 h-12 md:w-14 md:h-14 rounded-full bg-white/5 backdrop-blur-xl border border-white/10 hover:border-white/20 hover:bg-white/10 transition-all duration-300 flex items-center justify-center group"
+          className="absolute left-0 sm:-left-4 md:-left-12 top-1/2 -translate-y-1/2 z-10 w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full bg-white/5 backdrop-blur-xl border border-white/10 hover:border-white/20 hover:bg-white/10 transition-all duration-300 flex items-center justify-center group"
           aria-label="Previous card"
         >
-          <ChevronLeft className="w-5 h-5 md:w-6 md:h-6 text-white/70 group-hover:text-white transition-colors" />
+          <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-white/70 group-hover:text-white transition-colors" />
         </button>
         <button
           onClick={() => paginate(1)}
-          className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 md:translate-x-12 z-10 w-12 h-12 md:w-14 md:h-14 rounded-full bg-white/5 backdrop-blur-xl border border-white/10 hover:border-white/20 hover:bg-white/10 transition-all duration-300 flex items-center justify-center group"
+          className="absolute right-0 sm:-right-4 md:-right-12 top-1/2 -translate-y-1/2 z-10 w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full bg-white/5 backdrop-blur-xl border border-white/10 hover:border-white/20 hover:bg-white/10 transition-all duration-300 flex items-center justify-center group"
           aria-label="Next card"
         >
-          <ChevronRight className="w-5 h-5 md:w-6 md:h-6 text-white/70 group-hover:text-white transition-colors" />
+          <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-white/70 group-hover:text-white transition-colors" />
         </button>
 
         {/* Dots Indicator */}

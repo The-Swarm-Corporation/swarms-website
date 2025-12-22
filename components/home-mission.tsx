@@ -64,7 +64,7 @@ export function HomeMission() {
             <div className="flex items-center gap-3">
               <span className="h-px w-10 bg-gradient-to-r from-transparent to-white/20" />
               <p className="text-sm md:text-base text-white/55 tracking-[0.24em] uppercase font-semibold">
-                <span className="text-white font-bold">Our mission:</span>
+                <span className="text-white font-bold">Our mission</span>
               </p>
               <span className="h-px w-10 bg-gradient-to-l from-transparent to-white/20" />
             </div>

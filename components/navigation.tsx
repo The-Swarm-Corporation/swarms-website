@@ -109,7 +109,7 @@ export function Navigation() {
 
   return (
     <header className="sticky top-0 z-[9998] w-full pt-4 pb-4 scroll-optimized">
-      <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className="container mx-auto max-w-[1600px] px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center px-6 rounded-2xl bg-neutral-800/50 backdrop-blur-md border border-neutral-700/40 shadow-xl">
         <div className="mr-6 flex">
           <Link href="/" className="flex items-center group">

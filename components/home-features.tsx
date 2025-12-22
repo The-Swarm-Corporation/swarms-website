@@ -8,49 +8,37 @@ const features = [
     title: "Multi-Agent Architectures",
     description: "Build complex hierarchical, sequential, and parallel agent collaboration systems",
     link: "https://docs.swarms.world",
-    icon: Network,
-    gradient: "from-red-500/20 via-red-600/10 to-red-700/20",
-    bgGradient: "from-red-500/5 to-transparent"
+    icon: Network
   },
   {
     title: "Agent-To-Agent Communication",
     description: "Advanced communication protocols for seamless agent interaction",
     link: "https://docs.swarms.world",
-    icon: MessageSquare,
-    gradient: "from-blue-500/20 via-blue-600/10 to-blue-700/20",
-    bgGradient: "from-blue-500/5 to-transparent"
+    icon: MessageSquare
   },
   {
     title: "Ultra-Optimized Runtime",
     description: "High-performance runtime for maximum agent efficiency and speed",
     link: "https://docs.swarms.world",
-    icon: Zap,
-    gradient: "from-purple-500/20 via-purple-600/10 to-purple-700/20",
-    bgGradient: "from-purple-500/5 to-transparent"
+    icon: Zap
   },
   {
     title: "Multi-Agent Memory Systems",
     description: "Sophisticated memory management for complex agent workflows",
     link: "https://docs.swarms.world",
-    icon: Brain,
-    gradient: "from-green-500/20 via-green-600/10 to-green-700/20",
-    bgGradient: "from-green-500/5 to-transparent"
+    icon: Brain
   },
   {
     title: "Simulation Environments",
     description: "Advanced simulation environments for testing and training agent swarms",
     link: "https://docs.swarms.world",
-    icon: Cpu,
-    gradient: "from-orange-500/20 via-orange-600/10 to-orange-700/20",
-    bgGradient: "from-orange-500/5 to-transparent"
+    icon: Cpu
   },
   {
     title: "Enterprise Security & Compliance",
     description: "Built-in security, governance, and compliance features for enterprise deployments",
     link: "https://docs.swarms.world",
-    icon: Shield,
-    gradient: "from-cyan-500/20 via-cyan-600/10 to-cyan-700/20",
-    bgGradient: "from-cyan-500/5 to-transparent"
+    icon: Shield
   }
 ]
 
@@ -97,10 +85,10 @@ export function HomeFeatures() {
               >
                 <div className="relative h-[280px] md:h-[300px] lg:h-[320px] rounded-3xl overflow-hidden border border-white/10 bg-black/50 backdrop-blur-sm transition-all duration-500 hover:border-white/30 hover:scale-[1.02] hover:shadow-2xl hover:shadow-gray-300/20">
                   {/* Background gradient */}
-                  <div className={`absolute inset-0 bg-gradient-to-br ${feature.bgGradient} opacity-50 group-hover:opacity-100 transition-opacity duration-500`} />
+                  <div className="absolute inset-0 bg-gradient-to-br from-gray-500/5 to-transparent opacity-50 group-hover:opacity-100 transition-opacity duration-500" />
                   
                   {/* Animated gradient overlay */}
-                  <div className={`absolute inset-0 bg-gradient-to-br ${feature.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
+                  <div className="absolute inset-0 bg-gradient-to-br from-gray-500/20 via-gray-600/10 to-gray-700/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                   
                   {/* Content */}
                   <div className="relative z-10 h-full flex flex-col justify-between p-6 md:p-8">

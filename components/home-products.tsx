@@ -215,7 +215,7 @@ function ProductSection({ product, index, isEven }: { product: typeof swarmsStac
           {/* Content Section */}
           <motion.div
             variants={itemVariants}
-            className={`space-y-4 sm:space-y-6 md:space-y-8 ${isEven ? 'lg:order-1' : 'lg:order-2'} w-full max-w-full overflow-hidden`}
+            className={`space-y-4 sm:space-y-6 md:space-y-8 ${isEven ? 'lg:order-1' : 'lg:order-2'} w-full max-w-full overflow-visible`}
           >
             <motion.div
               variants={itemVariants}
@@ -263,7 +263,7 @@ function ProductSection({ product, index, isEven }: { product: typeof swarmsStac
             </motion.p>
 
             <motion.div 
-              className="flex flex-col sm:flex-row gap-2 sm:gap-3 md:gap-4 pt-2 sm:pt-4 w-full"
+              className="flex flex-col sm:flex-row gap-2 sm:gap-3 md:gap-4 pt-2 sm:pt-4 w-full p-2 sm:p-3 md:p-4 -m-2 sm:-m-3 md:-m-4"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ 

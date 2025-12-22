@@ -1,7 +1,8 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { MessageCircle, Twitter, Users, DiscIcon as Discord } from "lucide-react"
+import { MessageCircle, Twitter, Users } from "lucide-react"
+import { SiDiscord as Discord } from "react-icons/si"
 
 const socialLinks = [
   { icon: Discord, href: "https://discord.gg/EamjgSaEQf" },

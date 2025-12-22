@@ -6,7 +6,6 @@ import {
   Menu,
   ChevronDown,
   Twitter,
-  DiscIcon as Discord,
   Github,
   Calendar,
   BookOpen,
@@ -27,6 +26,9 @@ import {
   MessageCircle,
   Network,
 } from "lucide-react"
+import { SiDiscord } from "react-icons/si"
+
+const Discord = SiDiscord as React.ComponentType<{ className?: string }>
 import Image from "next/image"
 import { motion, AnimatePresence } from "framer-motion"
 

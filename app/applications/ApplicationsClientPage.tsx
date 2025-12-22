@@ -41,7 +41,6 @@ import {
   Globe,
   Github,
   Twitter,
-  DiscIcon as Discord,
   Factory,
   Truck,
   Package,
@@ -69,6 +68,7 @@ import {
   Box,
   Clock,
 } from "lucide-react"
+import { SiDiscord as Discord } from "react-icons/si"
 import Link from "next/link"
 import Image from "next/image"
 

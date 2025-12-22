@@ -25,9 +25,9 @@ import {
   Copy,
   CheckCircle,
   ExternalLink,
-  DiscIcon as Discord,
   Twitter,
 } from "lucide-react"
+import { SiDiscord as Discord } from "react-icons/si"
 import { useState } from "react"
 import Image from "next/image"
 import Link from "next/link"

@@ -1,3 +1,4 @@
+import * as React from "react"
 import Link from "next/link"
 import {
   Twitter,
@@ -21,6 +22,7 @@ import {
   Building,
   Network,
 } from "lucide-react"
+import { SiDiscord } from "react-icons/si"
 
 export function Footer() {
   return (
@@ -133,27 +135,30 @@ export function Footer() {
 
               <div className="grid gap-1 sm:gap-2">
                 {[
-                  { name: "Discord Community", icon: MessageCircle, url: "https://discord.gg/EamjgSaEQf" },
+                  { name: "Discord Community", icon: SiDiscord as React.ComponentType<{ className?: string }>, url: "https://discord.gg/EamjgSaEQf" },
                   { name: "Swarms Twitter", icon: Twitter, url: "https://twitter.com/swarms_corp" },
                   { name: "LinkedIn", icon: Building, url: "https://www.linkedin.com/company/swarms-corp/" },
                   { name: "YouTube", icon: MessageCircle, url: "https://www.youtube.com/@kyegomez3242" },
                   { name: "GitHub", icon: Github, url: "https://github.com/kyegomez/swarms" },
-                ].map((item, index) => (
-                  <Link
-                    key={index}
-                    href={item.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="group flex items-center rounded-lg bg-transparent p-2 text-sm transition-all duration-300 hover:bg-neutral-900/30 min-h-[44px] touch-manipulation"
-                  >
-                    <div className="flex items-center gap-2 min-w-0 flex-1">
-                      <div className="flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded bg-neutral-800/50 transition-colors duration-300 group-hover:bg-neutral-800/70 flex-shrink-0">
-                        <item.icon className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-red-500" />
+                ].map((item, index) => {
+                  const Icon = item.icon
+                  return (
+                    <Link
+                      key={index}
+                      href={item.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group flex items-center rounded-lg bg-transparent p-2 text-sm transition-all duration-300 hover:bg-neutral-900/30 min-h-[44px] touch-manipulation"
+                    >
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        <div className="flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded bg-neutral-800/50 transition-colors duration-300 group-hover:bg-neutral-800/70 flex-shrink-0">
+                          <Icon className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-red-500" />
+                        </div>
+                        <span className="text-xs text-gray-300 transition-colors duration-300 group-hover:text-gray-100 leading-tight truncate">{item.name}</span>
                       </div>
-                      <span className="text-xs text-gray-300 transition-colors duration-300 group-hover:text-gray-100 leading-tight truncate">{item.name}</span>
-                    </div>
-                  </Link>
-                ))}
+                    </Link>
+                  )
+                })}
               </div>
             </div>
 

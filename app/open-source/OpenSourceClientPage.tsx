@@ -7,6 +7,7 @@ import { AnimatedBackground } from "@/components/animated-background"
 import { motion } from "framer-motion"
 import { Badge } from "@/components/ui/badge"
 import { Github, Star, GitBranch, Code, BookOpen, Users, Globe } from "lucide-react"
+import { SiDiscord as Discord } from "react-icons/si"
 
 export default function OpenSourceClientPage() {
   const tickerAnnouncements = [
@@ -63,7 +64,7 @@ export default function OpenSourceClientPage() {
                 style={{ position: "relative", zIndex: 10 }}
                 className="cursor-pointer inline-flex items-center justify-center rounded-md text-sm font-medium border border-red-600 text-red-600 hover:bg-red-600/10 h-12 px-6 py-3"
               >
-                <Users className="mr-2 h-5 w-5" />
+                <Discord className="mr-2 h-5 w-5" />
                 Join Our Community
               </a>
             </div>
@@ -287,7 +288,7 @@ export default function OpenSourceClientPage() {
                 style={{ position: "relative", zIndex: 10 }}
                 className="cursor-pointer inline-flex items-center justify-center rounded-md text-sm font-medium border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 w-9 p-0"
               >
-                <Users className="h-5 w-5" />
+                <Discord className="h-5 w-5" />
               </a>
             </div>
           </div>

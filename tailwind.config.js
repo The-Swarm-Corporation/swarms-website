@@ -12,8 +12,16 @@ module.exports = {
     },
     extend: {
       fontFamily: {
-        'orbitron': ['Orbitron', 'monospace'],
-        'orbitron-bold': ['Orbitron', 'monospace'],
+        sans: [
+          "var(--font-sans)",
+          "system-ui",
+          "-apple-system",
+          "BlinkMacSystemFont",
+          "Segoe UI",
+          "Helvetica",
+          "Arial",
+          "sans-serif",
+        ],
       },
       colors: {
         border: "hsl(var(--border))",

@@ -6,7 +6,7 @@
  */
 
 import type { Metadata } from "next"
-import { Inter } from "next/font/google"
+import { Montserrat } from "next/font/google"
 import { siteConfig } from "./metadata"
 import "./globals.css"
 import type React from "react"
@@ -15,7 +15,11 @@ import { Footer } from "@/components/footer"
 import { NewsletterPopupProvider } from "@/components/newsletter-popup-provider"
 import { Analytics } from "@vercel/analytics/next"
 
-const inter = Inter({ subsets: ["latin"] })
+const montserrat = Montserrat({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
+  variable: "--font-sans",
+})
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
@@ -89,9 +93,9 @@ interface RootLayoutProps {
 
 export default function RootLayout({ children }: RootLayoutProps) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning className="smooth-scroll">
       <head />
-      <body className={inter.className}>
+      <body className={`${montserrat.variable} font-sans antialiased smooth-scroll`}>
         <ThemeProvider attribute="class" defaultTheme="dark" forcedTheme="dark">
           <NewsletterPopupProvider>
             {children}

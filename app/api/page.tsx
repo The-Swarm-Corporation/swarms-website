@@ -375,49 +375,42 @@ if (apiKey) {
       codeExamples: [
         {
           language: "Python",
-          code: `import os
-from swarms_client import SwarmsClient
+          code: `import requests
 
-# Initialize the Swarms client
-client = SwarmsClient(
-    api_key=os.getenv("SWARMS_API_KEY")
-)
-
-# Define your agent
-agent_config = {
-    "agent_name": "Research Assistant",
-    "description": "A helpful research assistant",
-    "system_prompt": "You are a helpful research assistant that provides accurate and detailed information.",
-    "model_name": "gpt-4o",
-    "max_tokens": 4000,
-    "temperature": 0.7
+payload = {
+    "agent_config": {
+        "agent_name": "Research Analyst",
+        "description": "Expert in analyzing and synthesizing research data",
+        "system_prompt": "You are a Research Analyst with expertise in data analysis and synthesis.",
+        "model_name": "gpt-4o-mini",
+        "max_tokens": 8192,
+        "temperature": 0.7
+    },
+    "task": "Analyze the impact of artificial intelligence on healthcare"
 }
 
-# Run your agent
-response = client.agents.run(
-    agent_config=agent_config,
-    task="Explain the benefits of multi-agent AI systems"
-)
-
-print("Agent Response:")
-print(response)`
+response = requests.post(
+    "https://api.swarms.world/v1/agent/completions",
+    headers={"x-api-key": "your-api-key"},
+    json=payload
+)`
         },
         {
           language: "cURL",
           code: `# Run your first agent with cURL
 curl -X POST "https://api.swarms.world/v1/agent/completions" \\
-  -H "x-api-key: $SWARMS_API_KEY" \\
+  -H "x-api-key: your-api-key" \\
   -H "Content-Type: application/json" \\
   -d '{
     "agent_config": {
-      "agent_name": "Research Assistant",
-      "description": "A helpful research assistant",
-      "system_prompt": "You are a helpful research assistant that provides accurate and detailed information.",
-      "model_name": "gpt-4o",
-      "max_tokens": 4000,
+      "agent_name": "Research Analyst",
+      "description": "Expert in analyzing and synthesizing research data",
+      "system_prompt": "You are a Research Analyst with expertise in data analysis and synthesis.",
+      "model_name": "gpt-4o-mini",
+      "max_tokens": 8192,
       "temperature": 0.7
     },
-    "task": "Explain the benefits of multi-agent AI systems"
+    "task": "Analyze the impact of artificial intelligence on healthcare"
   }'
 
 # You should receive a JSON response with your agent's output`
@@ -426,41 +419,33 @@ curl -X POST "https://api.swarms.world/v1/agent/completions" \\
           language: "JavaScript",
           code: `const axios = require('axios');
 
-// Initialize the API client
-const swarmsAPI = axios.create({
-  baseURL: 'https://api.swarms.world',
-  headers: {
-    'x-api-key': process.env.SWARMS_API_KEY,
-    'Content-Type': 'application/json'
-  }
-});
-
-// Define your agent
-const agentConfig = {
-  agent_name: "Research Assistant",
-  description: "A helpful research assistant",
-  system_prompt: "You are a helpful research assistant that provides accurate and detailed information.",
-  model_name: "gpt-4o",
-  max_tokens: 4000,
-  temperature: 0.7
+const payload = {
+  agent_config: {
+    agent_name: "Research Analyst",
+    description: "Expert in analyzing and synthesizing research data",
+    system_prompt: "You are a Research Analyst with expertise in data analysis and synthesis.",
+    model_name: "gpt-4o-mini",
+    max_tokens: 8192,
+    temperature: 0.7
+  },
+  task: "Analyze the impact of artificial intelligence on healthcare"
 };
 
-// Run your agent
-async function runAgent() {
-  try {
-    const response = await swarmsAPI.post('/v1/agent/completions', {
-      agent_config: agentConfig,
-      task: "Explain the benefits of multi-agent AI systems"
-    });
-    
-    console.log("Agent Response:");
-    console.log(response.data);
-  } catch (error) {
-    console.error("Error:", error.response?.data || error.message);
+axios.post(
+  "https://api.swarms.world/v1/agent/completions",
+  payload,
+  {
+    headers: {
+      "x-api-key": "your-api-key"
+    }
   }
-}
-
-runAgent();`
+)
+.then(response => {
+  console.log(response.data);
+})
+.catch(error => {
+  console.error("Error:", error.response?.data || error.message);
+});`
         }
       ]
     }

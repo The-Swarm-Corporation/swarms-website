@@ -272,7 +272,7 @@ export default function PricingPage() {
       {/* Hero Section - Apple-inspired */}
       <motion.section
         ref={heroRef}
-        className="relative overflow-hidden bg-black min-h-screen flex items-center"
+        className="relative overflow-hidden bg-black min-h-[80vh] sm:min-h-screen flex items-center"
         style={{ opacity: heroOpacity, y: heroY }}
       >
         {/* Background Image */}
@@ -301,49 +301,49 @@ export default function PricingPage() {
           <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
         </div>
 
-        <div className="container relative px-4 sm:px-6 lg:px-8 z-10 w-full">
-          <div className="flex flex-col items-center justify-center space-y-8 md:space-y-12 py-16 md:py-24 text-center max-w-6xl mx-auto">
+        <div className="container relative px-2 sm:px-4 md:px-6 lg:px-8 z-10 w-full max-w-full overflow-hidden">
+          <div className="flex flex-col items-center justify-center space-y-6 sm:space-y-8 md:space-y-12 py-12 sm:py-16 md:py-24 text-center max-w-6xl mx-auto">
             <motion.div
-              className="space-y-6 md:space-y-8"
+              className="space-y-4 sm:space-y-6 md:space-y-8 w-full px-2"
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, ease: "easeOut" }}
             >
-              <h1 className="text-6xl sm:text-8xl md:text-[10rem] lg:text-[12rem] xl:text-[14rem] font-bold text-white leading-none tracking-tight">
+              <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl xl:text-[10rem] 2xl:text-[12rem] font-bold text-white leading-none tracking-tight break-words">
                 Pricing
               </h1>
 
-              <p className="text-xl md:text-2xl lg:text-3xl text-white/60 max-w-4xl mx-auto font-normal leading-relaxed">
+              <p className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-3xl text-white/60 max-w-4xl mx-auto font-normal leading-relaxed px-2">
                 Transparent usage-based pricing and service tiers for The Swarms API.
               </p>
             </motion.div>
 
             <motion.div
-              className="flex flex-col sm:flex-row gap-4 sm:gap-6 w-full max-w-2xl mx-auto relative z-10 justify-center items-center"
+              className="flex flex-col sm:flex-row gap-3 sm:gap-4 md:gap-6 w-full max-w-2xl mx-auto relative z-10 justify-center items-center px-2"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.6, duration: 0.8 }}
             >
               <Button
                 size="lg"
-                className="bg-white text-black hover:bg-white/90 w-full sm:w-auto font-semibold text-base sm:text-lg px-8 sm:px-10 py-6 sm:py-7"
+                className="bg-white text-black hover:bg-white/90 w-full sm:w-auto font-semibold text-sm sm:text-base md:text-lg px-6 sm:px-8 md:px-10 py-5 sm:py-6 md:py-7"
                 asChild
               >
-                <Link href="https://swarms.world/platform/api-keys" target="_blank">
-                  <Key className="w-5 h-5 mr-2" />
-                  Get started free
-                  <ArrowRight className="w-5 h-5 ml-2" />
+                <Link href="https://swarms.world/platform/api-keys" target="_blank" className="flex items-center justify-center">
+                  <Key className="w-4 h-4 sm:w-5 sm:h-5 mr-2 flex-shrink-0" />
+                  <span>Get started free</span>
+                  <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 ml-2 flex-shrink-0" />
                 </Link>
               </Button>
               <Button
                 size="lg"
                 variant="outline"
-                className="border-2 border-white/20 text-white hover:bg-white/10 w-full sm:w-auto font-normal text-base sm:text-lg px-8 sm:px-10 py-6 sm:py-7 bg-transparent backdrop-blur-sm"
+                className="border-2 border-white/20 text-white hover:bg-white/10 w-full sm:w-auto font-normal text-sm sm:text-base md:text-lg px-6 sm:px-8 md:px-10 py-5 sm:py-6 md:py-7 bg-transparent backdrop-blur-sm"
                 asChild
               >
-                <Link href="https://docs.swarms.ai/resources/pricing">
-                  <Code className="w-5 h-5 mr-2" />
-                  View API docs
+                <Link href="https://docs.swarms.ai/resources/pricing" className="flex items-center justify-center">
+                  <Code className="w-4 h-4 sm:w-5 sm:h-5 mr-2 flex-shrink-0" />
+                  <span>View API docs</span>
                 </Link>
               </Button>
             </motion.div>
@@ -352,47 +352,81 @@ export default function PricingPage() {
       </motion.section>
 
       {/* Usage-Based Pricing Table */}
-      <section className="py-24 md:py-32 lg:py-40 bg-black">
-        <div className="container px-4 sm:px-6 lg:px-8">
+      <section className="py-12 sm:py-16 md:py-24 lg:py-32 xl:py-40 bg-black">
+        <div className="container px-2 sm:px-4 md:px-6 lg:px-8 max-w-full overflow-hidden">
           <motion.div
-            className="text-center mb-16 md:mb-20"
+            className="text-center mb-8 sm:mb-12 md:mb-16 lg:mb-20 px-2"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             viewport={{ once: true }}
           >
-            <h2 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-white leading-tight mb-6">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold tracking-tight text-white leading-tight mb-4 sm:mb-6 break-words">
               Usage-based pricing
             </h2>
-            <p className="text-lg md:text-xl text-white/60 max-w-3xl mx-auto font-normal leading-relaxed">
+            <p className="text-sm sm:text-base md:text-lg lg:text-xl text-white/60 max-w-3xl mx-auto font-normal leading-relaxed">
               Pay only for what you use with transparent, per-operation pricing
             </p>
           </motion.div>
 
           {/* Pricing Table */}
           <motion.div
-            className="overflow-x-auto"
+            className="overflow-x-auto -mx-2 sm:-mx-4 md:mx-0"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
             viewport={{ once: true }}
           >
-            <div className="min-w-full">
+            <div className="min-w-[800px] sm:min-w-full px-2 sm:px-4 md:px-0">
               <Card className="bg-white/[0.02] border-white/10 overflow-hidden">
                 <CardHeader className="p-0">
-                  {/* Table Header */}
-                  <div className="grid grid-cols-4 gap-4 p-6 border-b border-white/10">
-                    <div className="font-semibold text-white text-sm sm:text-base">Operation</div>
-                    <div className="font-semibold text-white text-sm sm:text-base text-center">Standard Cost</div>
-                    <div className="font-semibold text-white/80 text-sm sm:text-base text-center">Flex Cost</div>
-                    <div className="font-semibold text-white/60 text-sm sm:text-base text-center">Notes</div>
+                  {/* Table Header - Hidden on mobile, shown on desktop */}
+                  <div className="hidden sm:grid sm:grid-cols-4 gap-3 md:gap-4 p-4 md:p-6 border-b border-white/10">
+                    <div className="font-semibold text-white text-xs sm:text-sm md:text-base">Operation</div>
+                    <div className="font-semibold text-white text-xs sm:text-sm md:text-base text-center">Standard Cost</div>
+                    <div className="font-semibold text-white/80 text-xs sm:text-sm md:text-base text-center">Flex Cost</div>
+                    <div className="font-semibold text-white/60 text-xs sm:text-sm md:text-base text-center">Notes</div>
                   </div>
 
-                  {/* Table Rows */}
+                  {/* Mobile Card Layout */}
+                  <div className="sm:hidden space-y-3 p-4">
+                    {pricingItems.map((item, index) => (
+                      <motion.div
+                        key={item.item}
+                        className={`p-4 rounded-lg border border-white/10 bg-white/[0.01] ${
+                          item.highlight === 'flex' ? 'bg-white/[0.02]' : ''
+                        }`}
+                        initial={{ opacity: 0, y: 10 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                        viewport={{ once: true }}
+                      >
+                        <div className="flex items-start space-x-3 mb-3">
+                          <div className="w-6 h-6 rounded border border-white/10 bg-white/[0.03] flex items-center justify-center flex-shrink-0 mt-0.5">
+                            <item.icon className="w-3 h-3 text-white/80" />
+                          </div>
+                          <span className="text-white text-sm font-medium flex-1">{item.item}</span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3 text-xs">
+                          <div>
+                            <div className="text-white/60 mb-1">Standard</div>
+                            <div className="text-white/80 font-mono">{item.standardCost}</div>
+                          </div>
+                          <div>
+                            <div className="text-white/60 mb-1">Flex</div>
+                            <div className="text-white/60 font-mono">{item.flexCost}</div>
+                          </div>
+                        </div>
+                        <div className="text-white/50 text-xs mt-2 pt-2 border-t border-white/10">{item.notes}</div>
+                      </motion.div>
+                    ))}
+                  </div>
+
+                  {/* Desktop Table Rows */}
                   {pricingItems.map((item, index) => (
                     <motion.div
-                      key={item.item}
-                      className={`grid grid-cols-4 gap-4 p-6 border-b border-white/10 transition-colors hover:bg-white/[0.02] ${
+                      key={`desktop-${item.item}`}
+                      className={`hidden sm:grid sm:grid-cols-4 gap-3 md:gap-4 p-4 md:p-6 border-b border-white/10 transition-colors hover:bg-white/[0.02] ${
                         item.highlight === 'flex' ? 'bg-white/[0.01]' : ''
                       }`}
                       initial={{ opacity: 0, y: 10 }}
@@ -400,17 +434,17 @@ export default function PricingPage() {
                       transition={{ delay: index * 0.05 }}
                       viewport={{ once: true }}
                     >
-                      <div className="flex items-center space-x-3">
-                        <div className="w-8 h-8 rounded-lg border border-white/10 bg-white/[0.03] flex items-center justify-center flex-shrink-0">
-                          <item.icon className="w-4 h-4 text-white/80" />
+                      <div className="flex items-center space-x-2 md:space-x-3 min-w-0">
+                        <div className="w-6 h-6 md:w-8 md:h-8 rounded-lg border border-white/10 bg-white/[0.03] flex items-center justify-center flex-shrink-0">
+                          <item.icon className="w-3 h-3 md:w-4 md:h-4 text-white/80" />
                         </div>
-                        <span className="text-white text-sm sm:text-base font-medium">{item.item}</span>
+                        <span className="text-white text-xs sm:text-sm md:text-base font-medium truncate">{item.item}</span>
                       </div>
-                      <div className="text-white/80 text-sm sm:text-base text-center font-mono">{item.standardCost}</div>
-                      <div className="text-white/60 text-sm sm:text-base text-center font-mono">
+                      <div className="text-white/80 text-xs sm:text-sm md:text-base text-center font-mono break-words">{item.standardCost}</div>
+                      <div className="text-white/60 text-xs sm:text-sm md:text-base text-center font-mono break-words">
                         {item.flexCost}
                       </div>
-                      <div className="text-white/50 text-xs sm:text-sm text-center">{item.notes}</div>
+                      <div className="text-white/50 text-xs sm:text-sm text-center break-words">{item.notes}</div>
                     </motion.div>
                   ))}
                 </CardHeader>
@@ -420,24 +454,24 @@ export default function PricingPage() {
 
           {/* Special Offers */}
           <motion.div
-            className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-12"
+            className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mt-8 sm:mt-12"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
             viewport={{ once: true }}
           >
             <Card className="bg-white/[0.02] border-white/10 hover:border-white/20 transition-all duration-300">
-              <CardHeader className="p-6">
-                <div className="flex items-center space-x-3 mb-4">
-                  <div className="w-12 h-12 rounded-xl border border-white/10 bg-white/[0.03] flex items-center justify-center">
-                    <Zap className="w-6 h-6 text-white/80" />
+              <CardHeader className="p-4 sm:p-5 md:p-6">
+                <div className="flex items-center space-x-2 sm:space-x-3 mb-3 sm:mb-4">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl border border-white/10 bg-white/[0.03] flex items-center justify-center flex-shrink-0">
+                    <Zap className="w-5 h-5 sm:w-6 sm:h-6 text-white/80" />
                   </div>
-                  <div>
-                    <CardTitle className="text-white text-xl font-bold">Flex Tier</CardTitle>
-                    <CardDescription className="text-white/60">50% discount on token costs</CardDescription>
+                  <div className="min-w-0 flex-1">
+                    <CardTitle className="text-white text-lg sm:text-xl font-bold break-words">Flex Tier</CardTitle>
+                    <CardDescription className="text-white/60 text-xs sm:text-sm">50% discount on token costs</CardDescription>
                   </div>
                 </div>
-                <p className="text-white/60 text-sm leading-relaxed">
+                <p className="text-white/60 text-xs sm:text-sm leading-relaxed break-words">
                   Perfect for non-time-sensitive workloads where cost savings are prioritized over speed. 
                   May have higher latency or require retries, but offers significant savings on token usage.
                 </p>
@@ -445,17 +479,17 @@ export default function PricingPage() {
             </Card>
 
             <Card className="bg-white/[0.02] border-white/10 hover:border-white/20 transition-all duration-300">
-              <CardHeader className="p-6">
-                <div className="flex items-center space-x-3 mb-4">
-                  <div className="w-12 h-12 rounded-xl border border-white/10 bg-white/[0.03] flex items-center justify-center">
-                    <Moon className="w-6 h-6 text-white/80" />
+              <CardHeader className="p-4 sm:p-5 md:p-6">
+                <div className="flex items-center space-x-2 sm:space-x-3 mb-3 sm:mb-4">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl border border-white/10 bg-white/[0.03] flex items-center justify-center flex-shrink-0">
+                    <Moon className="w-5 h-5 sm:w-6 sm:h-6 text-white/80" />
                   </div>
-                  <div>
-                    <CardTitle className="text-white text-xl font-bold">Night-time Discount</CardTitle>
-                    <CardDescription className="text-white/60">50% off token costs</CardDescription>
+                  <div className="min-w-0 flex-1">
+                    <CardTitle className="text-white text-lg sm:text-xl font-bold break-words">Night-time Discount</CardTitle>
+                    <CardDescription className="text-white/60 text-xs sm:text-sm">50% off token costs</CardDescription>
                   </div>
                 </div>
-                <p className="text-white/60 text-sm leading-relaxed">
+                <p className="text-white/60 text-xs sm:text-sm leading-relaxed break-words">
                   Automatic 50% discount on token costs between 8pm–6am California time. 
                   Applies to both Standard and Flex pricing tiers for maximum savings during off-peak hours.
                 </p>
@@ -466,61 +500,61 @@ export default function PricingPage() {
       </section>
 
       {/* Credit Deductions */}
-      <section className="py-24 md:py-32 lg:py-40 bg-black">
-        <div className="container px-4 sm:px-6 lg:px-8">
+      <section className="py-12 sm:py-16 md:py-24 lg:py-32 xl:py-40 bg-black">
+        <div className="container px-2 sm:px-4 md:px-6 lg:px-8 max-w-full overflow-hidden">
           <motion.div
-            className="text-center mb-16 md:mb-20"
+            className="text-center mb-8 sm:mb-12 md:mb-16 lg:mb-20 px-2"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             viewport={{ once: true }}
           >
-            <h2 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-white leading-tight mb-6">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold tracking-tight text-white leading-tight mb-4 sm:mb-6 break-words">
               Credit deductions
             </h2>
-            <p className="text-lg md:text-xl text-white/60 max-w-3xl mx-auto font-normal leading-relaxed">
+            <p className="text-sm sm:text-base md:text-lg lg:text-xl text-white/60 max-w-3xl mx-auto font-normal leading-relaxed">
               How credits are deducted and billing logic works
             </p>
           </motion.div>
 
           <motion.div
-            className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto"
+            className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 max-w-6xl mx-auto"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
             viewport={{ once: true }}
           >
             <Card className="bg-white/[0.02] border-white/10 hover:border-white/20 transition-all duration-300 h-full">
-              <CardHeader className="p-6 text-center">
-                <div className="w-16 h-16 mx-auto mb-4 rounded-xl border border-white/10 bg-white/[0.03] flex items-center justify-center">
-                  <CreditCard className="w-8 h-8 text-white/80" />
+              <CardHeader className="p-4 sm:p-5 md:p-6 text-center">
+                <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 mx-auto mb-3 sm:mb-4 rounded-xl border border-white/10 bg-white/[0.03] flex items-center justify-center">
+                  <CreditCard className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-white/80" />
                 </div>
-                <CardTitle className="text-white text-xl mb-3">Credit Priority</CardTitle>
-                <CardDescription className="text-white/60 text-sm leading-relaxed">
+                <CardTitle className="text-white text-lg sm:text-xl mb-2 sm:mb-3 break-words">Credit Priority</CardTitle>
+                <CardDescription className="text-white/60 text-xs sm:text-sm leading-relaxed break-words">
                   Free credits are used first, then regular credits. This ensures you get maximum value from promotional credits and free tier allowances.
                 </CardDescription>
               </CardHeader>
             </Card>
 
             <Card className="bg-white/[0.02] border-white/10 hover:border-white/20 transition-all duration-300 h-full">
-              <CardHeader className="p-6 text-center">
-                <div className="w-16 h-16 mx-auto mb-4 rounded-xl border border-white/10 bg-white/[0.03] flex items-center justify-center">
-                  <DollarSign className="w-8 h-8 text-white/80" />
+              <CardHeader className="p-4 sm:p-5 md:p-6 text-center">
+                <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 mx-auto mb-3 sm:mb-4 rounded-xl border border-white/10 bg-white/[0.03] flex items-center justify-center">
+                  <DollarSign className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-white/80" />
                 </div>
-                <CardTitle className="text-white text-xl mb-3">Per-Call Billing</CardTitle>
-                <CardDescription className="text-white/60 text-sm leading-relaxed">
+                <CardTitle className="text-white text-lg sm:text-xl mb-2 sm:mb-3 break-words">Per-Call Billing</CardTitle>
+                <CardDescription className="text-white/60 text-xs sm:text-sm leading-relaxed break-words">
                   Credits are deducted for each API call based on operation type, token usage, agent count, and any additional services like MCP or image processing.
                 </CardDescription>
               </CardHeader>
             </Card>
 
-            <Card className="bg-white/[0.02] border-white/10 hover:border-white/20 transition-all duration-300 h-full">
-              <CardHeader className="p-6 text-center">
-                <div className="w-16 h-16 mx-auto mb-4 rounded-xl border border-white/10 bg-white/[0.03] flex items-center justify-center">
-                  <Globe className="w-8 h-8 text-white/80" />
+            <Card className="bg-white/[0.02] border-white/10 hover:border-white/20 transition-all duration-300 h-full sm:col-span-2 md:col-span-1">
+              <CardHeader className="p-4 sm:p-5 md:p-6 text-center">
+                <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 mx-auto mb-3 sm:mb-4 rounded-xl border border-white/10 bg-white/[0.03] flex items-center justify-center">
+                  <Globe className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-white/80" />
                 </div>
-                <CardTitle className="text-white text-xl mb-3">MCP Additional Costs</CardTitle>
-                <CardDescription className="text-white/60 text-sm leading-relaxed">
+                <CardTitle className="text-white text-lg sm:text-xl mb-2 sm:mb-3 break-words">MCP Additional Costs</CardTitle>
+                <CardDescription className="text-white/60 text-xs sm:text-sm leading-relaxed break-words">
                   If your agent uses an MCP URL for external integrations, an additional $0.10 is deducted per call on top of standard operation costs.
                 </CardDescription>
               </CardHeader>
@@ -530,46 +564,46 @@ export default function PricingPage() {
       </section>
 
       {/* API Pricing Section */}
-      <section className="py-24 md:py-32 lg:py-40 bg-black">
-        <div className="container px-4 sm:px-6 lg:px-8">
+      <section className="py-12 sm:py-16 md:py-24 lg:py-32 xl:py-40 bg-black">
+        <div className="container px-2 sm:px-4 md:px-6 lg:px-8 max-w-full overflow-hidden">
           <motion.div
-            className="text-center mb-16 md:mb-20"
+            className="text-center mb-8 sm:mb-12 md:mb-16 lg:mb-20 px-2"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             viewport={{ once: true }}
           >
-            <h2 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-white leading-tight mb-6">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold tracking-tight text-white leading-tight mb-4 sm:mb-6 break-words">
               API Pricing
             </h2>
-            <p className="text-lg md:text-xl text-white/60 max-w-3xl mx-auto font-normal leading-relaxed">
+            <p className="text-sm sm:text-base md:text-lg lg:text-xl text-white/60 max-w-3xl mx-auto font-normal leading-relaxed">
               Flexible subscription plans that scale with your needs. From free to enterprise.
             </p>
           </motion.div>
 
           <Tabs defaultValue="cloud" className="w-full">
-            <div className="flex justify-center mb-12 md:mb-16">
-              <TabsList className="bg-white/[0.02] border border-white/10 backdrop-blur-sm">
+            <div className="flex justify-center mb-8 sm:mb-12 md:mb-16 px-2">
+              <TabsList className="bg-white/[0.02] border border-white/10 backdrop-blur-sm w-full sm:w-auto">
                 <TabsTrigger 
                   value="cloud" 
-                  className="data-[state=active]:bg-white data-[state=active]:text-black text-white/60 data-[state=active]:text-black px-6 py-3"
+                  className="data-[state=active]:bg-white data-[state=active]:text-black text-white/60 data-[state=active]:text-black px-4 sm:px-6 py-2 sm:py-3 text-xs sm:text-sm flex-1 sm:flex-initial"
                 >
-                  <Globe className="w-4 h-4 mr-2" />
-                  Cloud
+                  <Globe className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                  <span>Cloud</span>
                 </TabsTrigger>
                 <TabsTrigger 
                   value="on-premise" 
-                  className="data-[state=active]:bg-white data-[state=active]:text-black text-white/60 data-[state=active]:text-black px-6 py-3"
+                  className="data-[state=active]:bg-white data-[state=active]:text-black text-white/60 data-[state=active]:text-black px-4 sm:px-6 py-2 sm:py-3 text-xs sm:text-sm flex-1 sm:flex-initial"
                 >
-                  <Zap className="w-4 h-4 mr-2" />
-                  On-Premise
+                  <Zap className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                  <span>On-Premise</span>
                 </TabsTrigger>
               </TabsList>
             </div>
 
             <TabsContent value="cloud" className="mt-0">
               {/* Pricing Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 md:gap-8">
                 {cloudTiers.map((tier, index) => (
                   <motion.div
                     key={tier.tier}
@@ -580,45 +614,45 @@ export default function PricingPage() {
                     className="relative"
                   >
                     {tier.popular && (
-                      <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 z-20">
-                        <span className="bg-white text-black text-xs font-semibold px-4 py-1.5 rounded-full whitespace-nowrap">
+                      <div className="absolute -top-3 sm:-top-4 left-1/2 transform -translate-x-1/2 z-20">
+                        <span className="bg-white text-black text-[10px] sm:text-xs font-semibold px-3 sm:px-4 py-1 sm:py-1.5 rounded-full whitespace-nowrap">
                           Most Popular
                         </span>
                       </div>
                     )}
-                    <Card className={`h-full border border-white/10 bg-white/[0.02] backdrop-blur-sm hover:border-white/20 transition-all duration-300 ${tier.popular ? 'scale-105' : ''}`}>
-                      <CardHeader className="text-center pb-4">
-                        <CardTitle className="text-2xl font-bold text-white mb-2">{tier.tier}</CardTitle>
-                        <CardDescription className="text-white/60 text-sm mb-4">
+                    <Card className={`h-full border border-white/10 bg-white/[0.02] backdrop-blur-sm hover:border-white/20 transition-all duration-300 ${tier.popular ? 'sm:scale-105' : ''}`}>
+                      <CardHeader className="text-center pb-3 sm:pb-4 p-4 sm:p-6">
+                        <CardTitle className="text-xl sm:text-2xl font-bold text-white mb-2 break-words">{tier.tier}</CardTitle>
+                        <CardDescription className="text-white/60 text-xs sm:text-sm mb-3 sm:mb-4 break-words">
                           {tier.description}
                         </CardDescription>
                         {tier.price && (
-                          <div className="mt-4">
-                            <span className="text-4xl font-bold text-white">{tier.price}</span>
-                            <span className="text-white/60 text-lg ml-2">{tier.period}</span>
+                          <div className="mt-3 sm:mt-4">
+                            <span className="text-3xl sm:text-4xl font-bold text-white">{tier.price}</span>
+                            <span className="text-white/60 text-sm sm:text-lg ml-2">{tier.period}</span>
                           </div>
                         )}
                       </CardHeader>
-                      <div className="px-6 pb-6">
+                      <div className="px-4 sm:px-6 pb-4 sm:pb-6">
                         <Button
-                          className={`w-full ${tier.tier === 'Enterprise' ? 'bg-white/10 hover:bg-white/20 text-white border border-white/20' : 'bg-white text-black hover:bg-white/90'} font-semibold`}
+                          className={`w-full ${tier.tier === 'Enterprise' ? 'bg-white/10 hover:bg-white/20 text-white border border-white/20' : 'bg-white text-black hover:bg-white/90'} font-semibold text-xs sm:text-sm py-5 sm:py-6`}
                           asChild
                         >
                           {tier.tier === 'Enterprise' ? (
-                            <a href="https://cal.com/swarms/swarms-strategy-session" target="_blank" rel="noopener noreferrer">
+                            <a href="https://cal.com/swarms/swarms-strategy-session" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center">
                               Contact Sales
                             </a>
                           ) : (
-                            <a href="https://swarms.world/platform/account" target="_blank" rel="noopener noreferrer">
+                            <a href="https://swarms.world/platform/account" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center">
                               Get Started
                             </a>
                           )}
                         </Button>
-                        <div className="mt-6 space-y-3 text-sm text-white/60">
+                        <div className="mt-4 sm:mt-6 space-y-2 sm:space-y-3 text-xs sm:text-sm text-white/60">
                           {tier.features?.map((feature, featureIndex) => (
                             <div key={featureIndex} className="flex items-start">
-                              <Check className="w-4 h-4 text-white/80 mr-2 mt-0.5 flex-shrink-0" />
-                              <span className={feature.includes('Everything in') ? 'text-white font-semibold' : ''}>{feature}</span>
+                              <Check className="w-3 h-3 sm:w-4 sm:h-4 text-white/80 mr-2 mt-0.5 flex-shrink-0" />
+                              <span className={`break-words ${feature.includes('Everything in') ? 'text-white font-semibold' : ''}`}>{feature}</span>
                             </div>
                           ))}
                         </div>
@@ -631,7 +665,7 @@ export default function PricingPage() {
 
             <TabsContent value="on-premise" className="mt-0">
               <motion.div 
-                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10 lg:gap-12 max-w-5xl mx-auto"
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8 lg:gap-10 xl:gap-12 max-w-5xl mx-auto"
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6 }}
@@ -647,57 +681,57 @@ export default function PricingPage() {
                     className="relative"
                   >
                     <Card className="h-full border border-white/10 bg-white/[0.02] backdrop-blur-sm hover:border-white/20 transition-all duration-300">
-                      <CardHeader className="text-center pb-4">
-                        <CardTitle className="text-2xl font-bold text-white mb-2">{tier.tier}</CardTitle>
-                        <CardDescription className="text-white/60 text-sm mb-4">
+                      <CardHeader className="text-center pb-3 sm:pb-4 p-4 sm:p-6">
+                        <CardTitle className="text-xl sm:text-2xl font-bold text-white mb-2 break-words">{tier.tier}</CardTitle>
+                        <CardDescription className="text-white/60 text-xs sm:text-sm mb-3 sm:mb-4 break-words">
                           {tier.description}
                         </CardDescription>
                         {tier.price && (
-                          <div className="mt-4">
-                            <span className="text-4xl font-bold text-white">{tier.price}</span>
-                            <span className="text-white/60 text-lg ml-2">{tier.period}</span>
+                          <div className="mt-3 sm:mt-4">
+                            <span className="text-3xl sm:text-4xl font-bold text-white">{tier.price}</span>
+                            <span className="text-white/60 text-sm sm:text-lg ml-2">{tier.period}</span>
                           </div>
                         )}
                       </CardHeader>
-                      <div className="px-6 pb-6">
+                      <div className="px-4 sm:px-6 pb-4 sm:pb-6">
                         <Button
-                          className="w-full bg-white text-black hover:bg-white/90 font-semibold"
+                          className="w-full bg-white text-black hover:bg-white/90 font-semibold text-xs sm:text-sm py-5 sm:py-6"
                           asChild
                         >
-                          <Link href="https://buy.stripe.com/eVq4gz7Nph072rZ1J6aAw09" target="_blank">
+                          <Link href="https://buy.stripe.com/eVq4gz7Nph072rZ1J6aAw09" target="_blank" className="flex items-center justify-center">
                             Purchase license
                           </Link>
                         </Button>
-                        <div className="mt-6 space-y-4">
-                          <div className="flex justify-between items-center py-3 border-b border-white/10">
-                            <span className="text-sm text-white/60 font-medium">Requests per minute</span>
-                            <span className="text-sm font-semibold text-white">
+                        <div className="mt-4 sm:mt-6 space-y-3 sm:space-y-4">
+                          <div className="flex justify-between items-center py-2 sm:py-3 border-b border-white/10">
+                            <span className="text-xs sm:text-sm text-white/60 font-medium break-words">Requests per minute</span>
+                            <span className="text-xs sm:text-sm font-semibold text-white ml-2 flex-shrink-0">
                               {tier.requests}
                             </span>
                           </div>
-                          <div className="flex justify-between items-center py-3 border-b border-white/10">
-                            <span className="text-sm text-white/60 font-medium">Tokens per agent</span>
-                            <span className="text-sm font-semibold text-white">
+                          <div className="flex justify-between items-center py-2 sm:py-3 border-b border-white/10">
+                            <span className="text-xs sm:text-sm text-white/60 font-medium break-words">Tokens per agent</span>
+                            <span className="text-xs sm:text-sm font-semibold text-white ml-2 flex-shrink-0">
                               {tier.tokens}
                             </span>
                           </div>
-                          <div className="flex justify-between items-center py-3">
-                            <span className="text-sm text-white/60 font-medium">Agents per request</span>
-                            <span className="text-sm font-semibold text-white">
+                          <div className="flex justify-between items-center py-2 sm:py-3">
+                            <span className="text-xs sm:text-sm text-white/60 font-medium break-words">Agents per request</span>
+                            <span className="text-xs sm:text-sm font-semibold text-white ml-2 flex-shrink-0">
                               {tier.batch}
                             </span>
                           </div>
                           
                           {tier.features && (
-                            <div className="border-t pt-6 mt-6 border-white/10">
-                              <div className="font-semibold text-base mb-4 text-white">
+                            <div className="border-t pt-4 sm:pt-6 mt-4 sm:mt-6 border-white/10">
+                              <div className="font-semibold text-sm sm:text-base mb-3 sm:mb-4 text-white">
                                 Included with license:
                               </div>
-                              <div className="space-y-3">
+                              <div className="space-y-2 sm:space-y-3">
                                 {tier.features.map((benefit, benefitIndex) => (
-                                  <div key={benefitIndex} className="flex items-start text-sm leading-relaxed text-white/60">
-                                    <Check className="w-4 h-4 text-white/80 mr-2 mt-0.5 flex-shrink-0" />
-                                    <span>{benefit}</span>
+                                  <div key={benefitIndex} className="flex items-start text-xs sm:text-sm leading-relaxed text-white/60">
+                                    <Check className="w-3 h-3 sm:w-4 sm:h-4 text-white/80 mr-2 mt-0.5 flex-shrink-0" />
+                                    <span className="break-words">{benefit}</span>
                                   </div>
                                 ))}
                               </div>
@@ -715,19 +749,19 @@ export default function PricingPage() {
       </section>
 
       {/* FAQ Section */}
-      <section className="py-24 md:py-32 lg:py-40 bg-black">
-        <div className="container px-4 sm:px-6 lg:px-8">
+      <section className="py-12 sm:py-16 md:py-24 lg:py-32 xl:py-40 bg-black">
+        <div className="container px-2 sm:px-4 md:px-6 lg:px-8 max-w-full overflow-hidden">
           <motion.div
-            className="text-center mb-16 md:mb-20"
+            className="text-center mb-8 sm:mb-12 md:mb-16 lg:mb-20 px-2"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             viewport={{ once: true }}
           >
-            <h2 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-white leading-tight mb-6">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold tracking-tight text-white leading-tight mb-4 sm:mb-6 break-words">
               Frequently asked questions
             </h2>
-            <p className="text-lg md:text-xl text-white/60 max-w-3xl mx-auto font-normal leading-relaxed">
+            <p className="text-sm sm:text-base md:text-lg lg:text-xl text-white/60 max-w-3xl mx-auto font-normal leading-relaxed">
               Everything you need to know about pricing, billing, and features
             </p>
           </motion.div>
@@ -746,28 +780,28 @@ export default function PricingPage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
                 viewport={{ once: true }}
-                className="mb-4"
+                className="mb-3 sm:mb-4"
               >
                 <Card className="bg-white/[0.02] border-white/10 hover:border-white/20 transition-all duration-300 overflow-hidden">
                   <CardHeader
-                    className="cursor-pointer p-6 transition-all duration-300 hover:bg-white/[0.02]"
+                    className="cursor-pointer p-4 sm:p-5 md:p-6 transition-all duration-300 hover:bg-white/[0.02]"
                     onClick={() => setOpenFaqIndex(openFaqIndex === index ? null : index)}
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-4 flex-1">
-                        <div className="w-10 h-10 rounded-lg border border-white/10 bg-white/[0.03] flex items-center justify-center flex-shrink-0">
-                          <HelpCircle className="w-5 h-5 text-white/80" />
+                    <div className="flex items-center justify-between gap-2 sm:gap-4">
+                      <div className="flex items-center space-x-2 sm:space-x-3 md:space-x-4 flex-1 min-w-0">
+                        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg border border-white/10 bg-white/[0.03] flex items-center justify-center flex-shrink-0">
+                          <HelpCircle className="w-4 h-4 sm:w-5 sm:h-5 text-white/80" />
                         </div>
-                        <h3 className="text-lg font-semibold text-white text-left leading-tight">
+                        <h3 className="text-sm sm:text-base md:text-lg font-semibold text-white text-left leading-tight break-words flex-1">
                           {faq.question}
                         </h3>
                       </div>
                       <motion.div
                         animate={{ rotate: openFaqIndex === index ? 180 : 0 }}
                         transition={{ duration: 0.3 }}
-                        className="flex-shrink-0 ml-2"
+                        className="flex-shrink-0 ml-1 sm:ml-2"
                       >
-                        <ChevronDown className="w-6 h-6 text-white/60" />
+                        <ChevronDown className="w-5 h-5 sm:w-6 sm:h-6 text-white/60" />
                       </motion.div>
                     </div>
                   </CardHeader>
@@ -781,9 +815,9 @@ export default function PricingPage() {
                     transition={{ duration: 0.3, ease: "easeInOut" }}
                     className="overflow-hidden"
                   >
-                    <div className="px-6 pb-6">
-                      <div className="ml-14">
-                        <p className="text-base text-white/60 leading-relaxed">
+                    <div className="px-4 sm:px-5 md:px-6 pb-4 sm:pb-5 md:pb-6">
+                      <div className="ml-0 sm:ml-10 md:ml-14">
+                        <p className="text-xs sm:text-sm md:text-base text-white/60 leading-relaxed break-words">
                           {faq.answer}
                         </p>
                       </div>
@@ -797,42 +831,42 @@ export default function PricingPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-24 md:py-32 lg:py-40 bg-black">
-        <div className="container px-4 sm:px-6 lg:px-8 text-center">
+      <section className="py-12 sm:py-16 md:py-24 lg:py-32 xl:py-40 bg-black">
+        <div className="container px-2 sm:px-4 md:px-6 lg:px-8 text-center max-w-full overflow-hidden">
           <motion.div
-            className="max-w-5xl mx-auto space-y-8 sm:space-y-10 md:space-y-12"
+            className="max-w-5xl mx-auto space-y-6 sm:space-y-8 md:space-y-10 lg:space-y-12 px-2"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             viewport={{ once: true }}
           >
-            <h2 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-tight tracking-tight">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-white leading-tight tracking-tight break-words">
               Start building <span className="text-white/60">today</span>
             </h2>
-            <p className="text-xl sm:text-2xl md:text-3xl text-white/60 max-w-3xl mx-auto leading-relaxed font-normal">
+            <p className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-3xl text-white/60 max-w-3xl mx-auto leading-relaxed font-normal">
               Get started with transparent pricing and pay only for what you use
             </p>
-            <div className="flex flex-col sm:flex-row gap-6 items-center justify-center pt-4">
+            <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 items-center justify-center pt-2 sm:pt-4">
               <Button
                 size="lg"
-                className="bg-white text-black hover:bg-white/90 w-full sm:w-auto font-semibold text-base sm:text-lg px-10 py-6"
+                className="bg-white text-black hover:bg-white/90 w-full sm:w-auto font-semibold text-sm sm:text-base md:text-lg px-6 sm:px-8 md:px-10 py-5 sm:py-6"
                 asChild
               >
-                <Link href="https://swarms.world/platform/api-keys" target="_blank">
-                  <Key className="w-6 h-6 mr-2" />
-                  Get API key
-                  <ArrowRight className="w-6 h-6 ml-2" />
+                <Link href="https://swarms.world/platform/api-keys" target="_blank" className="flex items-center justify-center">
+                  <Key className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 mr-2 flex-shrink-0" />
+                  <span>Get API key</span>
+                  <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 ml-2 flex-shrink-0" />
                 </Link>
               </Button>
               <Button
                 size="lg"
                 variant="outline"
-                className="border-2 border-white/20 text-white hover:bg-white/10 w-full sm:w-auto font-normal text-base sm:text-lg px-10 py-6 bg-transparent backdrop-blur-sm"
+                className="border-2 border-white/20 text-white hover:bg-white/10 w-full sm:w-auto font-normal text-sm sm:text-base md:text-lg px-6 sm:px-8 md:px-10 py-5 sm:py-6 bg-transparent backdrop-blur-sm"
                 asChild
               >
-                <Link href="/api">
-                  <Code className="w-6 h-6 mr-2" />
-                  View API docs
+                <Link href="/api" className="flex items-center justify-center">
+                  <Code className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 mr-2 flex-shrink-0" />
+                  <span>View API docs</span>
                 </Link>
               </Button>
             </div>

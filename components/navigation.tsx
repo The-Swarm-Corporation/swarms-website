@@ -576,22 +576,22 @@ export function Navigation() {
             </SheetTrigger>
             <SheetContent
               side="right"
-              className="w-[85vw] sm:w-[400px] max-w-[400px] border-2 border-red-500/30 bg-black backdrop-blur-md shadow-xl shadow-red-500/10 overflow-y-auto p-0"
+              className="w-[85vw] sm:w-[400px] max-w-[400px] border border-neutral-700/40 bg-neutral-800/50 backdrop-blur-md shadow-xl overflow-y-auto p-0"
             >
-              <SheetHeader className="px-4 sm:px-6 pt-6 pb-4 border-b-2 border-red-500/30">
-                <SheetTitle className="cyber-text text-lg sm:text-xl text-white">Menu</SheetTitle>
+              <SheetHeader className="px-4 sm:px-6 pt-6 pb-4 border-b border-neutral-700/40">
+                <SheetTitle className="text-lg sm:text-xl text-white font-semibold">Menu</SheetTitle>
               </SheetHeader>
               <div className="px-4 sm:px-6 py-4 sm:py-6 space-y-3 sm:space-y-4 overflow-y-auto max-h-[calc(100vh-120px)]">
                 <Link
                   href="/"
-                  className="block text-sm font-medium text-white hover:text-red-500 transition-all duration-300 hover:bg-red-500/10 p-3 rounded-md border border-transparent hover:border-red-500/30 hover:shadow-[0_0_8px_rgba(239,68,68,0.2)]"
+                  className="block text-sm font-semibold text-white/85 hover:text-white transition-all duration-300 hover:bg-white/[0.05] p-3 rounded-lg border border-transparent hover:border-white/10"
                   onClick={() => setIsOpen(false)}
                 >
                   Home
                 </Link>
                 <Link
                   href="/pricing"
-                  className="block text-sm font-medium text-white hover:text-red-500 transition-all duration-300 hover:bg-red-500/10 p-3 rounded-md border border-transparent hover:border-red-500/30 hover:shadow-[0_0_8px_rgba(239,68,68,0.2)]"
+                  className="block text-sm font-semibold text-white/85 hover:text-white transition-all duration-300 hover:bg-white/[0.05] p-3 rounded-lg border border-transparent hover:border-white/10"
                   onClick={() => setIsOpen(false)}
                 >
                   Pricing
@@ -600,84 +600,84 @@ export function Navigation() {
                   href="https://docs.swarms.world"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="block text-sm font-medium text-white hover:text-red-500 transition-all duration-300 hover:bg-red-500/10 p-3 rounded-md border border-transparent hover:border-red-500/30 hover:shadow-[0_0_8px_rgba(239,68,68,0.2)]"
+                  className="block text-sm font-semibold text-white/85 hover:text-white transition-all duration-300 hover:bg-white/[0.05] p-3 rounded-lg border border-transparent hover:border-white/10"
                   onClick={() => setIsOpen(false)}
                 >
                   Docs
                 </a>
                 <Link
                   href="/blog"
-                  className="block text-sm font-medium text-white hover:text-red-500 transition-all duration-300 hover:bg-red-500/10 p-3 rounded-md border border-transparent hover:border-red-500/30 hover:shadow-[0_0_8px_rgba(239,68,68,0.2)]"
+                  className="block text-sm font-semibold text-white/85 hover:text-white transition-all duration-300 hover:bg-white/[0.05] p-3 rounded-lg border border-transparent hover:border-white/10"
                   onClick={() => setIsOpen(false)}
                 >
                   Blog
                 </Link>
                 <div className="space-y-3">
-                  <div className="text-sm font-medium text-white/80 px-3 flex items-center">
+                  <div className="text-sm font-semibold text-white/60 px-3 flex items-center">
                     <span>Products</span>
-                    <div className="ml-2 h-px flex-1 bg-gradient-to-r from-red-500/30 to-transparent"></div>
+                    <div className="ml-2 h-px flex-1 bg-gradient-to-r from-white/20 to-transparent"></div>
                   </div>
                   <Link
                     href="/products"
-                    className="text-sm font-medium text-white hover:text-red-500 transition-all duration-300 hover:bg-red-500/10 p-3 rounded-md flex items-center border border-transparent hover:border-red-500/30 hover:shadow-[0_0_8px_rgba(239,68,68,0.2)]"
+                    className="text-sm font-semibold text-white/85 hover:text-white transition-all duration-300 hover:bg-white/[0.05] p-3 rounded-lg flex items-center border border-transparent hover:border-white/10"
                     onClick={() => setIsOpen(false)}
                   >
-                    <Package className="mr-3 h-4 w-4 text-red-500 flex-shrink-0" />
+                    <Package className="mr-3 h-4 w-4 text-white/60 flex-shrink-0" />
                     Products Overview
                   </Link>
                   <Link
                     href="/simulations"
-                    className="text-sm font-medium text-white hover:text-red-500 transition-all duration-300 hover:bg-red-500/10 p-3 rounded-md flex items-center border border-transparent hover:border-red-500/30 hover:shadow-[0_0_8px_rgba(239,68,68,0.2)]"
+                    className="text-sm font-semibold text-white/85 hover:text-white transition-all duration-300 hover:bg-white/[0.05] p-3 rounded-lg flex items-center border border-transparent hover:border-white/10"
                     onClick={() => setIsOpen(false)}
                   >
-                    <Network className="mr-3 h-4 w-4 text-red-500 flex-shrink-0" />
+                    <Network className="mr-3 h-4 w-4 text-white/60 flex-shrink-0" />
                     Simulations
                   </Link>
                   <a
                     href="https://github.com/kyegomez/swarms"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-sm font-medium text-white hover:text-red-500 transition-all duration-300 hover:bg-red-500/10 p-3 rounded-md flex items-center border border-transparent hover:border-red-500/30 hover:shadow-[0_0_8px_rgba(239,68,68,0.2)]"
+                    className="text-sm font-semibold text-white/85 hover:text-white transition-all duration-300 hover:bg-white/[0.05] p-3 rounded-lg flex items-center border border-transparent hover:border-white/10"
                     onClick={() => setIsOpen(false)}
                   >
-                    <Github className="mr-3 h-4 w-4 text-red-500 flex-shrink-0" />
+                    <Github className="mr-3 h-4 w-4 text-white/60 flex-shrink-0" />
                     Swarms Python
                   </a>
                   <a
                     href="https://docs.swarms.ai"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-sm font-medium text-white hover:text-red-500 transition-all duration-300 hover:bg-red-500/10 p-3 rounded-md flex items-center border border-transparent hover:border-red-500/30 hover:shadow-[0_0_8px_rgba(239,68,68,0.2)]"
+                    className="text-sm font-semibold text-white/85 hover:text-white transition-all duration-300 hover:bg-white/[0.05] p-3 rounded-lg flex items-center border border-transparent hover:border-white/10"
                     onClick={() => setIsOpen(false)}
                   >
-                    <Code className="mr-3 h-4 w-4 text-red-500 flex-shrink-0" />
+                    <Code className="mr-3 h-4 w-4 text-white/60 flex-shrink-0" />
                     Swarms API
                   </a>
                   <a
                     href="https://github.com/The-Swarm-Corporation/swarms-rs"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-sm font-medium text-white hover:text-red-500 transition-all duration-300 hover:bg-red-500/10 p-3 rounded-md flex items-center border border-transparent hover:border-red-500/30 hover:shadow-[0_0_8px_rgba(239,68,68,0.2)]"
+                    className="text-sm font-semibold text-white/85 hover:text-white transition-all duration-300 hover:bg-white/[0.05] p-3 rounded-lg flex items-center border border-transparent hover:border-white/10"
                     onClick={() => setIsOpen(false)}
                   >
-                    <Rocket className="mr-3 h-4 w-4 text-red-500 flex-shrink-0" />
+                    <Rocket className="mr-3 h-4 w-4 text-white/60 flex-shrink-0" />
                     Swarms RS
                   </a>
                   <a
                     href="https://swarms.world"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-sm font-medium text-white hover:text-red-500 transition-all duration-300 hover:bg-red-500/10 p-3 rounded-md flex items-center border border-transparent hover:border-red-500/30 hover:shadow-[0_0_8px_rgba(239,68,68,0.2)]"
+                    className="text-sm font-semibold text-white/85 hover:text-white transition-all duration-300 hover:bg-white/[0.05] p-3 rounded-lg flex items-center border border-transparent hover:border-white/10"
                     onClick={() => setIsOpen(false)}
                   >
-                    <Sparkles className="mr-3 h-4 w-4 text-red-500 flex-shrink-0" />
+                    <Sparkles className="mr-3 h-4 w-4 text-white/60 flex-shrink-0" />
                     Swarms Marketplace
                   </a>
                 </div>
 
                 <Link
                   href="/hiring"
-                  className="block text-sm font-medium text-white hover:text-red-500 transition-all duration-300 hover:bg-red-500/10 p-3 rounded-md border border-transparent hover:border-red-500/30 hover:shadow-[0_0_8px_rgba(239,68,68,0.2)]"
+                  className="block text-sm font-semibold text-white/85 hover:text-white transition-all duration-300 hover:bg-white/[0.05] p-3 rounded-lg border border-transparent hover:border-white/10"
                   onClick={() => setIsOpen(false)}
                 >
                   Careers
@@ -685,298 +685,382 @@ export function Navigation() {
 
                 {/* Mobile Resources Section with Tabs */}
                 <div className="space-y-3">
-                  <div className="text-sm font-medium text-white/80 px-3 flex items-center">
+                  <div className="text-sm font-semibold text-white/60 px-3 flex items-center">
                     <span>Resources</span>
-                    <div className="ml-2 h-px flex-1 bg-gradient-to-r from-red-500/30 to-transparent"></div>
+                    <div className="ml-2 h-px flex-1 bg-gradient-to-r from-white/20 to-transparent"></div>
                   </div>
 
                   <Tabs defaultValue="platform" className="w-full">
-                    <TabsList className="w-full grid grid-cols-2 sm:grid-cols-3 gap-1 bg-black backdrop-blur-sm border-2 border-red-500/20 rounded-md mb-3 h-auto p-1">
+                    <TabsList className="w-full grid grid-cols-2 sm:grid-cols-3 gap-1 bg-neutral-900/50 backdrop-blur-sm border border-neutral-700/40 rounded-lg mb-3 h-auto p-1">
                       <TabsTrigger
                         value="platform"
-                        className="text-xs data-[state=active]:bg-red-500/10 data-[state=active]:text-red-500 data-[state=active]:border-red-500/30 border border-transparent hover:border-red-500/20 transition-all duration-300"
+                        className="text-xs data-[state=active]:bg-white/[0.08] data-[state=active]:text-white data-[state=active]:border-neutral-700/50 border border-transparent hover:bg-white/[0.05] hover:border-white/10 text-neutral-400 transition-all duration-200"
                       >
                         Platform
                       </TabsTrigger>
                       <TabsTrigger
                         value="open_source"
-                        className="text-xs data-[state=active]:bg-red-500/10 data-[state=active]:text-red-500 data-[state=active]:border-red-500/30 border border-transparent hover:border-red-500/20 transition-all duration-300"
+                        className="text-xs data-[state=active]:bg-white/[0.08] data-[state=active]:text-white data-[state=active]:border-neutral-700/50 border border-transparent hover:bg-white/[0.05] hover:border-white/10 text-neutral-400 transition-all duration-200"
                       >
                         Open Source
                       </TabsTrigger>
                       <TabsTrigger
                         value="research"
-                        className="text-xs data-[state=active]:bg-red-500/10 data-[state=active]:text-red-500 data-[state=active]:border-red-500/30 border border-transparent hover:border-red-500/20 transition-all duration-300"
+                        className="text-xs data-[state=active]:bg-white/[0.08] data-[state=active]:text-white data-[state=active]:border-neutral-700/50 border border-transparent hover:bg-white/[0.05] hover:border-white/10 text-neutral-400 transition-all duration-200"
                       >
                         Research
                       </TabsTrigger>
                       <TabsTrigger
                         value="community"
-                        className="text-xs data-[state=active]:bg-red-500/10 data-[state=active]:text-red-500 data-[state=active]:border-red-500/30 border border-transparent hover:border-red-500/20 transition-all duration-300"
+                        className="text-xs data-[state=active]:bg-white/[0.08] data-[state=active]:text-white data-[state=active]:border-neutral-700/50 border border-transparent hover:bg-white/[0.05] hover:border-white/10 text-neutral-400 transition-all duration-200"
                       >
                         Community
                       </TabsTrigger>
                       <TabsTrigger
                         value="programs"
-                        className="text-xs data-[state=active]:bg-red-500/10 data-[state=active]:text-red-500 data-[state=active]:border-red-500/30 border border-transparent hover:border-red-500/20 transition-all duration-300"
+                        className="text-xs data-[state=active]:bg-white/[0.08] data-[state=active]:text-white data-[state=active]:border-neutral-700/50 border border-transparent hover:bg-white/[0.05] hover:border-white/10 text-neutral-400 transition-all duration-200"
                       >
                         Programs
                       </TabsTrigger>
                       <TabsTrigger
                         value="learn"
-                        className="text-xs data-[state=active]:bg-red-500/10 data-[state=active]:text-red-500 data-[state=active]:border-red-500/30 border border-transparent hover:border-red-500/20 transition-all duration-300"
+                        className="text-xs data-[state=active]:bg-white/[0.08] data-[state=active]:text-white data-[state=active]:border-neutral-700/50 border border-transparent hover:bg-white/[0.05] hover:border-white/10 text-neutral-400 transition-all duration-200"
                       >
                         Learn
                       </TabsTrigger>
                     </TabsList>
 
-                    <TabsContent value="platform" className="space-y-2 mt-0">
+                    <TabsContent value="platform" className="space-y-1 mt-0">
                       <a
                         href="https://ecosystem.swarms.world"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-sm font-medium text-white hover:text-red-500 transition-all duration-300 hover:bg-red-500/10 p-3 rounded-md flex items-center border border-transparent hover:border-red-500/30 hover:shadow-[0_0_8px_rgba(239,68,68,0.2)]"
+                        className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
                         onClick={() => setIsOpen(false)}
                       >
-                        <BookOpen className="mr-3 h-4 w-4 text-red-500 flex-shrink-0" />
-                        Ecosystem Hub
+                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
+                          <BookOpen className="h-4 w-4 text-red-500" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <span className="text-sm font-semibold text-white block">Ecosystem Hub</span>
+                        </div>
                       </a>
                       <a
                         href="https://cloud.swarms.ai"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-sm font-medium text-white hover:text-red-500 transition-all duration-300 hover:bg-red-500/10 p-3 rounded-md flex items-center border border-transparent hover:border-red-500/30 hover:shadow-[0_0_8px_rgba(239,68,68,0.2)]"
+                        className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
                         onClick={() => setIsOpen(false)}
                       >
-                        <Cloud className="mr-3 h-4 w-4 text-red-500 flex-shrink-0" />
-                        Cloud Platform
+                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
+                          <Cloud className="h-4 w-4 text-red-500" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <span className="text-sm font-semibold text-white block">Cloud Platform</span>
+                        </div>
                       </a>
                       <a
                         href="https://status.swarms.ai"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-sm font-medium text-white hover:text-red-500 transition-all duration-300 hover:bg-red-500/10 p-3 rounded-md flex items-center border border-transparent hover:border-red-500/30 hover:shadow-[0_0_8px_rgba(239,68,68,0.2)]"
+                        className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
                         onClick={() => setIsOpen(false)}
                       >
-                        <Activity className="mr-3 h-4 w-4 text-red-500 flex-shrink-0" />
-                        Status Page
+                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
+                          <Activity className="h-4 w-4 text-red-500" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <span className="text-sm font-semibold text-white block">Status Page</span>
+                        </div>
                       </a>
                     </TabsContent>
 
-                    <TabsContent value="open_source" className="space-y-2 mt-0">
+                    <TabsContent value="open_source" className="space-y-1 mt-0">
                       <a
                         href="https://github.com/kyegomez/swarms"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-sm font-medium text-white hover:text-red-500 transition-all duration-300 hover:bg-red-500/10 p-3 rounded-md flex items-center border border-transparent hover:border-red-500/30 hover:shadow-[0_0_8px_rgba(239,68,68,0.2)]"
+                        className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
                         onClick={() => setIsOpen(false)}
                       >
-                        <Github className="mr-3 h-4 w-4 text-red-500 flex-shrink-0" />
-                        Main Repository
+                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
+                          <Github className="h-4 w-4 text-red-500" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <span className="text-sm font-semibold text-white block">Main Repository</span>
+                        </div>
                       </a>
                       <a
                         href="https://github.com/The-Swarm-Corporation"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-sm font-medium text-white hover:text-red-500 transition-all duration-300 hover:bg-red-500/10 p-3 rounded-md flex items-center border border-transparent hover:border-red-500/30 hover:shadow-[0_0_8px_rgba(239,68,68,0.2)]"
+                        className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
                         onClick={() => setIsOpen(false)}
                       >
-                        <Code className="mr-3 h-4 w-4 text-red-500 flex-shrink-0" />
-                        Organization
+                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
+                          <Code className="h-4 w-4 text-red-500" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <span className="text-sm font-semibold text-white block">Organization</span>
+                        </div>
                       </a>
                       <Link
                         href="/open-source"
-                        className="text-sm font-medium text-white hover:text-red-500 transition-all duration-300 hover:bg-red-500/10 p-3 rounded-md flex items-center border border-transparent hover:border-red-500/30 hover:shadow-[0_0_8px_rgba(239,68,68,0.2)]"
+                        className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
                         onClick={() => setIsOpen(false)}
                       >
-                        <Code className="mr-3 h-4 w-4 text-red-500 flex-shrink-0" />
-                        Open Source
+                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
+                          <Code className="h-4 w-4 text-red-500" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <span className="text-sm font-semibold text-white block">Open Source</span>
+                        </div>
                       </Link>
                     </TabsContent>
 
-                    <TabsContent value="research" className="space-y-2 mt-0">
+                    <TabsContent value="research" className="space-y-1 mt-0">
                       <Link
                         href="/research"
-                        className="text-sm font-medium text-white hover:text-red-500 transition-all duration-300 hover:bg-red-500/10 p-3 rounded-md flex items-center border border-transparent hover:border-red-500/30 hover:shadow-[0_0_8px_rgba(239,68,68,0.2)]"
+                        className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
                         onClick={() => setIsOpen(false)}
                       >
-                        <BookOpen className="mr-3 h-4 w-4 text-red-500 flex-shrink-0" />
-                        Research
+                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
+                          <BookOpen className="h-4 w-4 text-red-500" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <span className="text-sm font-semibold text-white block">Research</span>
+                        </div>
                       </Link>
                       <Link
                         href="/research-papers"
-                        className="text-sm font-medium text-white hover:text-red-500 transition-all duration-300 hover:bg-red-500/10 p-3 rounded-md flex items-center border border-transparent hover:border-red-500/30 hover:shadow-[0_0_8px_rgba(239,68,68,0.2)]"
+                        className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
                         onClick={() => setIsOpen(false)}
                       >
-                        <FileText className="mr-3 h-4 w-4 text-red-500 flex-shrink-0" />
-                        Research Papers
+                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
+                          <FileText className="h-4 w-4 text-red-500" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <span className="text-sm font-semibold text-white block">Research Papers</span>
+                        </div>
                       </Link>
                       <Link
                         href="/applications"
-                        className="text-sm font-medium text-white hover:text-red-500 transition-all duration-300 hover:bg-red-500/10 p-3 rounded-md flex items-center border border-transparent hover:border-red-500/30 hover:shadow-[0_0_8px_rgba(239,68,68,0.2)]"
+                        className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
                         onClick={() => setIsOpen(false)}
                       >
-                        <Sparkles className="mr-3 h-4 w-4 text-red-500 flex-shrink-0" />
-                        Applications
+                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
+                          <Sparkles className="h-4 w-4 text-red-500" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <span className="text-sm font-semibold text-white block">Applications</span>
+                        </div>
                       </Link>
                     </TabsContent>
 
-                    <TabsContent value="community" className="space-y-2 mt-0">
+                    <TabsContent value="community" className="space-y-1 mt-0">
                       <a
                         href="https://discord.gg/EamjgSaEQf"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-sm font-medium text-white hover:text-red-500 transition-all duration-300 hover:bg-red-500/10 p-3 rounded-md flex items-center border border-transparent hover:border-red-500/30 hover:shadow-[0_0_8px_rgba(239,68,68,0.2)]"
+                        className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
                         onClick={() => setIsOpen(false)}
                       >
-                        <Discord className="mr-3 h-4 w-4 text-red-500 flex-shrink-0" />
-                        Discord Community
+                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
+                          <Discord className="h-4 w-4 text-red-500" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <span className="text-sm font-semibold text-white block">Discord Community</span>
+                        </div>
                       </a>
                       <a
                         href="https://x.com/swarms_corp"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-sm font-medium text-white hover:text-red-500 transition-all duration-300 hover:bg-red-500/10 p-3 rounded-md flex items-center border border-transparent hover:border-red-500/30 hover:shadow-[0_0_8px_rgba(239,68,68,0.2)]"
+                        className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
                         onClick={() => setIsOpen(false)}
                       >
-                        <Twitter className="mr-3 h-4 w-4 text-red-500 flex-shrink-0" />
-                        Twitter/X
+                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
+                          <Twitter className="h-4 w-4 text-red-500" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <span className="text-sm font-semibold text-white block">Twitter/X</span>
+                        </div>
                       </a>
                       <a
                         href="https://lu.ma/swarms_calendar"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-sm font-medium text-white hover:text-red-500 transition-all duration-300 hover:bg-red-500/10 p-3 rounded-md flex items-center border border-transparent hover:border-red-500/30 hover:shadow-[0_0_8px_rgba(239,68,68,0.2)]"
+                        className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
                         onClick={() => setIsOpen(false)}
                       >
-                        <Calendar className="mr-3 h-4 w-4 text-red-500 flex-shrink-0" />
-                        Events Calendar
+                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
+                          <Calendar className="h-4 w-4 text-red-500" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <span className="text-sm font-semibold text-white block">Events Calendar</span>
+                        </div>
                       </a>
                       <a
                         href="https://cal.com/swarms"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-sm font-medium text-white hover:text-red-500 transition-all duration-300 hover:bg-red-500/10 p-3 rounded-md flex items-center border border-transparent hover:border-red-500/30 hover:shadow-[0_0_8px_rgba(239,68,68,0.2)]"
+                        className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
                         onClick={() => setIsOpen(false)}
                       >
-                        <Phone className="mr-3 h-4 w-4 text-red-500 flex-shrink-0" />
-                        Book a Call
+                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
+                          <Phone className="h-4 w-4 text-red-500" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <span className="text-sm font-semibold text-white block">Book a Call</span>
+                        </div>
                       </a>
                     </TabsContent>
 
-                    <TabsContent value="programs" className="space-y-2 mt-0">
+                    <TabsContent value="programs" className="space-y-1 mt-0">
                       <Link
                         href="/programs"
-                        className="text-sm font-medium text-white hover:text-red-500 transition-all duration-300 hover:bg-red-500/10 p-3 rounded-md flex items-center border border-transparent hover:border-red-500/30 hover:shadow-[0_0_8px_rgba(239,68,68,0.2)]"
+                        className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
                         onClick={() => setIsOpen(false)}
                       >
-                        <Award className="mr-3 h-4 w-4 text-red-500 flex-shrink-0" />
-                        Research Program
+                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
+                          <Award className="h-4 w-4 text-red-500" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <span className="text-sm font-semibold text-white block">Research Program</span>
+                        </div>
                       </Link>
                       <a
                         href="https://www.swarms.ai/programs/startups"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-sm font-medium text-white hover:text-red-500 transition-all duration-300 hover:bg-red-500/10 p-3 rounded-md flex items-center border border-transparent hover:border-red-500/30 hover:shadow-[0_0_8px_rgba(239,68,68,0.2)]"
+                        className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
                         onClick={() => setIsOpen(false)}
                       >
-                        <Rocket className="mr-3 h-4 w-4 text-red-500 flex-shrink-0" />
-                        Startup Program
+                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
+                          <Rocket className="h-4 w-4 text-red-500" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <span className="text-sm font-semibold text-white block">Startup Program</span>
+                        </div>
                       </a>
                       <a
                         href="https://grants.swarms.world"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-sm font-medium text-white hover:text-red-500 transition-all duration-300 hover:bg-red-500/10 p-3 rounded-md flex items-center border border-transparent hover:border-red-500/30 hover:shadow-[0_0_8px_rgba(239,68,68,0.2)]"
+                        className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
                         onClick={() => setIsOpen(false)}
                       >
-                        <DollarSign className="mr-3 h-4 w-4 text-red-500 flex-shrink-0" />
-                        Grants Program
-                        <span className="ml-2 text-xs px-2 py-1 bg-red-500/20 text-red-500 rounded-full border border-red-500/30">New</span>
+                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
+                          <DollarSign className="h-4 w-4 text-red-500" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <span className="text-sm font-semibold text-white block">Grants Program</span>
+                          <span className="ml-2 text-xs px-2 py-0.5 bg-red-500/20 text-red-500 rounded-full border border-red-500/30">New</span>
+                        </div>
                       </a>
                     </TabsContent>
 
-                    <TabsContent value="learn" className="space-y-2 mt-0">
+                    <TabsContent value="learn" className="space-y-1 mt-0">
                       <a
                         href="https://docs.swarms.world"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-sm font-medium text-white hover:text-red-500 transition-all duration-300 hover:bg-red-500/10 p-3 rounded-md flex items-center border border-transparent hover:border-red-500/30 hover:shadow-[0_0_8px_rgba(239,68,68,0.2)]"
+                        className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
                         onClick={() => setIsOpen(false)}
                       >
-                        <FileText className="mr-3 h-4 w-4 text-red-500 flex-shrink-0" />
-                        Documentation
+                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
+                          <FileText className="h-4 w-4 text-red-500" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <span className="text-sm font-semibold text-white block">Documentation</span>
+                        </div>
                       </a>
                       <Link
                         href="/installation"
-                        className="text-sm font-medium text-white hover:text-red-500 transition-all duration-300 hover:bg-red-500/10 p-3 rounded-md flex items-center border border-transparent hover:border-red-500/30 hover:shadow-[0_0_8px_rgba(239,68,68,0.2)]"
+                        className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
                         onClick={() => setIsOpen(false)}
                       >
-                        <Download className="mr-3 h-4 w-4 text-red-500 flex-shrink-0" />
-                        Installation Guide
+                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
+                          <Download className="h-4 w-4 text-red-500" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <span className="text-sm font-semibold text-white block">Installation Guide</span>
+                        </div>
                       </Link>
                       <a
                         href="https://course.swarms.world"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-sm font-medium text-white hover:text-red-500 transition-all duration-300 hover:bg-red-500/10 p-3 rounded-md flex items-center border border-transparent hover:border-red-500/30 hover:shadow-[0_0_8px_rgba(239,68,68,0.2)]"
+                        className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
                         onClick={() => setIsOpen(false)}
                       >
-                        <GraduationCap className="mr-3 h-4 w-4 text-red-500 flex-shrink-0" />
-                        Swarms Course
+                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
+                          <GraduationCap className="h-4 w-4 text-red-500" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <span className="text-sm font-semibold text-white block">Swarms Course</span>
+                        </div>
                       </a>
                       <a
                         href="https://contributors.swarms.world"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-sm font-medium text-white hover:text-red-500 transition-all duration-300 hover:bg-red-500/10 p-3 rounded-md flex items-center border border-transparent hover:border-red-500/30 hover:shadow-[0_0_8px_rgba(239,68,68,0.2)]"
+                        className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
                         onClick={() => setIsOpen(false)}
                       >
-                        <Users className="mr-3 h-4 w-4 text-red-500 flex-shrink-0" />
-                        Contributors Portal
+                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
+                          <Users className="h-4 w-4 text-red-500" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <span className="text-sm font-semibold text-white block">Contributors Portal</span>
+                        </div>
                       </a>
                       <Link
                         href="/blog"
-                        className="text-sm font-medium text-white hover:text-red-500 transition-all duration-300 hover:bg-red-500/10 p-3 rounded-md flex items-center border border-transparent hover:border-red-500/30 hover:shadow-[0_0_8px_rgba(239,68,68,0.2)]"
+                        className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
                         onClick={() => setIsOpen(false)}
                       >
-                        <FileText className="mr-3 h-4 w-4 text-red-500 flex-shrink-0" />
-                        Blog
+                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
+                          <FileText className="h-4 w-4 text-red-500" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <span className="text-sm font-semibold text-white block">Blog</span>
+                        </div>
                       </Link>
                     </TabsContent>
                   </Tabs>
                 </div>
 
-                <div className="border-t-2 border-red-500/30 pt-6">
+                <div className="border-t border-neutral-700/40 pt-6">
                   <div className="flex justify-center space-x-4 mb-6">
-                    <Button variant="ghost" size="icon" asChild className="border border-transparent hover:border-red-500/40 hover:bg-red-500/10 transition-all duration-300 hover:shadow-[0_0_8px_rgba(239,68,68,0.3)]">
+                    <Button variant="ghost" size="icon" asChild className="border border-transparent hover:border-white/10 hover:bg-white/[0.05] transition-all duration-300">
                       <a
                         href="https://x.com/swarms_corp"
                         target="_blank"
                         rel="noopener noreferrer"
                         aria-label="Follow us on Twitter"
                       >
-                        <Twitter className="h-5 w-5" />
+                        <Twitter className="h-5 w-5 text-white/85 hover:text-white" />
                       </a>
                     </Button>
-                    <Button variant="ghost" size="icon" asChild className="border border-transparent hover:border-red-500/40 hover:bg-red-500/10 transition-all duration-300 hover:shadow-[0_0_8px_rgba(239,68,68,0.3)]">
+                    <Button variant="ghost" size="icon" asChild className="border border-transparent hover:border-white/10 hover:bg-white/[0.05] transition-all duration-300">
                       <a
                         href="https://discord.gg/EamjgSaEQf"
                         target="_blank"
                         rel="noopener noreferrer"
                         aria-label="Join our Discord"
                       >
-                        <Discord className="h-5 w-5" />
+                        <Discord className="h-5 w-5 text-white/85 hover:text-white" />
                       </a>
                     </Button>
-                    <Button variant="ghost" size="icon" asChild className="border border-transparent hover:border-red-500/40 hover:bg-red-500/10 transition-all duration-300 hover:shadow-[0_0_8px_rgba(239,68,68,0.3)]">
+                    <Button variant="ghost" size="icon" asChild className="border border-transparent hover:border-white/10 hover:bg-white/[0.05] transition-all duration-300">
                       <a
                         href="https://github.com/kyegomez/swarms"
                         target="_blank"
                         rel="noopener noreferrer"
                         aria-label="View on GitHub"
                       >
-                        <Github className="h-5 w-5" />
+                        <Github className="h-5 w-5 text-white/85 hover:text-white" />
                       </a>
                     </Button>
                   </div>

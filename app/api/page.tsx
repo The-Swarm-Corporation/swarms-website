@@ -17,6 +17,7 @@ import { AnimatedBackground } from "@/components/animated-background"
 import { Navigation } from "@/components/navigation"
 import { ScrollingTicker } from "@/components/scrolling-ticker"
 import Link from "next/link"
+import Image from "next/image"
 
 export default function APIPage() {
   const shouldReduceMotion = useReducedMotion()
@@ -510,10 +511,16 @@ axios.post(
       {/* Hero Section */}
       <div className="relative overflow-hidden bg-black min-h-screen">
         {/* Background Image */}
-        <div 
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-40"
-          style={{ backgroundImage: 'url(/generation-c179a831-b828-467c-b51b-730fcfe8d4ef.png)' }}
-        />
+        <div className="absolute inset-0 opacity-40">
+          <Image
+            src="/generation-c179a831-b828-467c-b51b-730fcfe8d4ef.png"
+            alt="Swarms API Multi-Agent Orchestration Platform - Enterprise-Grade AI Agent Infrastructure Background"
+            fill
+            className="object-cover"
+            priority
+            quality={90}
+          />
+        </div>
         {/* Dark overlay for better text readability */}
         <div className="absolute inset-0 bg-black/60" />
         {/* Cyberpunk grid background */}

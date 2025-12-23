@@ -116,10 +116,11 @@ export function Navigation() {
             <div className="relative w-7 h-7 sm:w-8 sm:h-8 transition-transform duration-300 group-hover:scale-110">
               <Image
                 src="/logo.svg"
-                alt="Swarms Logo"
+                alt="Swarms AI Multi-Agent Framework Logo - Enterprise-Grade Autonomous Agent Infrastructure"
                 width={32}
                 height={32}
                 className="transition-opacity duration-300 group-hover:opacity-80"
+                priority
               />
             </div>
           </Link>

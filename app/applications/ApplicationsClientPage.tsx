@@ -1277,9 +1277,10 @@ export default function ApplicationsClientPage() {
                 <div className="relative w-8 h-8 mr-2">
                   <Image
                     src="https://raw.githubusercontent.com/kyegomez/swarms/1899c807eb3874e095b677fbd6b9c877e7746918/swarms_logo_svg.svg"
-                    alt="Swarms Logo"
+                    alt="Swarms AI Multi-Agent Framework Logo - Enterprise-Grade Autonomous Agent Infrastructure"
                     width={32}
                     height={32}
+                    loading="lazy"
                   />
                 </div>
                 <span className="font-bold text-lg">Swarms AI</span>

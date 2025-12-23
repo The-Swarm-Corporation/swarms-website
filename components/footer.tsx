@@ -1,5 +1,6 @@
 import * as React from "react"
 import Link from "next/link"
+import Image from "next/image"
 import {
   Twitter,
   MessageCircle,
@@ -36,7 +37,14 @@ export function Footer() {
             {/* Left Side - Logo and Mission */}
             <div className="lg:w-1/3 xl:w-1/4">
               <div className="flex flex-col gap-4">
-                <img src="/logo.svg" alt="Swarms Logo" className="h-8 w-8 sm:h-10 sm:w-10 flex-shrink-0" />
+                <Image 
+                  src="/logo.svg" 
+                  alt="Swarms AI Multi-Agent Framework Logo - Enterprise-Grade Autonomous Agent Infrastructure" 
+                  width={40}
+                  height={40}
+                  className="h-8 w-8 sm:h-10 sm:w-10 flex-shrink-0"
+                  priority
+                />
                 <div>
                   <h2 className="text-xl sm:text-2xl font-bold text-white mb-3">Swarms</h2>
                   <p className="text-sm sm:text-base text-gray-400 leading-relaxed">

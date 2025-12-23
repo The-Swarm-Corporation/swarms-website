@@ -47,7 +47,7 @@ export default function SimulationsPage() {
           <div className="absolute inset-0">
             <Image
               src="/simulation.png"
-              alt="Multi-Agent Simulation Architecture"
+              alt="Large Scale Multi-Agent Simulation Architecture - Swarms AI Autonomous Agent Infrastructure for Organizational Simulation"
               fill
               className="object-cover"
               priority
@@ -209,10 +209,11 @@ export default function SimulationsPage() {
                       <div className="relative h-40 sm:h-48 overflow-hidden rounded-t-lg flex-shrink-0">
                         <Image
                           src={domain.image}
-                          alt={domain.imageAlt}
+                          alt={`${domain.imageAlt} - ${domain.title} Multi-Agent System Visualization - Swarms AI Enterprise Agent Infrastructure`}
                           width={400}
                           height={200}
                           className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110"
+                          loading="lazy"
                         />
                         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/80" />
                         <div className="absolute top-3 left-3 sm:top-4 sm:left-4">

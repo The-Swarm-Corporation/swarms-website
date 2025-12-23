@@ -315,7 +315,7 @@ function ProductBlock({ product, index }: { product: Product; index: number }) {
           <div className="absolute inset-0">
             <Image
               src="/chat_product.png"
-              alt="Swarms Chat interface"
+              alt="Swarms Chat Multi-Agent Interface - No-Code Conversational AI Agent System Dashboard"
               fill
               priority
               className="object-cover opacity-70"

@@ -321,10 +321,11 @@ function ProductSection({ product, index, isEven }: { product: typeof swarmsStac
                 <div className="relative rounded-lg overflow-hidden border border-white/10 hover:border-white/20 transition-all duration-500 hover:shadow-2xl hover:shadow-red-500/10 w-full max-w-full">
                   <Image
                     src={product.image}
-                    alt={product.title}
+                    alt={`${product.title} - ${product.subtitle} - Swarms Multi-Agent AI Framework Product Showcase`}
                     width={800}
                     height={600}
                     className="w-full h-auto object-cover max-w-full"
+                    loading="lazy"
                   />
                 </div>
               ) : (

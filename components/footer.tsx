@@ -67,6 +67,8 @@ export function Footer() {
                   },
                   { name: "Swarms RS", icon: Rocket, url: "https://github.com/The-Swarm-Corporation/swarms-rs" },
                   { name: "Swarms Marketplace", icon: Sparkles, url: "https://swarms.world" },
+                  { name: "Agent Economy", icon: DollarSign, url: "https://swarms.world/agent-economy" },
+                  { name: "Launch on Marketplace", icon: Rocket, url: "https://swarms.world/launch" },
                 ].map((item, index) => (
                   <li key={index} className="group">
                     <Link
@@ -98,6 +100,7 @@ export function Footer() {
                 {[
                   { name: "Documentation", icon: BookOpen, url: "https://docs.swarms.world" },
                   { name: "Research Program", icon: Award, url: "/programs" },
+                  { name: "Foundry Program", icon: Award, url: "https://swarms.world/foundry" },
                   { name: "Research", icon: BookOpen, url: "/research" },
                   { name: "Research Papers", icon: FileText, url: "/research-papers" },
                   { name: "Startup Program", icon: Rocket, url: "https://www.swarms.ai/programs/startups" },

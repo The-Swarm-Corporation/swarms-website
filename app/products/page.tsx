@@ -1,320 +1,47 @@
 "use client"
-import { Navigation } from "@/components/navigation"
-import { ScrollingTicker } from "@/components/scrolling-ticker"
-import { CardWrapper } from "@/components/card-wrapper"
-import { AnimatedBackground } from "@/components/animated-background"
-import { motion } from "framer-motion"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Badge } from "@/components/ui/badge"
-import {
-  Code,
-  Cpu,
-  Database,
-  FileCode,
-  Github,
-  Globe,
-  Grid3X3,
-  MessageSquare,
-  Package,
-  Server,
-  Shield,
-  Terminal,
-  Zap,
-  BookOpen,
-  Rocket,
-  Copy,
-  CheckCircle,
-  ExternalLink,
-  Twitter,
-} from "lucide-react"
-import { SiDiscord as Discord } from "react-icons/si"
+
 import { useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
+import { motion } from "framer-motion"
+import { Navigation } from "@/components/navigation"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Copy, CheckCircle } from "lucide-react"
 
-export default function ProductsPage() {
-  const [copied, setCopied] = useState<string | null>(null)
+type ProductBadge = { text: string; variant?: "default" | "secondary" | "destructive" | "outline" }
 
-  const copyToClipboard = (text: string, id: string) => {
-    navigator.clipboard.writeText(text)
-    setCopied(id)
-    setTimeout(() => setCopied(null), 2000)
-  }
+type Product = {
+  id: string
+  label: string
+  title: string
+  description: string
+  docsUrl: string
+  getStartedUrl: string
+  badges?: ProductBadge[]
+  installation?: { command: string; language: string }
+  codeExample?: { code: string; language: string }
+}
 
-  const CodeBlock = ({ code, language = "bash", id }: { code: string; language?: string; id: string }) => (
-    <div className="relative mt-4 rounded-lg bg-black/80 border border-red-500/20 overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-2 bg-red-950/20 border-b border-red-500/20">
-        <span className="text-xs text-red-400">{language}</span>
-        <button
-          onClick={() => copyToClipboard(code, id)}
-          className="text-xs text-red-400 hover:text-red-300 flex items-center gap-1 cursor-pointer"
-          aria-label="Copy code"
-        >
-          {copied === id ? (
-            <>
-              <CheckCircle className="h-3 w-3" />
-              <span>Copied!</span>
-            </>
-          ) : (
-            <>
-              <Copy className="h-3 w-3" />
-              <span>Copy</span>
-            </>
-          )}
-        </button>
-      </div>
-      <pre className="p-4 overflow-x-auto text-sm text-red-300">
-        <code>{code}</code>
-      </pre>
-    </div>
-  )
-
-  const ProductCard = ({
-    icon: Icon,
-    title,
-    description,
-    docsUrl,
-    getStartedUrl,
-    badges = [],
-    delay = 0,
-  }: {
-    icon: any
-    title: string
-    description: string
-    docsUrl: string
-    getStartedUrl: string
-    badges?: { text: string; variant?: "default" | "secondary" | "destructive" | "outline" }[]
-    delay?: number
-  }) => (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay: delay * 0.1 }}
-      viewport={{ once: true }}
-      className="h-full"
-    >
-      <CardWrapper className="h-full p-6 hover:border-red-500/50 transition-all duration-300">
-        <div className="flex flex-col h-full">
-          <div className="flex items-start gap-4 mb-4">
-            <div className="relative">
-              <div className="p-2 rounded-md bg-red-500/10 border border-red-500/20">
-                <Icon className="h-6 w-6 text-red-500" />
-              </div>
-              <div className="absolute -inset-1 bg-red-500/10 blur-md rounded-md -z-10" />
-            </div>
-            <div>
-              <h3 className="text-xl font-bold">{title}</h3>
-              <div className="flex flex-wrap gap-2 mt-2">
-                {badges.map((badge, i) => (
-                  <Badge
-                    key={i}
-                    variant={badge.variant || "default"}
-                    className={
-                      badge.variant === "outline"
-                        ? "border-red-500/50 text-red-400"
-                        : badge.variant === "secondary"
-                          ? "bg-red-500/20 text-red-400 hover:bg-red-500/30"
-                          : ""
-                    }
-                  >
-                    {badge.text}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          </div>
-          <p className="text-muted-foreground mb-6 flex-grow">{description}</p>
-          <div className="flex flex-wrap gap-3 mt-auto">
-            <a
-              href={docsUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ position: "relative", zIndex: 10 }}
-              className="cursor-pointer inline-flex items-center justify-center rounded-md text-sm font-medium border border-red-500/50 text-red-400 hover:bg-red-500/10 h-10 px-4 py-2"
-            >
-              <BookOpen className="mr-2 h-4 w-4" />
-              Documentation
-            </a>
-            <a
-              href={getStartedUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ position: "relative", zIndex: 10 }}
-              className="cursor-pointer inline-flex items-center justify-center rounded-md text-sm font-medium bg-red-600 hover:bg-red-700 text-white h-10 px-4 py-2"
-            >
-              <Rocket className="mr-2 h-4 w-4" />
-              Get Started
-            </a>
-          </div>
-        </div>
-      </CardWrapper>
-    </motion.div>
-  )
-
-  const tickerAnnouncements = [
-    "Swarms: The Enterprise-Grade Multi-Agent Orchestration Framework",
-    "Build, deploy, and scale autonomous AI agent swarms",
-    "Now available in Python and Rust",
-    "Explore our no-code interfaces and cloud API",
-  ]
-
-  return (
-    <div className="min-h-screen bg-background">
-      <Navigation />
-      <ScrollingTicker
-        announcements={tickerAnnouncements}
-        className="py-2 bg-black/30 border-y border-red-600/20 backdrop-blur-sm"
-      />
-
-      {/* Hero Section */}
-      <div className="relative overflow-hidden">
-        <AnimatedBackground particleColor="rgba(239, 68, 68, 0.5)" className="opacity-40" />
-        <div className="absolute inset-0 circuit-pattern opacity-20" aria-hidden="true" />
-        <div className="absolute inset-0 cyber-gradient" aria-hidden="true" />
-
-        <div className="container relative px-4 sm:px-6 py-20 md:py-28">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="max-w-4xl mx-auto text-center"
-          >
-            <Badge className="mb-4 bg-red-500/20 text-red-400 hover:bg-red-500/30">Enterprise-Grade</Badge>
-            <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl mb-6">Swarms Product Suite</h1>
-            <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
-              Build, deploy, and scale autonomous AI agent swarms with unprecedented control and efficiency using our
-              comprehensive suite of tools and frameworks.
-            </p>
-            <div className="flex flex-wrap justify-center gap-4">
-              <a
-                href="https://github.com/kyegomez/swarms"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ position: "relative", zIndex: 10 }}
-                className="cursor-pointer inline-flex items-center justify-center rounded-md text-sm font-medium bg-red-600 hover:bg-red-700 text-white h-12 px-6 py-3"
-              >
-                <Github className="mr-2 h-5 w-5" />
-                View on GitHub
-              </a>
-              <a
-                href="https://docs.swarms.world"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ position: "relative", zIndex: 10 }}
-                className="cursor-pointer inline-flex items-center justify-center rounded-md text-sm font-medium border border-red-600 text-red-600 hover:bg-red-600/10 h-12 px-6 py-3"
-              >
-                <BookOpen className="mr-2 h-5 w-5" />
-                Documentation
-              </a>
-            </div>
-          </motion.div>
-        </div>
-      </div>
-
-      {/* Product Categories */}
-      <div className="container px-4 sm:px-6 py-16">
-        <Tabs defaultValue="frameworks" className="w-full">
-          <div className="flex justify-center mb-8">
-            <TabsList className="grid grid-cols-3 w-full max-w-2xl bg-background/30 backdrop-blur-sm border border-red-500/20 p-1 rounded-lg">
-              <TabsTrigger
-                value="frameworks"
-                className="data-[state=active]:bg-red-500/10 data-[state=active]:text-red-500 data-[state=active]:shadow-[0_0_10px_rgba(239,68,68,0.2)]"
-              >
-                <Code className="mr-2 h-4 w-4" />
-                Frameworks
-              </TabsTrigger>
-              <TabsTrigger
-                value="interfaces"
-                className="data-[state=active]:bg-red-500/10 data-[state=active]:text-red-500 data-[state=active]:shadow-[0_0_10px_rgba(239,68,68,0.2)]"
-              >
-                <Grid3X3 className="mr-2 h-4 w-4" />
-                Interfaces
-              </TabsTrigger>
-              <TabsTrigger
-                value="cloud"
-                className="data-[state=active]:bg-red-500/10 data-[state=active]:text-red-500 data-[state=active]:shadow-[0_0_10px_rgba(239,68,68,0.2)]"
-              >
-                <Server className="mr-2 h-4 w-4" />
-                Cloud Services
-              </TabsTrigger>
-            </TabsList>
-          </div>
-
-          {/* Frameworks Tab */}
-          <TabsContent value="frameworks" className="space-y-12">
-            <div>
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6 }}
-                viewport={{ once: true }}
-                className="text-center mb-8"
-              >
-                <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl mb-4">Development Frameworks</h2>
-                <p className="text-muted-foreground max-w-2xl mx-auto">
-                  Build powerful multi-agent systems with our enterprise-grade frameworks available in multiple
-                  languages.
-                </p>
-              </motion.div>
-
-              <div className="grid gap-6 md:grid-cols-2">
-                <ProductCard
-                  icon={FileCode}
-                  title="Swarms Python"
-                  description="The flagship enterprise-grade production-ready multi-agent orchestration framework in Python. Build complex agent systems with sequential workflows, parallel processing, and mixture architectures."
-                  docsUrl="https://docs.swarms.world"
-                  getStartedUrl="https://github.com/kyegomez/swarms"
-                  badges={[
-                    { text: "Python", variant: "secondary" },
-                    { text: "Production-Ready", variant: "outline" },
-                  ]}
-                  delay={0}
-                />
-
-                <ProductCard
-                  icon={Cpu}
-                  title="Swarms Rust"
-                  description="A high-performance implementation of the Swarms framework in Rust, designed for maximum efficiency and safety. Perfect for systems requiring blazing-fast performance and minimal resource usage."
-                  docsUrl="https://docs.rs/swarm-rs/0.1.4/swarm_rs/"
-                  getStartedUrl="https://github.com/The-Swarm-Corporation/swarms-rs"
-                  badges={[
-                    { text: "Rust", variant: "secondary" },
-                    { text: "High Performance", variant: "outline" },
-                  ]}
-                  delay={1}
-                />
-              </div>
-
-              <div className="mt-12">
-                <h3 className="text-2xl font-bold mb-6">Quick Installation</h3>
-                <div className="grid gap-6 md:grid-cols-2">
-                  <div>
-                    <h4 className="text-lg font-medium mb-2 flex items-center">
-                      <FileCode className="mr-2 h-5 w-5 text-red-500" />
-                      Python Installation
-                    </h4>
-                    <CodeBlock code="pip install -U swarms swarms-memory" language="bash" id="python-install" />
-                  </div>
-                  <div>
-                    <h4 className="text-lg font-medium mb-2 flex items-center">
-                      <Cpu className="mr-2 h-5 w-5 text-red-500" />
-                      Rust Installation
-                    </h4>
-                    <CodeBlock code="cargo add swarm-rs" language="bash" id="rust-install" />
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-12">
-                <h3 className="text-2xl font-bold mb-6">Example Usage</h3>
-                <div className="grid gap-6 md:grid-cols-2">
-                  <div>
-                    <h4 className="text-lg font-medium mb-2 flex items-center">
-                      <FileCode className="mr-2 h-5 w-5 text-red-500" />
-                      Python Example
-                    </h4>
-                    <CodeBlock
-                      code={`import os
+const products: Product[] = [
+  // Developer tools first
+  {
+    id: "swarms-python",
+    label: "",
+    title: "Swarms Python",
+    description:
+      "The flagship enterprise-grade production-ready multi-agent orchestration framework in Python. Build complex agent systems with sequential workflows, parallel processing, and mixture architectures.",
+    docsUrl: "https://docs.swarms.world",
+    getStartedUrl: "https://github.com/kyegomez/swarms",
+    badges: [
+      { text: "Python", variant: "secondary" },
+      { text: "Production-Ready", variant: "outline" },
+    ],
+    installation: { command: "pip install -U swarms swarms-memory", language: "bash" },
+    codeExample: {
+      language: "python",
+      code: `import os
 from dotenv import load_dotenv
 from swarm_models import OpenAIChat
 from swarms import Agent, GroupChat, expertise_based
@@ -379,18 +106,22 @@ if __name__ == "__main__":
     history = chat.run(
         "How to optimize tax strategy for investments?"
     )
-    print(history.model_dump_json(indent=2))`}
-                      language="python"
-                      id="python-example"
-                    />
-                  </div>
-                  <div>
-                    <h4 className="text-lg font-medium mb-2 flex items-center">
-                      <Cpu className="mr-2 h-5 w-5 text-red-500" />
-                      Rust Example
-                    </h4>
-                    <CodeBlock
-                      code={`use std::env;
+    print(history.model_dump_json(indent=2))`,
+    },
+  },
+  {
+    id: "swarms-rust",
+    label: "",
+    title: "Swarms Rust",
+    description:
+      "A high-performance implementation of the Swarms framework in Rust, designed for maximum efficiency and safety. Perfect for systems requiring blazing-fast performance and minimal resource usage.",
+    docsUrl: "https://docs.rs/swarm-rs/0.1.4/swarm_rs/",
+    getStartedUrl: "https://github.com/The-Swarm-Corporation/swarms-rs",
+    badges: [],
+    installation: { command: "cargo add swarm-rs", language: "bash" },
+    codeExample: {
+      language: "rust",
+      code: `use std::env;
 
 use anyhow::Result;
 use swarms_rs::llm::provider::openai::OpenAI;
@@ -451,171 +182,24 @@ async fn main() -> Result<()> {
 
     println!("{}", serde_json::to_string_pretty(&result)?);
     Ok(())
-}`}
-                      language="rust"
-                      id="rust-example"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </TabsContent>
-
-          {/* Interfaces Tab */}
-          <TabsContent value="interfaces" className="space-y-12">
-            <div>
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6 }}
-                viewport={{ once: true }}
-                className="text-center mb-8"
-              >
-                <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl mb-4">No-Code Interfaces</h2>
-                <p className="text-muted-foreground max-w-2xl mx-auto">
-                  Powerful visual interfaces for building and deploying agent swarms without writing code.
-                </p>
-              </motion.div>
-
-              <div className="grid gap-6 md:grid-cols-3">
-                <ProductCard
-                  icon={MessageSquare}
-                  title="Swarms Chat"
-                  description="A no-code interface to interact with your swarm through natural language. Build, test, and deploy conversational agent systems without writing a single line of code."
-                  docsUrl="https://docs.swarms.world/en/latest/swarms_platform/chat/"
-                  getStartedUrl="https://swarms.world/platform/chat"
-                  badges={[{ text: "No-Code", variant: "secondary" }]}
-                  delay={0}
-                />
-
-                <ProductCard
-                  icon={Grid3X3}
-                  title="Swarms Drag n Drop"
-                  description="Visual interface for designing complex agent workflows through an intuitive drag-and-drop experience. Connect agents, define workflows, and deploy with just a few clicks."
-                  docsUrl="https://docs.swarms.world/en/latest/swarms_platform/dragndrop/"
-                  getStartedUrl="https://swarms.world/platform/dragndrop"
-                  badges={[{ text: "Visual Builder", variant: "secondary" }]}
-                  delay={1}
-                />
-
-                <ProductCard
-                  icon={Database}
-                  title="Swarms Spreadsheet"
-                  description="Massive concurrent swarm execution through a familiar spreadsheet interface. Process thousands of tasks in parallel with the power of multi-agent systems."
-                  docsUrl="https://docs.swarms.world/en/latest/swarms_platform/spreadsheet/"
-                  getStartedUrl="https://swarms.world/platform/spreadsheet"
-                  badges={[{ text: "Mass Execution", variant: "secondary" }]}
-                  delay={2}
-                />
-              </div>
-
-              <div className="mt-12">
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6 }}
-                  viewport={{ once: true }}
-                >
-                  <CardWrapper className="p-8 border-red-500/30">
-                    <div className="grid gap-8 md:grid-cols-2">
-                      <div>
-                        <h3 className="text-2xl font-bold mb-4">Swarms Marketplace</h3>
-                        <p className="text-muted-foreground mb-6">
-                          Discover and share agents, prompts, workflows, and more in the Swarms ecosystem. Find
-                          pre-built solutions or share your creations with the community.
-                        </p>
-                        <ul className="space-y-3 mb-6">
-                          <li className="flex items-start">
-                            <span className="mr-2 mt-1">
-                              <CheckCircle className="h-5 w-5 text-red-500" />
-                            </span>
-                            <span>Ready-to-use agent templates</span>
-                          </li>
-                          <li className="flex items-start">
-                            <span className="mr-2 mt-1">
-                              <CheckCircle className="h-5 w-5 text-red-500" />
-                            </span>
-                            <span>Community-contributed workflows</span>
-                          </li>
-                          <li className="flex items-start">
-                            <span className="mr-2 mt-1">
-                              <CheckCircle className="h-5 w-5 text-red-500" />
-                            </span>
-                            <span>Optimized prompts for specific use cases</span>
-                          </li>
-                        </ul>
-                        <a
-                          href="https://swarms.world"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{ position: "relative", zIndex: 10 }}
-                          className="cursor-pointer inline-flex items-center justify-center rounded-md text-sm font-medium bg-red-600 hover:bg-red-700 text-white h-10 px-4 py-2"
-                        >
-                          <Globe className="mr-2 h-4 w-4" />
-                          Explore Marketplace
-                        </a>
-                      </div>
-                    </div>
-                  </CardWrapper>
-                </motion.div>
-              </div>
-            </div>
-          </TabsContent>
-
-          {/* Cloud Services Tab */}
-          <TabsContent value="cloud" className="space-y-12">
-            <div>
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6 }}
-                viewport={{ once: true }}
-                className="text-center mb-8"
-              >
-                <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl mb-4">Cloud Services</h2>
-                <p className="text-muted-foreground max-w-2xl mx-auto">
-                  Deploy and manage AI agent swarms at scale with our enterprise-ready cloud infrastructure.
-                </p>
-              </motion.div>
-
-              <div className="grid gap-6 md:grid-cols-2">
-                <ProductCard
-                  icon={Server}
-                  title="Swarms API"
-                  description="Enterprise-grade Agent Swarm Management API for deploying and orchestrating sophisticated AI agent workflows in the cloud without managing infrastructure."
-                  docsUrl="https://docs.swarms.ai"
-                  getStartedUrl="https://swarms.world/platform/api-keys"
-                  badges={[
-                    { text: "Cloud", variant: "secondary" },
-                    { text: "Enterprise", variant: "outline" },
-                  ]}
-                  delay={0}
-                />
-
-                <ProductCard
-                  icon={Shield}
-                  title="Swarms Enterprise"
-                  description="Custom deployment options with dedicated infrastructure, enhanced security features, and SLAs for enterprise customers with mission-critical requirements."
-                  docsUrl="https://docs.swarms.world/en/latest/swarms_cloud/enterprise/"
-                  getStartedUrl="https://cal.com/swarms"
-                  badges={[
-                    { text: "Enterprise", variant: "secondary" },
-                    { text: "Custom Deployment", variant: "outline" },
-                  ]}
-                  delay={1}
-                />
-              </div>
-
-              <div className="mt-12">
-                <h3 className="text-2xl font-bold mb-6">API Example</h3>
-                <div className="grid gap-6 md:grid-cols-2">
-                  <div>
-                    <h4 className="text-lg font-medium mb-2 flex items-center">
-                      <Terminal className="mr-2 h-5 w-5 text-red-500" />
-                      Python API Client
-                    </h4>
-                    <CodeBlock
-                      code={`import requests
+}`,
+    },
+  },
+  {
+    id: "swarms-api",
+    label: "",
+    title: "Swarms API",
+    description:
+      "Enterprise-grade Agent Swarm Management API for deploying and orchestrating sophisticated AI agent workflows in the cloud without managing infrastructure.",
+    docsUrl: "https://docs.swarms.ai",
+    getStartedUrl: "https://swarms.world/platform/api-keys",
+    badges: [
+      { text: "Cloud", variant: "secondary" },
+      { text: "Enterprise", variant: "outline" },
+    ],
+    codeExample: {
+      language: "python",
+      code: `import requests
 
 API_KEY = "your-api-key"
 BASE_URL = "https://api.swarms.world"
@@ -650,295 +234,503 @@ response = requests.post(
   json=payload
 )
 
-print(response.json())`}
-                      language="python"
-                      id="api-example"
-                    />
-                  </div>
-                  <div>
-                    <h4 className="text-lg font-medium mb-2 flex items-center">
-                      <Package className="mr-2 h-5 w-5 text-red-500" />
-                      API Features
-                    </h4>
-                    <CardWrapper className="p-6 h-full">
-                      <ul className="space-y-3">
-                        <li className="flex items-start">
-                          <span className="mr-2 mt-1">
-                            <Zap className="h-5 w-5 text-red-500" />
-                          </span>
-                          <span>High-performance infrastructure with automatic scaling</span>
-                        </li>
-                        <li className="flex items-start">
-                          <span className="mr-2 mt-1">
-                            <Shield className="h-5 w-5 text-red-500" />
-                          </span>
-                          <span>Enterprise-grade security with SOC 2 compliance</span>
-                        </li>
-                        <li className="flex items-start">
-                          <span className="mr-2 mt-1">
-                            <Server className="h-5 w-5 text-red-500" />
-                          </span>
-                          <span>Managed infrastructure with high availability</span>
-                        </li>
-                        <li className="flex items-start">
-                          <span className="mr-2 mt-1">
-                            <Globe className="h-5 w-5 text-red-500" />
-                          </span>
-                          <span>Global deployment options for low-latency access</span>
-                        </li>
-                        <li className="flex items-start">
-                          <span className="mr-2 mt-1">
-                            <Database className="h-5 w-5 text-red-500" />
-                          </span>
-                          <span>Persistent storage for agent state and memory</span>
-                        </li>
-                      </ul>
-                      <div className="mt-6">
-                        <a
-                          href="https://docs.swarms.ai"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{ position: "relative", zIndex: 10 }}
-                          className="cursor-pointer inline-flex items-center justify-center rounded-md text-sm font-medium border border-red-500/50 text-red-400 hover:bg-red-500/10 h-10 px-4 py-2"
-                        >
-                          <ExternalLink className="mr-2 h-4 w-4" />
-                          API Documentation
-                        </a>
-                      </div>
-                    </CardWrapper>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </TabsContent>
-        </Tabs>
-      </div>
+print(response.json())`,
+    },
+  },
 
-      {/* Features Section */}
-      <div className="container px-4 sm:px-6 py-16 border-t border-red-500/20">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          viewport={{ once: true }}
-          className="text-center mb-12"
+  // Then the rest of the products
+  {
+    id: "swarms-chat",
+    label: "",
+    title: "Swarms Chat",
+    description:
+      "A no-code interface to interact with your swarm through natural language. Build, test, and deploy conversational agent systems without writing a single line of code.",
+    docsUrl: "https://docs.swarms.world/en/latest/swarms_platform/chat/",
+    getStartedUrl: "https://swarms.world/platform/chat",
+    badges: [{ text: "No-Code", variant: "secondary" }],
+  },
+  {
+    id: "swarms-dragndrop",
+    label: "",
+    title: "Swarms Drag n Drop",
+    description:
+      "Visual interface for designing complex agent workflows through an intuitive drag-and-drop experience. Connect agents, define workflows, and deploy with just a few clicks.",
+    docsUrl: "https://docs.swarms.world/en/latest/swarms_platform/dragndrop/",
+    getStartedUrl: "https://swarms.world/platform/dragndrop",
+    badges: [{ text: "Visual Builder", variant: "secondary" }],
+  },
+  {
+    id: "swarms-spreadsheet",
+    label: "",
+    title: "Swarms Spreadsheet",
+    description:
+      "Massive concurrent swarm execution through a familiar spreadsheet interface. Process thousands of tasks in parallel with the power of multi-agent systems.",
+    docsUrl: "https://docs.swarms.world/en/latest/swarms_platform/spreadsheet/",
+    getStartedUrl: "https://swarms.world/platform/spreadsheet",
+    badges: [{ text: "Mass Execution", variant: "secondary" }],
+  },
+  {
+    id: "swarms-enterprise",
+    label: "",
+    title: "Swarms Enterprise",
+    description:
+      "Custom deployment options with dedicated infrastructure, enhanced security features, and SLAs for enterprise customers with mission-critical requirements.",
+    docsUrl: "https://docs.swarms.world/en/latest/swarms_cloud/enterprise/",
+    getStartedUrl: "https://cal.com/swarms",
+    badges: [
+      { text: "Enterprise", variant: "secondary" },
+      { text: "Custom Deployment", variant: "outline" },
+    ],
+  },
+]
+
+function CodeBlock({ code, language = "bash", id }: { code: string; language?: string; id: string }) {
+  const [copied, setCopied] = useState<string | null>(null)
+
+  const copyToClipboard = (text: string, blockId: string) => {
+    navigator.clipboard.writeText(text)
+    setCopied(blockId)
+    setTimeout(() => setCopied(null), 2000)
+  }
+
+  return (
+    <Card className="mt-4 border-white/10 bg-white/[0.02]">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
+        <span className="text-xs uppercase tracking-wide text-white/50 font-medium">{language}</span>
+        <button
+          onClick={() => copyToClipboard(code, id)}
+          className="text-xs text-white/60 hover:text-white flex items-center gap-1.5 cursor-pointer transition-colors"
+          aria-label="Copy code"
         >
-          <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl mb-4">Enterprise-Grade Features</h2>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
-            Swarms provides everything you need to build powerful multi-agent systems for production use.
-          </p>
-        </motion.div>
+          {copied === id ? (
+            <>
+              <CheckCircle className="h-3.5 w-3.5" />
+              <span>Copied!</span>
+            </>
+          ) : (
+            <>
+              <Copy className="h-3.5 w-3.5" />
+              <span>Copy</span>
+            </>
+          )}
+        </button>
+      </div>
+      <pre className="p-4 overflow-x-auto text-xs sm:text-sm text-white/80 font-mono leading-relaxed">
+        <code>{code}</code>
+      </pre>
+    </Card>
+  )
+}
 
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {[
-            {
-              category: "🏢 Enterprise Architecture",
-              features: [
-                "Production-Ready Infrastructure",
-                "High Reliability Systems",
-                "Modular Design",
-                "Comprehensive Logging",
-              ],
-              benefits: ["Reduced downtime", "Easier maintenance", "Better debugging", "Enhanced monitoring"],
-            },
-            {
-              category: "🤖 Agent Orchestration",
-              features: [
-                "Hierarchical Swarms",
-                "Parallel Processing",
-                "Sequential Workflows",
-                "Graph-based Workflows",
-                "Dynamic Agent Rearrangement",
-              ],
-              benefits: ["Complex task handling", "Improved performance", "Flexible workflows", "Optimized execution"],
-            },
-            {
-              category: "🔄 Integration Capabilities",
-              features: [
-                "Multi-Model Support",
-                "Custom Agent Creation",
-                "Extensive Tool Library",
-                "Multiple Memory Systems",
-              ],
-              benefits: [
-                "Provider flexibility",
-                "Custom solutions",
-                "Extended functionality",
-                "Enhanced memory management",
-              ],
-            },
-            {
-              category: "📈 Scalability",
-              features: ["Concurrent Processing", "Resource Management", "Load Balancing", "Horizontal Scaling"],
-              benefits: ["Higher throughput", "Efficient resource use", "Better performance", "Easy scaling"],
-            },
-            {
-              category: "🛠️ Developer Tools",
-              features: ["Simple API", "Extensive Documentation", "Active Community", "CLI Tools"],
-              benefits: ["Faster development", "Easy learning curve", "Community support", "Quick deployment"],
-            },
-            {
-              category: "🔐 Security Features",
-              features: ["Error Handling", "Rate Limiting", "Monitoring Integration", "Audit Logging"],
-              benefits: ["Improved reliability", "API protection", "Better monitoring", "Enhanced tracking"],
-            },
-            {
-              category: "📊 Advanced Features",
-              features: ["SpreadsheetSwarm", "Group Chat", "Agent Registry", "Mixture of Agents"],
-              benefits: ["Mass agent management", "Collaborative AI", "Centralized control", "Complex solutions"],
-            },
-            {
-              category: "🔌 Provider Support",
-              features: ["OpenAI", "Anthropic", "ChromaDB", "Custom Providers"],
-              benefits: ["Provider flexibility", "Storage options", "Custom integration", "Vendor independence"],
-            },
-            {
-              category: "💪 Production Features",
-              features: ["Automatic Retries", "Async Support", "Environment Management", "Type Safety"],
-              benefits: ["Better reliability", "Improved performance", "Easy configuration", "Safer code"],
-            },
-          ].map((item, index) => (
+function ProductBlock({ product, index }: { product: Product; index: number }) {
+  const isEven = index % 2 === 0
+
+  return (
+    <>
+      {/* Spotlight section */}
+      <section className="relative min-h-screen flex items-center py-20 md:py-28 overflow-hidden bg-black border-t border-white/10">
+        {/* Optional background image for Swarms Chat */}
+        {product.id === "swarms-chat" && (
+          <div className="absolute inset-0">
+            <Image
+              src="/chat_product.png"
+              alt="Swarms Chat interface"
+              fill
+              priority
+              className="object-cover opacity-70"
+            />
+            <div className="absolute inset-0 bg-black/30" />
+          </div>
+        )}
+
+        <motion.div
+          className="pointer-events-none absolute inset-0 opacity-40"
+          style={{
+            background: `radial-gradient(circle at ${isEven ? "30%" : "70%"} 25%, rgba(63,63,70,0.35), transparent 60%)`,
+          }}
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 0.4 }}
+          transition={{ duration: 1 }}
+          viewport={{ once: true }}
+        />
+
+        <div className="container relative px-4 sm:px-6 lg:px-8 w-full max-w-5xl mx-auto">
+          <motion.div
+            className="max-w-3xl mx-auto text-center space-y-6"
+            initial={{ opacity: 0, y: 32 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+            viewport={{ once: true, amount: 0.4 }}
+          >
+            <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-white leading-tight">
+              {product.title}
+            </h2>
+            <p className="text-base sm:text-lg md:text-xl text-white/70 leading-relaxed">{product.description}</p>
+
+            {product.badges && product.badges.length > 0 && (
+              <div className="flex flex-wrap justify-center gap-2 pt-1">
+                {product.badges.map((badge, i) => (
+                  <Badge
+                    key={i}
+                    variant={badge.variant || "default"}
+                    className={
+                      badge.variant === "outline"
+                        ? "border-white/20 text-white/80 bg-white/[0.02]"
+                        : badge.variant === "secondary"
+                          ? "bg-white/[0.06] text-white/90 border-white/10"
+                          : ""
+                    }
+                  >
+                    {badge.text}
+                  </Badge>
+                ))}
+              </div>
+            )}
+
+            <div className="flex flex-wrap justify-center gap-3 pt-2">
+              <Button
+                size="lg"
+                className="bg-white text-black hover:bg-white/90 font-medium rounded-xl h-12 px-6 transition-all duration-200 active:scale-[0.98]"
+                asChild
+              >
+                <a href={product.getStartedUrl} target="_blank" rel="noopener noreferrer">
+                  Get Started
+                </a>
+              </Button>
+              <Button
+                variant="outline"
+                size="lg"
+                className="border-white/15 bg-white/[0.02] text-white hover:bg-white/[0.06] hover:border-white/25 font-medium rounded-xl h-12 px-6 transition-all duration-200 active:scale-[0.98]"
+                asChild
+              >
+                <a href={product.docsUrl} target="_blank" rel="noopener noreferrer">
+                  Documentation
+                </a>
+              </Button>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Technical details section (only if needed) */}
+      {(product.installation || product.codeExample) && (
+        <section className="relative py-16 md:py-24 bg-black border-t border-white/10">
+          <div className="container relative px-4 sm:px-6 lg:px-8 w-full max-w-5xl mx-auto">
             <motion.div
-              key={index}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
-              viewport={{ once: true }}
+              transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+              viewport={{ once: true, amount: 0.3 }}
+              className="mb-8 text-center"
             >
-              <CardWrapper className="p-6 h-full hover:border-red-500/50 transition-all duration-300">
-                <div className="space-y-4">
-                  <h3 className="text-xl font-bold">{item.category}</h3>
-                  <div className="space-y-2">
-                    <h4 className="font-medium text-sm">Features</h4>
-                    <ul className="text-sm text-muted-foreground space-y-2">
-                      {item.features.map((feature, i) => (
-                        <li key={i} className="flex items-start">
-                          <span className="w-1.5 h-1.5 rounded-full bg-red-500 mr-2 mt-1.5 shrink-0" />
-                          <span>{feature}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                  <div className="space-y-2">
-                    <h4 className="font-medium text-sm">Benefits</h4>
-                    <ul className="text-sm text-muted-foreground space-y-2">
-                      {item.benefits.map((benefit, i) => (
-                        <li key={i} className="flex items-start">
-                          <span className="w-1.5 h-1.5 rounded-full bg-red-500/50 mr-2 mt-1.5 shrink-0" />
-                          <span>{benefit}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              </CardWrapper>
+              <h3 className="text-2xl sm:text-3xl font-semibold text-white">{product.title} in Code</h3>
+              <p className="mt-3 text-sm sm:text-base text-white/70 max-w-2xl mx-auto">
+                Install and start using {product.title} with a minimal setup.
+              </p>
             </motion.div>
-          ))}
-        </div>
-      </div>
 
-      {/* CTA Section */}
-      <div className="container px-4 sm:px-6 py-16">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          viewport={{ once: true }}
-        >
-          <CardWrapper className="p-8 md:p-12 border-red-500/30">
-            <div className="relative">
-              {/* Glowing orb effect */}
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
-                <div className="w-[400px] h-[400px] rounded-full bg-red-500/10 blur-[100px]" />
-              </div>
-
-              <div className="relative max-w-3xl mx-auto text-center">
-                <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl mb-6">
-                  Ready to Build the Future of AI?
-                </h2>
-                <p className="text-xl text-muted-foreground mb-8">
-                  Start building with Swarms today and join the revolution in enterprise AI orchestration.
-                </p>
-                <div className="flex flex-wrap justify-center gap-4">
-                  <a
-                    href="https://docs.swarms.world/en/latest/swarms/install/install/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{ position: "relative", zIndex: 10 }}
-                    className="cursor-pointer inline-flex items-center justify-center rounded-md text-sm font-medium bg-red-600 hover:bg-red-700 text-white h-12 px-6 py-3"
-                  >
-                    <Rocket className="mr-2 h-5 w-5" />
-                    Get Started
-                  </a>
-                  <a
-                    href="https://discord.gg/EamjgSaEQf"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{ position: "relative", zIndex: 10 }}
-                    className="cursor-pointer inline-flex items-center justify-center rounded-md text-sm font-medium border border-red-600 text-red-600 hover:bg-red-600/10 h-12 px-6 py-3"
-                  >
-                    <Discord className="mr-2 h-5 w-5" />
-                    Join Community
-                  </a>
-                </div>
-              </div>
-            </div>
-          </CardWrapper>
-        </motion.div>
-      </div>
-
-      {/* Footer */}
-      <footer className="border-t border-red-500/20 py-8">
-        <div className="container px-4 sm:px-6">
-          <div className="flex flex-col md:flex-row justify-between items-center">
-            <div className="flex items-center mb-4 md:mb-0">
-              <Link href="/" className="flex items-center">
-                <div className="relative w-8 h-8 mr-2">
-                  <Image
-                    src="https://raw.githubusercontent.com/kyegomez/swarms/1899c807eb3874e095b677fbd6b9c877e7746918/swarms_logo_svg.svg"
-                    alt="Swarms Logo"
-                    width={32}
-                    height={32}
+            <motion.div
+              className="grid gap-8 md:grid-cols-2"
+              initial={{ opacity: 0, y: 24 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+              viewport={{ once: true, amount: 0.3 }}
+            >
+              {product.installation && (
+                <div>
+                  <h4 className="text-sm font-semibold mb-3 text-white/80">Install</h4>
+                  <CodeBlock
+                    code={product.installation.command}
+                    language={product.installation.language}
+                    id={`${product.id}-install`}
                   />
                 </div>
-                <span className="font-bold text-lg">Swarms AI</span>
-              </Link>
-            </div>
-            <div className="flex space-x-4">
-              <a
-                href="https://github.com/kyegomez/swarms"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ position: "relative", zIndex: 10 }}
-                className="cursor-pointer inline-flex items-center justify-center rounded-md text-sm font-medium border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 w-9 p-0"
-              >
-                <Github className="h-5 w-5" />
-              </a>
-              <a
-                href="https://x.com/swarms_corp"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ position: "relative", zIndex: 10 }}
-                className="cursor-pointer inline-flex items-center justify-center rounded-md text-sm font-medium border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 w-9 p-0"
-              >
-                <Twitter className="h-5 w-5" />
-              </a>
-              <a
-                href="https://discord.gg/EamjgSaEQf"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ position: "relative", zIndex: 10 }}
-                className="cursor-pointer inline-flex items-center justify-center rounded-md text-sm font-medium border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 w-9 p-0"
-              >
-                <Discord className="h-5 w-5" />
-              </a>
-            </div>
+              )}
+
+              {product.codeExample && (
+                <div>
+                  <h4 className="text-sm font-semibold mb-3 text-white/80">Example</h4>
+                  <CodeBlock
+                    code={product.codeExample.code}
+                    language={product.codeExample.language}
+                    id={`${product.id}-example`}
+                  />
+                </div>
+              )}
+            </motion.div>
           </div>
-          <div className="mt-4 text-center md:text-left text-sm text-muted-foreground">
-            <p>© {new Date().getFullYear()} Swarms AI. All rights reserved.</p>
+        </section>
+      )}
+    </>
+  )
+}
+
+export default function ProductsPage() {
+  return (
+    <div className="min-h-screen bg-black smooth-scroll overflow-x-hidden">
+      <Navigation />
+
+      {/* Hero Section - Full Viewport */}
+      <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-black">
+        <motion.div
+          className="pointer-events-none absolute inset-0 opacity-40"
+          style={{
+            background:
+              "radial-gradient(circle at 50% 0%, rgba(82,82,91,0.24), transparent 65%), radial-gradient(circle at 0% 100%, rgba(24,24,27,0.9), transparent 70%)",
+          }}
+          animate={{
+            opacity: [0.3, 0.45, 0.3],
+          }}
+          transition={{
+            duration: 6,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+        />
+
+        <div className="container relative px-4 sm:px-6 lg:px-8 z-10">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+            className="max-w-4xl mx-auto text-center space-y-6"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+            >
+              <Badge className="mb-4 bg-white/[0.06] text-white/90 border-white/10 hover:bg-white/[0.09]">
+                Enterprise Multi-Agent Stack
+              </Badge>
+            </motion.div>
+            <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold tracking-tight text-white leading-[0.9]">
+              Swarms Product Suite
+            </h1>
+            <p className="text-lg sm:text-xl md:text-2xl text-white/70 max-w-2xl mx-auto leading-relaxed">
+              Build, deploy, and scale autonomous AI agent swarms with a comprehensive stack of frameworks, interfaces, and cloud
+              services.
+            </p>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.4 }}
+              className="flex flex-wrap justify-center gap-4 pt-4"
+            >
+              <Button
+                size="lg"
+                className="bg-white text-black hover:bg-white/90 font-medium rounded-xl h-12 px-8 transition-all duration-200 active:scale-[0.98]"
+                asChild
+              >
+                <a href="https://github.com/kyegomez/swarms" target="_blank" rel="noopener noreferrer">
+                  Get Started on GitHub
+                </a>
+              </Button>
+              <Button
+                variant="outline"
+                size="lg"
+                className="border-white/15 bg-white/[0.02] text-white hover:bg-white/[0.06] hover:border-white/25 font-medium rounded-xl h-12 px-8 transition-all duration-200 active:scale-[0.98]"
+                asChild
+              >
+                <a href="https://docs.swarms.world" target="_blank" rel="noopener noreferrer">
+                  Read the Docs
+                </a>
+              </Button>
+            </motion.div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Product Sections: spotlight + details per product */}
+      {products.map((product, index) => (
+        <ProductBlock key={product.id} product={product} index={index} />
+      ))}
+
+      {/* Features Section */}
+      <section className="relative py-20 md:py-32 bg-black border-t border-white/10">
+        <div className="container px-4 sm:px-6 lg:px-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <Badge className="mx-auto mb-4 bg-white/[0.06] text-white/90 border-white/10">
+              Enterprise-Grade
+            </Badge>
+            <h2 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-white mb-6">
+              Enterprise-Grade Features
+            </h2>
+            <p className="text-lg sm:text-xl text-white/70 max-w-2xl mx-auto">
+              Swarms provides everything you need to build powerful multi-agent systems for production use.
+            </p>
+          </motion.div>
+
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {[
+              {
+                category: "🏢 Enterprise Architecture",
+                features: [
+                  "Production-Ready Infrastructure",
+                  "High Reliability Systems",
+                  "Modular Design",
+                  "Comprehensive Logging",
+                ],
+                benefits: ["Reduced downtime", "Easier maintenance", "Better debugging", "Enhanced monitoring"],
+              },
+              {
+                category: "🤖 Agent Orchestration",
+                features: [
+                  "Hierarchical Swarms",
+                  "Parallel Processing",
+                  "Sequential Workflows",
+                  "Graph-based Workflows",
+                  "Dynamic Agent Rearrangement",
+                ],
+                benefits: ["Complex task handling", "Improved performance", "Flexible workflows", "Optimized execution"],
+              },
+              {
+                category: "🔄 Integration Capabilities",
+                features: ["Multi-Model Support", "Custom Agent Creation", "Extensive Tool Library", "Multiple Memory Systems"],
+                benefits: [
+                  "Provider flexibility",
+                  "Custom solutions",
+                  "Extended functionality",
+                  "Enhanced memory management",
+                ],
+              },
+              {
+                category: "📈 Scalability",
+                features: ["Concurrent Processing", "Resource Management", "Load Balancing", "Horizontal Scaling"],
+                benefits: ["Higher throughput", "Efficient resource use", "Better performance", "Easy scaling"],
+              },
+              {
+                category: "🛠️ Developer Tools",
+                features: ["Simple API", "Extensive Documentation", "Active Community", "CLI Tools"],
+                benefits: ["Faster development", "Easy learning curve", "Community support", "Quick deployment"],
+              },
+              {
+                category: "🔐 Security Features",
+                features: ["Error Handling", "Rate Limiting", "Monitoring Integration", "Audit Logging"],
+                benefits: ["Improved reliability", "API protection", "Better monitoring", "Enhanced tracking"],
+              },
+              {
+                category: "📊 Advanced Features",
+                features: ["SpreadsheetSwarm", "Group Chat", "Agent Registry", "Mixture of Agents"],
+                benefits: ["Mass agent management", "Collaborative AI", "Centralized control", "Complex solutions"],
+              },
+              {
+                category: "🔌 Provider Support",
+                features: ["OpenAI", "Anthropic", "ChromaDB", "Custom Providers"],
+                benefits: ["Provider flexibility", "Storage options", "Custom integration", "Vendor independence"],
+              },
+              {
+                category: "💪 Production Features",
+                features: ["Automatic Retries", "Async Support", "Environment Management", "Type Safety"],
+                benefits: ["Better reliability", "Improved performance", "Easy configuration", "Safer code"],
+              },
+            ].map((item, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: index * 0.05 }}
+                viewport={{ once: true, amount: 0.2 }}
+              >
+                <Card className="apple-card-hover border-white/10 bg-white/[0.02] h-full">
+                  <CardHeader className="p-6">
+                    <CardTitle className="text-xl font-semibold text-white mb-4">{item.category}</CardTitle>
+                    <div className="space-y-4">
+                      <div>
+                        <h4 className="font-medium text-xs uppercase tracking-wide text-white/50 mb-2">Features</h4>
+                        <ul className="text-sm text-white/70 space-y-1.5">
+                          {item.features.map((feature, i) => (
+                            <li key={i} className="flex items-start">
+                              <span className="w-1.5 h-1.5 rounded-full bg-white/40 mr-2 mt-1.5 shrink-0" />
+                              <span>{feature}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                      <div>
+                        <h4 className="font-medium text-xs uppercase tracking-wide text-white/50 mb-2">Benefits</h4>
+                        <ul className="text-sm text-white/70 space-y-1.5">
+                          {item.benefits.map((benefit, i) => (
+                            <li key={i} className="flex items-start">
+                              <span className="w-1.5 h-1.5 rounded-full bg-white/30 mr-2 mt-1.5 shrink-0" />
+                              <span>{benefit}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  </CardHeader>
+                </Card>
+              </motion.div>
+            ))}
           </div>
         </div>
-      </footer>
+      </section>
+
+      {/* Call to Action Section */}
+      <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-black border-t border-white/10">
+        <motion.div
+          className="pointer-events-none absolute inset-0 opacity-40"
+          style={{
+            background: "radial-gradient(circle at 50% 50%, rgba(63,63,70,0.35), transparent 60%)",
+          }}
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 0.4 }}
+          transition={{ duration: 1 }}
+          viewport={{ once: true }}
+        />
+
+        <div className="container relative px-4 sm:px-6 lg:px-8 z-10">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+            viewport={{ once: true }}
+            className="max-w-5xl mx-auto"
+          >
+            <Card className="apple-card-hover border-white/10 bg-white/[0.02]">
+              <CardHeader className="p-12 md:p-16 text-center">
+                <div className="space-y-8">
+                  <h2 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-white leading-tight">
+                    Get Started Today
+                  </h2>
+                  <CardDescription className="text-xl sm:text-2xl md:text-3xl text-white/70 max-w-3xl mx-auto leading-relaxed">
+                    Sign up now and get $5 in free API credits. Join the marketplace and start building with Swarms.
+                  </CardDescription>
+                  <div className="flex flex-wrap justify-center gap-4 pt-6">
+                    <Button
+                      size="lg"
+                      className="bg-white text-black hover:bg-white/90 font-medium rounded-xl h-14 px-10 text-base transition-all duration-200 active:scale-[0.98]"
+                      asChild
+                    >
+                      <a href="https://swarms.world/signin" target="_blank" rel="noopener noreferrer">
+                        Sign Up Now
+                      </a>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      className="border-white/15 bg-white/[0.02] text-white hover:bg-white/[0.06] hover:border-white/25 font-medium rounded-xl h-14 px-10 text-base transition-all duration-200 active:scale-[0.98]"
+                      asChild
+                    >
+                      <a href="https://swarms.world" target="_blank" rel="noopener noreferrer">
+                        Join Marketplace
+                      </a>
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+            </Card>
+          </motion.div>
+        </div>
+      </section>
+
     </div>
   )
 }

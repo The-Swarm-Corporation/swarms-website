@@ -274,6 +274,34 @@ export function Navigation() {
                         <p className="text-xs text-neutral-400 mt-0.5">Buy & sell agents</p>
                       </div>
                     </a>
+                    <a
+                      href="https://swarms.world/agent-economy"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
+                    >
+                      <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
+                        <DollarSign className="h-4 w-4 text-red-500" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <span className="text-sm font-semibold text-white block">Agent Economy</span>
+                        <p className="text-xs text-neutral-400 mt-0.5">Track marketplace performance</p>
+                      </div>
+                    </a>
+                    <a
+                      href="https://swarms.world/launch"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
+                    >
+                      <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
+                        <Rocket className="h-4 w-4 text-red-500" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <span className="text-sm font-semibold text-white block">Launch on Marketplace</span>
+                        <p className="text-xs text-neutral-400 mt-0.5">Publish your agents</p>
+                      </div>
+                    </a>
                   </div>
                 </motion.div>
               )}
@@ -418,6 +446,9 @@ export function Navigation() {
                               </FuturisticMenuItem>
                               <FuturisticMenuItem icon={DollarSign} href="https://grants.swarms.world" isNew={true} iconColor="red">
                                 Grants Program
+                              </FuturisticMenuItem>
+                              <FuturisticMenuItem icon={Award} href="https://swarms.world/foundry" iconColor="red">
+                                Foundry Program
                               </FuturisticMenuItem>
                             </TabsContent>
 
@@ -672,6 +703,26 @@ export function Navigation() {
                   >
                     <Sparkles className="mr-3 h-4 w-4 text-white/60 flex-shrink-0" />
                     Swarms Marketplace
+                  </a>
+                  <a
+                    href="https://swarms.world/agent-economy"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm font-semibold text-white/85 hover:text-white transition-all duration-300 hover:bg-white/[0.05] p-3 rounded-lg flex items-center border border-transparent hover:border-white/10"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    <DollarSign className="mr-3 h-4 w-4 text-white/60 flex-shrink-0" />
+                    Agent Economy
+                  </a>
+                  <a
+                    href="https://swarms.world/launch"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm font-semibold text-white/85 hover:text-white transition-all duration-300 hover:bg-white/[0.05] p-3 rounded-lg flex items-center border border-transparent hover:border-white/10"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    <Rocket className="mr-3 h-4 w-4 text-white/60 flex-shrink-0" />
+                    Launch on Marketplace
                   </a>
                 </div>
 
@@ -941,6 +992,20 @@ export function Navigation() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <span className="text-sm font-semibold text-white block">Startup Program</span>
+                        </div>
+                      </a>
+                      <a
+                        href="https://swarms.world/foundry"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
+                        onClick={() => setIsOpen(false)}
+                      >
+                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
+                          <Award className="h-4 w-4 text-red-500" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <span className="text-sm font-semibold text-white block">Foundry Program</span>
                         </div>
                       </a>
                       <a

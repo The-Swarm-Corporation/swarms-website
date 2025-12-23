@@ -506,6 +506,16 @@
     -webkit-line-clamp: 3;
   }
   
+  /* Hide scrollbar utility */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  
   /* Optimize sticky elements for smooth scrolling */
   [class*="sticky"] {
     will-change: transform;

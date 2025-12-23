@@ -94,7 +94,13 @@ interface RootLayoutProps {
 export default function RootLayout({ children }: RootLayoutProps) {
   return (
     <html lang="en" suppressHydrationWarning className="smooth-scroll">
-      <head />
+      <head>
+        {/* Performance: help the browser establish early connections to frequently used origins */}
+        <link rel="preconnect" href="https://www.swarms.ai" />
+        <link rel="dns-prefetch" href="https://www.swarms.ai" />
+        <link rel="preconnect" href="https://docs.swarms.world" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://docs.swarms.world" />
+      </head>
       <body className={`${montserrat.variable} font-sans antialiased smooth-scroll`}>
         <ThemeProvider attribute="class" defaultTheme="dark" forcedTheme="dark">
           <NewsletterPopupProvider>

@@ -108,7 +108,7 @@ export function Navigation() {
   }
 
   return (
-    <header className="sticky top-0 z-[9998] w-full pt-2 sm:pt-3 md:pt-4 pb-2 sm:pb-3 md:pb-4 scroll-optimized">
+    <header className="fixed top-0 left-0 right-0 z-[9998] w-full pt-2 sm:pt-3 md:pt-4 pb-2 sm:pb-3 md:pb-4 scroll-optimized">
       <div className="container mx-auto max-w-[1600px] px-3 sm:px-4 md:px-6 lg:px-8">
         <div className="flex h-14 sm:h-16 items-center justify-between px-3 sm:px-4 md:px-6 rounded-xl sm:rounded-2xl bg-neutral-800/50 backdrop-blur-md border border-neutral-700/40 shadow-xl w-full">
         <div className="flex-shrink-0 mr-3 sm:mr-4 md:mr-6">

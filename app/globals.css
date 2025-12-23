@@ -89,12 +89,7 @@
     @apply bg-background text-foreground;
     font-family: inherit;
     font-weight: 600;
-    /* Optimize scrolling performance */
     overflow-x: hidden;
-    /* Enable hardware acceleration for smooth scrolling */
-    transform: translateZ(0);
-    -webkit-transform: translateZ(0);
-    /* Smooth scrolling momentum */
     -webkit-overflow-scrolling: touch;
   }
   
@@ -204,10 +199,6 @@
   /* Optimize scroll performance for sections */
   .scroll-optimized {
     will-change: scroll-position;
-    transform: translateZ(0);
-    -webkit-transform: translateZ(0);
-    backface-visibility: hidden;
-    -webkit-backface-visibility: hidden;
   }
   
   /* Prevent scroll jank on animations */
@@ -518,10 +509,6 @@
   /* Optimize sticky elements for smooth scrolling */
   [class*="sticky"] {
     will-change: transform;
-    transform: translateZ(0);
-    -webkit-transform: translateZ(0);
-    backface-visibility: hidden;
-    -webkit-backface-visibility: hidden;
   }
   
   /* Smooth transitions for scroll-triggered animations */

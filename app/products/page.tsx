@@ -250,26 +250,6 @@ print(response.json())`,
     badges: [{ text: "No-Code", variant: "secondary" }],
   },
   {
-    id: "swarms-dragndrop",
-    label: "",
-    title: "Swarms Drag n Drop",
-    description:
-      "Visual interface for designing complex agent workflows through an intuitive drag-and-drop experience. Connect agents, define workflows, and deploy with just a few clicks.",
-    docsUrl: "https://docs.swarms.world/en/latest/swarms_platform/dragndrop/",
-    getStartedUrl: "https://swarms.world/platform/dragndrop",
-    badges: [{ text: "Visual Builder", variant: "secondary" }],
-  },
-  {
-    id: "swarms-spreadsheet",
-    label: "",
-    title: "Swarms Spreadsheet",
-    description:
-      "Massive concurrent swarm execution through a familiar spreadsheet interface. Process thousands of tasks in parallel with the power of multi-agent systems.",
-    docsUrl: "https://docs.swarms.world/en/latest/swarms_platform/spreadsheet/",
-    getStartedUrl: "https://swarms.world/platform/spreadsheet",
-    badges: [{ text: "Mass Execution", variant: "secondary" }],
-  },
-  {
     id: "swarms-enterprise",
     label: "",
     title: "Swarms Enterprise",

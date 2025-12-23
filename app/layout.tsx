@@ -1,7 +1,7 @@
 /**
  * SEO & Favicon improvements
  * - Use /logo.svg for favicon and all icon fields
- * - Use /backend.jpg for Open Graph and Twitter images
+ * - Use /seo_image.jpg for Open Graph and Twitter images
  * - Add high-performance SEO best practices
  */
 
@@ -46,10 +46,11 @@ export const metadata: Metadata = {
     siteName: siteConfig.name,
     images: [
       {
-        url: "/backend.jpg",
+        url: "/seo_image.jpg",
         width: 1200,
         height: 630,
         alt: "Swarms AI - Enterprise Multi-Agent Framework",
+        type: "image/jpeg",
       },
     ],
   },
@@ -57,7 +58,14 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: siteConfig.name,
     description: siteConfig.description,
-    images: ["/backend.jpg"],
+    images: [
+      {
+        url: "/seo_image.jpg",
+        width: 1200,
+        height: 630,
+        alt: "Swarms AI - Enterprise Multi-Agent Framework",
+      },
+    ],
     creator: "@swarms_corp",
     site: "@swarms_corp",
   },
@@ -81,7 +89,7 @@ export const metadata: Metadata = {
       "max-snippet": -1,
     },
   },
-  generator: 'v0.dev',
+  generator: 'Next.js',
   category: 'technology',
   applicationName: siteConfig.name,
   referrer: 'origin-when-cross-origin',
@@ -100,6 +108,14 @@ export default function RootLayout({ children }: RootLayoutProps) {
         <link rel="dns-prefetch" href="https://www.swarms.ai" />
         <link rel="preconnect" href="https://docs.swarms.world" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://docs.swarms.world" />
+        {/* SEO: Preload critical images */}
+        <link rel="preload" href="/seo_image.jpg" as="image" type="image/jpeg" />
+        <link rel="preload" href="/logo.svg" as="image" type="image/svg+xml" />
+        {/* SEO: Additional meta tags */}
+        <meta name="theme-color" content="#000000" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content={siteConfig.name} />
       </head>
       <body className={`${montserrat.variable} font-sans antialiased smooth-scroll`}>
         <ThemeProvider attribute="class" defaultTheme="dark" forcedTheme="dark">
@@ -124,7 +140,18 @@ export default function RootLayout({ children }: RootLayoutProps) {
                   name: siteConfig.company.name,
                   url: siteConfig.url,
                   description: siteConfig.company.description,
-                  logo: "/logo.svg",
+                  logo: {
+                    "@type": "ImageObject",
+                    url: `${siteConfig.url}/logo.svg`,
+                    width: 180,
+                    height: 180,
+                  },
+                  image: {
+                    "@type": "ImageObject",
+                    url: `${siteConfig.url}/seo_image.jpg`,
+                    width: 1200,
+                    height: 630,
+                  },
                   foundingDate: siteConfig.company.foundingDate,
                   founder: {
                     "@type": "Person",
@@ -146,6 +173,20 @@ export default function RootLayout({ children }: RootLayoutProps) {
                   publisher: {
                     "@id": `${siteConfig.url}/#organization`,
                   },
+                  image: {
+                    "@type": "ImageObject",
+                    url: `${siteConfig.url}/seo_image.jpg`,
+                    width: 1200,
+                    height: 630,
+                  },
+                  potentialAction: {
+                    "@type": "SearchAction",
+                    "target": {
+                      "@type": "EntryPoint",
+                      "urlTemplate": `${siteConfig.url}/?search={search_term_string}`
+                    },
+                    "query-input": "required name=search_term_string"
+                  },
                 },
                 {
                   "@type": "SoftwareApplication",
@@ -162,7 +203,18 @@ export default function RootLayout({ children }: RootLayoutProps) {
                     "@id": `${siteConfig.url}/#organization`,
                   },
                   keywords: siteConfig.keywords.join(", "),
-                  image: "/backend.jpg",
+                  image: {
+                    "@type": "ImageObject",
+                    url: `${siteConfig.url}/seo_image.jpg`,
+                    width: 1200,
+                    height: 630,
+                  },
+                  screenshot: {
+                    "@type": "ImageObject",
+                    url: `${siteConfig.url}/seo_image.jpg`,
+                    width: 1200,
+                    height: 630,
+                  },
                 },
               ],
             }),

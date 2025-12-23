@@ -29,10 +29,11 @@ export const metadata: Metadata = {
     siteName: siteConfig.name,
     images: [
       {
-        url: "/backend.jpg",
+        url: "/seo_image.jpg",
         width: 1200,
         height: 630,
         alt: "Swarms AI Blog - Multi-Agent AI Insights and Tutorials",
+        type: "image/jpeg",
       },
     ],
     locale: "en_US",
@@ -42,7 +43,14 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Blog | Swarms AI - Multi-Agent AI Insights & Tutorials",
     description: "Explore cutting-edge insights, tutorials, and developments in multi-agent AI systems",
-    images: ["/backend.jpg"],
+    images: [
+      {
+        url: "/seo_image.jpg",
+        width: 1200,
+        height: 630,
+        alt: "Swarms AI Blog - Multi-Agent AI Insights and Tutorials",
+      },
+    ],
     creator: "@swarms_corp",
     site: "@swarms_corp",
   },

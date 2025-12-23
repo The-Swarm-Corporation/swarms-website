@@ -3,9 +3,9 @@ export const siteConfig = {
   description:
     "Swarms is the enterprise-grade, production-ready multi-agent orchestration framework created by kyegomez. Build, deploy, and scale autonomous AI agent swarms with unprecedented control, reliability, and efficiency. Swarms supports Python, Rust, and cloud-native deployments, offering hierarchical, concurrent, sequential, and graph-based agent architectures. Features include high-availability, modular microservices, observability, seamless legacy integration, multi-model provider support, agent registry, CLI & SDK tools, and a vibrant open-source community. Swarms powers advanced business process automation, scalable task distribution, and flexible workflow adaptation for research, finance, marketing, healthcare, and more. Explore the Swarms Marketplace, leverage comprehensive documentation, and join the global community driving the future of AI agent collaboration.",
   url: "https://swarms.ai",
-  ogImage: "/backend.jpg", // Use backend.jpg for Open Graph and SEO
+  ogImage: "/seo_image.jpg", // Use seo_image.jpg for Open Graph and SEO
   logo: "/logo.svg", // Use logo.svg for logo and favicon
-  seoBackground: "/backend.jpg", // Custom field for SEO background
+  seoBackground: "/seo_image.jpg", // Custom field for SEO background
   links: {
     github: "https://github.com/kyegomez/swarms",
     docs: "https://docs.swarms.world",

@@ -11,10 +11,11 @@ export const metadata: Metadata = {
     url: "https://swarms.world/api",
     images: [
       {
-        url: "/backend.jpg",
+        url: "/seo_image.jpg",
         width: 1200,
         height: 630,
         alt: "Swarms API - Multi-Agent Orchestration Platform",
+        type: "image/jpeg",
       },
     ],
   },
@@ -22,7 +23,14 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Swarms API - Multi-Agent Orchestration Platform",
     description: "Build, deploy, and orchestrate intelligent agent swarms with our RESTful API. Built on a Rust runtime for sub-millisecond initialization and enterprise-grade performance.",
-    images: ["/backend.jpg"],
+    images: [
+      {
+        url: "/seo_image.jpg",
+        width: 1200,
+        height: 630,
+        alt: "Swarms API - Multi-Agent Orchestration Platform",
+      },
+    ],
   },
 }
 

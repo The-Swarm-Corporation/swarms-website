@@ -33,10 +33,11 @@ export async function generateMetadata({ params }: BlogPostLayoutProps): Promise
       siteName: siteConfig.name,
       images: [
         {
-          url: "/backend.jpg",
+          url: "/seo_image.jpg",
           width: 1200,
           height: 630,
           alt: post.title,
+          type: "image/jpeg",
         },
       ],
       locale: "en_US",
@@ -49,7 +50,14 @@ export async function generateMetadata({ params }: BlogPostLayoutProps): Promise
       card: "summary_large_image",
       title: post.title,
       description: post.description,
-      images: ["/backend.jpg"],
+      images: [
+        {
+          url: "/seo_image.jpg",
+          width: 1200,
+          height: 630,
+          alt: post.title,
+        },
+      ],
       creator: "@swarms_corp",
       site: "@swarms_corp",
     },
@@ -112,7 +120,7 @@ export default function BlogPostLayout({ children, params }: BlogPostLayoutProps
             "@type": "BlogPosting",
             "headline": post.title,
             "description": post.description,
-            "image": "/backend.jpg",
+            "image": "/seo_image.jpg",
             "author": {
               "@type": "Person",
               "name": post.author

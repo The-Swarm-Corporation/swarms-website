@@ -26,9 +26,10 @@ import {
   MessageCircle,
   Network,
 } from "lucide-react"
-import { SiDiscord } from "react-icons/si"
+import { SiDiscord, SiTelegram } from "react-icons/si"
 
 const Discord = SiDiscord as React.ComponentType<{ className?: string }>
+const Telegram = SiTelegram as React.ComponentType<{ className?: string }>
 import Image from "next/image"
 import { motion, AnimatePresence } from "framer-motion"
 
@@ -398,6 +399,9 @@ export function Navigation() {
                               <FuturisticMenuItem icon={Discord} href="https://discord.gg/EamjgSaEQf" iconColor="red">
                                 Discord Community
                               </FuturisticMenuItem>
+                              <FuturisticMenuItem icon={Telegram} href="https://t.me/swarmsgroupchat" iconColor="red">
+                                Telegram Group
+                              </FuturisticMenuItem>
                               <FuturisticMenuItem icon={Twitter} href="https://x.com/swarms_corp" iconColor="red">
                                 Twitter/X
                               </FuturisticMenuItem>
@@ -495,6 +499,20 @@ export function Navigation() {
                       <div className="flex-1 min-w-0">
                         <span className="text-sm font-semibold text-white block">Discord</span>
                         <p className="text-xs text-neutral-400 mt-0.5">Join community</p>
+                      </div>
+                    </a>
+                    <a
+                      href="https://t.me/swarmsgroupchat"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
+                    >
+                      <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
+                        <Telegram className="h-4 w-4 text-red-500" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <span className="text-sm font-semibold text-white block">Telegram</span>
+                        <p className="text-xs text-neutral-400 mt-0.5">Join group chat</p>
                       </div>
                     </a>
                     <a
@@ -870,6 +888,20 @@ export function Navigation() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <span className="text-sm font-semibold text-white block">Discord Community</span>
+                        </div>
+                      </a>
+                      <a
+                        href="https://t.me/swarmsgroupchat"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
+                        onClick={() => setIsOpen(false)}
+                      >
+                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
+                          <Telegram className="h-4 w-4 text-red-500" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <span className="text-sm font-semibold text-white block">Telegram Group</span>
                         </div>
                       </a>
                       <a

@@ -23,7 +23,7 @@ import {
   Building,
   Network,
 } from "lucide-react"
-import { SiDiscord } from "react-icons/si"
+import { SiDiscord, SiTelegram } from "react-icons/si"
 
 export function Footer() {
   return (
@@ -147,6 +147,7 @@ export function Footer() {
               <div className="grid gap-1 sm:gap-2">
                 {[
                   { name: "Discord Community", icon: SiDiscord as React.ComponentType<{ className?: string }>, url: "https://discord.gg/EamjgSaEQf" },
+                  { name: "Telegram Group", icon: SiTelegram as React.ComponentType<{ className?: string }>, url: "https://t.me/swarmsgroupchat" },
                   { name: "Swarms Twitter", icon: Twitter, url: "https://twitter.com/swarms_corp" },
                   { name: "LinkedIn", icon: Building, url: "https://www.linkedin.com/company/swarms-corp/" },
                   { name: "YouTube", icon: MessageCircle, url: "https://www.youtube.com/@kyegomez3242" },

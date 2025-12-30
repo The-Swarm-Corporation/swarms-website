@@ -26,10 +26,9 @@ import {
   MessageCircle,
   Network,
 } from "lucide-react"
-import { SiDiscord, SiTelegram } from "react-icons/si"
+import { SiDiscord } from "react-icons/si"
 
 const Discord = SiDiscord as React.ComponentType<{ className?: string }>
-const Telegram = SiTelegram as React.ComponentType<{ className?: string }>
 import Image from "next/image"
 import { motion, AnimatePresence } from "framer-motion"
 
@@ -109,7 +108,7 @@ export function Navigation() {
   }
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-[9998] w-full pt-2 sm:pt-3 md:pt-4 pb-2 sm:pb-3 md:pb-4 scroll-optimized">
+    <header className="sticky top-0 z-[9998] w-full pt-2 sm:pt-3 md:pt-4 pb-2 sm:pb-3 md:pb-4 scroll-optimized">
       <div className="container mx-auto max-w-[1600px] px-3 sm:px-4 md:px-6 lg:px-8">
         <div className="flex h-14 sm:h-16 items-center justify-between px-3 sm:px-4 md:px-6 rounded-xl sm:rounded-2xl bg-neutral-800/50 backdrop-blur-md border border-neutral-700/40 shadow-xl w-full">
         <div className="flex-shrink-0 mr-3 sm:mr-4 md:mr-6">
@@ -117,11 +116,10 @@ export function Navigation() {
             <div className="relative w-7 h-7 sm:w-8 sm:h-8 transition-transform duration-300 group-hover:scale-110">
               <Image
                 src="/logo.svg"
-                alt="Swarms AI Multi-Agent Framework Logo - Enterprise-Grade Autonomous Agent Infrastructure"
+                alt="Swarms Logo"
                 width={32}
                 height={32}
                 className="transition-opacity duration-300 group-hover:opacity-80"
-                priority
               />
             </div>
           </Link>
@@ -276,34 +274,6 @@ export function Navigation() {
                         <p className="text-xs text-neutral-400 mt-0.5">Buy & sell agents</p>
                       </div>
                     </a>
-                    <a
-                      href="https://swarms.world/agent-economy"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
-                    >
-                      <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
-                        <DollarSign className="h-4 w-4 text-red-500" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <span className="text-sm font-semibold text-white block">Agent Economy</span>
-                        <p className="text-xs text-neutral-400 mt-0.5">Track marketplace performance</p>
-                      </div>
-                    </a>
-                    <a
-                      href="https://swarms.world/launch"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
-                    >
-                      <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
-                        <Rocket className="h-4 w-4 text-red-500" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <span className="text-sm font-semibold text-white block">Launch on Marketplace</span>
-                        <p className="text-xs text-neutral-400 mt-0.5">Publish your agents</p>
-                      </div>
-                    </a>
                   </div>
                 </motion.div>
               )}
@@ -428,9 +398,6 @@ export function Navigation() {
                               <FuturisticMenuItem icon={Discord} href="https://discord.gg/EamjgSaEQf" iconColor="red">
                                 Discord Community
                               </FuturisticMenuItem>
-                              <FuturisticMenuItem icon={Telegram} href="https://t.me/swarmsgroupchat" iconColor="red">
-                                Telegram Group
-                              </FuturisticMenuItem>
                               <FuturisticMenuItem icon={Twitter} href="https://x.com/swarms_corp" iconColor="red">
                                 Twitter/X
                               </FuturisticMenuItem>
@@ -451,9 +418,6 @@ export function Navigation() {
                               </FuturisticMenuItem>
                               <FuturisticMenuItem icon={DollarSign} href="https://grants.swarms.world" isNew={true} iconColor="red">
                                 Grants Program
-                              </FuturisticMenuItem>
-                              <FuturisticMenuItem icon={Award} href="https://swarms.world/foundry" iconColor="red">
-                                Foundry Program
                               </FuturisticMenuItem>
                             </TabsContent>
 
@@ -573,20 +537,6 @@ export function Navigation() {
                       <div className="flex-1 min-w-0">
                         <span className="text-sm font-semibold text-white block">YouTube</span>
                         <p className="text-xs text-neutral-400 mt-0.5">Watch tutorials</p>
-                      </div>
-                    </a>
-                    <a
-                      href="https://t.me/swarmsgroupchat"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
-                    >
-                      <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
-                        <Telegram className="h-4 w-4 text-red-500" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <span className="text-sm font-semibold text-white block">Telegram</span>
-                        <p className="text-xs text-neutral-400 mt-0.5">Join group chat</p>
                       </div>
                     </a>
                   </div>
@@ -722,26 +672,6 @@ export function Navigation() {
                   >
                     <Sparkles className="mr-3 h-4 w-4 text-white/60 flex-shrink-0" />
                     Swarms Marketplace
-                  </a>
-                  <a
-                    href="https://swarms.world/agent-economy"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm font-semibold text-white/85 hover:text-white transition-all duration-300 hover:bg-white/[0.05] p-3 rounded-lg flex items-center border border-transparent hover:border-white/10"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    <DollarSign className="mr-3 h-4 w-4 text-white/60 flex-shrink-0" />
-                    Agent Economy
-                  </a>
-                  <a
-                    href="https://swarms.world/launch"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm font-semibold text-white/85 hover:text-white transition-all duration-300 hover:bg-white/[0.05] p-3 rounded-lg flex items-center border border-transparent hover:border-white/10"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    <Rocket className="mr-3 h-4 w-4 text-white/60 flex-shrink-0" />
-                    Launch on Marketplace
                   </a>
                 </div>
 
@@ -984,20 +914,6 @@ export function Navigation() {
                           <span className="text-sm font-semibold text-white block">Book a Call</span>
                         </div>
                       </a>
-                      <a
-                        href="https://t.me/swarmsgroupchat"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
-                        onClick={() => setIsOpen(false)}
-                      >
-                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
-                          <Telegram className="h-4 w-4 text-red-500" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <span className="text-sm font-semibold text-white block">Telegram Group</span>
-                        </div>
-                      </a>
                     </TabsContent>
 
                     <TabsContent value="programs" className="space-y-1 mt-0">
@@ -1025,20 +941,6 @@ export function Navigation() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <span className="text-sm font-semibold text-white block">Startup Program</span>
-                        </div>
-                      </a>
-                      <a
-                        href="https://swarms.world/foundry"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
-                        onClick={() => setIsOpen(false)}
-                      >
-                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
-                          <Award className="h-4 w-4 text-red-500" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <span className="text-sm font-semibold text-white block">Foundry Program</span>
                         </div>
                       </a>
                       <a

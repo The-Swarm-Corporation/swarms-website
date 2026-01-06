@@ -37,88 +37,45 @@ export default function PricingPage() {
 
   const pricingItems = [
     {
-      item: "Agent cost",
-      standardCost: "$0.01 per agent",
-      flexCost: "$0.01 per agent",
-      notes: "Charged for each agent (swarm, workflow, etc.)",
+      item: "Input Tokens",
+      cost: "$6.50 per 1M tokens",
+      notes: "Unified pricing across all endpoints",
+      icon: Database
+    },
+    {
+      item: "Output Tokens",
+      cost: "$18.50 per 1M tokens",
+      notes: "Unified pricing across all endpoints",
+      icon: Activity
+    },
+    {
+      item: "Agent Cost",
+      cost: "$0.01 per agent",
+      notes: "For swarms and workflows",
       icon: Users
     },
     {
-      item: "Swarm completions input tokens",
-      standardCost: "$3.00 per 1M tokens",
-      flexCost: "$1.50 per 1M tokens",
-      notes: "50% discount in Flex mode",
-      icon: Database,
-      highlight: "flex"
-    },
-    {
-      item: "Swarm completions output tokens",
-      standardCost: "$15.00 per 1M tokens",
-      flexCost: "$7.50 per 1M tokens",
-      notes: "50% discount in Flex mode",
-      icon: Activity,
-      highlight: "flex"
-    },
-    {
-      item: "Agent/Workflow completions input tokens",
-      standardCost: "$4.00 per 1M tokens",
-      flexCost: "$2.00 per 1M tokens",
-      notes: "50% discount in Flex mode",
-      icon: Database,
-      highlight: "flex"
-    },
-    {
-      item: "Agent/Workflow completions output tokens",
-      standardCost: "$12.50 per 1M tokens",
-      flexCost: "$6.25 per 1M tokens",
-      notes: "50% discount in Flex mode",
-      icon: Activity,
-      highlight: "flex"
-    },
-    {
-      item: "Advanced research input tokens",
-      standardCost: "$20.00 per 1M tokens",
-      flexCost: "$10.00 per 1M tokens",
-      notes: "50% discount in Flex mode",
-      icon: Database,
-      highlight: "flex"
-    },
-    {
-      item: "Advanced research output tokens",
-      standardCost: "$60.00 per 1M tokens",
-      flexCost: "$30.00 per 1M tokens",
-      notes: "50% discount in Flex mode",
-      icon: Activity,
-      highlight: "flex"
-    },
-    {
-      item: "Auto swarm builder input tokens",
-      standardCost: "$6.00 per 1M tokens",
-      flexCost: "$3.00 per 1M tokens",
-      notes: "50% discount in Flex mode",
-      icon: Database,
-      highlight: "flex"
-    },
-    {
-      item: "Auto swarm builder output tokens",
-      standardCost: "$18.00 per 1M tokens",
-      flexCost: "$9.00 per 1M tokens",
-      notes: "50% discount in Flex mode",
-      icon: Activity,
-      highlight: "flex"
-    },
-    {
-      item: "Image processing",
-      standardCost: "$0.25 per image",
-      flexCost: "$0.25 per image",
-      notes: "Charged for each image processed",
+      item: "Image Processing",
+      cost: "$0.25 per image",
+      notes: "Charged when image provided",
       icon: BarChart3
     },
     {
-      item: "MCP cost",
-      standardCost: "$0.10 per call",
-      flexCost: "$0.10 per call",
-      notes: "Charged if an agent uses an MCP URL",
+      item: "MCP Call",
+      cost: "$0.10 per call",
+      notes: "Charged when MCP URL provided",
+      icon: Globe
+    },
+    {
+      item: "Exa Search Tool",
+      cost: "$0.04 per search",
+      notes: "Charged per search execution",
+      icon: Activity
+    },
+    {
+      item: "Web Scraper Tool",
+      cost: "$0.15 per scrape",
+      notes: "Charged per scrape execution",
       icon: Globe
     }
   ]
@@ -128,74 +85,70 @@ export default function PricingPage() {
       tier: "Free",
       price: "$0",
       period: "/month",
-      requests: "100 req/min",
-      tokens: "200K tokens/agent",
-      batch: "100 agents/request",
-      description: "Pay as you go • Perfect for getting started",
+      annualPrice: "$0/year",
+      discount: "N/A",
+      description: "Get started with AI. No monthly fees — pay only for usage.",
       features: [
-        "$5 in free credits when you sign up",
-        "Basic Access",
-        "Pay-Per-Use Pricing",
-        "Community Support",
-        "Standard Processing Speed",
-        "Access to the Marketplace"
+        "Sign-up bonus credits",
+        "Basic API access",
+        "Pay-per-use pricing",
+        "Community support",
+        "Standard processing speed",
+        "Access to the Marketplace",
+        "Premium endpoints not available"
       ]
     },
     {
       tier: "Pro",
       price: "$19.99",
       period: "/month",
-      requests: "500 req/min",
-      tokens: "500K tokens/agent",
-      batch: "200 agents/request",
-      description: "Perfect for professionals who need more power and features",
+      annualPrice: "$203.90/year",
+      discount: "15%",
+      description: "Most popular. Perfect for professionals who need more power and features.",
       popular: true,
       features: [
         "Everything in Free, plus",
-        "Global Availability",
-        "Exclusive Multi-Agent Architectures",
-        "Accelerated Hardware",
-        "API Telemetry Platform",
-        "Priority Support",
-        "Pro Models"
+        "Global availability",
+        "Exclusive multi-agent architectures",
+        "Accelerated hardware",
+        "API telemetry platform",
+        "Priority support",
+        "Access to Pro models",
+        "Access to Premium Endpoints: batch processing, reasoning agents, and advanced workflows"
       ]
     },
     {
-      tier: "Premium",
+      tier: "Ultra",
       price: "$100",
-      period: "/user/month",
-      requests: "2,000 req/min",
-      tokens: "2M tokens/agent",
-      batch: "500 agents/batch",
-      description: "Best for growing businesses",
+      period: "/month",
+      annualPrice: "$1,020/year",
+      discount: "15%",
+      description: "Best for growing teams and production workloads that need higher limits and security.",
       features: [
         "Everything in Pro, plus",
-        "Premium Models",
-        "More Agents Per Request",
-        "More Completions",
-        "Increased Rate Limits",
-        "SOC 2 Compliance",
-        "Priority Support",
-        "Enhanced Security Features",
-        "Fetch Agents from the Marketplace",
-        "View Previous Agent Configurations"
+        "Premium models",
+        "More agents per request",
+        "More completions",
+        "Increased rate limits",
+        "SOC 2 compliance",
+        "Enhanced security features",
+        "Fetch agents directly from the Marketplace",
+        "View previous agent configurations",
+        "Priority region/zone routing",
+        "Full access to Premium Endpoints"
       ]
     },
     {
       tier: "Enterprise",
-      requests: "Custom limits",
-      tokens: "Unlimited",
-      batch: "Unlimited",
-      description: "Unlimited scalability",
+      description: "Critical support, compliance, and control for large-scale enterprises.",
       features: [
-        "Everything in Premium, plus",
-        "Dedicated 24/7 Support",
-        "Custom Solutions Engineering",
-        "Onsite Training and Onboarding",
-        "Priority Support",
-        "Custom Agent Development",
-        "No Rate Limits",
-        "Access to Experimental Features"
+        "Contact sales for custom pricing",
+        "Dedicated 24/7 support",
+        "Custom solutions engineering",
+        "Onsite training and onboarding",
+        "Custom agent development",
+        "No rate limits",
+        "Access to experimental features"
       ]
     }
   ]
@@ -225,39 +178,39 @@ export default function PricingPage() {
   const faqData = [
     {
       question: "How does the usage-based pricing work?",
-      answer: "Credits are deducted from your account for each API call based on our transparent pricing structure. Free credits are used first, then regular credits. You're charged for base agent costs, input/output tokens, MCP calls, and image processing according to the rates in our pricing table."
+      answer: "Credits are deducted automatically after each request completes. All API endpoints use unified pricing: $6.50 per 1M input tokens and $18.50 per 1M output tokens. Additional costs apply for agent costs ($0.01 per agent for swarms/workflows), image processing ($0.25 per image), MCP calls ($0.10 per call), Exa Search ($0.04 per search), and Web Scraper ($0.15 per scrape). Free credits are used first, followed by regular credits."
     },
     {
-      question: "What's the difference between Standard and Flex pricing?",
-      answer: "Flex tier offers a 50% discount on token costs but may have higher latency or require retries. Standard tier provides consistent performance with standard pricing. Flex is perfect for non-time-sensitive workloads where cost savings are prioritized over speed."
+      question: "What is unified pricing?",
+      answer: "All API endpoints (Swarm Completions, Agent Completions, Advanced Research, Auto Swarm Builder, Graph Workflow, Batched Grid Workflow) use the same token pricing: $6.50 per 1M input tokens and $18.50 per 1M output tokens. This simplifies cost calculation across all endpoints."
     },
     {
       question: "How does the night-time discount work?",
-      answer: "You get a 50% discount on token costs between 8pm and 6am California time. This applies to both Standard and Flex pricing tiers and is automatically applied to eligible API calls during these hours."
+      answer: "Swarm Completions receive a 50% discount on token costs during 8 PM - 6 AM Pacific Time. Agent costs remain the same. The discount is automatically applied to eligible API calls during these hours."
     },
     {
-      question: "What are MCP costs and when are they charged?",
-      answer: "MCP (Model Context Protocol) costs are $0.10 per call and are charged when an agent uses an MCP URL for external integrations like Notion, Supabase, or GitHub. This enables seamless integration with any platform supporting the MCP protocol."
+      question: "What are Premium Endpoints?",
+      answer: "Premium Endpoints are advanced features available on Pro and Ultra plans, including batch processing (/v1/agent/batch/completions, /v1/swarm/batch/completions), reasoning agents (/v1/reasoning-agent/completions), batched grid workflows, graph workflows, auto-swarm-builder, and advanced research. These are not available on the Free tier."
     },
     {
-      question: "How are swarm vs single agent costs different?",
-      answer: "Swarm completions use token pricing ($3.00/$15.00 per 1M input/output tokens in Standard, $1.50/$7.50 in Flex) plus $0.01 per agent. Agent completions (single agent) use $4.00/$12.50 per 1M input/output tokens ($2.00/$6.25 in Flex) and don't include the per-agent base cost. Advanced research uses $20.00/$60.00 per 1M tokens ($10.00/$30.00 in Flex), and auto swarm builder uses $6.00/$18.00 per 1M tokens ($3.00/$9.00 in Flex)."
+      question: "What's the difference between Pro and Ultra plans?",
+      answer: "Pro ($19.99/month) includes global availability, multi-agent architectures, accelerated hardware, API telemetry, priority support, Pro models, and Premium Endpoints access. Ultra ($100/month) includes everything in Pro plus premium models, higher limits, SOC 2 compliance, enhanced security, priority region/zone routing, and full Premium Endpoints access."
     },
     {
       question: "Can I switch between pricing tiers?",
-      answer: "Yes! You can upgrade from Free to Premium at any time. Your API keys remain the same, and the upgrade takes effect immediately. Premium users get increased rate limits, priority support, and access to the latest features."
+      answer: "Yes! You can upgrade your plan at any time through the Account Dashboard. Go to the Billing tab, scroll to the Plans section, and select your desired plan. You'll be redirected to Stripe to complete payment. Your API keys remain the same, and the upgrade takes effect immediately."
     },
     {
       question: "What happens when I run out of credits?",
-      answer: "When your credits are exhausted, API calls will fail with appropriate error codes. You can purchase additional credits or upgrade to Premium for higher limits. We recommend setting up billing alerts to monitor your usage."
+      answer: "When your credits are exhausted, API calls will fail with appropriate error codes. You can purchase additional credits or upgrade your plan for higher limits. We recommend setting up billing alerts to monitor your usage."
     },
     {
       question: "How is image processing charged?",
-      answer: "Image processing costs $0.25 per image across all tiers. This applies when agents analyze, generate, or manipulate images as part of their tasks. The cost is the same whether using Standard or Flex pricing."
+      answer: "Image processing costs $0.25 per image and is charged when an image is provided to an agent. This applies across all tiers and endpoints."
     },
     {
-      question: "What's included in the Premium tier support?",
-      answer: "Premium users get 24/7 support through email, scheduled calls, and exclusive Discord channels with direct engineer access. You also receive priority processing, access to closest availability zones, and early access to new features."
+      question: "What is Frenzy Mode?",
+      answer: "Frenzy Mode is a special promotion where all API requests are free during Black Friday (4th Friday of November) for 24 hours. The discount is automatically applied - no action needed."
     },
     {
       question: "How does the on-premise license work?",
@@ -365,7 +318,7 @@ export default function PricingPage() {
               Usage-based pricing
             </h2>
             <p className="text-sm sm:text-base md:text-lg lg:text-xl text-white/60 max-w-3xl mx-auto font-normal leading-relaxed">
-              Pay only for what you use with transparent, per-operation pricing
+              Pay only for what you use with transparent, per-operation pricing. All API endpoints use a unified pricing structure for token costs.
             </p>
           </motion.div>
 
@@ -381,10 +334,9 @@ export default function PricingPage() {
               <Card className="bg-white/[0.02] border-white/10 overflow-hidden">
                 <CardHeader className="p-0">
                   {/* Table Header - Hidden on mobile, shown on desktop */}
-                  <div className="hidden sm:grid sm:grid-cols-4 gap-3 md:gap-4 p-4 md:p-6 border-b border-white/10">
-                    <div className="font-semibold text-white text-xs sm:text-sm md:text-base">Operation</div>
-                    <div className="font-semibold text-white text-xs sm:text-sm md:text-base text-center">Standard Cost</div>
-                    <div className="font-semibold text-white/80 text-xs sm:text-sm md:text-base text-center">Flex Cost</div>
+                  <div className="hidden sm:grid sm:grid-cols-3 gap-3 md:gap-4 p-4 md:p-6 border-b border-white/10">
+                    <div className="font-semibold text-white text-xs sm:text-sm md:text-base">Item</div>
+                    <div className="font-semibold text-white text-xs sm:text-sm md:text-base text-center">Price</div>
                     <div className="font-semibold text-white/60 text-xs sm:text-sm md:text-base text-center">Notes</div>
                   </div>
 
@@ -393,9 +345,7 @@ export default function PricingPage() {
                     {pricingItems.map((item, index) => (
                       <motion.div
                         key={item.item}
-                        className={`p-4 rounded-lg border border-white/10 bg-white/[0.01] ${
-                          item.highlight === 'flex' ? 'bg-white/[0.02]' : ''
-                        }`}
+                        className="p-4 rounded-lg border border-white/10 bg-white/[0.01]"
                         initial={{ opacity: 0, y: 10 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         transition={{ delay: index * 0.05 }}
@@ -407,15 +357,9 @@ export default function PricingPage() {
                           </div>
                           <span className="text-white text-sm font-medium flex-1">{item.item}</span>
                         </div>
-                        <div className="grid grid-cols-2 gap-3 text-xs">
-                          <div>
-                            <div className="text-white/60 mb-1">Standard</div>
-                            <div className="text-white/80 font-mono">{item.standardCost}</div>
-                          </div>
-                          <div>
-                            <div className="text-white/60 mb-1">Flex</div>
-                            <div className="text-white/60 font-mono">{item.flexCost}</div>
-                          </div>
+                        <div className="text-xs mb-2">
+                          <div className="text-white/60 mb-1">Price</div>
+                          <div className="text-white/80 font-mono">{item.cost}</div>
                         </div>
                         <div className="text-white/50 text-xs mt-2 pt-2 border-t border-white/10">{item.notes}</div>
                       </motion.div>
@@ -426,9 +370,7 @@ export default function PricingPage() {
                   {pricingItems.map((item, index) => (
                     <motion.div
                       key={`desktop-${item.item}`}
-                      className={`hidden sm:grid sm:grid-cols-4 gap-3 md:gap-4 p-4 md:p-6 border-b border-white/10 transition-colors hover:bg-white/[0.02] ${
-                        item.highlight === 'flex' ? 'bg-white/[0.01]' : ''
-                      }`}
+                      className="hidden sm:grid sm:grid-cols-3 gap-3 md:gap-4 p-4 md:p-6 border-b border-white/10 transition-colors hover:bg-white/[0.02]"
                       initial={{ opacity: 0, y: 10 }}
                       whileInView={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.05 }}
@@ -440,10 +382,7 @@ export default function PricingPage() {
                         </div>
                         <span className="text-white text-xs sm:text-sm md:text-base font-medium truncate">{item.item}</span>
                       </div>
-                      <div className="text-white/80 text-xs sm:text-sm md:text-base text-center font-mono break-words">{item.standardCost}</div>
-                      <div className="text-white/60 text-xs sm:text-sm md:text-base text-center font-mono break-words">
-                        {item.flexCost}
-                      </div>
+                      <div className="text-white/80 text-xs sm:text-sm md:text-base text-center font-mono break-words">{item.cost}</div>
                       <div className="text-white/50 text-xs sm:text-sm text-center break-words">{item.notes}</div>
                     </motion.div>
                   ))}
@@ -464,16 +403,16 @@ export default function PricingPage() {
               <CardHeader className="p-4 sm:p-5 md:p-6">
                 <div className="flex items-center space-x-2 sm:space-x-3 mb-3 sm:mb-4">
                   <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl border border-white/10 bg-white/[0.03] flex items-center justify-center flex-shrink-0">
-                    <Zap className="w-5 h-5 sm:w-6 sm:h-6 text-white/80" />
+                    <Moon className="w-5 h-5 sm:w-6 sm:h-6 text-white/80" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <CardTitle className="text-white text-lg sm:text-xl font-bold break-words">Flex Tier</CardTitle>
-                    <CardDescription className="text-white/60 text-xs sm:text-sm">50% discount on token costs</CardDescription>
+                    <CardTitle className="text-white text-lg sm:text-xl font-bold break-words">Night-time Discount</CardTitle>
+                    <CardDescription className="text-white/60 text-xs sm:text-sm">50% off tokens</CardDescription>
                   </div>
                 </div>
                 <p className="text-white/60 text-xs sm:text-sm leading-relaxed break-words">
-                  Perfect for non-time-sensitive workloads where cost savings are prioritized over speed. 
-                  May have higher latency or require retries, but offers significant savings on token usage.
+                  Swarm Completions receive a 50% discount on token costs during 8 PM - 6 AM Pacific Time. 
+                  Agent costs remain the same. Automatically applied.
                 </p>
               </CardHeader>
             </Card>
@@ -482,17 +421,51 @@ export default function PricingPage() {
               <CardHeader className="p-4 sm:p-5 md:p-6">
                 <div className="flex items-center space-x-2 sm:space-x-3 mb-3 sm:mb-4">
                   <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl border border-white/10 bg-white/[0.03] flex items-center justify-center flex-shrink-0">
-                    <Moon className="w-5 h-5 sm:w-6 sm:h-6 text-white/80" />
+                    <Zap className="w-5 h-5 sm:w-6 sm:h-6 text-white/80" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <CardTitle className="text-white text-lg sm:text-xl font-bold break-words">Night-time Discount</CardTitle>
-                    <CardDescription className="text-white/60 text-xs sm:text-sm">50% off token costs</CardDescription>
+                    <CardTitle className="text-white text-lg sm:text-xl font-bold break-words">Frenzy Mode</CardTitle>
+                    <CardDescription className="text-white/60 text-xs sm:text-sm">All requests free</CardDescription>
                   </div>
                 </div>
                 <p className="text-white/60 text-xs sm:text-sm leading-relaxed break-words">
-                  Automatic 50% discount on token costs between 8pm–6am California time. 
-                  Applies to both Standard and Flex pricing tiers for maximum savings during off-peak hours.
+                  All API requests are free during Black Friday (4th Friday of November) for 24 hours. 
+                  Automatically applied.
                 </p>
+              </CardHeader>
+            </Card>
+          </motion.div>
+
+          {/* Unified Pricing Info */}
+          <motion.div
+            className="mt-8 sm:mt-12 max-w-4xl mx-auto"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+            viewport={{ once: true }}
+          >
+            <Card className="bg-white/[0.02] border-white/10">
+              <CardHeader className="p-4 sm:p-5 md:p-6">
+                <CardTitle className="text-white text-lg sm:text-xl font-bold mb-3 sm:mb-4 break-words">Unified Pricing</CardTitle>
+                <CardDescription className="text-white/60 text-xs sm:text-sm leading-relaxed break-words mb-3 sm:mb-4">
+                  All API endpoints use the same token pricing:
+                </CardDescription>
+                <div className="space-y-2 sm:space-y-3 text-xs sm:text-sm text-white/80">
+                  <div className="flex items-center">
+                    <Check className="w-3 h-3 sm:w-4 sm:h-4 text-white/80 mr-2 flex-shrink-0" />
+                    <span><strong>Input Tokens:</strong> $6.50 per 1 million tokens</span>
+                  </div>
+                  <div className="flex items-center">
+                    <Check className="w-3 h-3 sm:w-4 sm:h-4 text-white/80 mr-2 flex-shrink-0" />
+                    <span><strong>Output Tokens:</strong> $18.50 per 1 million tokens</span>
+                  </div>
+                </div>
+                <CardDescription className="text-white/60 text-xs sm:text-sm leading-relaxed break-words mt-3 sm:mt-4">
+                  This applies to: Swarm Completions, Agent Completions, Advanced Research, Auto Swarm Builder, Graph Workflow, and Batched Grid Workflow.
+                </CardDescription>
+                <CardDescription className="text-white/50 text-xs sm:text-sm leading-relaxed break-words mt-2">
+                  You can retrieve current pricing using the <code className="bg-white/10 px-1 py-0.5 rounded">/v1/usage/costs</code> endpoint.
+                </CardDescription>
               </CardHeader>
             </Card>
           </motion.div>
@@ -577,7 +550,7 @@ export default function PricingPage() {
               API Pricing
             </h2>
             <p className="text-sm sm:text-base md:text-lg lg:text-xl text-white/60 max-w-3xl mx-auto font-normal leading-relaxed">
-              Flexible subscription plans that scale with your needs. From free to enterprise.
+              Flexible subscription plans that scale with your needs. Choose a plan for higher limits and features; usage is billed per operation. Prices shown are subscription fees; API usage is billed per operation.
             </p>
           </motion.div>
 
@@ -628,8 +601,18 @@ export default function PricingPage() {
                         </CardDescription>
                         {tier.price && (
                           <div className="mt-3 sm:mt-4">
-                            <span className="text-3xl sm:text-4xl font-bold text-white">{tier.price}</span>
-                            <span className="text-white/60 text-sm sm:text-lg ml-2">{tier.period}</span>
+                            <div className="flex flex-col items-center">
+                              <div>
+                                <span className="text-3xl sm:text-4xl font-bold text-white">{tier.price}</span>
+                                <span className="text-white/60 text-sm sm:text-lg ml-2">{tier.period}</span>
+                              </div>
+                              {tier.annualPrice && tier.discount && tier.discount !== "N/A" && (
+                                <div className="mt-2">
+                                  <span className="text-white/60 text-xs sm:text-sm">{tier.annualPrice}</span>
+                                  <span className="text-white/40 text-xs sm:text-sm ml-1">({tier.discount} off)</span>
+                                </div>
+                              )}
+                            </div>
                           </div>
                         )}
                       </CardHeader>

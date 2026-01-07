@@ -22,6 +22,7 @@ import {
   Activity,
   Building,
   Network,
+  Smartphone,
 } from "lucide-react"
 import { SiDiscord, SiTelegram } from "react-icons/si"
 
@@ -67,6 +68,7 @@ export function Footer() {
                 {[
                   { name: "Products Overview", icon: Package, url: "/products" },
                   { name: "Simulations", icon: Network, url: "/simulations" },
+                  { name: "Mobile App", icon: Smartphone, url: "/mobile" },
                   { name: "Swarms Python", icon: Github, url: "https://github.com/kyegomez/swarms" },
                   {
                     name: "Swarms API",

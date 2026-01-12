@@ -132,6 +132,8 @@ export function Navigation() {
           
           <NavLink href="/pricing">Pricing</NavLink>
           
+          <NavLink href="https://status.swarms.ai" external>Status</NavLink>
+          
           {/* Docs Dropdown */}
           <div 
             className="relative"
@@ -624,6 +626,15 @@ export function Navigation() {
                 >
                   Pricing
                 </Link>
+                <a
+                  href="https://status.swarms.ai"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block text-sm font-semibold text-white/85 hover:text-white transition-all duration-300 hover:bg-white/[0.05] p-3 rounded-lg border border-transparent hover:border-white/10"
+                  onClick={() => setIsOpen(false)}
+                >
+                  Status
+                </a>
                 <a
                   href="https://docs.swarms.world"
                   target="_blank"

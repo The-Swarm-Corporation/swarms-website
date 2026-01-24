@@ -76,11 +76,10 @@
     /* Improved scroll performance */
     -webkit-overflow-scrolling: touch;
     scroll-padding-top: 5rem;
-    /* Prevent scroll chaining */
-    overscroll-behavior-y: contain;
     /* Smooth momentum scrolling on iOS */
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    overflow-y: auto;
   }
   * {
     @apply border-border;
@@ -90,6 +89,7 @@
     font-family: inherit;
     font-weight: 600;
     overflow-x: hidden;
+    overflow-y: auto;
     -webkit-overflow-scrolling: touch;
   }
   
@@ -193,7 +193,6 @@
   .smooth-scroll {
     scroll-behavior: smooth;
     -webkit-overflow-scrolling: touch;
-    overscroll-behavior: contain;
   }
   
   /* Optimize scroll performance for sections */

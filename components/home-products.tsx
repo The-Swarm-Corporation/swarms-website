@@ -9,34 +9,10 @@ import Image from "next/image"
 
 const swarmsStack = [
   {
-    title: "Swarms-RS",
-    subtitle: "The First Multi-Agent Framework in Rust",
-    description: "Ultra-fast, memory-safe, and production-ready multi-agent framework built in Rust for maximum performance and reliability.",
-    link: "https://crates.io/crates/swarms-rs",
-    docsLink: "https://docs.swarms.world",
-    code: `use swarms_rs::llm::provider::openai::OpenAI;
-use swarms_rs::structs::concurrent_workflow::ConcurrentWorkflow;
-
-#[tokio::main]
-async fn main() -> Result<()> {
-    let client = OpenAI::from_url(
-        base_url, api_key
-    ).set_model("deepseek-chat");
-
-    let workflow = ConcurrentWorkflow::builder()
-        .name("Trading Strategy")
-        .agents(vec![...])
-        .build();
-
-    let result = workflow
-        .run("BTC/USD").await?;
-    Ok(())
-}`,
-  },
-  {
     title: "Swarms Python",
     subtitle: "Core Swarms Python Framework",
-    description: "The original Swarms framework in Python with full backwards compatibility with LangChain, AutoGen, and other popular frameworks.",
+    description:
+      "The original Swarms framework in Python with full backwards compatibility with LangChain, AutoGen, and other popular frameworks.",
     link: "https://github.com/kyegomez/swarms",
     docsLink: "https://docs.swarms.world",
     code: `from swarms import Agent, SequentialWorkflow
@@ -64,7 +40,8 @@ final_post = workflow.run("AI history")`,
   {
     title: "Swarms API",
     subtitle: "Ultra-Optimized Agent Execution Runtime",
-    description: "Enterprise-grade hosted API with ultra-optimized runtime for deploying and scaling your agent swarms in production.",
+    description:
+      "Enterprise-grade hosted API with ultra-optimized runtime for deploying and scaling your agent swarms in production.",
     link: "https://docs.swarms.ai",
     docsLink: "https://docs.swarms.ai",
     code: `import requests
@@ -88,13 +65,64 @@ response = requests.post(
 )`,
   },
   {
+    title: "Swarms-RS",
+    subtitle: "The First Multi-Agent Framework in Rust",
+    description:
+      "Ultra-fast, memory-safe, and production-ready multi-agent framework built in Rust for maximum performance and reliability.",
+    link: "https://crates.io/crates/swarms-rs",
+    docsLink: "https://docs.swarms.world",
+    code: `use swarms_rs::llm::provider::openai::OpenAI;
+use swarms_rs::structs::concurrent_workflow::ConcurrentWorkflow;
+
+#[tokio::main]
+async fn main() -> Result<()> {
+    let client = OpenAI::from_url(
+        base_url, api_key
+    ).set_model("deepseek-chat");
+
+    let workflow = ConcurrentWorkflow::builder()
+        .name("Trading Strategy")
+        .agents(vec![...])
+        .build();
+
+    let result = workflow
+        .run("BTC/USD").await?;
+    Ok(())
+}`,
+  },
+  {
+    title: "ATP - Agent Trade Protocol",
+    subtitle: "On-Chain Payment Settlement for AI Agents",
+    description:
+      "A Solana-based payment settlement system that automatically parses usage, executes split payments, and encrypts agent responses until payment is confirmed on-chain.",
+    link: "https://docs.swarms.ai/docs/atp/overview",
+    docsLink: "https://docs.swarms.ai/docs/atp/overview",
+    code: `from fastapi import FastAPI
+from atp.middleware import ATPSettlementMiddleware
+from atp.schemas import PaymentToken
+
+app = FastAPI(title="ATP-Protected API")
+
+app.add_middleware(
+    ATPSettlementMiddleware,
+    allowed_endpoints=["/v1/chat"],
+    input_cost_per_million_usd=10.0,
+    output_cost_per_million_usd=30.0,
+    recipient_pubkey="YourSolanaWalletPublicKeyHere",
+    payment_token=PaymentToken.SOL,
+    wallet_private_key_header="x-wallet-private-key",
+    settlement_service_url="https://facilitator.swarms.world",
+)`,
+  },
+  {
     title: "Swarms Marketplace",
     subtitle: "Buy & Sell Agents, Prompts & More",
-    description: "Discover, buy, and sell agents, prompts, tools, and components on swarms.world - the premier marketplace for AI agents.",
+    description:
+      "Discover, buy, and sell agents, prompts, tools, and components on swarms.world - the premier marketplace for AI agents.",
     link: "https://swarms.world",
     docsLink: "https://swarms.world",
     image: "/marketplace_banner.png",
-  }
+  },
 ]
 
 const containerVariants = {

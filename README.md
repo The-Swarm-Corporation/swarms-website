@@ -2,12 +2,16 @@
 This is the main swarms.ai website open sourced! 
 
 
-## Install
+## Install packages
 
 ```bash
 
 pnpm install
 
-pnpm run dev
+``` 
 
+## Build
+
+```bash
+pnpm run dev
 ``` 

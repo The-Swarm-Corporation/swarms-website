@@ -61,7 +61,7 @@ export default function SimulationsPage() {
           <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/40" />
 
           {/* Content overlay */}
-          <div className="container relative px-4 sm:px-6 h-full flex items-center justify-center z-10">
+          <div className="container relative px-3 sm:px-6 h-full flex items-center justify-center z-10 overflow-x-hidden">
             <div className="text-center max-w-4xl mx-auto">
               <motion.div
                 className="space-y-8"
@@ -132,7 +132,7 @@ export default function SimulationsPage() {
         </div>
 
         {/* What We're Building */}
-        <div className="container py-16 sm:py-20 md:py-32 px-4 sm:px-6 bg-black relative">
+        <div className="container py-12 sm:py-16 md:py-20 lg:py-32 px-3 sm:px-6 bg-black relative overflow-x-hidden">
           <div className="absolute inset-0 bg-[linear-gradient(rgba(239,68,68,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(239,68,68,0.03)_1px,transparent_1px)] bg-[size:40px_40px]" />
           
           <motion.div
@@ -142,13 +142,13 @@ export default function SimulationsPage() {
             viewport={{ once: true }}
             className="text-center space-y-4 sm:space-y-6 mb-12 sm:mb-16 md:mb-20 relative z-10"
           >
-            <h2 className="text-3xl sm:text-4xl font-black tracking-tighter md:text-5xl lg:text-6xl text-white font-orbitron">
+            <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl 2xl:text-6xl font-black tracking-tighter text-white font-orbitron break-words px-1">
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-red-400">
                 Simulating The World Economy
               </span>
             </h2>
             <div className="w-24 sm:w-32 h-1 bg-gradient-to-r from-red-500 to-red-600 mx-auto" />
-            <p className="text-lg sm:text-xl text-gray-300 max-w-3xl mx-auto font-light font-sans px-4">
+            <p className="text-sm sm:text-base md:text-lg lg:text-xl text-gray-300 max-w-3xl mx-auto font-light font-sans px-2 sm:px-4 break-words">
               Digital replicas of complex human organizations using coordinated agent systems
             </p>
           </motion.div>

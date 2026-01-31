@@ -101,18 +101,18 @@ export default function ApplicationsClientPage() {
       viewport={{ once: true }}
       className="h-full"
     >
-      <CardWrapper className="h-full p-6 hover:border-red-500/50 transition-all duration-300">
-        <div className="flex flex-col h-full">
-          <div className="flex items-start gap-4 mb-4">
-            <div className="relative">
+      <CardWrapper className="h-full p-4 sm:p-6 hover:border-red-500/50 transition-all duration-300">
+        <div className="flex flex-col h-full min-w-0">
+          <div className="flex items-start gap-3 sm:gap-4 mb-3 sm:mb-4">
+            <div className="relative flex-shrink-0">
               <div className="p-2 rounded-md bg-red-500/10 border border-red-500/20">
-                <Icon className="h-6 w-6 text-red-500" />
+                <Icon className="h-5 w-5 sm:h-6 sm:w-6 text-red-500" />
               </div>
               <div className="absolute -inset-1 bg-red-500/10 blur-md rounded-md -z-10" />
             </div>
-            <h3 className="text-xl font-bold">{title}</h3>
+            <h3 className="text-base sm:text-lg md:text-xl font-bold break-words min-w-0">{title}</h3>
           </div>
-          <p className="text-muted-foreground mb-6 flex-grow">{description}</p>
+          <p className="text-sm sm:text-base text-muted-foreground mb-4 sm:mb-6 flex-grow break-words">{description}</p>
           <div className="mt-auto">
             <h4 className="font-medium text-sm mb-2">Key Benefits:</h4>
             <ul className="space-y-2">
@@ -143,22 +143,22 @@ export default function ApplicationsClientPage() {
         <div className="absolute inset-0 circuit-pattern opacity-20" aria-hidden="true" />
         <div className="absolute inset-0 cyber-gradient" aria-hidden="true" />
 
-        <div className="container relative px-4 sm:px-6 py-20 md:py-28">
+        <div className="container relative px-3 sm:px-6 py-12 sm:py-20 md:py-28">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
             className="max-w-4xl mx-auto text-center"
           >
-            <Badge className="mb-4 bg-red-500/20 text-red-400 hover:bg-red-500/30">Industry Solutions</Badge>
-            <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl mb-6">
+            <Badge className="mb-3 sm:mb-4 bg-red-500/20 text-red-400 hover:bg-red-500/30 text-xs sm:text-sm">Industry Solutions</Badge>
+            <h1 className="text-2xl min-[400px]:text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tighter mb-4 sm:mb-6 break-words px-1">
               Transforming Industries with Multi-Agent AI
             </h1>
-            <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
+            <p className="text-base sm:text-lg md:text-xl text-muted-foreground mb-6 sm:mb-8 max-w-3xl mx-auto break-words px-1">
               Discover how Swarms AI's enterprise-grade multi-agent systems are revolutionizing industries with
               unprecedented intelligence, efficiency, and automation.
             </p>
-            <div className="flex flex-wrap justify-center gap-4">
+            <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-3 sm:gap-4">
               <Button
                 size="lg"
                 className="bg-red-600 hover:bg-red-700 hover:scale-105 transition-all duration-300"
@@ -183,71 +183,71 @@ export default function ApplicationsClientPage() {
       </div>
 
       {/* Industry Applications */}
-      <div id="industry-applications" className="container px-4 sm:px-6 py-16">
+      <div id="industry-applications" className="container px-3 sm:px-6 py-10 sm:py-16 overflow-x-hidden">
         <Tabs defaultValue="finance" className="w-full">
-          <div className="flex justify-center mb-8 overflow-x-auto pb-2">
-            <TabsList className="grid grid-cols-9 w-full max-w-5xl bg-background/30 backdrop-blur-sm border border-red-500/20 p-1 rounded-lg">
+          <div className="flex justify-start sm:justify-center mb-6 sm:mb-8 overflow-x-auto pb-2 -mx-3 px-3 sm:mx-0 sm:px-0 scrollbar-thin">
+            <TabsList className="flex flex-nowrap sm:grid sm:grid-cols-9 w-full max-w-5xl min-w-0 sm:min-w-full bg-background/30 backdrop-blur-sm border border-red-500/20 p-1 rounded-lg gap-1">
               <TabsTrigger
                 value="finance"
-                className="data-[state=active]:bg-red-500/10 data-[state=active]:text-red-500 data-[state=active]:shadow-[0_0_10px_rgba(239,68,68,0.2)]"
+                className="flex-shrink-0 whitespace-nowrap text-xs sm:text-sm data-[state=active]:bg-red-500/10 data-[state=active]:text-red-500 data-[state=active]:shadow-[0_0_10px_rgba(239,68,68,0.2)]"
               >
-                <DollarSign className="mr-2 h-4 w-4" />
+                <DollarSign className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
                 Finance
               </TabsTrigger>
               <TabsTrigger
                 value="healthcare"
-                className="data-[state=active]:bg-red-500/10 data-[state=active]:text-red-500 data-[state=active]:shadow-[0_0_10px_rgba(239,68,68,0.2)]"
+                className="flex-shrink-0 whitespace-nowrap text-xs sm:text-sm data-[state=active]:bg-red-500/10 data-[state=active]:text-red-500 data-[state=active]:shadow-[0_0_10px_rgba(239,68,68,0.2)]"
               >
-                <HeartPulse className="mr-2 h-4 w-4" />
+                <HeartPulse className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
                 Healthcare
               </TabsTrigger>
               <TabsTrigger
                 value="manufacturing"
-                className="data-[state=active]:bg-red-500/10 data-[state=active]:text-red-500 data-[state=active]:shadow-[0_0_10px_rgba(239,68,68,0.2)]"
+                className="flex-shrink-0 whitespace-nowrap text-xs sm:text-sm data-[state=active]:bg-red-500/10 data-[state=active]:text-red-500 data-[state=active]:shadow-[0_0_10px_rgba(239,68,68,0.2)]"
               >
-                <Factory className="mr-2 h-4 w-4" />
+                <Factory className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
                 Manufacturing
               </TabsTrigger>
               <TabsTrigger
                 value="retail"
-                className="data-[state=active]:bg-red-500/10 data-[state=active]:text-red-500 data-[state=active]:shadow-[0_0_10px_rgba(239,68,68,0.2)]"
+                className="flex-shrink-0 whitespace-nowrap text-xs sm:text-sm data-[state=active]:bg-red-500/10 data-[state=active]:text-red-500 data-[state=active]:shadow-[0_0_10px_rgba(239,68,68,0.2)]"
               >
-                <ShoppingBag className="mr-2 h-4 w-4" />
+                <ShoppingBag className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
                 Retail
               </TabsTrigger>
               <TabsTrigger
                 value="energy"
-                className="data-[state=active]:bg-red-500/10 data-[state=active]:text-red-500 data-[state=active]:shadow-[0_0_10px_rgba(239,68,68,0.2)]"
+                className="flex-shrink-0 whitespace-nowrap text-xs sm:text-sm data-[state=active]:bg-red-500/10 data-[state=active]:text-red-500 data-[state=active]:shadow-[0_0_10px_rgba(239,68,68,0.2)]"
               >
-                <Zap className="mr-2 h-4 w-4" />
+                <Zap className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
                 Energy
               </TabsTrigger>
               <TabsTrigger
                 value="education"
-                className="data-[state=active]:bg-red-500/10 data-[state=active]:text-red-500 data-[state=active]:shadow-[0_0_10px_rgba(239,68,68,0.2)]"
+                className="flex-shrink-0 whitespace-nowrap text-xs sm:text-sm data-[state=active]:bg-red-500/10 data-[state=active]:text-red-500 data-[state=active]:shadow-[0_0_10px_rgba(239,68,68,0.2)]"
               >
-                <GraduationCap className="mr-2 h-4 w-4" />
+                <GraduationCap className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
                 Education
               </TabsTrigger>
               <TabsTrigger
                 value="logistics"
-                className="data-[state=active]:bg-red-500/10 data-[state=active]:text-red-500 data-[state=active]:shadow-[0_0_10px_rgba(239,68,68,0.2)]"
+                className="flex-shrink-0 whitespace-nowrap text-xs sm:text-sm data-[state=active]:bg-red-500/10 data-[state=active]:text-red-500 data-[state=active]:shadow-[0_0_10px_rgba(239,68,68,0.2)]"
               >
-                <Truck className="mr-2 h-4 w-4" />
+                <Truck className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
                 Logistics
               </TabsTrigger>
               <TabsTrigger
                 value="defi"
-                className="data-[state=active]:bg-red-500/10 data-[state=active]:text-red-500 data-[state=active]:shadow-[0_0_10px_rgba(239,68,68,0.2)]"
+                className="flex-shrink-0 whitespace-nowrap text-xs sm:text-sm data-[state=active]:bg-red-500/10 data-[state=active]:text-red-500 data-[state=active]:shadow-[0_0_10px_rgba(239,68,68,0.2)]"
               >
-                <Coins className="mr-2 h-4 w-4" />
+                <Coins className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
                 DeFi
               </TabsTrigger>
               <TabsTrigger
                 value="collaboration"
-                className="data-[state=active]:bg-red-500/10 data-[state=active]:text-red-500 data-[state=active]:shadow-[0_0_10px_rgba(239,68,68,0.2)]"
+                className="flex-shrink-0 whitespace-nowrap text-xs sm:text-sm data-[state=active]:bg-red-500/10 data-[state=active]:text-red-500 data-[state=active]:shadow-[0_0_10px_rgba(239,68,68,0.2)]"
               >
-                <Network className="mr-2 h-4 w-4" />
+                <Network className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
                 Multi-Agent
               </TabsTrigger>
             </TabsList>
@@ -263,10 +263,10 @@ export default function ApplicationsClientPage() {
                 viewport={{ once: true }}
                 className="text-center mb-8"
               >
-                <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl mb-4">
+                <h2 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tighter sm:text-4xl mb-3 sm:mb-4 break-words px-1">
                   Finance & Investment Applications
                 </h2>
-                <p className="text-muted-foreground max-w-2xl mx-auto">
+                <p className="text-sm sm:text-base text-muted-foreground max-w-2xl mx-auto break-words px-1">
                   Leverage multi-agent systems to gain competitive advantages in financial markets with advanced
                   analytics, risk management, and automated trading strategies.
                 </p>

@@ -186,9 +186,9 @@ const HiringClientPage = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-black text-white overflow-x-hidden selection:bg-red-500/20 selection:text-red-200">
+    <div className="min-h-screen bg-black text-white overflow-x-hidden selection:bg-red-500/20 selection:text-red-200 w-full max-w-full">
       {/* Hero Section */}
-      <section className="relative min-h-[90vh] sm:min-h-screen flex items-center justify-center px-4 py-16 sm:py-0">
+      <section className="relative min-h-[90vh] sm:min-h-screen flex items-center justify-center px-3 sm:px-4 py-12 sm:py-16 md:py-0">
         {/* Enhanced Animated Background */}
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-red-900/5 via-black to-red-900/10" />

@@ -31,30 +31,30 @@ export default function OpenSourceClientPage() {
         <div className="absolute inset-0 circuit-pattern opacity-20" aria-hidden="true" />
         <div className="absolute inset-0 cyber-gradient" aria-hidden="true" />
 
-        <div className="container relative px-4 sm:px-6 py-20 md:py-28">
+        <div className="container relative px-3 sm:px-6 py-12 sm:py-20 md:py-28">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
             className="max-w-4xl mx-auto text-center"
           >
-            <Badge className="mb-4 bg-red-500/20 text-red-400 hover:bg-red-500/30">Open Source</Badge>
-            <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl mb-6">
+            <Badge className="mb-3 sm:mb-4 bg-red-500/20 text-red-400 hover:bg-red-500/30 text-xs sm:text-sm">Open Source</Badge>
+            <h1 className="text-2xl min-[400px]:text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tighter mb-4 sm:mb-6 break-words px-1">
               Advancing AI Through Open Research
             </h1>
-            <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
+            <p className="text-base sm:text-lg md:text-xl text-muted-foreground mb-6 sm:mb-8 max-w-3xl mx-auto break-words px-1">
               Explore our open source repositories and join the community of researchers and developers building the
               future of multi-agent AI systems.
             </p>
-            <div className="flex flex-wrap justify-center gap-4">
+            <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-3 sm:gap-4">
               <a
                 href="https://github.com/The-Swarm-Corporation"
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{ position: "relative", zIndex: 10 }}
-                className="cursor-pointer inline-flex items-center justify-center rounded-md text-sm font-medium bg-red-600 hover:bg-red-700 text-white h-12 px-6 py-3"
+                className="cursor-pointer inline-flex items-center justify-center rounded-md text-sm font-medium bg-red-600 hover:bg-red-700 text-white min-h-[44px] h-12 px-6 py-3 w-full sm:w-auto touch-manipulation"
               >
-                <Github className="mr-2 h-5 w-5" />
+                <Github className="mr-2 h-5 w-5 flex-shrink-0" />
                 View on GitHub
               </a>
               <a
@@ -62,9 +62,9 @@ export default function OpenSourceClientPage() {
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{ position: "relative", zIndex: 10 }}
-                className="cursor-pointer inline-flex items-center justify-center rounded-md text-sm font-medium border border-red-600 text-red-600 hover:bg-red-600/10 h-12 px-6 py-3"
+                className="cursor-pointer inline-flex items-center justify-center rounded-md text-sm font-medium border border-red-600 text-red-600 hover:bg-red-600/10 min-h-[44px] h-12 px-6 py-3 w-full sm:w-auto touch-manipulation"
               >
-                <Discord className="mr-2 h-5 w-5" />
+                <Discord className="mr-2 h-5 w-5 flex-shrink-0" />
                 Join Our Community
               </a>
             </div>
@@ -73,22 +73,22 @@ export default function OpenSourceClientPage() {
       </div>
 
       {/* Open Source Mission */}
-      <div className="container px-4 sm:px-6 py-16">
+      <div className="container px-3 sm:px-6 py-10 sm:py-16 overflow-x-hidden">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
           viewport={{ once: true }}
-          className="text-center mb-12"
+          className="text-center mb-8 sm:mb-12 px-1"
         >
-          <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl mb-4">Our Open Source Mission</h2>
-          <p className="text-muted-foreground max-w-3xl mx-auto">
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tighter sm:text-4xl mb-3 sm:mb-4 break-words">Our Open Source Mission</h2>
+          <p className="text-sm sm:text-base text-muted-foreground max-w-3xl mx-auto break-words px-1">
             At Swarms AI, we believe that open collaboration accelerates innovation. Our commitment to open source
             research drives the development of cutting-edge multi-agent systems that are accessible to everyone.
           </p>
         </motion.div>
 
-        <div className="grid gap-8 md:grid-cols-3 mb-16">
+        <div className="grid gap-6 sm:gap-8 grid-cols-1 md:grid-cols-3 mb-12 sm:mb-16">
           {[
             {
               icon: Code,
@@ -117,14 +117,14 @@ export default function OpenSourceClientPage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
                 viewport={{ once: true }}
-                className="relative overflow-hidden rounded-lg border border-red-900/20 bg-background/30 p-8 backdrop-blur-sm"
+                className="relative overflow-hidden rounded-lg border border-red-900/20 bg-background/30 p-5 sm:p-6 md:p-8 backdrop-blur-sm min-w-0"
               >
                 <div className="relative">
                   <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-red-500/10 mb-4">
                     <Icon className="h-6 w-6 text-red-500" />
                   </div>
-                  <h3 className="text-xl font-bold mb-2">{item.title}</h3>
-                  <p className="text-muted-foreground">{item.description}</p>
+                  <h3 className="text-lg sm:text-xl font-bold mb-2 break-words">{item.title}</h3>
+                  <p className="text-sm sm:text-base text-muted-foreground break-words">{item.description}</p>
                 </div>
               </motion.div>
             )
@@ -139,9 +139,9 @@ export default function OpenSourceClientPage() {
           viewport={{ once: true }}
           className="mb-12"
         >
-          <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl mb-4">Our GitHub Repositories</h2>
-            <p className="text-muted-foreground max-w-3xl mx-auto">
+          <div className="text-center mb-6 sm:mb-8 px-1">
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tighter sm:text-4xl mb-3 sm:mb-4 break-words">Our GitHub Repositories</h2>
+            <p className="text-sm sm:text-base text-muted-foreground max-w-3xl mx-auto break-words">
               Explore our open source repositories, ranked by stars. Find the tools and frameworks that power the next
               generation of AI systems.
             </p>
@@ -158,14 +158,14 @@ export default function OpenSourceClientPage() {
           viewport={{ once: true }}
           className="mb-16"
         >
-          <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl mb-4">How to Contribute</h2>
-            <p className="text-muted-foreground max-w-3xl mx-auto">
+          <div className="text-center mb-6 sm:mb-8 px-1">
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tighter sm:text-4xl mb-3 sm:mb-4 break-words">How to Contribute</h2>
+            <p className="text-sm sm:text-base text-muted-foreground max-w-3xl mx-auto break-words">
               Join our community of contributors and help shape the future of multi-agent AI systems.
             </p>
           </div>
 
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
             {[
               {
                 step: "1",
@@ -198,7 +198,7 @@ export default function OpenSourceClientPage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
                 viewport={{ once: true }}
-                className="relative overflow-hidden rounded-lg border border-red-900/20 bg-background/30 p-6 backdrop-blur-sm"
+                className="relative overflow-hidden rounded-lg border border-red-900/20 bg-background/30 p-4 sm:p-6 backdrop-blur-sm min-w-0"
               >
                 <div className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-red-500/20 text-red-500 font-bold">
                   {item.step}
@@ -207,8 +207,8 @@ export default function OpenSourceClientPage() {
                   <div className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-red-500/10 mb-4">
                     <item.icon className="h-5 w-5 text-red-500" />
                   </div>
-                  <h3 className="text-lg font-bold mb-2">{item.title}</h3>
-                  <p className="text-sm text-muted-foreground">{item.description}</p>
+                  <h3 className="text-base sm:text-lg font-bold mb-2 break-words">{item.title}</h3>
+                  <p className="text-xs sm:text-sm text-muted-foreground break-words">{item.description}</p>
                 </div>
               </motion.div>
             ))}
@@ -222,28 +222,28 @@ export default function OpenSourceClientPage() {
           transition={{ duration: 0.6 }}
           viewport={{ once: true }}
         >
-          <div className="relative overflow-hidden rounded-lg border border-red-900/20 bg-background/30 px-6 py-12 backdrop-blur-sm">
+          <div className="relative overflow-hidden rounded-lg border border-red-900/20 bg-background/30 px-4 sm:px-6 py-8 sm:py-12 backdrop-blur-sm">
             {/* Glowing orb effect */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
               <div className="w-[400px] h-[400px] rounded-full bg-red-500/10 blur-[100px]" />
             </div>
 
-            <div className="relative max-w-3xl mx-auto text-center">
-              <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl mb-6">
+            <div className="relative max-w-3xl mx-auto text-center px-1">
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tighter sm:text-4xl mb-4 sm:mb-6 break-words">
                 Ready to Join the Open Source Movement?
               </h2>
-              <p className="text-xl text-muted-foreground mb-8">
+              <p className="text-base sm:text-lg md:text-xl text-muted-foreground mb-6 sm:mb-8 break-words">
                 Contribute to our repositories, join our community, and help us build the future of AI together.
               </p>
-              <div className="flex flex-wrap justify-center gap-4">
+              <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-3 sm:gap-4">
                 <a
                   href="https://github.com/The-Swarm-Corporation"
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{ position: "relative", zIndex: 10 }}
-                  className="cursor-pointer inline-flex items-center justify-center rounded-md text-sm font-medium bg-red-600 hover:bg-red-700 text-white h-12 px-6 py-3"
+                  className="cursor-pointer inline-flex items-center justify-center rounded-md text-sm font-medium bg-red-600 hover:bg-red-700 text-white min-h-[44px] h-12 px-6 py-3 w-full sm:w-auto touch-manipulation"
                 >
-                  <Github className="mr-2 h-5 w-5" />
+                  <Github className="mr-2 h-5 w-5 flex-shrink-0" />
                   Explore Repositories
                 </a>
                 <a
@@ -251,9 +251,9 @@ export default function OpenSourceClientPage() {
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{ position: "relative", zIndex: 10 }}
-                  className="cursor-pointer inline-flex items-center justify-center rounded-md text-sm font-medium border border-red-600 text-red-600 hover:bg-red-600/10 h-12 px-6 py-3"
+                  className="cursor-pointer inline-flex items-center justify-center rounded-md text-sm font-medium border border-red-600 text-red-600 hover:bg-red-600/10 min-h-[44px] h-12 px-6 py-3 w-full sm:w-auto touch-manipulation"
                 >
-                  <BookOpen className="mr-2 h-5 w-5" />
+                  <BookOpen className="mr-2 h-5 w-5 flex-shrink-0" />
                   Contribution Guidelines
                 </a>
               </div>

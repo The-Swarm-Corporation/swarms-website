@@ -174,15 +174,15 @@ export default function BlogPage() {
         <div className="absolute inset-0 bg-gradient-to-b from-black via-red-950/20 to-black" />
         <AnimatedBackground particleColor="rgba(239, 68, 68, 0.3)" className="opacity-30" />
 
-        <div className="container relative px-4 sm:px-6 py-24 md:py-32">
+        <div className="container relative px-3 sm:px-6 py-16 sm:py-24 md:py-32 overflow-x-hidden">
           <motion.div
-            className="text-center space-y-8"
+            className="text-center space-y-6 sm:space-y-8"
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1 }}
           >
             <motion.h1 
-              className="text-5xl md:text-7xl font-black text-white font-orbitron tracking-tighter"
+              className="text-2xl min-[400px]:text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-black text-white font-orbitron tracking-tighter break-words px-1"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2, duration: 0.8 }}
@@ -192,7 +192,7 @@ export default function BlogPage() {
               </span>
             </motion.h1>
             <motion.p
-              className="text-gray-400 text-lg md:text-xl max-w-2xl mx-auto font-sans"
+              className="text-gray-400 text-sm sm:text-base md:text-lg lg:text-xl max-w-2xl mx-auto font-sans break-words px-1"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.4, duration: 0.8 }}
@@ -204,9 +204,9 @@ export default function BlogPage() {
       </div>
 
       {/* Category Navigation */}
-      <div className="container px-4 sm:px-6 py-8 bg-black border-b border-red-500/20">
+      <div className="container px-3 sm:px-6 py-6 sm:py-8 bg-black border-b border-red-500/20 overflow-x-auto">
         <motion.div
-          className="flex flex-wrap gap-4 justify-center"
+          className="flex flex-wrap gap-2 sm:gap-4 justify-center"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
@@ -238,9 +238,9 @@ export default function BlogPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          <div className="flex flex-col md:flex-row gap-6 items-center justify-between">
+          <div className="flex flex-col md:flex-row gap-4 sm:gap-6 items-stretch md:items-center justify-between">
             {/* Search */}
-            <div className="relative w-full md:w-96">
+            <div className="relative w-full min-w-0 md:w-96">
               <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-red-500" />
               <input
                 type="text"
@@ -252,7 +252,7 @@ export default function BlogPage() {
             </div>
 
             {/* Controls */}
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-4 min-w-0">
               {/* Sort By */}
               <select
                 value={sortBy}
@@ -455,8 +455,8 @@ export default function BlogPage() {
               ))}
             </div>
           ) : (
-            <div className="overflow-hidden rounded-lg border-2 border-red-500/20 bg-black/50 backdrop-blur-sm">
-              <table className="w-full">
+            <div className="overflow-x-auto rounded-lg border-2 border-red-500/20 bg-black/50 backdrop-blur-sm -mx-3 sm:mx-0">
+              <table className="w-full min-w-[600px]">
                 <thead>
                   <tr className="border-b-2 border-red-500/20">
                     <th className="px-6 py-4 text-left text-sm font-orbitron text-red-400">Title</th>

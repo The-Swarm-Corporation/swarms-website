@@ -540,7 +540,7 @@ axios.post(
           />
         </div>
 
-        <div className="container relative px-4 sm:px-6 h-screen">
+        <div className="container relative px-3 sm:px-6 h-screen overflow-x-hidden">
           <div className="flex flex-col items-center justify-center space-y-6 sm:space-y-8 md:space-y-12 lg:space-y-16 h-full text-center">
             <motion.div
               className="space-y-6 sm:space-y-8 md:space-y-12 lg:space-y-16"
@@ -617,7 +617,7 @@ axios.post(
 
       {/* Core Capabilities - Mobile-Optimized Single Feature Showcase */}
       <section className="py-8 sm:py-12 md:py-16 lg:py-20 bg-black" data-section="features">
-        <div className="container px-4 sm:px-6 lg:px-8">
+        <div className="container px-3 sm:px-6 lg:px-8 overflow-x-hidden">
           <motion.div
             className="text-center sm:text-left mb-6 sm:mb-8 md:mb-12"
             variants={mobileOptimizedVariants}

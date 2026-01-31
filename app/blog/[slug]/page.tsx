@@ -140,8 +140,8 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
         <div className="absolute inset-0 bg-gradient-to-b from-black via-red-950/20 to-black" />
         <AnimatedBackground particleColor="rgba(239, 68, 68, 0.3)" className="opacity-30" />
 
-        <div className="container max-w-[1600px] relative px-4 sm:px-6 py-16 md:py-24">
-          <div className="max-w-[1400px] mx-auto">
+        <div className="container max-w-[1600px] relative px-3 sm:px-6 py-12 sm:py-16 md:py-24 overflow-x-hidden">
+          <div className="max-w-[1400px] mx-auto min-w-0">
             {/* Back Button */}
             <div className="mb-8">
               <Button
@@ -170,15 +170,15 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
                 ))}
               </div>
 
-              <h1 className="text-5xl md:text-7xl font-black text-white font-orbitron tracking-tighter leading-tight">
+              <h1 className="text-2xl min-[400px]:text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-black text-white font-orbitron tracking-tighter leading-tight break-words">
                 {post.title}
               </h1>
 
-              <p className="text-xl md:text-2xl text-gray-300 font-sans leading-relaxed max-w-4xl">
+              <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-gray-300 font-sans leading-relaxed max-w-4xl break-words">
                 {post.description}
               </p>
 
-              <div className="flex flex-wrap items-center gap-6 text-gray-400 font-sans">
+              <div className="flex flex-wrap items-center gap-4 sm:gap-6 text-gray-400 font-sans text-sm sm:text-base">
                 <div className="flex items-center space-x-2">
                   <User className="h-4 w-4 text-red-500" />
                   <span>{post.author}</span>
@@ -194,7 +194,7 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
               </div>
 
               {/* Action Buttons */}
-              <div className="flex flex-wrap items-center gap-4 pt-4">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-4 pt-4">
                 <Button
                   variant="outline"
                   size="sm"

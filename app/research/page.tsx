@@ -194,8 +194,8 @@ export default function ResearchPage() {
   // CSS class utilities for better maintainability
   const styles = {
     // Layout classes
-    container: "container relative px-4 sm:px-6 lg:px-8",
-    section: "relative py-16 md:py-24 lg:py-32",
+    container: "container relative px-3 sm:px-6 lg:px-8 overflow-x-hidden",
+    section: "relative py-12 sm:py-16 md:py-24 lg:py-32",
     
     // Background classes
     heroBg: "relative min-h-screen overflow-hidden bg-black",

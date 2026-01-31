@@ -335,7 +335,7 @@ function ProductBlock({ product, index }: { product: Product; index: number }) {
           viewport={{ once: true }}
         />
 
-        <div className="container relative px-4 sm:px-6 lg:px-8 w-full max-w-5xl mx-auto">
+        <div className="container relative px-3 sm:px-6 lg:px-8 w-full max-w-5xl mx-auto overflow-x-hidden">
           <motion.div
             className="max-w-3xl mx-auto text-center space-y-6"
             initial={{ opacity: 0, y: 32 }}
@@ -343,7 +343,7 @@ function ProductBlock({ product, index }: { product: Product; index: number }) {
             transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
             viewport={{ once: true, amount: 0.4 }}
           >
-            <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-white leading-tight">
+            <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl 2xl:text-6xl font-bold tracking-tight text-white leading-tight break-words px-1">
               {product.title}
             </h2>
             <p className="text-base sm:text-lg md:text-xl text-white/70 leading-relaxed">{product.description}</p>
@@ -396,7 +396,7 @@ function ProductBlock({ product, index }: { product: Product; index: number }) {
       {/* Technical details section (only if needed) */}
       {(product.installation || product.codeExample) && (
         <section className="relative py-16 md:py-24 bg-black border-t border-white/10">
-          <div className="container relative px-4 sm:px-6 lg:px-8 w-full max-w-5xl mx-auto">
+          <div className="container relative px-3 sm:px-6 lg:px-8 w-full max-w-5xl mx-auto overflow-x-hidden">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}

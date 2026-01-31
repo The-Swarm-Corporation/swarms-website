@@ -30,21 +30,21 @@ export function InstallationClientPage() {
     commandId: string
     description?: string
   }) => (
-    <div className="relative group">
-      <div className="bg-black border border-red-500/20 rounded-lg p-4 font-mono text-sm">
-        <div className="flex items-center justify-between">
-          <code className="text-green-400">{command}</code>
+    <div className="relative group overflow-hidden">
+      <div className="bg-black border border-red-500/20 rounded-lg p-3 sm:p-4 font-mono text-xs sm:text-sm overflow-x-auto">
+        <div className="flex items-center justify-between gap-2 min-w-0">
+          <code className="text-green-400 break-all min-w-0">{command}</code>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => copyToClipboard(command, commandId)}
-            className="opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500/10"
+            className="flex-shrink-0 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity hover:bg-red-500/10 min-h-[36px] min-w-[36px] touch-manipulation"
           >
             {copiedCommand === commandId ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
           </Button>
         </div>
       </div>
-      {description && <p className="text-sm text-gray-400 mt-2">{description}</p>}
+      {description && <p className="text-xs sm:text-sm text-gray-400 mt-2 break-words">{description}</p>}
     </div>
   )
 
@@ -93,18 +93,18 @@ export function InstallationClientPage() {
   return (
     <div className="min-h-screen bg-black">
       {/* Hero Section */}
-      <section className="relative py-20 px-4 bg-gradient-to-br from-red-950/20 via-black to-black">
+      <section className="relative py-12 sm:py-16 md:py-20 px-3 sm:px-4 bg-gradient-to-br from-red-950/20 via-black to-black">
         <div className="absolute inset-0 bg-grid-white/[0.02] bg-grid-16" />
-        <div className="container mx-auto max-w-4xl relative">
-          <div className="text-center mb-12">
-            <Badge variant="outline" className="mb-4 border-red-500/30 text-red-500">
-              <Download className="w-3 h-3 mr-1" />
+        <div className="container mx-auto max-w-4xl relative px-2 sm:px-4">
+          <div className="text-center mb-8 sm:mb-12">
+            <Badge variant="outline" className="mb-3 sm:mb-4 border-red-500/30 text-red-500 text-xs sm:text-sm">
+              <Download className="w-3 h-3 mr-1 flex-shrink-0" />
               Installation Guide
             </Badge>
-            <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-white via-white to-red-500 bg-clip-text text-transparent text-white">
+            <h1 className="text-2xl min-[400px]:text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 sm:mb-6 bg-gradient-to-r from-white via-white to-red-500 bg-clip-text text-transparent text-white break-words">
               Install Swarms
             </h1>
-            <p className="text-xl text-gray-300 max-w-2xl mx-auto">
+            <p className="text-base sm:text-lg md:text-xl text-gray-300 max-w-2xl mx-auto break-words px-1">
               Get started with the Swarms framework in minutes. Choose your preferred installation method and start
               building multi-agent AI systems.
             </p>
@@ -113,11 +113,11 @@ export function InstallationClientPage() {
       </section>
 
       {/* Quick Start */}
-      <section className="py-16 px-4">
-        <div className="container mx-auto max-w-4xl">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4 text-white">Quick Start</h2>
-            <p className="text-gray-400">The fastest way to get Swarms up and running</p>
+      <section className="py-10 sm:py-16 px-3 sm:px-4">
+        <div className="container mx-auto max-w-4xl px-2 sm:px-4">
+          <div className="text-center mb-8 sm:mb-12">
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-3 sm:mb-4 text-white break-words">Quick Start</h2>
+            <p className="text-sm sm:text-base text-gray-400 break-words">The fastest way to get Swarms up and running</p>
           </div>
 
           <Card className="mb-8 bg-black/40 border-red-900/30 hover:border-red-500/50">
@@ -155,23 +155,23 @@ export function InstallationClientPage() {
       </section>
 
       {/* Installation Methods */}
-      <section className="py-16 px-4 bg-gradient-to-r from-red-950/10 via-transparent to-red-950/10">
-        <div className="container mx-auto max-w-4xl">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4 text-white">Installation Methods</h2>
-            <p className="text-gray-400">Choose the installation method that works best for your environment</p>
+      <section className="py-10 sm:py-16 px-3 sm:px-4 bg-gradient-to-r from-red-950/10 via-transparent to-red-950/10">
+        <div className="container mx-auto max-w-4xl px-2 sm:px-4">
+          <div className="text-center mb-8 sm:mb-12">
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-3 sm:mb-4 text-white break-words">Installation Methods</h2>
+            <p className="text-sm sm:text-base text-gray-400 break-words px-1">Choose the installation method that works best for your environment</p>
           </div>
 
-          <Tabs defaultValue="pip" className="w-full">
-            <TabsList className="grid w-full grid-cols-4 mb-8">
+          <Tabs defaultValue="pip" className="w-full overflow-x-hidden">
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 gap-1 sm:gap-0 mb-6 sm:mb-8 p-1">
               {installationMethods.map((method) => (
-                <TabsTrigger
-                  key={method.id}
-                  value={method.id}
-                  className="flex items-center gap-2 data-[state=active]:bg-red-500/10 data-[state=active]:text-red-500"
-                >
-                  <method.icon className="h-4 w-4" />
-                  {method.title}
+<TabsTrigger
+                key={method.id}
+                value={method.id}
+                className="flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm data-[state=active]:bg-red-500/10 data-[state=active]:text-red-500 flex-shrink-0 min-h-[44px] sm:min-h-0"
+              >
+                <method.icon className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                <span className="truncate">{method.title}</span>
                   {method.recommended && (
                     <Badge variant="secondary" className="ml-1 text-xs bg-red-500/20 text-red-400">
                       Recommended
@@ -322,9 +322,9 @@ export function InstallationClientPage() {
       </section>
 
       {/* Requirements */}
-      <section className="py-16 px-4">
-        <div className="container mx-auto max-w-4xl">
-          <div className="grid md:grid-cols-2 gap-8">
+      <section className="py-10 sm:py-16 px-3 sm:px-4">
+        <div className="container mx-auto max-w-4xl px-2 sm:px-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
             <Card className="bg-black/40 border-red-900/30 hover:border-red-500/50">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-white">

@@ -33,8 +33,8 @@ export default function ProgramsPage() {
       />
 
       {/* Hero Section */}
-      <div className="container py-12 md:py-16 lg:py-20">
-        <div className="relative overflow-hidden rounded-lg border border-red-900/20 bg-background/30 px-6 py-12 md:py-16 backdrop-blur-sm mb-16">
+      <div className="container px-3 sm:px-4 md:px-6 py-10 sm:py-12 md:py-16 lg:py-20 overflow-x-hidden">
+        <div className="relative overflow-hidden rounded-lg border border-red-900/20 bg-background/30 px-4 sm:px-6 py-10 sm:py-12 md:py-16 backdrop-blur-sm mb-10 sm:mb-16">
           {/* Glowing orb effect */}
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
             <div className="w-[600px] h-[600px] rounded-full bg-red-500/10 blur-[128px]" />
@@ -44,10 +44,10 @@ export default function ProgramsPage() {
             <div className="inline-block rounded-full bg-red-500/10 px-4 py-1.5 text-sm font-medium text-red-500 mb-4">
               Research Initiative
             </div>
-            <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl mb-6">
+            <h1 className="text-2xl min-[400px]:text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tighter mb-4 sm:mb-6 break-words">
               Swarms Research Program
             </h1>
-            <p className="text-xl text-muted-foreground mb-8">
+            <p className="text-base sm:text-lg md:text-xl text-muted-foreground mb-6 sm:mb-8 break-words px-1">
               Empowering researchers with limitless swarms credits and comprehensive support for multi-agent
               experiments.
             </p>
@@ -84,8 +84,8 @@ export default function ProgramsPage() {
         {/* Program Overview */}
         <div className="mb-16">
           <div className="text-center mb-10">
-            <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl mb-4">Program Overview</h2>
-            <p className="text-muted-foreground mx-auto max-w-[800px]">
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tighter sm:text-4xl mb-3 sm:mb-4 break-words px-1">Program Overview</h2>
+            <p className="text-sm sm:text-base text-muted-foreground mx-auto max-w-[800px] break-words px-1">
               The Swarms Research Program provides academic researchers with the tools, resources, and support needed to
               advance multi-agent AI systems
             </p>

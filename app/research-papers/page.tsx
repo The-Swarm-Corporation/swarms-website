@@ -42,7 +42,7 @@ export default function ResearchPapersPage() {
           </div>
 
           {/* Content */}
-          <div className="container relative px-4 sm:px-6 lg:px-8 min-h-screen flex items-center justify-center z-10 pt-20 md:pt-24">
+          <div className="container relative px-3 sm:px-6 lg:px-8 min-h-screen flex items-center justify-center z-10 pt-20 md:pt-24 overflow-x-hidden">
             <div className="text-center max-w-6xl mx-auto">
               <motion.div
                 className="space-y-8 md:space-y-12"
@@ -65,7 +65,7 @@ export default function ResearchPapersPage() {
                 </motion.h1>
 
                 <motion.p
-                  className="text-lg sm:text-xl md:text-2xl lg:text-3xl text-gray-300 max-w-4xl mx-auto font-light leading-relaxed"
+                  className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-3xl text-gray-300 max-w-4xl mx-auto font-light leading-relaxed break-words px-1"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.4, duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
@@ -79,8 +79,8 @@ export default function ResearchPapersPage() {
         </div>
 
         {/* Research Papers Table */}
-        <div className="relative py-16 md:py-24 lg:py-32 bg-black">
-          <div className="container relative px-4 sm:px-6 lg:px-8 z-10">
+        <div className="relative py-12 sm:py-16 md:py-24 lg:py-32 bg-black overflow-x-hidden">
+          <div className="container relative px-3 sm:px-6 lg:px-8 z-10">
 
             {/* Simple Table */}
             <motion.div
@@ -139,8 +139,8 @@ export default function ResearchPapersPage() {
         </div>
 
         {/* Call to Action */}
-        <div className="relative py-16 md:py-24 lg:py-32 bg-black">
-          <div className="container relative px-4 sm:px-6 lg:px-8 z-10">
+        <div className="relative py-12 sm:py-16 md:py-24 lg:py-32 bg-black overflow-x-hidden">
+          <div className="container relative px-3 sm:px-6 lg:px-8 z-10">
             <motion.div
               className="relative overflow-hidden rounded-3xl border border-red-500/20 bg-gradient-to-br from-gray-900/40 to-black/60 backdrop-blur-2xl px-6 md:px-8 py-16 md:py-20 lg:py-24"
               initial={{ opacity: 0, y: 40 }}

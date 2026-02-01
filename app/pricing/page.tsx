@@ -330,9 +330,9 @@ export default function PricingPage() {
             transition={{ duration: 0.6, delay: 0.1 }}
             viewport={{ once: true }}
           >
-            <div className="min-w-[800px] sm:min-w-full w-max sm:w-full px-2 sm:px-4 md:px-0">
-              <Card className="bg-white/[0.02] border-white/10 overflow-hidden">
-                <CardHeader className="p-0">
+            <div className="w-full min-w-0 sm:min-w-[800px] px-2 sm:px-4 md:px-0">
+              <Card className="bg-white/[0.02] border-white/10 overflow-hidden w-full max-w-full">
+                <CardHeader className="p-0 max-w-full overflow-hidden">
                   {/* Table Header - Hidden on mobile, shown on desktop */}
                   <div className="hidden sm:grid sm:grid-cols-3 gap-3 md:gap-4 p-4 md:p-6 border-b border-white/10">
                     <div className="font-semibold text-white text-xs sm:text-sm md:text-base">Item</div>
@@ -341,27 +341,27 @@ export default function PricingPage() {
                   </div>
 
                   {/* Mobile Card Layout */}
-                  <div className="sm:hidden space-y-3 p-4">
+                  <div className="sm:hidden space-y-3 p-3 sm:p-4 min-w-0 overflow-hidden">
                     {pricingItems.map((item, index) => (
                       <motion.div
                         key={item.item}
-                        className="p-4 rounded-lg border border-white/10 bg-white/[0.01]"
+                        className="p-3 sm:p-4 rounded-lg border border-white/10 bg-white/[0.01] min-w-0 overflow-hidden"
                         initial={{ opacity: 0, y: 10 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         transition={{ delay: index * 0.05 }}
                         viewport={{ once: true }}
                       >
-                        <div className="flex items-start space-x-3 mb-3">
+                        <div className="flex items-start gap-3 mb-3 min-w-0">
                           <div className="w-6 h-6 rounded border border-white/10 bg-white/[0.03] flex items-center justify-center flex-shrink-0 mt-0.5">
                             <item.icon className="w-3 h-3 text-white/80" />
                           </div>
-                          <span className="text-white text-sm font-medium flex-1">{item.item}</span>
+                          <span className="text-white text-sm font-medium flex-1 min-w-0 break-words">{item.item}</span>
                         </div>
-                        <div className="text-xs mb-2">
+                        <div className="text-xs mb-2 min-w-0 overflow-hidden">
                           <div className="text-white/60 mb-1">Price</div>
-                          <div className="text-white/80 font-mono">{item.cost}</div>
+                          <div className="text-white/80 font-mono break-all">{item.cost}</div>
                         </div>
-                        <div className="text-white/50 text-xs mt-2 pt-2 border-t border-white/10">{item.notes}</div>
+                        <div className="text-white/50 text-xs mt-2 pt-2 border-t border-white/10 break-words">{item.notes}</div>
                       </motion.div>
                     ))}
                   </div>

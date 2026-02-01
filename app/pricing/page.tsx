@@ -324,13 +324,13 @@ export default function PricingPage() {
 
           {/* Pricing Table */}
           <motion.div
-            className="overflow-x-auto -mx-2 sm:-mx-4 md:mx-0"
+            className="w-full max-w-full min-w-0 overflow-x-auto -mx-2 sm:-mx-4 md:mx-0"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
             viewport={{ once: true }}
           >
-            <div className="min-w-[800px] sm:min-w-full px-2 sm:px-4 md:px-0">
+            <div className="min-w-[800px] sm:min-w-full w-max sm:w-full px-2 sm:px-4 md:px-0">
               <Card className="bg-white/[0.02] border-white/10 overflow-hidden">
                 <CardHeader className="p-0">
                   {/* Table Header - Hidden on mobile, shown on desktop */}

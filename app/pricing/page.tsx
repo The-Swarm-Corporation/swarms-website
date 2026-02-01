@@ -391,83 +391,82 @@ export default function PricingPage() {
             </div>
           </motion.div>
 
-          {/* Special Offers */}
+          {/* Special Offers & Unified Pricing */}
           <motion.div
-            className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mt-8 sm:mt-12"
+            className="mt-8 sm:mt-12 md:mt-16"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
             viewport={{ once: true }}
           >
-            <Card className="bg-white/[0.02] border-white/10 hover:border-white/20 transition-all duration-300">
-              <CardHeader className="p-4 sm:p-5 md:p-6">
-                <div className="flex items-center space-x-2 sm:space-x-3 mb-3 sm:mb-4">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl border border-white/10 bg-white/[0.03] flex items-center justify-center flex-shrink-0">
-                    <Moon className="w-5 h-5 sm:w-6 sm:h-6 text-white/80" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <CardTitle className="text-white text-lg sm:text-xl font-bold break-words">Night-time Discount</CardTitle>
-                    <CardDescription className="text-white/60 text-xs sm:text-sm">50% off tokens</CardDescription>
-                  </div>
-                </div>
-                <p className="text-white/60 text-xs sm:text-sm leading-relaxed break-words">
-                  Swarm Completions receive a 50% discount on token costs during 8 PM - 6 AM Pacific Time. 
-                  Agent costs remain the same. Automatically applied.
-                </p>
-              </CardHeader>
-            </Card>
+            <div className="text-center mb-6 sm:mb-8 md:mb-10 px-2">
+              <h3 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-white leading-tight mb-3 sm:mb-4 break-words">
+                Discounts & pricing details
+              </h3>
+              <p className="text-sm sm:text-base md:text-lg text-white/60 max-w-2xl mx-auto font-normal leading-relaxed break-words">
+                Time-based discounts and unified token pricing across all API endpoints.
+              </p>
+            </div>
 
-            <Card className="bg-white/[0.02] border-white/10 hover:border-white/20 transition-all duration-300">
-              <CardHeader className="p-4 sm:p-5 md:p-6">
-                <div className="flex items-center space-x-2 sm:space-x-3 mb-3 sm:mb-4">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl border border-white/10 bg-white/[0.03] flex items-center justify-center flex-shrink-0">
-                    <Zap className="w-5 h-5 sm:w-6 sm:h-6 text-white/80" />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+              <Card className="bg-white/[0.02] border-white/10 hover:border-white/20 transition-all duration-300 h-full flex flex-col">
+                <CardHeader className="p-4 sm:p-5 md:p-6 flex-1 flex flex-col">
+                  <div className="flex items-center space-x-2 sm:space-x-3 mb-3 sm:mb-4">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl border border-white/10 bg-white/[0.03] flex items-center justify-center flex-shrink-0">
+                      <Moon className="w-5 h-5 sm:w-6 sm:h-6 text-white/80" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <CardTitle className="text-white text-lg sm:text-xl font-bold break-words">Night-time Discount</CardTitle>
+                      <CardDescription className="text-white/60 text-xs sm:text-sm">50% off tokens</CardDescription>
+                    </div>
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <CardTitle className="text-white text-lg sm:text-xl font-bold break-words">Frenzy Mode</CardTitle>
-                    <CardDescription className="text-white/60 text-xs sm:text-sm">All requests free</CardDescription>
-                  </div>
-                </div>
-                <p className="text-white/60 text-xs sm:text-sm leading-relaxed break-words">
-                  All API requests are free during Black Friday (4th Friday of November) for 24 hours. 
-                  Automatically applied.
-                </p>
-              </CardHeader>
-            </Card>
-          </motion.div>
+                  <p className="text-white/60 text-xs sm:text-sm leading-relaxed break-words flex-1">
+                    Swarm Completions receive a 50% discount on token costs during 8 PM - 6 AM Pacific Time.
+                    Agent costs remain the same. Automatically applied.
+                  </p>
+                </CardHeader>
+              </Card>
 
-          {/* Unified Pricing Info */}
-          <motion.div
-            className="mt-8 sm:mt-12 max-w-4xl mx-auto"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-            viewport={{ once: true }}
-          >
-            <Card className="bg-white/[0.02] border-white/10">
-              <CardHeader className="p-4 sm:p-5 md:p-6">
-                <CardTitle className="text-white text-lg sm:text-xl font-bold mb-3 sm:mb-4 break-words">Unified Pricing</CardTitle>
-                <CardDescription className="text-white/60 text-xs sm:text-sm leading-relaxed break-words mb-3 sm:mb-4">
-                  All API endpoints use the same token pricing:
-                </CardDescription>
-                <div className="space-y-2 sm:space-y-3 text-xs sm:text-sm text-white/80">
-                  <div className="flex items-center">
-                    <Check className="w-3 h-3 sm:w-4 sm:h-4 text-white/80 mr-2 flex-shrink-0" />
-                    <span><strong>Input Tokens:</strong> $6.50 per 1 million tokens</span>
+              <Card className="bg-white/[0.02] border-white/10 hover:border-white/20 transition-all duration-300 h-full flex flex-col">
+                <CardHeader className="p-4 sm:p-5 md:p-6 flex-1 flex flex-col">
+                  <div className="flex items-center space-x-2 sm:space-x-3 mb-3 sm:mb-4">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl border border-white/10 bg-white/[0.03] flex items-center justify-center flex-shrink-0">
+                      <Zap className="w-5 h-5 sm:w-6 sm:h-6 text-white/80" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <CardTitle className="text-white text-lg sm:text-xl font-bold break-words">Frenzy Mode</CardTitle>
+                      <CardDescription className="text-white/60 text-xs sm:text-sm">All requests free</CardDescription>
+                    </div>
                   </div>
-                  <div className="flex items-center">
-                    <Check className="w-3 h-3 sm:w-4 sm:h-4 text-white/80 mr-2 flex-shrink-0" />
-                    <span><strong>Output Tokens:</strong> $18.50 per 1 million tokens</span>
+                  <p className="text-white/60 text-xs sm:text-sm leading-relaxed break-words flex-1">
+                    All API requests are free during Black Friday (4th Friday of November) for 24 hours.
+                    Automatically applied.
+                  </p>
+                </CardHeader>
+              </Card>
+
+              <Card className="bg-white/[0.02] border-white/10 hover:border-white/20 transition-all duration-300 h-full flex flex-col">
+                <CardHeader className="p-4 sm:p-5 md:p-6 flex-1 flex flex-col">
+                  <CardTitle className="text-white text-lg sm:text-xl font-bold mb-3 sm:mb-4 break-words">Unified Pricing</CardTitle>
+                  <CardDescription className="text-white/60 text-xs sm:text-sm leading-relaxed break-words mb-3 sm:mb-4">
+                    All API endpoints use the same token pricing:
+                  </CardDescription>
+                  <div className="space-y-2 sm:space-y-3 text-xs sm:text-sm text-white/80 flex-1">
+                    <div className="flex items-start">
+                      <Check className="w-3 h-3 sm:w-4 sm:h-4 text-white/80 mr-2 flex-shrink-0 mt-0.5" />
+                      <span className="break-words"><strong>Input Tokens:</strong> $6.50 per 1M tokens</span>
+                    </div>
+                    <div className="flex items-start">
+                      <Check className="w-3 h-3 sm:w-4 sm:h-4 text-white/80 mr-2 flex-shrink-0 mt-0.5" />
+                      <span className="break-words"><strong>Output Tokens:</strong> $18.50 per 1M tokens</span>
+                    </div>
                   </div>
-                </div>
-                <CardDescription className="text-white/60 text-xs sm:text-sm leading-relaxed break-words mt-3 sm:mt-4">
-                  This applies to: Swarm Completions, Agent Completions, Advanced Research, Auto Swarm Builder, Graph Workflow, and Batched Grid Workflow.
-                </CardDescription>
-                <CardDescription className="text-white/50 text-xs sm:text-sm leading-relaxed break-words mt-2">
-                  You can retrieve current pricing using the <code className="bg-white/10 px-1 py-0.5 rounded">/v1/usage/costs</code> endpoint.
-                </CardDescription>
-              </CardHeader>
-            </Card>
+                  <CardDescription className="text-white/50 text-xs sm:text-sm leading-relaxed break-words mt-2">
+                    Retrieve current pricing via <code className="bg-white/10 px-1 py-0.5 rounded text-xs">/v1/usage/costs</code>.
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+            </div>
           </motion.div>
         </div>
       </section>

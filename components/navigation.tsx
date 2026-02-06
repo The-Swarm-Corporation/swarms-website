@@ -218,6 +218,15 @@ export function Navigation() {
                         <p className="text-xs text-neutral-400 mt-0.5">Explore all products</p>
                       </div>
                     </Link>
+                    <Link href="/atp" className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative">
+                      <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
+                        <DollarSign className="h-4 w-4 text-red-500" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <span className="text-sm font-semibold text-white block">ATP</span>
+                        <p className="text-xs text-neutral-400 mt-0.5">Agent Trade Protocol</p>
+                      </div>
+                    </Link>
                     <Link href="/simulations" className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative">
                       <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
                         <Network className="h-4 w-4 text-red-500" />
@@ -663,6 +672,14 @@ export function Navigation() {
                   >
                     <Package className="mr-3 h-4 w-4 text-white/60 flex-shrink-0" />
                     Products Overview
+                  </Link>
+                  <Link
+                    href="/atp"
+                    className="text-sm font-semibold text-white/85 hover:text-white transition-all duration-300 hover:bg-white/[0.05] p-3 rounded-lg flex items-center border border-transparent hover:border-white/10"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    <DollarSign className="mr-3 h-4 w-4 text-white/60 flex-shrink-0" />
+                    ATP
                   </Link>
                   <Link
                     href="/simulations"

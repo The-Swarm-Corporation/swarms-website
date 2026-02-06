@@ -67,6 +67,7 @@ export function Footer() {
               <ul className="space-y-1 sm:space-y-2">
                 {[
                   { name: "Products Overview", icon: Package, url: "/products" },
+                  { name: "ATP", icon: DollarSign, url: "/atp" },
                   { name: "Simulations", icon: Network, url: "/simulations" },
                   { name: "Mobile App", icon: Smartphone, url: "/mobile" },
                   { name: "Swarms Python", icon: Github, url: "https://github.com/kyegomez/swarms" },

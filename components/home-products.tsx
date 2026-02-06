@@ -6,6 +6,7 @@ import { motion, useScroll, useTransform } from "framer-motion"
 import { ExternalLink } from "lucide-react"
 import { useRef } from "react"
 import Image from "next/image"
+import Link from "next/link"
 
 const swarmsStack = [
   {
@@ -95,7 +96,7 @@ async fn main() -> Result<()> {
     subtitle: "On-Chain Payment Settlement for AI Agents",
     description:
       "A Solana-based payment settlement system that automatically parses usage, executes split payments, and encrypts agent responses until payment is confirmed on-chain.",
-    link: "https://docs.swarms.ai/docs/atp/overview",
+    link: "/atp",
     docsLink: "https://docs.swarms.ai/docs/atp/overview",
     code: `from fastapi import FastAPI
 from atp.middleware import ATPSettlementMiddleware
@@ -306,10 +307,17 @@ function ProductSection({ product, index, isEven }: { product: typeof swarmsStac
                 className="bg-gradient-to-r from-red-900 via-red-800 to-red-900 text-white hover:from-red-800 hover:via-red-700 hover:to-red-800 font-bold w-full sm:w-auto transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-red-900/50 group border-0 text-xs sm:text-sm md:text-base px-3 sm:px-4 md:px-6 py-4 sm:py-5 md:py-6 flex-shrink-0" 
                 asChild
               >
-                <a href={product.link} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center">
-                  <span>Get Started</span>
-                  <ExternalLink className="h-3 w-3 sm:h-4 sm:w-4 ml-2 transition-transform duration-300 group-hover:translate-x-1 group-hover:-translate-y-1 flex-shrink-0" />
-                </a>
+                {product.link.startsWith("/") ? (
+                  <Link href={product.link} className="flex items-center justify-center">
+                    <span>Get Started</span>
+                    <ExternalLink className="h-3 w-3 sm:h-4 sm:w-4 ml-2 transition-transform duration-300 group-hover:translate-x-1 group-hover:-translate-y-1 flex-shrink-0" />
+                  </Link>
+                ) : (
+                  <a href={product.link} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center">
+                    <span>Get Started</span>
+                    <ExternalLink className="h-3 w-3 sm:h-4 sm:w-4 ml-2 transition-transform duration-300 group-hover:translate-x-1 group-hover:-translate-y-1 flex-shrink-0" />
+                  </a>
+                )}
               </Button>
               <Button 
                 variant="outline" 

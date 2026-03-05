@@ -3,14 +3,15 @@
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { motion, useScroll, useTransform } from "framer-motion"
-import { ExternalLink } from "lucide-react"
-import { useRef } from "react"
+import { ExternalLink, Star } from "lucide-react"
+import { useRef, useEffect, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 
 const swarmsStack = [
   {
     title: "Swarms Python",
+    github: "kyegomez/swarms",
     subtitle: "Core Swarms Python Framework",
     description:
       "The original Swarms framework in Python with full backwards compatibility with LangChain, AutoGen, and other popular frameworks.",
@@ -67,6 +68,7 @@ response = requests.post(
   },
   {
     title: "Swarms-RS",
+    github: "The-Swarm-Corporation/swarms-rs",
     subtitle: "The First Multi-Agent Framework in Rust",
     description:
       "Ultra-fast, memory-safe, and production-ready multi-agent framework built in Rust for maximum performance and reliability.",
@@ -93,6 +95,7 @@ async fn main() -> Result<()> {
   },
   {
     title: "ATP - Agent Trade Protocol",
+    github: "The-Swarm-Corporation/ATP-Protocol",
     subtitle: "On-Chain Payment Settlement for AI Agents",
     description:
       "A Solana-based payment settlement system that automatically parses usage, executes split payments, and encrypts agent responses until payment is confirmed on-chain.",
@@ -149,7 +152,24 @@ const itemVariants = {
   },
 }
 
+function useGithubStars() {
+  const [stars, setStars] = useState<Record<string, number>>({})
+  useEffect(() => {
+    fetch("/api/github-stars")
+      .then((r) => r.json())
+      .then(setStars)
+      .catch(() => {})
+  }, [])
+  return stars
+}
+
+function formatStars(n: number) {
+  if (n >= 1000) return `${(n / 1000).toFixed(1)}k`
+  return String(n)
+}
+
 export function HomeProducts() {
+  const stars = useGithubStars()
   return (
     <>
       {/* Products Section Header */}
@@ -196,11 +216,12 @@ export function HomeProducts() {
       {swarmsStack.map((product, index) => {
         const isEven = index % 2 === 0
         return (
-          <ProductSection 
-            key={index} 
-            product={product} 
-            index={index} 
+          <ProductSection
+            key={index}
+            product={product}
+            index={index}
             isEven={isEven}
+            starCount={product.github ? stars[product.github] : undefined}
           />
         )
       })}
@@ -208,7 +229,7 @@ export function HomeProducts() {
   )
 }
 
-function ProductSection({ product, index, isEven }: { product: typeof swarmsStack[0], index: number, isEven: boolean }) {
+function ProductSection({ product, index, isEven, starCount }: { product: typeof swarmsStack[0], index: number, isEven: boolean, starCount?: number }) {
   const sectionRef = useRef<HTMLDivElement>(null)
   const { scrollYProgress } = useScroll({
     target: sectionRef,
@@ -262,11 +283,11 @@ function ProductSection({ product, index, isEven }: { product: typeof swarmsStac
               >
                 {product.title}
               </motion.h3>
-              <motion.p 
+              <motion.p
                 className="text-sm sm:text-base md:text-lg lg:text-xl text-white/60 font-medium break-words"
                 initial={{ opacity: 0, x: isEven ? -30 : 30 }}
                 whileInView={{ opacity: 1, x: 0 }}
-                transition={{ 
+                transition={{
                   duration: 0.7,
                   delay: 0.1,
                   ease: [0.22, 1, 0.36, 1],
@@ -275,6 +296,17 @@ function ProductSection({ product, index, isEven }: { product: typeof swarmsStac
               >
                 {product.subtitle}
               </motion.p>
+              {starCount !== undefined && (
+                <a
+                  href={`https://github.com/${product.github}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-white/60 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all duration-200 text-xs sm:text-sm font-medium w-fit"
+                >
+                  <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
+                  <span>{formatStars(starCount)} stars</span>
+                </a>
+              )}
             </motion.div>
 
             <motion.p 

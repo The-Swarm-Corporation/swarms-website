@@ -42,6 +42,18 @@ const cookbookResources = [
     description: "Create, update, and manage prompts and agents on the marketplace via API",
     link: "https://docs.swarms.ai/docs/marketplace/prompts-api",
     badge: "MARKETPLACE"
+  },
+  {
+    title: "AutoHedge",
+    description: "Build your autonomous hedge fund in minutes. Harnesses swarm intelligence and AI agents to automate market analysis, risk management, and trade execution on Solana.",
+    link: "https://github.com/The-Swarm-Corporation/AutoHedge",
+    badge: "FINANCE"
+  },
+  {
+    title: "ClawSwarm",
+    description: "A multi-agent messaging platform integrating Telegram, Discord, and WhatsApp through a unified gateway. Natively multi-agent, compiles to Rust, and built on the Swarms framework.",
+    link: "https://github.com/The-Swarm-Corporation/ClawSwarm",
+    badge: "MESSAGING"
   }
 ]
 

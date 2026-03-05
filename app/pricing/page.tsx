@@ -7,8 +7,8 @@ import { motion, useReducedMotion, useScroll, useSpring, useTransform } from "fr
 import { useState, useRef } from "react"
 import { 
   ArrowRight, Zap, Globe,
-  BookOpen, Code,
-  Calendar, Key, Database,
+  Code,
+  Key, Database,
   Activity, BarChart3, DollarSign, Moon,
   HelpCircle, ChevronDown, CreditCard, Users, Check
 } from "lucide-react"

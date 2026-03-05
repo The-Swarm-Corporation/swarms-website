@@ -44,8 +44,8 @@ export function HomeHero() {
           >
             <h1
               id="hero-title"
-              className="text-5xl xs:text-6xl sm:text-7xl md:text-8xl lg:text-[10rem] xl:text-[12rem] 2xl:text-[14rem] font-bold text-white leading-[0.9] sm:leading-none px-2 sm:px-0"
-              style={{ fontSize: 'clamp(2.5rem, 10vw, 14rem)' }}
+              className="text-5xl xs:text-6xl sm:text-7xl md:text-8xl lg:text-[10rem] xl:text-[12rem] 2xl:text-[14rem] font-bold leading-[0.9] sm:leading-none px-2 sm:px-0 text-red-500"
+              style={{ fontSize: 'clamp(2.5rem, 10vw, 14rem)', fontFamily: 'var(--font-orbitron)' }}
             >
               swarms
             </h1>

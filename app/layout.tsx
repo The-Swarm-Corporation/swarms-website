@@ -6,7 +6,7 @@
  */
 
 import type { Metadata } from "next"
-import { Montserrat } from "next/font/google"
+import { Montserrat, Orbitron } from "next/font/google"
 import { siteConfig } from "./metadata"
 import "./globals.css"
 import type React from "react"
@@ -19,6 +19,12 @@ const montserrat = Montserrat({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700", "800"],
   variable: "--font-sans",
+})
+
+const orbitron = Orbitron({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800", "900"],
+  variable: "--font-orbitron",
 })
 
 export const metadata: Metadata = {
@@ -117,7 +123,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content={siteConfig.name} />
       </head>
-      <body className={`${montserrat.variable} font-sans antialiased smooth-scroll`}>
+      <body className={`${montserrat.variable} ${orbitron.variable} font-sans antialiased smooth-scroll`}>
         <ThemeProvider attribute="class" defaultTheme="dark" forcedTheme="dark">
           <NewsletterPopupProvider>
             {children}

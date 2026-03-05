@@ -24,6 +24,7 @@ import {
   Download,
   Building,
   MessageCircle,
+  ShoppingBag,
   Network,
   Smartphone,
 } from "lucide-react"
@@ -594,14 +595,14 @@ export function Navigation() {
           >
             <a href="https://github.com/kyegomez/swarms" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5">
               <Github className="h-4 w-4" />
-              <span className="text-sm font-semibold">5.5k</span>
+              <span className="text-sm font-semibold">Github 5.5k ⭐️</span>
             </a>
           </Button>
 
           <Button variant="outline" className="hidden md:inline-flex rounded-xl text-xs sm:text-sm px-3 sm:px-4" asChild>
-            <a href="https://cal.com/swarms/swarms-onboarding-session?overlayCalendar=true" target="_blank" rel="noopener noreferrer">
-              <Calendar className="mr-2 h-4 w-4" />
-              Get demo
+            <a href="https://swarms.world" target="_blank" rel="noopener noreferrer">
+              <ShoppingBag className="mr-2 h-4 w-4" />
+              Marketplace
             </a>
           </Button>
 

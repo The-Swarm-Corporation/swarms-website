@@ -51,7 +51,7 @@ export function HomeHero() {
             </h1>
 
             <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl text-white/80 max-w-4xl mx-auto font-medium leading-tight px-2 sm:px-0">
-              The Enterprise-Grade Multi-Agent Infrastructure Stack
+              Build, deploy, scale, and monetize Agents
             </p>
           </motion.div>
 

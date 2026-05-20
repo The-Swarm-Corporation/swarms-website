@@ -73,7 +73,7 @@ response = requests.post(
     description:
       "Ultra-fast, memory-safe, and production-ready multi-agent framework built in Rust for maximum performance and reliability.",
     link: "https://crates.io/crates/swarms-rs",
-    docsLink: "https://docs.swarms.world",
+    docsLink: "https://docs.rs/swarms-rs/latest/swarms_rs/",
     code: `use swarms_rs::llm::provider::openai::OpenAI;
 use swarms_rs::structs::concurrent_workflow::ConcurrentWorkflow;
 

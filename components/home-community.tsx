@@ -13,7 +13,7 @@ const socialLinks = [
 
 export function HomeCommunity() {
   return (
-    <div className="relative h-screen w-full flex items-center justify-center bg-black border-t border-white/10">
+    <div className="relative h-screen w-full flex items-center justify-center bg-black">
       <div className="container relative z-10 px-4 sm:px-6 py-16 sm:py-20 md:py-24 lg:py-32">
         <motion.div
           initial={{ opacity: 0, y: 30 }}

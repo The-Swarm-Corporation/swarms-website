@@ -116,7 +116,7 @@ if __name__ == "__main__":
     title: "Swarms Rust",
     description:
       "A high-performance implementation of the Swarms framework in Rust, designed for maximum efficiency and safety. Perfect for systems requiring blazing-fast performance and minimal resource usage.",
-    docsUrl: "https://docs.rs/swarm-rs/0.1.4/swarm_rs/",
+    docsUrl: "https://docs.rs/swarms-rs/latest/swarms_rs/",
     getStartedUrl: "https://github.com/The-Swarm-Corporation/swarms-rs",
     badges: [],
     installation: { command: "cargo add swarm-rs", language: "bash" },

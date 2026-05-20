@@ -112,10 +112,10 @@ export function Navigation() {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-[9998] w-full pt-2 sm:pt-3 md:pt-4 pb-2 sm:pb-3 md:pb-4 scroll-optimized">
-      <div className="container mx-auto max-w-[1600px] px-3 sm:px-4 md:px-6 lg:px-8">
-        <div className="flex h-14 sm:h-16 items-center justify-between px-3 sm:px-4 md:px-6 rounded-xl sm:rounded-2xl bg-neutral-800/50 backdrop-blur-md border border-neutral-700/40 shadow-xl w-full">
-        <div className="flex-shrink-0 mr-3 sm:mr-4 md:mr-6">
-          <Link href="/" className="flex items-center group">
+      <div className="container mx-auto max-w-[1600px] px-2 sm:px-4 md:px-6 lg:px-8">
+        <div className="flex h-12 sm:h-14 md:h-16 items-center justify-between px-2.5 sm:px-4 md:px-6 rounded-xl sm:rounded-2xl bg-neutral-800/50 backdrop-blur-md border border-neutral-700/40 shadow-xl w-full">
+        <div className="flex-shrink-0 mr-2 sm:mr-4 md:mr-6">
+          <Link href="/" className="flex items-center group" aria-label="Swarms home">
             <div className="relative w-7 h-7 sm:w-8 sm:h-8 transition-transform duration-300 group-hover:scale-110">
               <Image
                 src="/logo.svg"
@@ -577,11 +577,11 @@ export function Navigation() {
           </div>
         </nav>
 
-        <div className="flex items-center justify-end space-x-1 sm:space-x-2 flex-shrink-0 ml-auto">
+        <div className="flex items-center justify-end space-x-1 sm:space-x-1.5 lg:space-x-2 flex-shrink-0 ml-auto">
 
-          <Button 
+          <Button
             variant="outline"
-            className="hidden md:inline-flex rounded-xl text-xs sm:text-sm" 
+            className="hidden xl:inline-flex rounded-xl text-xs sm:text-sm"
             asChild
           >
             <a href="https://github.com/kyegomez/swarms" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5">
@@ -590,7 +590,7 @@ export function Navigation() {
             </a>
           </Button>
 
-          <Button variant="outline" className="hidden md:inline-flex rounded-xl text-xs sm:text-sm px-3 sm:px-4" asChild>
+          <Button variant="outline" className="hidden lg:inline-flex rounded-xl text-xs sm:text-sm px-3 sm:px-4" asChild>
             <a href="https://swarms.world" target="_blank" rel="noopener noreferrer">
               <ShoppingBag className="mr-2 h-4 w-4" />
               Marketplace
@@ -600,14 +600,14 @@ export function Navigation() {
           {/* Mobile Menu */}
           <Sheet open={isOpen} onOpenChange={setIsOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="md:hidden hover:bg-red-500/10 border border-transparent hover:border-red-500/40 transition-all duration-300 hover:shadow-[0_0_8px_rgba(239,68,68,0.3)] h-9 w-9 sm:h-10 sm:w-10">
+              <Button variant="ghost" size="icon" aria-label="Open menu" aria-expanded={isOpen} className="lg:hidden hover:bg-red-500/10 border border-transparent hover:border-red-500/40 transition-all duration-300 hover:shadow-[0_0_8px_rgba(239,68,68,0.3)] h-10 w-10 sm:h-11 sm:w-11 active:scale-95">
                 <Menu className="h-5 w-5" />
                 <span className="sr-only">Toggle menu</span>
               </Button>
             </SheetTrigger>
             <SheetContent
               side="right"
-              className="w-[85vw] sm:w-[400px] max-w-[400px] border border-neutral-700/40 bg-neutral-800/50 backdrop-blur-md shadow-xl overflow-y-auto p-0"
+              className="w-[92vw] xs:w-[88vw] sm:w-[400px] max-w-[420px] border border-neutral-700/40 bg-neutral-900/95 backdrop-blur-xl shadow-2xl overflow-y-auto p-0"
             >
               <SheetHeader className="px-4 sm:px-6 pt-6 pb-4 border-b border-neutral-700/40">
                 <SheetTitle className="text-lg sm:text-xl text-white font-semibold">Menu</SheetTitle>

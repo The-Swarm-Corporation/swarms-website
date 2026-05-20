@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 
 export function ProductsCallToAction() {
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-black border-t border-white/10">
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-black">
       <motion.div
         className="pointer-events-none absolute inset-0 opacity-40"
         style={{

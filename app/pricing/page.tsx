@@ -1,860 +1,730 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { motion, useReducedMotion, useScroll, useSpring, useTransform } from "framer-motion"
-import { useState, useRef } from "react"
-import { 
-  ArrowRight, Zap, Globe,
-  Code,
-  Key, Database,
-  Activity, BarChart3, DollarSign, Moon,
-  HelpCircle, ChevronDown, CreditCard, Users, Check
-} from "lucide-react"
-import { Navigation } from "@/components/navigation"
+import { useState } from "react"
 import Link from "next/link"
+import { motion } from "framer-motion"
+import {
+  ArrowRight,
+  ExternalLink,
+  CheckCircle,
+  Key,
+  Code,
+  ChevronDown,
+  Database,
+  Activity,
+  Users,
+  Image as ImageIcon,
+  Globe,
+  Wrench,
+  Search,
+  Moon,
+  Zap,
+  CreditCard,
+  DollarSign,
+  Server,
+  Shield,
+  HeadphonesIcon,
+  Sparkles,
+} from "lucide-react"
+
+import { Navigation } from "@/components/navigation"
+import { Button } from "@/components/ui/button"
+
+type PricingTier = {
+  name: string
+  price: string
+  cadence: string
+  description: string
+  features: string[]
+  cta: { label: string; href: string }
+  highlight?: boolean
+}
+
+const tiers: PricingTier[] = [
+  {
+    name: "Free",
+    price: "$0",
+    cadence: "Pay only for what you use",
+    description: "Get started with AI. No monthly fees — pay-per-use credits.",
+    features: [
+      "Sign-up bonus credits",
+      "Pay-per-use API access",
+      "100 requests / minute",
+      "1,200 requests / day",
+      "200K tokens per agent",
+      "Marketplace access",
+      "Community support",
+    ],
+    cta: { label: "Get API key", href: "https://swarms.world/platform/api-keys" },
+  },
+  {
+    name: "Pro",
+    price: "$19.99",
+    cadence: "per month",
+    description: "For professionals who need more power and features.",
+    features: [
+      "Everything in Free",
+      "Global availability zones",
+      "Exclusive multi-agent architectures",
+      "Accelerated hardware",
+      "API telemetry platform",
+      "Priority queue access",
+      "Pro models",
+      "Premium endpoints: batch, reasoning, advanced workflows",
+    ],
+    cta: { label: "Upgrade to Pro", href: "https://swarms.world/platform/account?tab=subscription" },
+  },
+  {
+    name: "Premium",
+    price: "$100",
+    cadence: "per month · or $1,020/yr (save 15%)",
+    description: "Production workloads with priority access.",
+    highlight: true,
+    features: [
+      "Everything in Pro",
+      "2,000 requests / minute",
+      "100,000 requests / day",
+      "2M tokens per agent",
+      "500 agents per batch",
+      "Premium models access",
+      "SOC 2 compliance",
+      "Priority region/zone routing",
+      "24/7 email & Discord support",
+    ],
+    cta: { label: "Upgrade to Premium", href: "https://swarms.world/platform/account?tab=subscription" },
+  },
+  {
+    name: "Enterprise",
+    price: "Custom",
+    cadence: "Tailored to your scale",
+    description: "Dedicated infrastructure, on-premise, and SLAs.",
+    features: [
+      "Custom rate limits — no caps",
+      "Dedicated infrastructure",
+      "On-premise & VPC deployment",
+      "Custom SLAs & uptime guarantees",
+      "Dedicated solutions engineer",
+      "Onsite training & onboarding",
+      "Custom agent development",
+      "White-label options",
+    ],
+    cta: { label: "Talk to sales", href: "https://cal.com/swarms" },
+  },
+]
+
+const usageItems = [
+  {
+    icon: Database,
+    item: "Input tokens",
+    cost: "$6.50",
+    unit: "per 1M tokens",
+    note: "Unified across all endpoints",
+  },
+  {
+    icon: Activity,
+    item: "Output tokens",
+    cost: "$18.50",
+    unit: "per 1M tokens",
+    note: "Unified across all endpoints",
+  },
+  {
+    icon: Users,
+    item: "Agent cost",
+    cost: "$0.01",
+    unit: "per agent",
+    note: "For swarms and workflows",
+  },
+  {
+    icon: ImageIcon,
+    item: "Image processing",
+    cost: "$0.25",
+    unit: "per image",
+    note: "When an image is provided",
+  },
+  {
+    icon: Globe,
+    item: "MCP call",
+    cost: "$0.10",
+    unit: "per call",
+    note: "When MCP URL is provided",
+  },
+  {
+    icon: Search,
+    item: "Exa search tool",
+    cost: "$0.04",
+    unit: "per search",
+    note: "Per search execution",
+  },
+  {
+    icon: Wrench,
+    item: "Web scraper tool",
+    cost: "$0.15",
+    unit: "per scrape",
+    note: "Per scrape execution",
+  },
+]
+
+const discounts = [
+  {
+    icon: Moon,
+    title: "Night-time discount",
+    label: "50% off tokens",
+    description:
+      "Swarm Completions receive a 50% token discount between 8 PM – 6 AM Pacific Time. Agent costs unchanged. Applied automatically.",
+  },
+  {
+    icon: Zap,
+    title: "Frenzy mode",
+    label: "All requests free",
+    description:
+      "All API requests are free for 24 hours during Black Friday (4th Friday of November). Applied automatically — no action needed.",
+  },
+  {
+    icon: Sparkles,
+    title: "Unified pricing",
+    label: "Same cost everywhere",
+    description:
+      "All endpoints — Swarm Completions, Agent Completions, Advanced Research, Auto Swarm Builder, Graph and Batched Grid Workflows — use identical token pricing.",
+  },
+]
+
+const creditDetails = [
+  {
+    icon: CreditCard,
+    title: "Credit priority",
+    description:
+      "Free credits are consumed before paid credits, ensuring maximum value from promotional and free-tier allowances.",
+  },
+  {
+    icon: DollarSign,
+    title: "Per-call billing",
+    description:
+      "Credits deduct on each call based on operation, token usage, agent count, and any add-ons like MCP or image processing.",
+  },
+  {
+    icon: Server,
+    title: "Live cost API",
+    description:
+      "Retrieve up-to-the-minute pricing programmatically via the /v1/usage/costs endpoint for accurate budgeting.",
+  },
+]
+
+const enterpriseBenefits = [
+  {
+    icon: Shield,
+    title: "Security & compliance",
+    description: "SOC 2 controls, audit logging, encrypted transport, scoped API keys, and on-premise deployments for data sovereignty.",
+  },
+  {
+    icon: Server,
+    title: "Dedicated infrastructure",
+    description: "Reserved capacity, custom regions, dedicated workers, and zero shared-tenant noise for predictable performance.",
+  },
+  {
+    icon: HeadphonesIcon,
+    title: "White-glove support",
+    description: "Named solutions engineer, custom SLA, onsite training, and direct engineering escalation channels.",
+  },
+]
+
+const faqs = [
+  {
+    question: "How does usage-based pricing work?",
+    answer:
+      "Credits are deducted automatically after each request. All endpoints use unified pricing: $6.50 per 1M input tokens and $18.50 per 1M output tokens. Additional per-agent, per-image, per-MCP-call, and per-tool costs may apply. Free credits are consumed before paid credits.",
+  },
+  {
+    question: "What is unified pricing?",
+    answer:
+      "Every endpoint — Swarm Completions, Agent Completions, Advanced Research, Auto Swarm Builder, Graph Workflow, and Batched Grid Workflow — uses identical token pricing. One predictable rate across the platform.",
+  },
+  {
+    question: "How does the night-time discount work?",
+    answer:
+      "Swarm Completions receive 50% off token costs between 8 PM – 6 AM Pacific Time. Agent costs are unchanged. The discount applies automatically to eligible calls within that window.",
+  },
+  {
+    question: "What are Premium Endpoints?",
+    answer:
+      "Premium Endpoints — batch processing, reasoning agents, batched grid workflows, graph workflows, auto-swarm-builder, and advanced research — are available on Pro and Premium plans. They are not accessible on the Free tier.",
+  },
+  {
+    question: "What's the difference between Pro and Premium?",
+    answer:
+      "Pro ($19.99/mo) adds global availability, multi-agent architectures, accelerated hardware, API telemetry, priority support, Pro models, and Premium Endpoints. Premium ($100/mo or $1,020/yr) adds 2,000 req/min, 2M tokens per agent, 500 agents per batch, SOC 2 compliance, enhanced security, priority region/zone routing, and 24/7 support.",
+  },
+  {
+    question: "Can I switch between plans?",
+    answer:
+      "Yes. Upgrade or downgrade any time from the platform Account Dashboard → Billing → Plans. Changes take effect immediately. Your API keys are preserved.",
+  },
+  {
+    question: "What happens when I run out of credits?",
+    answer:
+      "API calls return an explicit error code. You can top up credits or upgrade your plan for higher limits. Billing alerts are configurable in the dashboard.",
+  },
+  {
+    question: "Is there an on-premise option?",
+    answer:
+      "Yes. On-premise deployment is available under our Enterprise tier — full stack as Docker images, source access, unlimited usage, and a priority-update enterprise license. Ideal for regulated environments and data-sovereignty requirements.",
+  },
+  {
+    question: "How is image processing charged?",
+    answer:
+      "Each image passed to an agent is billed at $0.25. This applies uniformly across all tiers and endpoints.",
+  },
+  {
+    question: "How does Frenzy Mode work?",
+    answer:
+      "All API requests are free for 24 hours starting on Black Friday (4th Friday of November). The promotion applies automatically — no codes or action required.",
+  },
+]
+
+function SectionHeading({
+  eyebrow,
+  title,
+  description,
+  align = "center",
+}: {
+  eyebrow?: string
+  title: React.ReactNode
+  description?: string
+  align?: "center" | "left"
+}) {
+  const alignClass = align === "center" ? "text-center mx-auto" : "text-left"
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6 }}
+      viewport={{ once: true }}
+      className={`max-w-3xl ${alignClass} space-y-3 sm:space-y-4 md:space-y-5 mb-10 sm:mb-14 md:mb-20 px-2 sm:px-0`}
+    >
+      {eyebrow && (
+        <div className={`flex items-center gap-2 sm:gap-3 ${align === "center" ? "justify-center" : ""}`}>
+          {align === "center" && <span className="h-px w-6 sm:w-8 bg-gradient-to-r from-transparent to-white/20" />}
+          <p className="text-[10px] sm:text-xs text-white/55 tracking-[0.22em] uppercase font-semibold">
+            <span className="text-white font-bold">{eyebrow}</span>
+          </p>
+          {align === "center" && <span className="h-px w-6 sm:w-8 bg-gradient-to-l from-transparent to-white/20" />}
+        </div>
+      )}
+      <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-white leading-tight">
+        {title}
+      </h2>
+      {description && (
+        <p className="text-base sm:text-lg md:text-xl text-white/60 max-w-3xl font-normal leading-relaxed">
+          {description}
+        </p>
+      )}
+    </motion.div>
+  )
+}
 
 export default function PricingPage() {
-  const shouldReduceMotion = useReducedMotion()
-  const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null)
-  const heroRef = useRef<HTMLDivElement>(null)
-
-  const { scrollYProgress } = useScroll({
-    target: heroRef,
-    offset: ["start start", "end start"],
-  })
-
-  const smoothProgress = useSpring(scrollYProgress, {
-    stiffness: 30,
-    damping: 20,
-    restDelta: 0.001,
-  })
-
-  const heroOpacity = shouldReduceMotion ? 1 : useTransform(smoothProgress, [0, 0.5], [1, 0])
-  const heroY = shouldReduceMotion ? 0 : useTransform(smoothProgress, [0, 0.5], [0, -50])
-  const glowOpacity = shouldReduceMotion ? 0.1 : useTransform(smoothProgress, [0, 0.5], [0.1, 0])
-
-  const pricingItems = [
-    {
-      item: "Input Tokens",
-      cost: "$6.50 per 1M tokens",
-      notes: "Unified pricing across all endpoints",
-      icon: Database
-    },
-    {
-      item: "Output Tokens",
-      cost: "$18.50 per 1M tokens",
-      notes: "Unified pricing across all endpoints",
-      icon: Activity
-    },
-    {
-      item: "Agent Cost",
-      cost: "$0.01 per agent",
-      notes: "For swarms and workflows",
-      icon: Users
-    },
-    {
-      item: "Image Processing",
-      cost: "$0.25 per image",
-      notes: "Charged when image provided",
-      icon: BarChart3
-    },
-    {
-      item: "MCP Call",
-      cost: "$0.10 per call",
-      notes: "Charged when MCP URL provided",
-      icon: Globe
-    },
-    {
-      item: "Exa Search Tool",
-      cost: "$0.04 per search",
-      notes: "Charged per search execution",
-      icon: Activity
-    },
-    {
-      item: "Web Scraper Tool",
-      cost: "$0.15 per scrape",
-      notes: "Charged per scrape execution",
-      icon: Globe
-    }
-  ]
-
-  const cloudTiers = [
-    {
-      tier: "Free",
-      price: "$0",
-      period: "/month",
-      annualPrice: "$0/year",
-      discount: "N/A",
-      description: "Get started with AI. No monthly fees — pay only for usage.",
-      features: [
-        "Sign-up bonus credits",
-        "Basic API access",
-        "Pay-per-use pricing",
-        "Community support",
-        "Standard processing speed",
-        "Access to the Marketplace",
-        "Premium endpoints not available"
-      ]
-    },
-    {
-      tier: "Pro",
-      price: "$19.99",
-      period: "/month",
-      annualPrice: "$203.90/year",
-      discount: "15%",
-      description: "Most popular. Perfect for professionals who need more power and features.",
-      popular: true,
-      features: [
-        "Everything in Free, plus",
-        "Global availability",
-        "Exclusive multi-agent architectures",
-        "Accelerated hardware",
-        "API telemetry platform",
-        "Priority support",
-        "Access to Pro models",
-        "Access to Premium Endpoints: batch processing, reasoning agents, and advanced workflows"
-      ]
-    },
-    {
-      tier: "Ultra",
-      price: "$100",
-      period: "/month",
-      annualPrice: "$1,020/year",
-      discount: "15%",
-      description: "Best for growing teams and production workloads that need higher limits and security.",
-      features: [
-        "Everything in Pro, plus",
-        "Premium models",
-        "More agents per request",
-        "More completions",
-        "Increased rate limits",
-        "SOC 2 compliance",
-        "Enhanced security features",
-        "Fetch agents directly from the Marketplace",
-        "View previous agent configurations",
-        "Priority region/zone routing",
-        "Full access to Premium Endpoints"
-      ]
-    },
-    {
-      tier: "Enterprise",
-      description: "Critical support, compliance, and control for large-scale enterprises.",
-      features: [
-        "Contact sales for custom pricing",
-        "Dedicated 24/7 support",
-        "Custom solutions engineering",
-        "Onsite training and onboarding",
-        "Custom agent development",
-        "No rate limits",
-        "Access to experimental features"
-      ]
-    }
-  ]
-
-  const onPremiseTiers = [
-    {
-      tier: "On-Premise",
-      price: "$9,999",
-      period: "/year",
-      requests: "Unlimited",
-      tokens: "Unlimited",
-      batch: "Unlimited",
-      description: "Run on your own infrastructure",
-      features: [
-        "Complete Docker deployment",
-        "1-year enterprise license",
-        "Full source code access",
-        "Priority support & updates",
-        "Unlimited usage on your infrastructure",
-        "Custom integrations and configurations",
-        "Data sovereignty and compliance",
-        "Dedicated technical support"
-      ]
-    }
-  ]
-
-  const faqData = [
-    {
-      question: "How does the usage-based pricing work?",
-      answer: "Credits are deducted automatically after each request completes. All API endpoints use unified pricing: $6.50 per 1M input tokens and $18.50 per 1M output tokens. Additional costs apply for agent costs ($0.01 per agent for swarms/workflows), image processing ($0.25 per image), MCP calls ($0.10 per call), Exa Search ($0.04 per search), and Web Scraper ($0.15 per scrape). Free credits are used first, followed by regular credits."
-    },
-    {
-      question: "What is unified pricing?",
-      answer: "All API endpoints (Swarm Completions, Agent Completions, Advanced Research, Auto Swarm Builder, Graph Workflow, Batched Grid Workflow) use the same token pricing: $6.50 per 1M input tokens and $18.50 per 1M output tokens. This simplifies cost calculation across all endpoints."
-    },
-    {
-      question: "How does the night-time discount work?",
-      answer: "Swarm Completions receive a 50% discount on token costs during 8 PM - 6 AM Pacific Time. Agent costs remain the same. The discount is automatically applied to eligible API calls during these hours."
-    },
-    {
-      question: "What are Premium Endpoints?",
-      answer: "Premium Endpoints are advanced features available on Pro and Ultra plans, including batch processing (/v1/agent/batch/completions, /v1/swarm/batch/completions), reasoning agents (/v1/reasoning-agent/completions), batched grid workflows, graph workflows, auto-swarm-builder, and advanced research. These are not available on the Free tier."
-    },
-    {
-      question: "What's the difference between Pro and Ultra plans?",
-      answer: "Pro ($19.99/month) includes global availability, multi-agent architectures, accelerated hardware, API telemetry, priority support, Pro models, and Premium Endpoints access. Ultra ($100/month) includes everything in Pro plus premium models, higher limits, SOC 2 compliance, enhanced security, priority region/zone routing, and full Premium Endpoints access."
-    },
-    {
-      question: "Can I switch between pricing tiers?",
-      answer: "Yes! You can upgrade your plan at any time through the Account Dashboard. Go to the Billing tab, scroll to the Plans section, and select your desired plan. You'll be redirected to Stripe to complete payment. Your API keys remain the same, and the upgrade takes effect immediately."
-    },
-    {
-      question: "What happens when I run out of credits?",
-      answer: "When your credits are exhausted, API calls will fail with appropriate error codes. You can purchase additional credits or upgrade your plan for higher limits. We recommend setting up billing alerts to monitor your usage."
-    },
-    {
-      question: "How is image processing charged?",
-      answer: "Image processing costs $0.25 per image and is charged when an image is provided to an agent. This applies across all tiers and endpoints."
-    },
-    {
-      question: "What is Frenzy Mode?",
-      answer: "Frenzy Mode is a special promotion where all API requests are free during Black Friday (4th Friday of November) for 24 hours. The discount is automatically applied - no action needed."
-    },
-    {
-      question: "How does the on-premise license work?",
-      answer: "The on-premise license ($9,999/year) includes complete Docker deployment, full source code access, unlimited usage, and 1-year enterprise license with priority support. Perfect for organizations requiring data sovereignty and custom deployments."
-    }
-  ]
+  const [openFaq, setOpenFaq] = useState<number | null>(0)
 
   return (
     <div className="min-h-screen bg-black text-white">
       <Navigation />
-      
-      {/* Hero Section - Apple-inspired */}
-      <motion.section
-        ref={heroRef}
-        className="relative overflow-hidden bg-black min-h-[80vh] sm:min-h-screen flex items-center"
-        style={{ opacity: heroOpacity, y: heroY }}
-      >
-        {/* Background Image */}
-        <div 
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-30"
-          style={{ backgroundImage: 'url(/product_agency.jpg)' }}
-        />
-        
-        {/* Dark overlay for better text readability */}
-        <div className="absolute inset-0 bg-black/60" />
 
-        {/* Atmospheric background */}
-        <motion.div
-          aria-hidden="true"
-          style={{ opacity: glowOpacity }}
-          className="pointer-events-none absolute inset-0"
-        >
-          <div className="absolute -top-40 left-1/2 h-[680px] w-[680px] -translate-x-1/2 rounded-full bg-white/10 blur-3xl" />
-          <div className="absolute -bottom-48 left-1/2 h-[720px] w-[720px] -translate-x-1/2 rounded-full bg-white/5 blur-3xl" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(255,255,255,0.08)_0%,_rgba(0,0,0,0)_55%)]" />
-        </motion.div>
+      <main className="pt-[64px] sm:pt-[80px] md:pt-[96px]">
+        {/* HERO */}
+        <section className="relative overflow-hidden bg-black min-h-[70vh] flex items-center">
+          <div className="absolute inset-0 pointer-events-none">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,_rgba(239,68,68,0.10)_0%,_rgba(0,0,0,0)_60%)]" />
+          </div>
 
-        {/* Subtle hairlines */}
-        <div aria-hidden="true" className="pointer-events-none absolute inset-0">
-          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/15 to-transparent" />
-          <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-        </div>
-
-        <div className="container relative px-2 sm:px-4 md:px-6 lg:px-8 z-10 w-full max-w-full overflow-hidden">
-          <div className="flex flex-col items-center justify-center space-y-6 sm:space-y-8 md:space-y-12 py-12 sm:py-16 md:py-24 text-center max-w-6xl mx-auto">
+          <div className="container relative z-10 mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-24 md:py-32">
             <motion.div
-              className="space-y-4 sm:space-y-6 md:space-y-8 w-full px-2"
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, ease: "easeOut" }}
+              transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+              className="max-w-5xl mx-auto text-center space-y-6 sm:space-y-8 md:space-y-10"
             >
-              <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl xl:text-[10rem] 2xl:text-[12rem] font-bold text-white leading-none tracking-tight break-words">
+              <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 backdrop-blur-sm">
+                <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
+                <span className="text-xs sm:text-sm text-white/70 font-medium">
+                  Transparent. Usage-based. Enterprise-ready.
+                </span>
+              </div>
+
+              <h1
+                className="font-bold leading-[0.9] tracking-tight text-red-500"
+                style={{ fontSize: "clamp(2.75rem, 9vw, 9rem)", fontFamily: "var(--font-orbitron)" }}
+              >
                 Pricing
               </h1>
 
-              <p className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-3xl text-white/60 max-w-4xl mx-auto font-normal leading-relaxed px-2">
-                Transparent usage-based pricing and service tiers for The Swarms API.
+              <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl text-white/80 max-w-3xl mx-auto font-medium leading-tight px-2 sm:px-0">
+                Start free. Pay per use. Scale to enterprise on the same API key.
               </p>
-            </motion.div>
 
-            <motion.div
-              className="flex flex-col sm:flex-row gap-3 sm:gap-4 md:gap-6 w-full max-w-2xl mx-auto relative z-10 justify-center items-center px-2"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.6, duration: 0.8 }}
-            >
-              <Button
-                size="lg"
-                className="bg-white text-black hover:bg-white/90 w-full sm:w-auto font-semibold text-sm sm:text-base md:text-lg px-6 sm:px-8 md:px-10 py-5 sm:py-6 md:py-7"
-                asChild
-              >
-                <Link href="https://swarms.world/platform/api-keys" target="_blank" className="flex items-center justify-center">
-                  <Key className="w-4 h-4 sm:w-5 sm:h-5 mr-2 flex-shrink-0" />
-                  <span>Get started free</span>
-                  <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 ml-2 flex-shrink-0" />
-                </Link>
-              </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                className="border-2 border-white/20 text-white hover:bg-white/10 w-full sm:w-auto font-normal text-sm sm:text-base md:text-lg px-6 sm:px-8 md:px-10 py-5 sm:py-6 md:py-7 bg-transparent backdrop-blur-sm"
-                asChild
-              >
-                <Link href="https://docs.swarms.ai/resources/pricing" className="flex items-center justify-center">
-                  <Code className="w-4 h-4 sm:w-5 sm:h-5 mr-2 flex-shrink-0" />
-                  <span>View API docs</span>
-                </Link>
-              </Button>
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 md:gap-6 justify-center items-center w-full max-w-2xl mx-auto pt-2">
+                <Button
+                  size="lg"
+                  className="bg-white text-black hover:bg-white/90 w-full sm:w-auto font-bold text-sm sm:text-base md:text-lg px-6 sm:px-8 md:px-10 py-5 sm:py-6 md:py-7"
+                  asChild
+                >
+                  <a href="https://swarms.world/platform/api-keys" target="_blank" rel="noopener noreferrer">
+                    <Key className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
+                    Get started free
+                    <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5 ml-2" />
+                  </a>
+                </Button>
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="border-2 border-white/20 text-white hover:bg-white/10 w-full sm:w-auto font-normal text-sm sm:text-base md:text-lg px-6 sm:px-8 md:px-10 py-5 sm:py-6 md:py-7 bg-transparent backdrop-blur-sm"
+                  asChild
+                >
+                  <a href="https://cal.com/swarms" target="_blank" rel="noopener noreferrer">
+                    Talk to sales
+                    <ExternalLink className="h-4 w-4 sm:h-5 sm:w-5 ml-2" />
+                  </a>
+                </Button>
+              </div>
             </motion.div>
           </div>
-        </div>
-      </motion.section>
+        </section>
 
-      {/* Usage-Based Pricing Table */}
-      <section className="py-12 sm:py-16 md:py-24 lg:py-32 xl:py-40 bg-black">
-        <div className="container px-2 sm:px-4 md:px-6 lg:px-8 max-w-full overflow-hidden">
-          <motion.div
-            className="text-center mb-8 sm:mb-12 md:mb-16 lg:mb-20 px-2"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            viewport={{ once: true }}
-          >
-            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold tracking-tight text-white leading-tight mb-4 sm:mb-6 break-words">
-              Usage-based pricing
-            </h2>
-            <p className="text-sm sm:text-base md:text-lg lg:text-xl text-white/60 max-w-3xl mx-auto font-normal leading-relaxed">
-              Pay only for what you use with transparent, per-operation pricing. All API endpoints use a unified pricing structure for token costs.
-            </p>
-          </motion.div>
+        {/* SUBSCRIPTION TIERS */}
+        <section className="bg-black py-16 sm:py-20 md:py-24 lg:py-32">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+            <SectionHeading
+              eyebrow="Subscription plans"
+              title="A plan for every stage"
+              description="Free for prototyping. Pro and Premium for production teams. Enterprise for mission-critical workloads."
+            />
 
-          {/* Pricing Table */}
-          <motion.div
-            className="w-full max-w-full min-w-0 overflow-x-auto -mx-2 sm:-mx-4 md:mx-0"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            viewport={{ once: true }}
-          >
-            <div className="w-full min-w-0 sm:min-w-[800px] px-2 sm:px-4 md:px-0">
-              <Card className="bg-white/[0.02] border-white/10 overflow-hidden w-full max-w-full">
-                <CardHeader className="p-0 max-w-full overflow-hidden">
-                  {/* Table Header - Hidden on mobile, shown on desktop */}
-                  <div className="hidden sm:grid sm:grid-cols-3 gap-3 md:gap-4 p-4 md:p-6 border-b border-white/10">
-                    <div className="font-semibold text-white text-xs sm:text-sm md:text-base">Item</div>
-                    <div className="font-semibold text-white text-xs sm:text-sm md:text-base text-center">Price</div>
-                    <div className="font-semibold text-white/60 text-xs sm:text-sm md:text-base text-center">Notes</div>
+            <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 md:gap-6">
+              {tiers.map((tier, i) => (
+                <motion.div
+                  key={tier.name}
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: i * 0.07 }}
+                  viewport={{ once: true }}
+                  className={`relative flex flex-col rounded-2xl sm:rounded-3xl border backdrop-blur-sm p-6 sm:p-7 md:p-8 ${
+                    tier.highlight
+                      ? "border-red-500/40 bg-gradient-to-b from-red-500/[0.06] to-white/[0.02]"
+                      : "border-white/10 bg-white/[0.02]"
+                  }`}
+                >
+                  {tier.highlight && (
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 inline-flex items-center rounded-full border border-red-500/40 bg-red-500/15 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-red-300">
+                      Most popular
+                    </div>
+                  )}
+                  <div className="mb-5 sm:mb-6">
+                    <h3 className="text-lg sm:text-xl font-bold text-white mb-1">{tier.name}</h3>
+                    <p className="text-xs sm:text-sm text-white/55 leading-relaxed">{tier.description}</p>
                   </div>
-
-                  {/* Mobile Card Layout */}
-                  <div className="sm:hidden space-y-3 p-3 sm:p-4 min-w-0 overflow-hidden">
-                    {pricingItems.map((item, index) => (
-                      <motion.div
-                        key={item.item}
-                        className="p-3 sm:p-4 rounded-lg border border-white/10 bg-white/[0.01] min-w-0 overflow-hidden"
-                        initial={{ opacity: 0, y: 10 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.05 }}
-                        viewport={{ once: true }}
+                  <div className="mb-5 sm:mb-6 pb-5 sm:pb-6 border-b border-white/5">
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-white">
+                        {tier.price}
+                      </span>
+                    </div>
+                    <p className="text-xs sm:text-sm text-white/50 mt-1">{tier.cadence}</p>
+                  </div>
+                  <ul className="space-y-2.5 sm:space-y-3 mb-6 sm:mb-8 flex-1">
+                    {tier.features.map((feature) => (
+                      <li
+                        key={feature}
+                        className="flex items-start gap-2.5 text-xs sm:text-sm text-white/75 leading-relaxed"
                       >
-                        <div className="flex items-start gap-3 mb-3 min-w-0">
-                          <div className="w-6 h-6 rounded border border-white/10 bg-white/[0.03] flex items-center justify-center flex-shrink-0 mt-0.5">
-                            <item.icon className="w-3 h-3 text-white/80" />
-                          </div>
-                          <span className="text-white text-sm font-medium flex-1 min-w-0 break-words">{item.item}</span>
-                        </div>
-                        <div className="text-xs mb-2 min-w-0 overflow-hidden">
-                          <div className="text-white/60 mb-1">Price</div>
-                          <div className="text-white/80 font-mono break-all">{item.cost}</div>
-                        </div>
-                        <div className="text-white/50 text-xs mt-2 pt-2 border-t border-white/10 break-words">{item.notes}</div>
-                      </motion.div>
-                    ))}
-                  </div>
-
-                  {/* Desktop Table Rows */}
-                  {pricingItems.map((item, index) => (
-                    <motion.div
-                      key={`desktop-${item.item}`}
-                      className="hidden sm:grid sm:grid-cols-3 gap-3 md:gap-4 p-4 md:p-6 border-b border-white/10 transition-colors hover:bg-white/[0.02]"
-                      initial={{ opacity: 0, y: 10 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.05 }}
-                      viewport={{ once: true }}
-                    >
-                      <div className="flex items-center space-x-2 md:space-x-3 min-w-0">
-                        <div className="w-6 h-6 md:w-8 md:h-8 rounded-lg border border-white/10 bg-white/[0.03] flex items-center justify-center flex-shrink-0">
-                          <item.icon className="w-3 h-3 md:w-4 md:h-4 text-white/80" />
-                        </div>
-                        <span className="text-white text-xs sm:text-sm md:text-base font-medium truncate">{item.item}</span>
-                      </div>
-                      <div className="text-white/80 text-xs sm:text-sm md:text-base text-center font-mono break-words">{item.cost}</div>
-                      <div className="text-white/50 text-xs sm:text-sm text-center break-words">{item.notes}</div>
-                    </motion.div>
-                  ))}
-                </CardHeader>
-              </Card>
-            </div>
-          </motion.div>
-
-          {/* Special Offers & Unified Pricing */}
-          <motion.div
-            className="mt-8 sm:mt-12 md:mt-16"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            viewport={{ once: true }}
-          >
-            <div className="text-center mb-6 sm:mb-8 md:mb-10 px-2">
-              <h3 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-white leading-tight mb-3 sm:mb-4 break-words">
-                Discounts & pricing details
-              </h3>
-              <p className="text-sm sm:text-base md:text-lg text-white/60 max-w-2xl mx-auto font-normal leading-relaxed break-words">
-                Time-based discounts and unified token pricing across all API endpoints.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
-              <Card className="bg-white/[0.02] border-white/10 hover:border-white/20 transition-all duration-300 h-full flex flex-col">
-                <CardHeader className="p-4 sm:p-5 md:p-6 flex-1 flex flex-col">
-                  <div className="flex items-center space-x-2 sm:space-x-3 mb-3 sm:mb-4">
-                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl border border-white/10 bg-white/[0.03] flex items-center justify-center flex-shrink-0">
-                      <Moon className="w-5 h-5 sm:w-6 sm:h-6 text-white/80" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <CardTitle className="text-white text-lg sm:text-xl font-bold break-words">Night-time Discount</CardTitle>
-                      <CardDescription className="text-white/60 text-xs sm:text-sm">50% off tokens</CardDescription>
-                    </div>
-                  </div>
-                  <p className="text-white/60 text-xs sm:text-sm leading-relaxed break-words flex-1">
-                    Swarm Completions receive a 50% discount on token costs during 8 PM - 6 AM Pacific Time.
-                    Agent costs remain the same. Automatically applied.
-                  </p>
-                </CardHeader>
-              </Card>
-
-              <Card className="bg-white/[0.02] border-white/10 hover:border-white/20 transition-all duration-300 h-full flex flex-col">
-                <CardHeader className="p-4 sm:p-5 md:p-6 flex-1 flex flex-col">
-                  <div className="flex items-center space-x-2 sm:space-x-3 mb-3 sm:mb-4">
-                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl border border-white/10 bg-white/[0.03] flex items-center justify-center flex-shrink-0">
-                      <Zap className="w-5 h-5 sm:w-6 sm:h-6 text-white/80" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <CardTitle className="text-white text-lg sm:text-xl font-bold break-words">Frenzy Mode</CardTitle>
-                      <CardDescription className="text-white/60 text-xs sm:text-sm">All requests free</CardDescription>
-                    </div>
-                  </div>
-                  <p className="text-white/60 text-xs sm:text-sm leading-relaxed break-words flex-1">
-                    All API requests are free during Black Friday (4th Friday of November) for 24 hours.
-                    Automatically applied.
-                  </p>
-                </CardHeader>
-              </Card>
-
-              <Card className="bg-white/[0.02] border-white/10 hover:border-white/20 transition-all duration-300 h-full flex flex-col">
-                <CardHeader className="p-4 sm:p-5 md:p-6 flex-1 flex flex-col">
-                  <CardTitle className="text-white text-lg sm:text-xl font-bold mb-3 sm:mb-4 break-words">Unified Pricing</CardTitle>
-                  <CardDescription className="text-white/60 text-xs sm:text-sm leading-relaxed break-words mb-3 sm:mb-4">
-                    All API endpoints use the same token pricing:
-                  </CardDescription>
-                  <div className="space-y-2 sm:space-y-3 text-xs sm:text-sm text-white/80 flex-1">
-                    <div className="flex items-start">
-                      <Check className="w-3 h-3 sm:w-4 sm:h-4 text-white/80 mr-2 flex-shrink-0 mt-0.5" />
-                      <span className="break-words"><strong>Input Tokens:</strong> $6.50 per 1M tokens</span>
-                    </div>
-                    <div className="flex items-start">
-                      <Check className="w-3 h-3 sm:w-4 sm:h-4 text-white/80 mr-2 flex-shrink-0 mt-0.5" />
-                      <span className="break-words"><strong>Output Tokens:</strong> $18.50 per 1M tokens</span>
-                    </div>
-                  </div>
-                  <CardDescription className="text-white/50 text-xs sm:text-sm leading-relaxed break-words mt-2">
-                    Retrieve current pricing via <code className="bg-white/10 px-1 py-0.5 rounded text-xs">/v1/usage/costs</code>.
-                  </CardDescription>
-                </CardHeader>
-              </Card>
-            </div>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Credit Deductions */}
-      <section className="py-12 sm:py-16 md:py-24 lg:py-32 xl:py-40 bg-black">
-        <div className="container px-2 sm:px-4 md:px-6 lg:px-8 max-w-full overflow-hidden">
-          <motion.div
-            className="text-center mb-8 sm:mb-12 md:mb-16 lg:mb-20 px-2"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            viewport={{ once: true }}
-          >
-            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold tracking-tight text-white leading-tight mb-4 sm:mb-6 break-words">
-              Credit deductions
-            </h2>
-            <p className="text-sm sm:text-base md:text-lg lg:text-xl text-white/60 max-w-3xl mx-auto font-normal leading-relaxed">
-              How credits are deducted and billing logic works
-            </p>
-          </motion.div>
-
-          <motion.div
-            className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 max-w-6xl mx-auto"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            viewport={{ once: true }}
-          >
-            <Card className="bg-white/[0.02] border-white/10 hover:border-white/20 transition-all duration-300 h-full">
-              <CardHeader className="p-4 sm:p-5 md:p-6 text-center">
-                <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 mx-auto mb-3 sm:mb-4 rounded-xl border border-white/10 bg-white/[0.03] flex items-center justify-center">
-                  <CreditCard className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-white/80" />
-                </div>
-                <CardTitle className="text-white text-lg sm:text-xl mb-2 sm:mb-3 break-words">Credit Priority</CardTitle>
-                <CardDescription className="text-white/60 text-xs sm:text-sm leading-relaxed break-words">
-                  Free credits are used first, then regular credits. This ensures you get maximum value from promotional credits and free tier allowances.
-                </CardDescription>
-              </CardHeader>
-            </Card>
-
-            <Card className="bg-white/[0.02] border-white/10 hover:border-white/20 transition-all duration-300 h-full">
-              <CardHeader className="p-4 sm:p-5 md:p-6 text-center">
-                <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 mx-auto mb-3 sm:mb-4 rounded-xl border border-white/10 bg-white/[0.03] flex items-center justify-center">
-                  <DollarSign className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-white/80" />
-                </div>
-                <CardTitle className="text-white text-lg sm:text-xl mb-2 sm:mb-3 break-words">Per-Call Billing</CardTitle>
-                <CardDescription className="text-white/60 text-xs sm:text-sm leading-relaxed break-words">
-                  Credits are deducted for each API call based on operation type, token usage, agent count, and any additional services like MCP or image processing.
-                </CardDescription>
-              </CardHeader>
-            </Card>
-
-            <Card className="bg-white/[0.02] border-white/10 hover:border-white/20 transition-all duration-300 h-full sm:col-span-2 md:col-span-1">
-              <CardHeader className="p-4 sm:p-5 md:p-6 text-center">
-                <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 mx-auto mb-3 sm:mb-4 rounded-xl border border-white/10 bg-white/[0.03] flex items-center justify-center">
-                  <Globe className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-white/80" />
-                </div>
-                <CardTitle className="text-white text-lg sm:text-xl mb-2 sm:mb-3 break-words">MCP Additional Costs</CardTitle>
-                <CardDescription className="text-white/60 text-xs sm:text-sm leading-relaxed break-words">
-                  If your agent uses an MCP URL for external integrations, an additional $0.10 is deducted per call on top of standard operation costs.
-                </CardDescription>
-              </CardHeader>
-            </Card>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* API Pricing Section */}
-      <section className="py-12 sm:py-16 md:py-24 lg:py-32 xl:py-40 bg-black">
-        <div className="container px-2 sm:px-4 md:px-6 lg:px-8 max-w-full overflow-hidden">
-          <motion.div
-            className="text-center mb-8 sm:mb-12 md:mb-16 lg:mb-20 px-2"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            viewport={{ once: true }}
-          >
-            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold tracking-tight text-white leading-tight mb-4 sm:mb-6 break-words">
-              API Pricing
-            </h2>
-            <p className="text-sm sm:text-base md:text-lg lg:text-xl text-white/60 max-w-3xl mx-auto font-normal leading-relaxed">
-              Flexible subscription plans that scale with your needs. Choose a plan for higher limits and features; usage is billed per operation. Prices shown are subscription fees; API usage is billed per operation.
-            </p>
-          </motion.div>
-
-          <Tabs defaultValue="cloud" className="w-full">
-            <div className="flex justify-center mb-8 sm:mb-12 md:mb-16 px-2">
-              <TabsList className="bg-white/[0.02] border border-white/10 backdrop-blur-sm w-full sm:w-auto">
-                <TabsTrigger 
-                  value="cloud" 
-                  className="data-[state=active]:bg-white data-[state=active]:text-black text-white/60 data-[state=active]:text-black px-4 sm:px-6 py-2 sm:py-3 text-xs sm:text-sm flex-1 sm:flex-initial"
-                >
-                  <Globe className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                  <span>Cloud</span>
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="on-premise" 
-                  className="data-[state=active]:bg-white data-[state=active]:text-black text-white/60 data-[state=active]:text-black px-4 sm:px-6 py-2 sm:py-3 text-xs sm:text-sm flex-1 sm:flex-initial"
-                >
-                  <Zap className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                  <span>On-Premise</span>
-                </TabsTrigger>
-              </TabsList>
-            </div>
-
-            <TabsContent value="cloud" className="mt-0">
-              {/* Pricing Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 md:gap-8">
-                {cloudTiers.map((tier, index) => (
-                  <motion.div
-                    key={tier.tier}
-                    initial={{ opacity: 0, y: 30 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, delay: index * 0.1 }}
-                    viewport={{ once: true }}
-                    className="relative"
-                  >
-                    {tier.popular && (
-                      <div className="absolute -top-3 sm:-top-4 left-1/2 transform -translate-x-1/2 z-20">
-                        <span className="bg-white text-black text-[10px] sm:text-xs font-semibold px-3 sm:px-4 py-1 sm:py-1.5 rounded-full whitespace-nowrap">
-                          Most Popular
+                        <CheckCircle className="h-4 w-4 text-red-500 flex-shrink-0 mt-0.5" />
+                        <span className={feature.startsWith("Everything in") ? "font-semibold text-white" : ""}>
+                          {feature}
                         </span>
-                      </div>
-                    )}
-                    <Card className={`h-full border border-white/10 bg-white/[0.02] backdrop-blur-sm hover:border-white/20 transition-all duration-300 ${tier.popular ? 'sm:scale-105' : ''}`}>
-                      <CardHeader className="text-center pb-3 sm:pb-4 p-4 sm:p-6">
-                        <CardTitle className="text-xl sm:text-2xl font-bold text-white mb-2 break-words">{tier.tier}</CardTitle>
-                        <CardDescription className="text-white/60 text-xs sm:text-sm mb-3 sm:mb-4 break-words">
-                          {tier.description}
-                        </CardDescription>
-                        {tier.price && (
-                          <div className="mt-3 sm:mt-4">
-                            <div className="flex flex-col items-center">
-                              <div>
-                                <span className="text-3xl sm:text-4xl font-bold text-white">{tier.price}</span>
-                                <span className="text-white/60 text-sm sm:text-lg ml-2">{tier.period}</span>
-                              </div>
-                              {tier.annualPrice && tier.discount && tier.discount !== "N/A" && (
-                                <div className="mt-2">
-                                  <span className="text-white/60 text-xs sm:text-sm">{tier.annualPrice}</span>
-                                  <span className="text-white/40 text-xs sm:text-sm ml-1">({tier.discount} off)</span>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        )}
-                      </CardHeader>
-                      <div className="px-4 sm:px-6 pb-4 sm:pb-6">
-                        <Button
-                          className={`w-full ${tier.tier === 'Enterprise' ? 'bg-white/10 hover:bg-white/20 text-white border border-white/20' : 'bg-white text-black hover:bg-white/90'} font-semibold text-xs sm:text-sm py-5 sm:py-6`}
-                          asChild
-                        >
-                          {tier.tier === 'Enterprise' ? (
-                            <a href="https://cal.com/swarms/swarms-strategy-session" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center">
-                              Contact Sales
-                            </a>
-                          ) : (
-                            <a href="https://swarms.world/platform/account" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center">
-                              Get Started
-                            </a>
-                          )}
-                        </Button>
-                        <div className="mt-4 sm:mt-6 space-y-2 sm:space-y-3 text-xs sm:text-sm text-white/60">
-                          {tier.features?.map((feature, featureIndex) => (
-                            <div key={featureIndex} className="flex items-start">
-                              <Check className="w-3 h-3 sm:w-4 sm:h-4 text-white/80 mr-2 mt-0.5 flex-shrink-0" />
-                              <span className={`break-words ${feature.includes('Everything in') ? 'text-white font-semibold' : ''}`}>{feature}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </Card>
-                  </motion.div>
-                ))}
-              </div>
-            </TabsContent>
-
-            <TabsContent value="on-premise" className="mt-0">
-              <motion.div 
-                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8 lg:gap-10 xl:gap-12 max-w-5xl mx-auto"
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6 }}
-                viewport={{ once: true }}
-              >
-                {onPremiseTiers.map((tier, index) => (
-                  <motion.div
-                    key={tier.tier}
-                    initial={{ opacity: 0, y: 30 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, delay: index * 0.1 }}
-                    viewport={{ once: true }}
-                    className="relative"
+                      </li>
+                    ))}
+                  </ul>
+                  <Button
+                    className={
+                      tier.highlight
+                        ? "bg-white text-black hover:bg-white/90 font-bold w-full"
+                        : "border-2 border-white/20 text-white hover:bg-white/10 bg-transparent backdrop-blur-sm font-normal w-full"
+                    }
+                    variant={tier.highlight ? "default" : "outline"}
+                    asChild
                   >
-                    <Card className="h-full border border-white/10 bg-white/[0.02] backdrop-blur-sm hover:border-white/20 transition-all duration-300">
-                      <CardHeader className="text-center pb-3 sm:pb-4 p-4 sm:p-6">
-                        <CardTitle className="text-xl sm:text-2xl font-bold text-white mb-2 break-words">{tier.tier}</CardTitle>
-                        <CardDescription className="text-white/60 text-xs sm:text-sm mb-3 sm:mb-4 break-words">
-                          {tier.description}
-                        </CardDescription>
-                        {tier.price && (
-                          <div className="mt-3 sm:mt-4">
-                            <span className="text-3xl sm:text-4xl font-bold text-white">{tier.price}</span>
-                            <span className="text-white/60 text-sm sm:text-lg ml-2">{tier.period}</span>
-                          </div>
-                        )}
-                      </CardHeader>
-                      <div className="px-4 sm:px-6 pb-4 sm:pb-6">
-                        <Button
-                          className="w-full bg-white text-black hover:bg-white/90 font-semibold text-xs sm:text-sm py-5 sm:py-6"
-                          asChild
-                        >
-                          <Link href="https://buy.stripe.com/eVq4gz7Nph072rZ1J6aAw09" target="_blank" className="flex items-center justify-center">
-                            Purchase license
-                          </Link>
-                        </Button>
-                        <div className="mt-4 sm:mt-6 space-y-3 sm:space-y-4">
-                          <div className="flex justify-between items-center py-2 sm:py-3 border-b border-white/10">
-                            <span className="text-xs sm:text-sm text-white/60 font-medium break-words">Requests per minute</span>
-                            <span className="text-xs sm:text-sm font-semibold text-white ml-2 flex-shrink-0">
-                              {tier.requests}
-                            </span>
-                          </div>
-                          <div className="flex justify-between items-center py-2 sm:py-3 border-b border-white/10">
-                            <span className="text-xs sm:text-sm text-white/60 font-medium break-words">Tokens per agent</span>
-                            <span className="text-xs sm:text-sm font-semibold text-white ml-2 flex-shrink-0">
-                              {tier.tokens}
-                            </span>
-                          </div>
-                          <div className="flex justify-between items-center py-2 sm:py-3">
-                            <span className="text-xs sm:text-sm text-white/60 font-medium break-words">Agents per request</span>
-                            <span className="text-xs sm:text-sm font-semibold text-white ml-2 flex-shrink-0">
-                              {tier.batch}
-                            </span>
-                          </div>
-                          
-                          {tier.features && (
-                            <div className="border-t pt-4 sm:pt-6 mt-4 sm:mt-6 border-white/10">
-                              <div className="font-semibold text-sm sm:text-base mb-3 sm:mb-4 text-white">
-                                Included with license:
-                              </div>
-                              <div className="space-y-2 sm:space-y-3">
-                                {tier.features.map((benefit, benefitIndex) => (
-                                  <div key={benefitIndex} className="flex items-start text-xs sm:text-sm leading-relaxed text-white/60">
-                                    <Check className="w-3 h-3 sm:w-4 sm:h-4 text-white/80 mr-2 mt-0.5 flex-shrink-0" />
-                                    <span className="break-words">{benefit}</span>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </Card>
-                  </motion.div>
-                ))}
-              </motion.div>
-            </TabsContent>
-          </Tabs>
-        </div>
-      </section>
-
-      {/* FAQ Section */}
-      <section className="py-12 sm:py-16 md:py-24 lg:py-32 xl:py-40 bg-black">
-        <div className="container px-2 sm:px-4 md:px-6 lg:px-8 max-w-full overflow-hidden">
-          <motion.div
-            className="text-center mb-8 sm:mb-12 md:mb-16 lg:mb-20 px-2"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            viewport={{ once: true }}
-          >
-            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold tracking-tight text-white leading-tight mb-4 sm:mb-6 break-words">
-              Frequently asked questions
-            </h2>
-            <p className="text-sm sm:text-base md:text-lg lg:text-xl text-white/60 max-w-3xl mx-auto font-normal leading-relaxed">
-              Everything you need to know about pricing, billing, and features
-            </p>
-          </motion.div>
-
-          <motion.div
-            className="max-w-4xl mx-auto"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            viewport={{ once: true }}
-          >
-            {faqData.map((faq, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 10 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05 }}
-                viewport={{ once: true }}
-                className="mb-3 sm:mb-4"
-              >
-                <Card className="bg-white/[0.02] border-white/10 hover:border-white/20 transition-all duration-300 overflow-hidden">
-                  <CardHeader
-                    className="cursor-pointer p-4 sm:p-5 md:p-6 transition-all duration-300 hover:bg-white/[0.02]"
-                    onClick={() => setOpenFaqIndex(openFaqIndex === index ? null : index)}
-                  >
-                    <div className="flex items-center justify-between gap-2 sm:gap-4">
-                      <div className="flex items-center space-x-2 sm:space-x-3 md:space-x-4 flex-1 min-w-0">
-                        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg border border-white/10 bg-white/[0.03] flex items-center justify-center flex-shrink-0">
-                          <HelpCircle className="w-4 h-4 sm:w-5 sm:h-5 text-white/80" />
-                        </div>
-                        <h3 className="text-sm sm:text-base md:text-lg font-semibold text-white text-left leading-tight break-words flex-1">
-                          {faq.question}
-                        </h3>
-                      </div>
-                      <motion.div
-                        animate={{ rotate: openFaqIndex === index ? 180 : 0 }}
-                        transition={{ duration: 0.3 }}
-                        className="flex-shrink-0 ml-1 sm:ml-2"
-                      >
-                        <ChevronDown className="w-5 h-5 sm:w-6 sm:h-6 text-white/60" />
-                      </motion.div>
-                    </div>
-                  </CardHeader>
-
-                  <motion.div
-                    initial={false}
-                    animate={{
-                      height: openFaqIndex === index ? "auto" : 0,
-                      opacity: openFaqIndex === index ? 1 : 0
-                    }}
-                    transition={{ duration: 0.3, ease: "easeInOut" }}
-                    className="overflow-hidden"
-                  >
-                    <div className="px-4 sm:px-5 md:px-6 pb-4 sm:pb-5 md:pb-6">
-                      <div className="ml-0 sm:ml-10 md:ml-14">
-                        <p className="text-xs sm:text-sm md:text-base text-white/60 leading-relaxed break-words">
-                          {faq.answer}
-                        </p>
-                      </div>
-                    </div>
-                  </motion.div>
-                </Card>
-              </motion.div>
-            ))}
-          </motion.div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-12 sm:py-16 md:py-24 lg:py-32 xl:py-40 bg-black">
-        <div className="container px-2 sm:px-4 md:px-6 lg:px-8 text-center max-w-full overflow-hidden">
-          <motion.div
-            className="max-w-5xl mx-auto space-y-6 sm:space-y-8 md:space-y-10 lg:space-y-12 px-2"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            viewport={{ once: true }}
-          >
-            <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-white leading-tight tracking-tight break-words">
-              Start building <span className="text-white/60">today</span>
-            </h2>
-            <p className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-3xl text-white/60 max-w-3xl mx-auto leading-relaxed font-normal">
-              Get started with transparent pricing and pay only for what you use
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 items-center justify-center pt-2 sm:pt-4">
-              <Button
-                size="lg"
-                className="bg-white text-black hover:bg-white/90 w-full sm:w-auto font-semibold text-sm sm:text-base md:text-lg px-6 sm:px-8 md:px-10 py-5 sm:py-6"
-                asChild
-              >
-                <Link href="https://swarms.world/platform/api-keys" target="_blank" className="flex items-center justify-center">
-                  <Key className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 mr-2 flex-shrink-0" />
-                  <span>Get API key</span>
-                  <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 ml-2 flex-shrink-0" />
-                </Link>
-              </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                className="border-2 border-white/20 text-white hover:bg-white/10 w-full sm:w-auto font-normal text-sm sm:text-base md:text-lg px-6 sm:px-8 md:px-10 py-5 sm:py-6 bg-transparent backdrop-blur-sm"
-                asChild
-              >
-                <Link href="/api" className="flex items-center justify-center">
-                  <Code className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 mr-2 flex-shrink-0" />
-                  <span>View API docs</span>
-                </Link>
-              </Button>
+                    <a href={tier.cta.href} target="_blank" rel="noopener noreferrer">
+                      {tier.cta.label}
+                      <ArrowRight className="h-4 w-4 ml-2" />
+                    </a>
+                  </Button>
+                </motion.div>
+              ))}
             </div>
-          </motion.div>
-        </div>
-      </section>
+          </div>
+        </section>
+
+        {/* USAGE-BASED PRICING TABLE */}
+        <section className="bg-black py-16 sm:py-20 md:py-24 lg:py-32">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+            <SectionHeading
+              eyebrow="Usage-based pricing"
+              title="Pay only for what you use"
+              description="Transparent per-operation pricing across every endpoint. No surprises, no minimums."
+            />
+
+            <div className="max-w-5xl mx-auto rounded-2xl border border-white/10 bg-white/[0.02] backdrop-blur-sm overflow-hidden">
+              <div className="hidden md:grid md:grid-cols-12 gap-4 px-6 lg:px-8 py-4 border-b border-white/10 text-[10px] uppercase tracking-[0.18em] text-white/40 font-semibold">
+                <div className="col-span-5">Item</div>
+                <div className="col-span-3 text-right">Price</div>
+                <div className="col-span-4 text-right">Notes</div>
+              </div>
+              {usageItems.map((row, i) => (
+                <motion.div
+                  key={row.item}
+                  initial={{ opacity: 0, y: 10 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: i * 0.04 }}
+                  viewport={{ once: true }}
+                  className="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-4 px-4 sm:px-6 lg:px-8 py-5 sm:py-6 border-b border-white/5 last:border-b-0 hover:bg-white/[0.02] transition-colors"
+                >
+                  <div className="md:col-span-5 flex items-center gap-3 sm:gap-4">
+                    <div className="h-9 w-9 sm:h-10 sm:w-10 flex-shrink-0 rounded-lg border border-white/10 bg-white/[0.03] flex items-center justify-center">
+                      <row.icon className="h-4 w-4 text-red-500" />
+                    </div>
+                    <span className="text-sm sm:text-base text-white font-medium">{row.item}</span>
+                  </div>
+                  <div className="md:col-span-3 md:text-right">
+                    <span className="font-mono text-base sm:text-lg text-white font-semibold">{row.cost}</span>
+                    <span className="text-xs sm:text-sm text-white/50 ml-1.5">{row.unit}</span>
+                  </div>
+                  <div className="md:col-span-4 md:text-right text-xs sm:text-sm text-white/50">{row.note}</div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* DISCOUNTS */}
+        <section className="bg-black py-16 sm:py-20 md:py-24 lg:py-32">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+            <SectionHeading
+              eyebrow="Discounts & policies"
+              title="Built-in savings"
+              description="Time-based discounts, unified token pricing, and automatic promotional credits."
+            />
+
+            <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
+              {discounts.map((d, i) => (
+                <motion.div
+                  key={d.title}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: i * 0.05 }}
+                  viewport={{ once: true }}
+                  className="rounded-2xl sm:rounded-3xl border border-white/10 bg-white/[0.02] backdrop-blur-sm p-5 sm:p-6 md:p-8"
+                >
+                  <div className="p-2.5 sm:p-3 rounded-xl sm:rounded-2xl border-2 border-red-500/50 bg-red-500/10 w-fit mb-4 sm:mb-5">
+                    <d.icon className="w-5 h-5 sm:w-6 sm:h-6 text-red-500" />
+                  </div>
+                  <h3 className="text-lg sm:text-xl font-bold text-white mb-1">{d.title}</h3>
+                  <p className="text-xs sm:text-sm text-red-300 font-semibold uppercase tracking-wider mb-3">
+                    {d.label}
+                  </p>
+                  <p className="text-white/65 text-sm sm:text-base leading-relaxed">{d.description}</p>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* CREDIT DETAILS */}
+        <section className="bg-black py-16 sm:py-20 md:py-24 lg:py-32">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+            <SectionHeading
+              eyebrow="Billing"
+              title="How billing works"
+              description="Predictable deductions, clear priority order, and a live cost endpoint to power your dashboards."
+            />
+
+            <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
+              {creditDetails.map((d, i) => (
+                <motion.div
+                  key={d.title}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: i * 0.05 }}
+                  viewport={{ once: true }}
+                  className="rounded-2xl border border-white/10 bg-white/[0.02] backdrop-blur-sm p-5 sm:p-6 md:p-8"
+                >
+                  <div className="p-2.5 sm:p-3 rounded-xl border-2 border-red-500/50 bg-red-500/10 w-fit mb-4 sm:mb-5">
+                    <d.icon className="w-5 h-5 sm:w-6 sm:h-6 text-red-500" />
+                  </div>
+                  <h3 className="text-base sm:text-lg font-bold text-white mb-2">{d.title}</h3>
+                  <p className="text-white/65 text-sm sm:text-base leading-relaxed">{d.description}</p>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ENTERPRISE & ON-PREMISE */}
+        <section className="bg-black py-16 sm:py-20 md:py-24 lg:py-32 xl:py-40">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="max-w-7xl mx-auto rounded-3xl border border-white/10 bg-white/[0.02] backdrop-blur-sm overflow-hidden">
+              <div className="grid lg:grid-cols-5 gap-0">
+                <div className="lg:col-span-2 p-6 sm:p-8 md:p-10 lg:p-12 border-b lg:border-b-0 lg:border-r border-white/10 flex flex-col justify-between gap-8">
+                  <div>
+                    <p className="text-[10px] sm:text-xs text-white font-bold tracking-[0.22em] uppercase mb-4">
+                      Enterprise & on-premise
+                    </p>
+                    <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-white leading-tight mb-4 sm:mb-5">
+                      Run Swarms&nbsp;
+                      <span className="text-red-500">your way</span>.
+                    </h2>
+                    <p className="text-base sm:text-lg text-white/60 leading-relaxed">
+                      Dedicated capacity, custom SLAs, white-label options, and full on-premise deployments. Built for regulated industries and large-scale agentic workloads.
+                    </p>
+                  </div>
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <Button
+                      className="bg-white text-black hover:bg-white/90 font-bold"
+                      asChild
+                    >
+                      <a href="https://cal.com/swarms" target="_blank" rel="noopener noreferrer">
+                        Talk to sales
+                        <ArrowRight className="h-4 w-4 ml-2" />
+                      </a>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="border-2 border-white/20 text-white hover:bg-white/10 bg-transparent backdrop-blur-sm font-normal"
+                      asChild
+                    >
+                      <Link href="/api">
+                        <Code className="h-4 w-4 mr-2" />
+                        API reference
+                      </Link>
+                    </Button>
+                  </div>
+                </div>
+                <div className="lg:col-span-3 grid grid-cols-1 sm:grid-cols-3">
+                  {enterpriseBenefits.map((b, i) => (
+                    <div
+                      key={b.title}
+                      className={`p-6 sm:p-7 md:p-8 ${i < enterpriseBenefits.length - 1 ? "border-b sm:border-b-0 sm:border-r border-white/10" : ""}`}
+                    >
+                      <div className="p-2.5 rounded-xl border-2 border-red-500/50 bg-red-500/10 w-fit mb-4">
+                        <b.icon className="w-5 h-5 text-red-500" />
+                      </div>
+                      <h3 className="text-base sm:text-lg font-bold text-white mb-2">{b.title}</h3>
+                      <p className="text-sm text-white/60 leading-relaxed">{b.description}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* FAQ */}
+        <section className="bg-black py-16 sm:py-20 md:py-24 lg:py-32">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+            <SectionHeading eyebrow="FAQ" title="Common pricing questions" />
+
+            <div className="max-w-3xl mx-auto space-y-3 sm:space-y-4">
+              {faqs.map((faq, i) => {
+                const isOpen = openFaq === i
+                return (
+                  <motion.div
+                    key={faq.question}
+                    initial={{ opacity: 0, y: 12 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: i * 0.03 }}
+                    viewport={{ once: true }}
+                    className="rounded-2xl border border-white/10 bg-white/[0.02] backdrop-blur-sm overflow-hidden"
+                  >
+                    <button
+                      type="button"
+                      onClick={() => setOpenFaq(isOpen ? null : i)}
+                      aria-expanded={isOpen}
+                      className="flex w-full items-center justify-between gap-4 px-5 sm:px-6 py-4 sm:py-5 text-left hover:bg-white/[0.02] transition-colors"
+                    >
+                      <span className="text-sm sm:text-base md:text-lg font-semibold text-white leading-snug">
+                        {faq.question}
+                      </span>
+                      <ChevronDown
+                        className={`h-5 w-5 flex-shrink-0 text-white/50 transition-transform duration-300 ${
+                          isOpen ? "rotate-180 text-red-500" : ""
+                        }`}
+                      />
+                    </button>
+                    <motion.div
+                      initial={false}
+                      animate={{
+                        height: isOpen ? "auto" : 0,
+                        opacity: isOpen ? 1 : 0,
+                      }}
+                      transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                      className="overflow-hidden"
+                    >
+                      <div className="px-5 sm:px-6 pb-5 sm:pb-6 text-sm sm:text-base text-white/65 leading-relaxed">
+                        {faq.answer}
+                      </div>
+                    </motion.div>
+                  </motion.div>
+                )
+              })}
+            </div>
+          </div>
+        </section>
+
+        {/* CTA */}
+        <section className="bg-black py-16 sm:py-20 md:py-24 lg:py-32 xl:py-40">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7 }}
+              viewport={{ once: true }}
+              className="relative max-w-5xl mx-auto rounded-3xl border border-white/10 bg-white/[0.02] backdrop-blur-sm overflow-hidden"
+            >
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_70%_30%,_rgba(239,68,68,0.12)_0%,_rgba(0,0,0,0)_55%)]"
+              />
+              <div className="relative z-10 px-6 sm:px-10 md:px-14 py-12 sm:py-16 md:py-20 text-center space-y-6 sm:space-y-8">
+                <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-white leading-tight">
+                  Start free. Scale when you're ready.
+                </h2>
+                <p className="text-base sm:text-lg md:text-xl text-white/60 max-w-2xl mx-auto leading-relaxed">
+                  Generate an API key in under a minute. Upgrade to Pro, Premium, or Enterprise on the same key — no migrations, no downtime.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 md:gap-6 justify-center items-center pt-2">
+                  <Button
+                    size="lg"
+                    className="bg-white text-black hover:bg-white/90 w-full sm:w-auto font-bold text-sm sm:text-base md:text-lg px-6 sm:px-8 md:px-10 py-5 sm:py-6 md:py-7"
+                    asChild
+                  >
+                    <a href="https://swarms.world/platform/api-keys" target="_blank" rel="noopener noreferrer">
+                      Get API key
+                      <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5 ml-2" />
+                    </a>
+                  </Button>
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="border-2 border-white/20 text-white hover:bg-white/10 w-full sm:w-auto font-normal text-sm sm:text-base md:text-lg px-6 sm:px-8 md:px-10 py-5 sm:py-6 md:py-7 bg-transparent backdrop-blur-sm"
+                    asChild
+                  >
+                    <a href="https://cal.com/swarms" target="_blank" rel="noopener noreferrer">
+                      Talk to sales
+                      <ExternalLink className="h-4 w-4 sm:h-5 sm:w-5 ml-2" />
+                    </a>
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </section>
+      </main>
     </div>
   )
 }

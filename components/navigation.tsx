@@ -210,6 +210,43 @@ export function Navigation() {
                   className="absolute top-full left-0 mt-2 w-[340px] rounded-2xl bg-neutral-950/95 backdrop-blur-2xl border border-neutral-800/60 shadow-2xl overflow-hidden z-[9999]"
                 >
                   <div className="p-2 relative">
+                    <a
+                      href="https://github.com/kyegomez/swarms"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
+                    >
+                      <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
+                        <Github className="h-4 w-4 text-red-500" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <span className="text-sm font-semibold text-white block">Swarms Python</span>
+                        <p className="text-xs text-neutral-400 mt-0.5">Core Python framework</p>
+                      </div>
+                    </a>
+                    <Link href="/api" className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative">
+                      <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
+                        <Code className="h-4 w-4 text-red-500" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <span className="text-sm font-semibold text-white block">Swarms API</span>
+                        <p className="text-xs text-neutral-400 mt-0.5">Hosted API service</p>
+                      </div>
+                    </Link>
+                    <a
+                      href="https://swarms.world"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
+                    >
+                      <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
+                        <Sparkles className="h-4 w-4 text-red-500" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <span className="text-sm font-semibold text-white block">Swarms Marketplace</span>
+                        <p className="text-xs text-neutral-400 mt-0.5">Buy & sell agents</p>
+                      </div>
+                    </a>
                     <Link href="/products" className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative">
                       <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
                         <Package className="h-4 w-4 text-red-500" />
@@ -238,29 +275,6 @@ export function Navigation() {
                       </div>
                     </Link>
                     <a
-                      href="https://github.com/kyegomez/swarms"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
-                    >
-                      <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
-                        <Github className="h-4 w-4 text-red-500" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <span className="text-sm font-semibold text-white block">Swarms Python</span>
-                        <p className="text-xs text-neutral-400 mt-0.5">Core Python framework</p>
-                      </div>
-                    </a>
-                    <Link href="/api" className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative">
-                      <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
-                        <Code className="h-4 w-4 text-red-500" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <span className="text-sm font-semibold text-white block">Swarms API</span>
-                        <p className="text-xs text-neutral-400 mt-0.5">Hosted API service</p>
-                      </div>
-                    </Link>
-                    <a
                       href="https://github.com/The-Swarm-Corporation/swarms-rs"
                       target="_blank"
                       rel="noopener noreferrer"
@@ -272,20 +286,6 @@ export function Navigation() {
                       <div className="flex-1 min-w-0">
                         <span className="text-sm font-semibold text-white block">Swarms RS</span>
                         <p className="text-xs text-neutral-400 mt-0.5">Rust framework</p>
-                      </div>
-                    </a>
-                    <a
-                      href="https://swarms.world"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
-                    >
-                      <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
-                        <Sparkles className="h-4 w-4 text-red-500" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <span className="text-sm font-semibold text-white block">Swarms Marketplace</span>
-                        <p className="text-xs text-neutral-400 mt-0.5">Buy & sell agents</p>
                       </div>
                     </a>
                   </div>
@@ -657,6 +657,34 @@ export function Navigation() {
                     <span>Products</span>
                     <div className="ml-2 h-px flex-1 bg-gradient-to-r from-white/20 to-transparent"></div>
                   </div>
+                  <a
+                    href="https://github.com/kyegomez/swarms"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm font-semibold text-white/85 hover:text-white transition-all duration-300 hover:bg-white/[0.05] p-3 rounded-lg flex items-center border border-transparent hover:border-white/10"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    <Github className="mr-3 h-4 w-4 text-white/60 flex-shrink-0" />
+                    Swarms Python
+                  </a>
+                  <Link
+                    href="/api"
+                    className="text-sm font-semibold text-white/85 hover:text-white transition-all duration-300 hover:bg-white/[0.05] p-3 rounded-lg flex items-center border border-transparent hover:border-white/10"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    <Code className="mr-3 h-4 w-4 text-white/60 flex-shrink-0" />
+                    Swarms API
+                  </Link>
+                  <a
+                    href="https://swarms.world"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm font-semibold text-white/85 hover:text-white transition-all duration-300 hover:bg-white/[0.05] p-3 rounded-lg flex items-center border border-transparent hover:border-white/10"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    <Sparkles className="mr-3 h-4 w-4 text-white/60 flex-shrink-0" />
+                    Swarms Marketplace
+                  </a>
                   <Link
                     href="/products"
                     className="text-sm font-semibold text-white/85 hover:text-white transition-all duration-300 hover:bg-white/[0.05] p-3 rounded-lg flex items-center border border-transparent hover:border-white/10"
@@ -682,26 +710,6 @@ export function Navigation() {
                     Mobile App
                   </Link>
                   <a
-                    href="https://github.com/kyegomez/swarms"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm font-semibold text-white/85 hover:text-white transition-all duration-300 hover:bg-white/[0.05] p-3 rounded-lg flex items-center border border-transparent hover:border-white/10"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    <Github className="mr-3 h-4 w-4 text-white/60 flex-shrink-0" />
-                    Swarms Python
-                  </a>
-                  <a
-                    href="https://docs.swarms.ai"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm font-semibold text-white/85 hover:text-white transition-all duration-300 hover:bg-white/[0.05] p-3 rounded-lg flex items-center border border-transparent hover:border-white/10"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    <Code className="mr-3 h-4 w-4 text-white/60 flex-shrink-0" />
-                    Swarms API
-                  </a>
-                  <a
                     href="https://github.com/The-Swarm-Corporation/swarms-rs"
                     target="_blank"
                     rel="noopener noreferrer"
@@ -710,16 +718,6 @@ export function Navigation() {
                   >
                     <Rocket className="mr-3 h-4 w-4 text-white/60 flex-shrink-0" />
                     Swarms RS
-                  </a>
-                  <a
-                    href="https://swarms.world"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm font-semibold text-white/85 hover:text-white transition-all duration-300 hover:bg-white/[0.05] p-3 rounded-lg flex items-center border border-transparent hover:border-white/10"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    <Sparkles className="mr-3 h-4 w-4 text-white/60 flex-shrink-0" />
-                    Swarms Marketplace
                   </a>
                 </div>
 

@@ -1,6 +1,5 @@
 "use client"
 
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Globe } from "@/components/ui/globe"
 import { motion } from "framer-motion"
 import { Shield, Server, Activity, BarChart } from "lucide-react"
@@ -8,24 +7,24 @@ import { Shield, Server, Activity, BarChart } from "lucide-react"
 const enterpriseFeatures = [
   {
     title: "Security",
-    description: "HIPAA compliant and ISO 27001 certified infrastructure with enterprise-grade security practices",
-    icon: Shield
+    description: "HIPAA compliant and ISO 27001 certified infrastructure with enterprise-grade security practices.",
+    icon: Shield,
   },
   {
-    title: "Custom Deployments",
-    description: "Tailored agentic deployments for your specific requirements",
-    icon: Server
+    title: "Custom deployments",
+    description: "Tailored agentic deployments for your specific requirements.",
+    icon: Server,
   },
   {
     title: "Reliability",
-    description: "99% uptime, 24/7 availability, and global availability across 4 major continents",
-    icon: Activity
+    description: "99% uptime, 24/7 availability, and global presence across 4 major continents.",
+    icon: Activity,
   },
   {
-    title: "Monitoring & Telemetry",
-    description: "Comprehensive monitoring and extensive telemetry stack for real-time insights and observability",
-    icon: BarChart
-  }
+    title: "Monitoring & telemetry",
+    description: "Comprehensive monitoring and extensive telemetry stack for real-time observability.",
+    icon: BarChart,
+  },
 ]
 
 export function HomeEnterpriseInfrastructure() {
@@ -39,12 +38,18 @@ export function HomeEnterpriseInfrastructure() {
           viewport={{ once: true }}
           className="space-y-6 sm:space-y-8"
         >
-          <div>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-white leading-tight mb-4 sm:mb-6">
-              Enterprise-Grade Infrastructure
+          <div className="space-y-3 sm:space-y-4 md:space-y-5">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <p className="text-[10px] sm:text-xs text-white/55 tracking-[0.22em] uppercase font-semibold">
+                <span className="text-white font-bold">Built for production</span>
+              </p>
+              <span className="h-px w-6 sm:w-8 bg-gradient-to-r from-white/20 to-transparent" />
+            </div>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-white leading-tight">
+              Enterprise-grade infrastructure
             </h2>
             <p className="text-base sm:text-lg md:text-xl text-white/60 max-w-2xl leading-relaxed">
-              Built for the most demanding enterprise requirements with global availability, compliance certifications, and custom deployment options.
+              Global availability, compliance certifications, and custom deployment options — built for the most demanding workloads.
             </p>
           </div>
 
@@ -53,25 +58,22 @@ export function HomeEnterpriseInfrastructure() {
               const Icon = feature.icon
               return (
                 <motion.div
-                  key={index}
+                  key={feature.title}
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: index * 0.1 }}
+                  transition={{ duration: 0.6, delay: index * 0.08 }}
                   viewport={{ once: true }}
+                  className="rounded-2xl sm:rounded-3xl border border-white/10 bg-white/[0.02] backdrop-blur-sm p-5 sm:p-6"
                 >
-                  <Card className="border-white/10 bg-white/[0.02] h-full">
-                    <CardHeader className="p-4 sm:p-5 md:p-6">
-                      <div className="mb-3 sm:mb-4 inline-flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-xl border border-white/10 bg-white/[0.03]">
-                        <Icon className="h-5 w-5 sm:h-6 sm:w-6 text-white/80" />
-                      </div>
-                      <CardTitle className="text-base sm:text-lg font-bold text-white mb-1.5 sm:mb-2">
-                        {feature.title}
-                      </CardTitle>
-                      <CardDescription className="text-white/60 text-xs sm:text-sm leading-relaxed">
-                        {feature.description}
-                      </CardDescription>
-                    </CardHeader>
-                  </Card>
+                  <div className="p-2.5 sm:p-3 rounded-xl border-2 border-red-500/50 bg-red-500/10 w-fit mb-4 sm:mb-5">
+                    <Icon className="h-5 w-5 sm:h-6 sm:w-6 text-red-500" />
+                  </div>
+                  <h3 className="text-base sm:text-lg font-bold text-white mb-1.5 sm:mb-2">
+                    {feature.title}
+                  </h3>
+                  <p className="text-white/60 text-xs sm:text-sm leading-relaxed">
+                    {feature.description}
+                  </p>
                 </motion.div>
               )
             })}
@@ -94,4 +96,3 @@ export function HomeEnterpriseInfrastructure() {
     </div>
   )
 }
-

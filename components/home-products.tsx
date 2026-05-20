@@ -177,24 +177,31 @@ export function HomeProducts() {
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
-          transition={{ 
+          transition={{
             duration: 0.8,
             ease: [0.22, 1, 0.36, 1],
           }}
           viewport={{ once: true, margin: "-100px" }}
-          className="text-center space-y-3 sm:space-y-4 md:space-y-6 px-2 sm:px-0"
+          className="max-w-3xl mx-auto text-center space-y-3 sm:space-y-4 md:space-y-5 px-2 sm:px-0"
         >
-          <motion.h2 
-            className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-white"
+          <div className="flex items-center gap-2 sm:gap-3 justify-center">
+            <span className="h-px w-6 sm:w-8 bg-gradient-to-r from-transparent to-white/20" />
+            <p className="text-[10px] sm:text-xs text-white/55 tracking-[0.22em] uppercase font-semibold">
+              <span className="text-white font-bold">The suite</span>
+            </p>
+            <span className="h-px w-6 sm:w-8 bg-gradient-to-l from-transparent to-white/20" />
+          </div>
+          <motion.h2
+            className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-white leading-tight"
             initial={{ opacity: 0, scale: 0.95 }}
             whileInView={{ opacity: 1, scale: 1 }}
-            transition={{ 
+            transition={{
               duration: 0.6,
               ease: [0.22, 1, 0.36, 1],
             }}
             viewport={{ once: true }}
           >
-            Products
+            One stack. End-to-end agent infrastructure.
           </motion.h2>
           <motion.p 
             className="text-base sm:text-lg md:text-xl text-white/60 max-w-3xl mx-auto font-normal px-2 sm:px-0"
@@ -334,9 +341,9 @@ function ProductSection({ product, index, isEven, starCount }: { product: typeof
               }}
               viewport={{ once: true }}
             >
-              <Button 
-                size="lg" 
-                className="bg-gradient-to-r from-red-900 via-red-800 to-red-900 text-white hover:from-red-800 hover:via-red-700 hover:to-red-800 font-bold w-full sm:w-auto transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-red-900/50 group border-0 text-xs sm:text-sm md:text-base px-3 sm:px-4 md:px-6 py-4 sm:py-5 md:py-6 flex-shrink-0" 
+              <Button
+                size="lg"
+                className="bg-white text-black hover:bg-white/90 font-bold w-full sm:w-auto group text-xs sm:text-sm md:text-base px-3 sm:px-4 md:px-6 py-4 sm:py-5 md:py-6 flex-shrink-0"
                 asChild
               >
                 {product.link.startsWith("/") ? (
@@ -351,10 +358,10 @@ function ProductSection({ product, index, isEven, starCount }: { product: typeof
                   </a>
                 )}
               </Button>
-              <Button 
-                variant="outline" 
-                size="lg" 
-                className="border-white/20 text-white hover:bg-white/10 hover:border-white/40 w-full sm:w-auto transition-all duration-300 hover:scale-105 group text-xs sm:text-sm md:text-base px-3 sm:px-4 md:px-6 py-4 sm:py-5 md:py-6 flex-shrink-0" 
+              <Button
+                variant="outline"
+                size="lg"
+                className="border-2 border-white/20 text-white hover:bg-white/10 bg-transparent backdrop-blur-sm w-full sm:w-auto group text-xs sm:text-sm md:text-base px-3 sm:px-4 md:px-6 py-4 sm:py-5 md:py-6 flex-shrink-0"
                 asChild
               >
                 <a href={product.docsLink} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center">

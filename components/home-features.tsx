@@ -50,13 +50,20 @@ export function HomeFeatures() {
         whileInView={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
         viewport={{ once: true }}
-        className="text-center space-y-3 sm:space-y-4 md:space-y-6 mb-12 sm:mb-16 md:mb-20 px-2 sm:px-0"
+        className="max-w-3xl mx-auto text-center space-y-3 sm:space-y-4 md:space-y-5 mb-12 sm:mb-16 md:mb-20 px-2 sm:px-0"
       >
+        <div className="flex items-center gap-2 sm:gap-3 justify-center">
+          <span className="h-px w-6 sm:w-8 bg-gradient-to-r from-transparent to-white/20" />
+          <p className="text-[10px] sm:text-xs text-white/55 tracking-[0.22em] uppercase font-semibold">
+            <span className="text-white font-bold">Capabilities</span>
+          </p>
+          <span className="h-px w-6 sm:w-8 bg-gradient-to-l from-transparent to-white/20" />
+        </div>
         <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-white leading-tight">
-          Features
+          Everything you need to ship agents
         </h2>
         <p className="text-base sm:text-lg md:text-xl text-white/60 max-w-3xl mx-auto font-normal leading-relaxed px-2 sm:px-0">
-          Swarms has pioneered world-class infrastructure for multi-agent collaboration such as communication protocols, optimized runtimes, memory systems, and simulation environments.
+          Pioneered infrastructure for multi-agent collaboration — communication protocols, optimized runtimes, memory systems, and simulation environments.
         </p>
       </motion.div>
 

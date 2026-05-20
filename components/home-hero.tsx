@@ -42,6 +42,7 @@ export function HomeHero() {
             animate={mounted ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.8, ease: "easeOut" }}
           >
+
             <h1
               id="hero-title"
               className="text-5xl xs:text-6xl sm:text-7xl md:text-8xl lg:text-[10rem] xl:text-[12rem] 2xl:text-[14rem] font-bold leading-[0.9] sm:leading-none px-2 sm:px-0 text-red-500"

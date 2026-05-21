@@ -231,16 +231,18 @@ const pillars = [
 
 function CodeBlock({ code }: { code: string }) {
   return (
-    <div className="overflow-x-auto rounded-2xl border border-white/10 bg-white/[0.02] backdrop-blur-sm">
+    <div className="w-full max-w-full overflow-hidden rounded-2xl border border-white/10 bg-white/[0.02] backdrop-blur-sm">
       <div className="flex items-center gap-1.5 border-b border-white/5 px-4 py-3">
         <span className="h-2 w-2 rounded-full bg-white/20" />
         <span className="h-2 w-2 rounded-full bg-white/20" />
         <span className="h-2 w-2 rounded-full bg-white/20" />
         <span className="ml-3 font-mono text-[10px] uppercase tracking-widest text-white/40">code</span>
       </div>
-      <pre className="px-4 py-5 sm:px-6 sm:py-6 font-mono text-[11px] sm:text-xs md:text-sm leading-relaxed text-white/85 whitespace-pre">
-        {code}
-      </pre>
+      <div className="overflow-x-auto">
+        <pre className="px-4 py-5 sm:px-6 sm:py-6 font-mono text-[11px] sm:text-xs md:text-sm leading-relaxed text-white/85 whitespace-pre">
+          {code}
+        </pre>
+      </div>
     </div>
   )
 }
@@ -287,7 +289,7 @@ function SectionHeading({
       whileInView={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}
       viewport={{ once: true }}
-      className={`max-w-3xl ${alignClass} space-y-3 sm:space-y-4 md:space-y-5 mb-10 sm:mb-14 md:mb-20 px-2 sm:px-0`}
+      className={`max-w-3xl ${alignClass} space-y-2.5 sm:space-y-4 md:space-y-5 mb-8 sm:mb-14 md:mb-20 px-1 sm:px-0`}
     >
       {eyebrow && (
         <div className={`flex items-center gap-2 sm:gap-3 ${align === "center" ? "justify-center" : ""}`}>
@@ -298,11 +300,11 @@ function SectionHeading({
           {align === "center" && <span className="h-px w-6 sm:w-8 bg-gradient-to-l from-transparent to-white/20" />}
         </div>
       )}
-      <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-white leading-tight">
+      <h2 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-white leading-tight">
         {title}
       </h2>
       {description && (
-        <p className="text-base sm:text-lg md:text-xl text-white/60 max-w-3xl font-normal leading-relaxed">
+        <p className="text-sm sm:text-lg md:text-xl text-white/60 max-w-3xl font-normal leading-relaxed">
           {description}
         </p>
       )}
@@ -338,42 +340,42 @@ export default function ProductsPage() {
     <div className="min-h-screen bg-black text-white">
       <Navigation />
 
-      <main className="pt-[64px] sm:pt-[80px] md:pt-[96px]">
+      <main className="pt-[64px] sm:pt-[80px] md:pt-[96px] overflow-x-hidden">
         {/* HERO */}
-        <section className="relative overflow-hidden bg-black min-h-[80vh] flex items-center">
+        <section className="relative overflow-hidden bg-black sm:min-h-[80vh] flex items-center">
           <div className="absolute inset-0 pointer-events-none">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,_rgba(239,68,68,0.10)_0%,_rgba(0,0,0,0)_60%)]" />
           </div>
 
-          <div className="container relative z-10 mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-24 md:py-32">
+          <div className="container relative z-10 mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-24 md:py-32">
             <motion.div
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-              className="max-w-5xl mx-auto text-center space-y-6 sm:space-y-8 md:space-y-10"
+              className="max-w-5xl mx-auto text-center space-y-5 sm:space-y-8 md:space-y-10"
             >
               <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 backdrop-blur-sm">
                 <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
-                <span className="text-xs sm:text-sm text-white/70 font-medium">
+                <span className="text-[11px] sm:text-sm text-white/70 font-medium">
                   The complete multi-agent stack
                 </span>
               </div>
 
               <h1
-                className="font-bold leading-[0.9] tracking-tight text-red-500"
-                style={{ fontSize: "clamp(2.75rem, 9vw, 9rem)", fontFamily: "var(--font-orbitron)" }}
+                className="font-bold leading-[0.9] tracking-tight text-red-500 break-words"
+                style={{ fontSize: "clamp(2.5rem, 10vw, 9rem)", fontFamily: "var(--font-orbitron)" }}
               >
                 Products
               </h1>
 
-              <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl text-white/80 max-w-3xl mx-auto font-medium leading-tight px-2 sm:px-0">
+              <p className="text-base sm:text-xl md:text-2xl lg:text-3xl text-white/80 max-w-3xl mx-auto font-medium leading-snug sm:leading-tight px-1 sm:px-0">
                 Frameworks, APIs, marketplaces, and infrastructure for building the agent economy.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 md:gap-6 justify-center items-center w-full max-w-2xl mx-auto pt-2">
                 <Button
                   size="lg"
-                  className="bg-white text-black hover:bg-white/90 w-full sm:w-auto font-bold text-sm sm:text-base md:text-lg px-6 sm:px-8 md:px-10 py-5 sm:py-6 md:py-7"
+                  className="bg-white text-black hover:bg-white/90 w-full sm:w-auto font-bold text-sm sm:text-base md:text-lg px-5 sm:px-8 md:px-10 py-3.5 sm:py-6 md:py-7 h-auto"
                   asChild
                 >
                   <a href="https://github.com/kyegomez/swarms" target="_blank" rel="noopener noreferrer">
@@ -385,7 +387,7 @@ export default function ProductsPage() {
                 <Button
                   size="lg"
                   variant="outline"
-                  className="border-2 border-white/20 text-white hover:bg-white/10 w-full sm:w-auto font-normal text-sm sm:text-base md:text-lg px-6 sm:px-8 md:px-10 py-5 sm:py-6 md:py-7 bg-transparent backdrop-blur-sm"
+                  className="border-2 border-white/20 text-white hover:bg-white/10 w-full sm:w-auto font-normal text-sm sm:text-base md:text-lg px-5 sm:px-8 md:px-10 py-3.5 sm:py-6 md:py-7 h-auto bg-transparent backdrop-blur-sm"
                   asChild
                 >
                   <a href="https://docs.swarms.world" target="_blank" rel="noopener noreferrer">
@@ -400,9 +402,9 @@ export default function ProductsPage() {
         </section>
 
         {/* STATS */}
-        <section className="bg-black py-12 sm:py-16 md:py-20">
+        <section className="bg-black py-10 sm:py-16 md:py-20">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="max-w-7xl mx-auto grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
+            <div className="max-w-7xl mx-auto grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4 md:gap-6">
               {stats.map((stat, i) => (
                 <motion.div
                   key={stat.label}
@@ -410,12 +412,12 @@ export default function ProductsPage() {
                   whileInView={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: i * 0.05 }}
                   viewport={{ once: true }}
-                  className="rounded-2xl border border-white/10 bg-white/[0.02] backdrop-blur-sm p-5 sm:p-6 md:p-8"
+                  className="rounded-xl sm:rounded-2xl border border-white/10 bg-white/[0.02] backdrop-blur-sm p-4 sm:p-6 md:p-8"
                 >
-                  <div className="text-3xl sm:text-4xl md:text-5xl font-bold text-white tracking-tight mb-1.5 sm:mb-2">
+                  <div className="text-2xl sm:text-4xl md:text-5xl font-bold text-white tracking-tight mb-1 sm:mb-2 break-words">
                     {stat.value}
                   </div>
-                  <div className="text-xs sm:text-sm md:text-base text-white/55 font-medium">
+                  <div className="text-[11px] sm:text-sm md:text-base text-white/55 font-medium leading-snug">
                     {stat.label}
                   </div>
                 </motion.div>
@@ -425,7 +427,7 @@ export default function ProductsPage() {
         </section>
 
         {/* PRODUCT GRID */}
-        <section className="bg-black py-16 sm:py-20 md:py-24 lg:py-32 xl:py-40">
+        <section className="bg-black py-12 sm:py-20 md:py-24 lg:py-32 xl:py-40">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <SectionHeading
               eyebrow="The suite"
@@ -433,7 +435,7 @@ export default function ProductsPage() {
               description="Pick the surface that fits your team — Python, Rust, REST, hosted, on-prem, or no-code."
             />
 
-            <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
+            <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-5 md:gap-6">
               {productCards.map((product, i) => (
                 <motion.div
                   key={product.title}
@@ -448,21 +450,21 @@ export default function ProductsPage() {
                     className="block h-full"
                   >
                     <div className="relative h-full rounded-2xl sm:rounded-3xl overflow-hidden border border-white/10 bg-black/50 backdrop-blur-sm transition-all duration-500 hover:border-white/30 hover:scale-[1.01] hover:shadow-2xl hover:shadow-white/5">
-                      <div className="relative z-10 p-5 sm:p-6 md:p-8 flex flex-col gap-4 sm:gap-5 md:gap-6 min-h-[260px] sm:min-h-[280px] md:min-h-[300px]">
-                        <div className="flex items-start justify-between">
-                          <div className="p-2.5 sm:p-3 rounded-xl sm:rounded-2xl border-2 border-red-500/50 bg-red-500/10 group-hover:border-red-500 group-hover:bg-red-500/20 transition-all duration-500">
+                      <div className="relative z-10 p-4 sm:p-6 md:p-8 flex flex-col gap-3 sm:gap-5 md:gap-6 min-h-0 sm:min-h-[280px] md:min-h-[300px]">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="p-2 sm:p-3 rounded-xl sm:rounded-2xl border-2 border-red-500/50 bg-red-500/10 group-hover:border-red-500 group-hover:bg-red-500/20 transition-all duration-500">
                             <product.icon className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-red-500" />
                           </div>
-                          <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 text-white/30 group-hover:text-white group-hover:translate-x-1 transition-all duration-300" />
+                          <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 text-white/30 group-hover:text-white group-hover:translate-x-1 transition-all duration-300 flex-shrink-0 mt-1" />
                         </div>
-                        <div className="flex-1 flex flex-col">
-                          <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-white mb-1.5 sm:mb-2">
+                        <div className="flex-1 flex flex-col min-w-0">
+                          <h3 className="text-base sm:text-xl md:text-2xl font-bold text-white mb-1.5 sm:mb-2 leading-snug">
                             {product.title}
                           </h3>
-                          <p className="text-white/65 text-sm sm:text-base leading-relaxed flex-1">
+                          <p className="text-white/65 text-[13px] sm:text-base leading-relaxed flex-1">
                             {product.description}
                           </p>
-                          <div className="mt-4 sm:mt-5 inline-flex items-center font-mono text-[11px] sm:text-xs text-white/50 group-hover:text-white/75 transition-colors">
+                          <div className="mt-3 sm:mt-5 inline-flex items-center font-mono text-[10px] sm:text-xs text-white/50 group-hover:text-white/75 transition-colors break-all">
                             {product.meta}
                           </div>
                         </div>
@@ -476,29 +478,29 @@ export default function ProductsPage() {
         </section>
 
         {/* FEATURED CODE */}
-        <section className="bg-black py-16 sm:py-20 md:py-24 lg:py-32">
+        <section className="bg-black py-12 sm:py-20 md:py-24 lg:py-32">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="max-w-7xl mx-auto grid lg:grid-cols-5 gap-8 sm:gap-10 md:gap-12 lg:gap-16 items-start">
+            <div className="max-w-7xl mx-auto grid lg:grid-cols-5 gap-6 sm:gap-10 md:gap-12 lg:gap-16 items-start">
               <motion.div
                 initial={{ opacity: 0, x: -30 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.6 }}
                 viewport={{ once: true }}
-                className="lg:col-span-2 space-y-4 sm:space-y-6 lg:sticky lg:top-32"
+                className="lg:col-span-2 space-y-4 sm:space-y-6 lg:sticky lg:top-32 min-w-0"
               >
                 <p className="text-[10px] sm:text-xs text-white font-bold tracking-[0.22em] uppercase">
                   Same swarm. Any language.
                 </p>
-                <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-white leading-tight">
+                <h2 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-white leading-tight">
                   Ship in&nbsp;
                   <span className="text-red-500">your stack</span>.
                 </h2>
-                <p className="text-base sm:text-lg md:text-xl text-white/60 leading-relaxed">
+                <p className="text-sm sm:text-lg md:text-xl text-white/60 leading-relaxed">
                   Idiomatic SDKs in Python and Rust, plus a hosted REST API for any language. The same agents, the same swarms, the same runtime.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-3 pt-2">
                   <Button
-                    className="bg-white text-black hover:bg-white/90 font-bold"
+                    className="bg-white text-black hover:bg-white/90 font-bold w-full sm:w-auto"
                     asChild
                   >
                     <a href="https://docs.swarms.world" target="_blank" rel="noopener noreferrer">
@@ -508,7 +510,7 @@ export default function ProductsPage() {
                   </Button>
                   <Button
                     variant="outline"
-                    className="border-2 border-white/20 text-white hover:bg-white/10 bg-transparent backdrop-blur-sm font-normal"
+                    className="border-2 border-white/20 text-white hover:bg-white/10 bg-transparent backdrop-blur-sm font-normal w-full sm:w-auto"
                     asChild
                   >
                     <Link href="/api">
@@ -524,7 +526,7 @@ export default function ProductsPage() {
                 whileInView={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.6, delay: 0.1 }}
                 viewport={{ once: true }}
-                className="lg:col-span-3"
+                className="lg:col-span-3 min-w-0 w-full"
               >
                 <CodeTabs examples={featuredCode} />
               </motion.div>
@@ -533,7 +535,7 @@ export default function ProductsPage() {
         </section>
 
         {/* WHY SWARMS */}
-        <section className="bg-black py-16 sm:py-20 md:py-24 lg:py-32 xl:py-40">
+        <section className="bg-black py-12 sm:py-20 md:py-24 lg:py-32 xl:py-40">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <SectionHeading
               eyebrow="Built for production"
@@ -541,7 +543,7 @@ export default function ProductsPage() {
               description="Security, scale, reliability, and support — built into every product in the suite."
             />
 
-            <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 md:gap-6">
+            <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-5 md:gap-6">
               {pillars.map((pillar, i) => (
                 <motion.div
                   key={pillar.title}
@@ -549,15 +551,15 @@ export default function ProductsPage() {
                   whileInView={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: i * 0.05 }}
                   viewport={{ once: true }}
-                  className="rounded-2xl sm:rounded-3xl border border-white/10 bg-white/[0.02] backdrop-blur-sm p-5 sm:p-6 md:p-8"
+                  className="rounded-2xl sm:rounded-3xl border border-white/10 bg-white/[0.02] backdrop-blur-sm p-4 sm:p-6 md:p-8"
                 >
-                  <div className="p-2.5 sm:p-3 rounded-xl sm:rounded-2xl border-2 border-red-500/50 bg-red-500/10 w-fit mb-4 sm:mb-5">
+                  <div className="p-2 sm:p-3 rounded-xl sm:rounded-2xl border-2 border-red-500/50 bg-red-500/10 w-fit mb-3 sm:mb-5">
                     <pillar.icon className="w-5 h-5 sm:w-6 sm:h-6 text-red-500" />
                   </div>
-                  <h3 className="text-lg sm:text-xl font-bold text-white mb-2">
+                  <h3 className="text-base sm:text-xl font-bold text-white mb-1.5 sm:mb-2 leading-snug">
                     {pillar.title}
                   </h3>
-                  <p className="text-white/65 text-sm sm:text-base leading-relaxed">
+                  <p className="text-white/65 text-[13px] sm:text-base leading-relaxed">
                     {pillar.description}
                   </p>
                 </motion.div>
@@ -567,30 +569,30 @@ export default function ProductsPage() {
         </section>
 
         {/* CTA */}
-        <section className="bg-black py-16 sm:py-20 md:py-24 lg:py-32 xl:py-40">
+        <section className="bg-black py-12 sm:py-20 md:py-24 lg:py-32 xl:py-40">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7 }}
               viewport={{ once: true }}
-              className="relative max-w-5xl mx-auto rounded-3xl border border-white/10 bg-white/[0.02] backdrop-blur-sm overflow-hidden"
+              className="relative max-w-5xl mx-auto rounded-2xl sm:rounded-3xl border border-white/10 bg-white/[0.02] backdrop-blur-sm overflow-hidden"
             >
               <div
                 aria-hidden="true"
                 className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_70%_30%,_rgba(239,68,68,0.12)_0%,_rgba(0,0,0,0)_55%)]"
               />
-              <div className="relative z-10 px-6 sm:px-10 md:px-14 py-12 sm:py-16 md:py-20 text-center space-y-6 sm:space-y-8">
-                <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-white leading-tight">
+              <div className="relative z-10 px-5 sm:px-10 md:px-14 py-10 sm:py-16 md:py-20 text-center space-y-5 sm:space-y-8">
+                <h2 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-white leading-tight">
                   Pick a product. Ship a swarm.
                 </h2>
-                <p className="text-base sm:text-lg md:text-xl text-white/60 max-w-2xl mx-auto leading-relaxed">
+                <p className="text-sm sm:text-lg md:text-xl text-white/60 max-w-2xl mx-auto leading-relaxed">
                   Open-source frameworks. Hosted APIs. Enterprise deployments. The stack is yours.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 md:gap-6 justify-center items-center pt-2">
                   <Button
                     size="lg"
-                    className="bg-white text-black hover:bg-white/90 w-full sm:w-auto font-bold text-sm sm:text-base md:text-lg px-6 sm:px-8 md:px-10 py-5 sm:py-6 md:py-7"
+                    className="bg-white text-black hover:bg-white/90 w-full sm:w-auto font-bold text-sm sm:text-base md:text-lg px-5 sm:px-8 md:px-10 py-3.5 sm:py-6 md:py-7 h-auto"
                     asChild
                   >
                     <a href="https://github.com/kyegomez/swarms" target="_blank" rel="noopener noreferrer">
@@ -602,7 +604,7 @@ export default function ProductsPage() {
                   <Button
                     size="lg"
                     variant="outline"
-                    className="border-2 border-white/20 text-white hover:bg-white/10 w-full sm:w-auto font-normal text-sm sm:text-base md:text-lg px-6 sm:px-8 md:px-10 py-5 sm:py-6 md:py-7 bg-transparent backdrop-blur-sm"
+                    className="border-2 border-white/20 text-white hover:bg-white/10 w-full sm:w-auto font-normal text-sm sm:text-base md:text-lg px-5 sm:px-8 md:px-10 py-3.5 sm:py-6 md:py-7 h-auto bg-transparent backdrop-blur-sm"
                     asChild
                   >
                     <a href="https://cal.com/swarms" target="_blank" rel="noopener noreferrer">

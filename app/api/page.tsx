@@ -399,16 +399,18 @@ const faqs = [
 
 function CodeBlock({ code }: { code: string }) {
   return (
-    <div className="overflow-x-auto rounded-2xl border border-white/10 bg-white/[0.02] backdrop-blur-sm">
+    <div className="w-full max-w-full overflow-hidden rounded-2xl border border-white/10 bg-white/[0.02] backdrop-blur-sm">
       <div className="flex items-center gap-1.5 border-b border-white/5 px-4 py-3">
         <span className="h-2 w-2 rounded-full bg-white/20" />
         <span className="h-2 w-2 rounded-full bg-white/20" />
         <span className="h-2 w-2 rounded-full bg-white/20" />
         <span className="ml-3 font-mono text-[10px] uppercase tracking-widest text-white/40">code</span>
       </div>
-      <pre className="px-4 py-5 sm:px-6 sm:py-6 font-mono text-[11px] sm:text-xs md:text-sm leading-relaxed text-white/85 whitespace-pre">
-        {code}
-      </pre>
+      <div className="overflow-x-auto">
+        <pre className="px-4 py-5 sm:px-6 sm:py-6 font-mono text-[11px] sm:text-xs md:text-sm leading-relaxed text-white/85 whitespace-pre">
+          {code}
+        </pre>
+      </div>
     </div>
   )
 }
@@ -455,7 +457,7 @@ function SectionHeading({
       whileInView={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}
       viewport={{ once: true }}
-      className={`max-w-3xl ${alignClass} space-y-3 sm:space-y-4 md:space-y-5 mb-10 sm:mb-14 md:mb-20 px-2 sm:px-0`}
+      className={`max-w-3xl ${alignClass} space-y-2.5 sm:space-y-4 md:space-y-5 mb-8 sm:mb-14 md:mb-20 px-1 sm:px-0`}
     >
       {eyebrow && (
         <div className={`flex items-center gap-2 sm:gap-3 ${align === "center" ? "justify-center" : ""}`}>
@@ -466,11 +468,11 @@ function SectionHeading({
           {align === "center" && <span className="h-px w-6 sm:w-8 bg-gradient-to-l from-transparent to-white/20" />}
         </div>
       )}
-      <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-white leading-tight">
+      <h2 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-white leading-tight">
         {title}
       </h2>
       {description && (
-        <p className="text-base sm:text-lg md:text-xl text-white/60 max-w-3xl font-normal leading-relaxed">
+        <p className="text-sm sm:text-lg md:text-xl text-white/60 max-w-3xl font-normal leading-relaxed">
           {description}
         </p>
       )}
@@ -485,42 +487,42 @@ export default function APIPage() {
     <div className="min-h-screen bg-black text-white">
       <Navigation />
 
-      <main className="pt-[64px] sm:pt-[80px] md:pt-[96px]">
+      <main className="pt-[64px] sm:pt-[80px] md:pt-[96px] overflow-x-hidden">
         {/* HERO */}
-        <section className="relative overflow-hidden bg-black min-h-[80vh] flex items-center">
+        <section className="relative overflow-hidden bg-black sm:min-h-[80vh] flex items-center">
           <div className="absolute inset-0 pointer-events-none">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,_rgba(239,68,68,0.10)_0%,_rgba(0,0,0,0)_60%)]" />
           </div>
 
-          <div className="container relative z-10 mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-24 md:py-32">
+          <div className="container relative z-10 mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-24 md:py-32">
             <motion.div
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-              className="max-w-5xl mx-auto text-center space-y-6 sm:space-y-8 md:space-y-10"
+              className="max-w-5xl mx-auto text-center space-y-5 sm:space-y-8 md:space-y-10"
             >
               <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 backdrop-blur-sm">
                 <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
-                <span className="text-xs sm:text-sm text-white/70 font-medium">
+                <span className="text-[11px] sm:text-sm text-white/70 font-medium">
                   Production multi-agent infrastructure
                 </span>
               </div>
 
               <h1
-                className="font-bold leading-[0.9] tracking-tight text-red-500"
-                style={{ fontSize: "clamp(2.75rem, 9vw, 9rem)", fontFamily: "var(--font-orbitron)" }}
+                className="font-bold leading-[0.9] tracking-tight text-red-500 break-words"
+                style={{ fontSize: "clamp(2.25rem, 10vw, 9rem)", fontFamily: "var(--font-orbitron)" }}
               >
                 Swarms API
               </h1>
 
-              <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl text-white/80 max-w-3xl mx-auto font-medium leading-tight px-2 sm:px-0">
+              <p className="text-base sm:text-xl md:text-2xl lg:text-3xl text-white/80 max-w-3xl mx-auto font-medium leading-snug sm:leading-tight px-1 sm:px-0">
                 The only API for orchestrating multi-agent systems at production scale.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 md:gap-6 justify-center items-center w-full max-w-2xl mx-auto pt-2">
                 <Button
                   size="lg"
-                  className="bg-white text-black hover:bg-white/90 w-full sm:w-auto font-bold text-sm sm:text-base md:text-lg px-6 sm:px-8 md:px-10 py-5 sm:py-6 md:py-7"
+                  className="bg-white text-black hover:bg-white/90 w-full sm:w-auto font-bold text-sm sm:text-base md:text-lg px-5 sm:px-8 md:px-10 py-3.5 sm:py-6 md:py-7 h-auto"
                   asChild
                 >
                   <a href="https://swarms.world/platform/api-keys" target="_blank" rel="noopener noreferrer">
@@ -532,7 +534,7 @@ export default function APIPage() {
                 <Button
                   size="lg"
                   variant="outline"
-                  className="border-2 border-white/20 text-white hover:bg-white/10 w-full sm:w-auto font-normal text-sm sm:text-base md:text-lg px-6 sm:px-8 md:px-10 py-5 sm:py-6 md:py-7 bg-transparent backdrop-blur-sm"
+                  className="border-2 border-white/20 text-white hover:bg-white/10 w-full sm:w-auto font-normal text-sm sm:text-base md:text-lg px-5 sm:px-8 md:px-10 py-3.5 sm:py-6 md:py-7 h-auto bg-transparent backdrop-blur-sm"
                   asChild
                 >
                   <a href="https://docs.swarms.ai" target="_blank" rel="noopener noreferrer">
@@ -547,9 +549,9 @@ export default function APIPage() {
         </section>
 
         {/* STATS */}
-        <section className="bg-black py-12 sm:py-16 md:py-20">
+        <section className="bg-black py-10 sm:py-16 md:py-20">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="max-w-7xl mx-auto grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
+            <div className="max-w-7xl mx-auto grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4 md:gap-6">
               {stats.map((stat, i) => (
                 <motion.div
                   key={stat.label}
@@ -557,12 +559,12 @@ export default function APIPage() {
                   whileInView={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: i * 0.05 }}
                   viewport={{ once: true }}
-                  className="rounded-2xl border border-white/10 bg-white/[0.02] backdrop-blur-sm p-5 sm:p-6 md:p-8"
+                  className="rounded-xl sm:rounded-2xl border border-white/10 bg-white/[0.02] backdrop-blur-sm p-4 sm:p-6 md:p-8"
                 >
-                  <div className="text-3xl sm:text-4xl md:text-5xl font-bold text-white tracking-tight mb-1.5 sm:mb-2">
+                  <div className="text-2xl sm:text-4xl md:text-5xl font-bold text-white tracking-tight mb-1 sm:mb-2 break-words">
                     {stat.value}
                   </div>
-                  <div className="text-xs sm:text-sm md:text-base text-white/55 font-medium">
+                  <div className="text-[11px] sm:text-sm md:text-base text-white/55 font-medium leading-snug">
                     {stat.label}
                   </div>
                 </motion.div>
@@ -572,7 +574,7 @@ export default function APIPage() {
         </section>
 
         {/* CAPABILITIES */}
-        <section className="bg-black py-16 sm:py-20 md:py-24 lg:py-32 xl:py-40">
+        <section className="bg-black py-12 sm:py-20 md:py-24 lg:py-32 xl:py-40">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <SectionHeading
               eyebrow="Capabilities"
@@ -580,7 +582,7 @@ export default function APIPage() {
               description="A complete multi-agent stack — orchestration, memory, tooling, and observability — behind one API."
             />
 
-            <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
+            <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-5 md:gap-6">
               {capabilities.map((cap, i) => (
                 <motion.div
                   key={cap.title}
@@ -591,17 +593,17 @@ export default function APIPage() {
                   className="group"
                 >
                   <div className="relative h-full rounded-2xl sm:rounded-3xl overflow-hidden border border-white/10 bg-black/50 backdrop-blur-sm transition-all duration-500 hover:border-white/30 hover:scale-[1.01] hover:shadow-2xl hover:shadow-white/5">
-                    <div className="relative z-10 p-5 sm:p-6 md:p-8 flex flex-col gap-4 sm:gap-5 md:gap-6 min-h-[220px] sm:min-h-[240px] md:min-h-[260px]">
+                    <div className="relative z-10 p-4 sm:p-6 md:p-8 flex flex-col gap-3 sm:gap-5 md:gap-6 min-h-0 sm:min-h-[240px] md:min-h-[260px]">
                       <div className="flex items-start">
-                        <div className="p-2.5 sm:p-3 rounded-xl sm:rounded-2xl border-2 border-red-500/50 bg-red-500/10 group-hover:border-red-500 group-hover:bg-red-500/20 transition-all duration-500">
+                        <div className="p-2 sm:p-3 rounded-xl sm:rounded-2xl border-2 border-red-500/50 bg-red-500/10 group-hover:border-red-500 group-hover:bg-red-500/20 transition-all duration-500">
                           <cap.icon className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-red-500" />
                         </div>
                       </div>
                       <div>
-                        <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-white mb-1.5 sm:mb-2">
+                        <h3 className="text-base sm:text-xl md:text-2xl font-bold text-white mb-1.5 sm:mb-2 leading-snug">
                           {cap.title}
                         </h3>
-                        <p className="text-white/65 text-sm sm:text-base leading-relaxed">
+                        <p className="text-white/65 text-[13px] sm:text-base leading-relaxed">
                           {cap.description}
                         </p>
                       </div>
@@ -614,25 +616,25 @@ export default function APIPage() {
         </section>
 
         {/* QUICKSTART - SINGLE AGENT */}
-        <section className="bg-black py-16 sm:py-20 md:py-24 lg:py-32">
+        <section className="bg-black py-12 sm:py-20 md:py-24 lg:py-32">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="max-w-7xl mx-auto grid lg:grid-cols-5 gap-8 sm:gap-10 md:gap-12 lg:gap-16 items-start">
+            <div className="max-w-7xl mx-auto grid lg:grid-cols-5 gap-6 sm:gap-10 md:gap-12 lg:gap-16 items-start">
               <motion.div
                 initial={{ opacity: 0, x: -30 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.6 }}
                 viewport={{ once: true }}
-                className="lg:col-span-2 space-y-4 sm:space-y-6"
+                className="lg:col-span-2 space-y-4 sm:space-y-6 min-w-0"
               >
                 <p className="text-[10px] sm:text-xs text-white font-bold tracking-[0.22em] uppercase">
                   Quickstart
                 </p>
-                <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-white leading-tight">
+                <h2 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-white leading-tight">
                   Your first agent in&nbsp;
                   <span className="text-red-500">three lines</span>.
                 </h2>
-                <p className="text-base sm:text-lg md:text-xl text-white/60 leading-relaxed">
-                  Sign up, drop in your API key, and call <code className="font-mono text-white/85">/v1/agent/completions</code>. No infrastructure to provision.
+                <p className="text-sm sm:text-lg md:text-xl text-white/60 leading-relaxed">
+                  Sign up, drop in your API key, and call <code className="font-mono text-white/85 break-all">/v1/agent/completions</code>. No infrastructure to provision.
                 </p>
                 <div className="space-y-3 pt-2">
                   {[
@@ -657,7 +659,7 @@ export default function APIPage() {
                 whileInView={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.6, delay: 0.1 }}
                 viewport={{ once: true }}
-                className="lg:col-span-3"
+                className="lg:col-span-3 min-w-0 w-full"
               >
                 <CodeTabs examples={agentExamples} />
               </motion.div>
@@ -666,7 +668,7 @@ export default function APIPage() {
         </section>
 
         {/* MULTI-AGENT EXAMPLE */}
-        <section className="bg-black py-16 sm:py-20 md:py-24 lg:py-32">
+        <section className="bg-black py-12 sm:py-20 md:py-24 lg:py-32">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <SectionHeading
               eyebrow="Multi-agent"
@@ -678,7 +680,7 @@ export default function APIPage() {
               description="Describe the topology and the agents — Swarms handles routing, memory, and aggregation."
             />
 
-            <div className="max-w-7xl mx-auto">
+            <div className="max-w-7xl mx-auto min-w-0">
               <CodeTabs examples={swarmExamples} defaultLang="Python SDK" />
 
               <motion.div
@@ -689,16 +691,16 @@ export default function APIPage() {
                 className="mt-8 sm:mt-10 md:mt-12"
               >
                 <div className="flex items-center gap-3 mb-4 sm:mb-5">
-                  <Layers className="h-4 w-4 text-red-500" />
+                  <Layers className="h-4 w-4 text-red-500 flex-shrink-0" />
                   <p className="text-[10px] sm:text-xs font-bold tracking-[0.22em] uppercase text-white">
                     Available swarm topologies
                   </p>
                 </div>
-                <div className="flex flex-wrap gap-2 sm:gap-2.5">
+                <div className="flex flex-wrap gap-1.5 sm:gap-2.5">
                   {swarmTypes.map((t) => (
                     <span
                       key={t}
-                      className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs sm:text-sm font-mono text-white/75 hover:border-white/25 hover:bg-white/[0.06] hover:text-white transition-all"
+                      className="rounded-full border border-white/10 bg-white/[0.03] px-2.5 sm:px-3 py-1 sm:py-1.5 text-[11px] sm:text-sm font-mono text-white/75 hover:border-white/25 hover:bg-white/[0.06] hover:text-white transition-all"
                     >
                       {t}
                     </span>
@@ -710,7 +712,7 @@ export default function APIPage() {
         </section>
 
         {/* SDKs */}
-        <section className="bg-black py-16 sm:py-20 md:py-24 lg:py-32">
+        <section className="bg-black py-12 sm:py-20 md:py-24 lg:py-32">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <SectionHeading
               eyebrow="Official SDKs"
@@ -718,7 +720,7 @@ export default function APIPage() {
               description="Type-safe, idiomatic, production-ready libraries maintained by the Swarms team."
             />
 
-            <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 md:gap-6">
+            <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 md:gap-6">
               {sdks.map((sdk, i) => (
                 <motion.a
                   key={sdk.name}
@@ -729,16 +731,16 @@ export default function APIPage() {
                   whileInView={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: i * 0.05 }}
                   viewport={{ once: true }}
-                  className="group block rounded-2xl border border-white/10 bg-white/[0.02] backdrop-blur-sm p-5 sm:p-6 hover:border-white/25 hover:bg-white/[0.04] transition-all duration-300"
+                  className="group block rounded-2xl border border-white/10 bg-white/[0.02] backdrop-blur-sm p-4 sm:p-6 hover:border-white/25 hover:bg-white/[0.04] transition-all duration-300 min-w-0"
                 >
-                  <div className="flex items-center justify-between mb-4 sm:mb-5">
-                    <h3 className="text-base sm:text-lg font-semibold text-white">{sdk.name}</h3>
-                    <Github className="h-4 w-4 text-white/40 group-hover:text-white transition-colors" />
+                  <div className="flex items-center justify-between mb-3 sm:mb-5 gap-2 min-w-0">
+                    <h3 className="text-sm sm:text-lg font-semibold text-white truncate">{sdk.name}</h3>
+                    <Github className="h-4 w-4 text-white/40 group-hover:text-white transition-colors flex-shrink-0" />
                   </div>
-                  <div className="rounded-lg border border-white/10 bg-black/50 px-3 py-2.5 font-mono text-[11px] sm:text-xs text-white/75 overflow-x-auto whitespace-nowrap">
+                  <div className="rounded-lg border border-white/10 bg-black/50 px-2.5 sm:px-3 py-2 sm:py-2.5 font-mono text-[10px] sm:text-xs text-white/75 overflow-x-auto whitespace-nowrap">
                     {sdk.install}
                   </div>
-                  <div className="mt-4 flex items-center text-xs sm:text-sm text-white/50 group-hover:text-white transition-colors">
+                  <div className="mt-3 sm:mt-4 flex items-center text-[11px] sm:text-sm text-white/50 group-hover:text-white transition-colors">
                     View on GitHub
                     <ArrowRight className="h-3.5 w-3.5 ml-1.5 group-hover:translate-x-0.5 transition-transform" />
                   </div>
@@ -749,7 +751,7 @@ export default function APIPage() {
         </section>
 
         {/* PRICING */}
-        <section className="bg-black py-16 sm:py-20 md:py-24 lg:py-32 xl:py-40">
+        <section className="bg-black py-12 sm:py-20 md:py-24 lg:py-32 xl:py-40">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <SectionHeading
               eyebrow="Pricing"
@@ -757,7 +759,7 @@ export default function APIPage() {
               description="Generous free tier. Predictable team pricing. On-premise and enterprise when you need them."
             />
 
-            <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 md:gap-6">
+            <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-5 md:gap-6">
               {pricingTiers.map((tier, i) => (
                 <motion.div
                   key={tier.name}
@@ -765,35 +767,35 @@ export default function APIPage() {
                   whileInView={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: i * 0.07 }}
                   viewport={{ once: true }}
-                  className={`relative flex flex-col rounded-2xl sm:rounded-3xl border backdrop-blur-sm p-6 sm:p-7 md:p-8 ${
+                  className={`relative flex flex-col rounded-2xl sm:rounded-3xl border backdrop-blur-sm p-5 sm:p-7 md:p-8 ${
                     tier.highlight
                       ? "border-red-500/40 bg-gradient-to-b from-red-500/[0.06] to-white/[0.02]"
                       : "border-white/10 bg-white/[0.02]"
                   }`}
                 >
                   {tier.highlight && (
-                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 inline-flex items-center rounded-full border border-red-500/40 bg-red-500/15 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-red-300">
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 inline-flex items-center rounded-full border border-red-500/40 bg-red-500/15 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-red-300 whitespace-nowrap">
                       Most popular
                     </div>
                   )}
-                  <div className="mb-5 sm:mb-6">
-                    <h3 className="text-lg sm:text-xl font-bold text-white mb-1">{tier.name}</h3>
-                    <p className="text-xs sm:text-sm text-white/55 leading-relaxed">
+                  <div className="mb-4 sm:mb-6">
+                    <h3 className="text-base sm:text-xl font-bold text-white mb-1">{tier.name}</h3>
+                    <p className="text-[11px] sm:text-sm text-white/55 leading-relaxed">
                       {tier.description}
                     </p>
                   </div>
-                  <div className="mb-5 sm:mb-6 pb-5 sm:pb-6 border-b border-white/5">
-                    <div className="flex items-baseline gap-1">
+                  <div className="mb-4 sm:mb-6 pb-4 sm:pb-6 border-b border-white/5">
+                    <div className="flex items-baseline gap-1 flex-wrap">
                       <span className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-white">
                         {tier.price}
                       </span>
                     </div>
-                    <p className="text-xs sm:text-sm text-white/50 mt-1">{tier.cadence}</p>
+                    <p className="text-[11px] sm:text-sm text-white/50 mt-1 leading-snug">{tier.cadence}</p>
                   </div>
-                  <ul className="space-y-2.5 sm:space-y-3 mb-6 sm:mb-8 flex-1">
+                  <ul className="space-y-2 sm:space-y-3 mb-5 sm:mb-8 flex-1">
                     {tier.features.map((feature) => (
-                      <li key={feature} className="flex items-start gap-2.5 text-xs sm:text-sm text-white/75 leading-relaxed">
-                        <CheckCircle className="h-4 w-4 text-red-500 flex-shrink-0 mt-0.5" />
+                      <li key={feature} className="flex items-start gap-2 sm:gap-2.5 text-[12px] sm:text-sm text-white/75 leading-relaxed">
+                        <CheckCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-red-500 flex-shrink-0 mt-0.5" />
                         <span>{feature}</span>
                       </li>
                     ))}
@@ -823,14 +825,14 @@ export default function APIPage() {
         </section>
 
         {/* FAQ */}
-        <section className="bg-black py-16 sm:py-20 md:py-24 lg:py-32">
+        <section className="bg-black py-12 sm:py-20 md:py-24 lg:py-32">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <SectionHeading
               eyebrow="FAQ"
               title="Common questions"
             />
 
-            <div className="max-w-3xl mx-auto space-y-3 sm:space-y-4">
+            <div className="max-w-3xl mx-auto space-y-2.5 sm:space-y-4">
               {faqs.map((faq, i) => {
                 const isOpen = openFaq === i
                 return (
@@ -840,19 +842,19 @@ export default function APIPage() {
                     whileInView={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.4, delay: i * 0.04 }}
                     viewport={{ once: true }}
-                    className="rounded-2xl border border-white/10 bg-white/[0.02] backdrop-blur-sm overflow-hidden"
+                    className="rounded-xl sm:rounded-2xl border border-white/10 bg-white/[0.02] backdrop-blur-sm overflow-hidden"
                   >
                     <button
                       type="button"
                       onClick={() => setOpenFaq(isOpen ? null : i)}
                       aria-expanded={isOpen}
-                      className="flex w-full items-center justify-between gap-4 px-5 sm:px-6 py-4 sm:py-5 text-left hover:bg-white/[0.02] transition-colors"
+                      className="flex w-full items-center justify-between gap-3 sm:gap-4 px-4 sm:px-6 py-3.5 sm:py-5 text-left hover:bg-white/[0.02] transition-colors"
                     >
-                      <span className="text-sm sm:text-base md:text-lg font-semibold text-white leading-snug">
+                      <span className="text-[13px] sm:text-base md:text-lg font-semibold text-white leading-snug">
                         {faq.question}
                       </span>
                       <ChevronDown
-                        className={`h-5 w-5 flex-shrink-0 text-white/50 transition-transform duration-300 ${
+                        className={`h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0 text-white/50 transition-transform duration-300 ${
                           isOpen ? "rotate-180 text-red-500" : ""
                         }`}
                       />
@@ -866,7 +868,7 @@ export default function APIPage() {
                       transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
                       className="overflow-hidden"
                     >
-                      <div className="px-5 sm:px-6 pb-5 sm:pb-6 text-sm sm:text-base text-white/65 leading-relaxed">
+                      <div className="px-4 sm:px-6 pb-4 sm:pb-6 text-[13px] sm:text-base text-white/65 leading-relaxed">
                         {faq.answer}
                       </div>
                     </motion.div>
@@ -878,30 +880,30 @@ export default function APIPage() {
         </section>
 
         {/* CTA */}
-        <section className="bg-black py-16 sm:py-20 md:py-24 lg:py-32 xl:py-40">
+        <section className="bg-black py-12 sm:py-20 md:py-24 lg:py-32 xl:py-40">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7 }}
               viewport={{ once: true }}
-              className="relative max-w-5xl mx-auto rounded-3xl border border-white/10 bg-white/[0.02] backdrop-blur-sm overflow-hidden"
+              className="relative max-w-5xl mx-auto rounded-2xl sm:rounded-3xl border border-white/10 bg-white/[0.02] backdrop-blur-sm overflow-hidden"
             >
               <div
                 aria-hidden="true"
                 className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_70%_30%,_rgba(239,68,68,0.12)_0%,_rgba(0,0,0,0)_55%)]"
               />
-              <div className="relative z-10 px-6 sm:px-10 md:px-14 py-12 sm:py-16 md:py-20 text-center space-y-6 sm:space-y-8">
-                <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-white leading-tight">
+              <div className="relative z-10 px-5 sm:px-10 md:px-14 py-10 sm:py-16 md:py-20 text-center space-y-5 sm:space-y-8">
+                <h2 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-white leading-tight">
                   Ready to ship a swarm?
                 </h2>
-                <p className="text-base sm:text-lg md:text-xl text-white/60 max-w-2xl mx-auto leading-relaxed">
+                <p className="text-sm sm:text-lg md:text-xl text-white/60 max-w-2xl mx-auto leading-relaxed">
                   Generate an API key in under a minute. Run your first multi-agent workflow before your coffee gets cold.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 md:gap-6 justify-center items-center pt-2">
                   <Button
                     size="lg"
-                    className="bg-white text-black hover:bg-white/90 w-full sm:w-auto font-bold text-sm sm:text-base md:text-lg px-6 sm:px-8 md:px-10 py-5 sm:py-6 md:py-7"
+                    className="bg-white text-black hover:bg-white/90 w-full sm:w-auto font-bold text-sm sm:text-base md:text-lg px-5 sm:px-8 md:px-10 py-3.5 sm:py-6 md:py-7 h-auto"
                     asChild
                   >
                     <a href="https://swarms.world/platform/api-keys" target="_blank" rel="noopener noreferrer">
@@ -912,7 +914,7 @@ export default function APIPage() {
                   <Button
                     size="lg"
                     variant="outline"
-                    className="border-2 border-white/20 text-white hover:bg-white/10 w-full sm:w-auto font-normal text-sm sm:text-base md:text-lg px-6 sm:px-8 md:px-10 py-5 sm:py-6 md:py-7 bg-transparent backdrop-blur-sm"
+                    className="border-2 border-white/20 text-white hover:bg-white/10 w-full sm:w-auto font-normal text-sm sm:text-base md:text-lg px-5 sm:px-8 md:px-10 py-3.5 sm:py-6 md:py-7 h-auto bg-transparent backdrop-blur-sm"
                     asChild
                   >
                     <a href="https://cal.com/swarms" target="_blank" rel="noopener noreferrer">

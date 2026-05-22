@@ -46,6 +46,26 @@ export function Navigation() {
   
   const [hoveredDropdown, setHoveredDropdown] = React.useState<string | null>(null)
   const [dropdownPosition, setDropdownPosition] = React.useState<{ [key: string]: 'left' | 'right' }>({})
+  const sheetContentRef = React.useRef<HTMLDivElement>(null)
+  
+  React.useEffect(() => {
+    if (isOpen) {
+      const scrollToTop = () => {
+        const sheetElement = document.querySelector('[data-sheet-content]') as HTMLElement
+        if (sheetElement) {
+          sheetElement.scrollTop = 0
+        }
+      }
+      
+      // Scroll immediately
+      scrollToTop()
+      
+      // Also scroll after a short delay to catch any late rendering
+      setTimeout(scrollToTop, 10)
+      setTimeout(scrollToTop, 50)
+      setTimeout(scrollToTop, 100)
+    }
+  }, [isOpen])
   
   const handleDropdownEnter = React.useCallback((dropdownName: string, event: React.MouseEvent<HTMLDivElement>) => {
     setHoveredDropdown(dropdownName)
@@ -628,21 +648,34 @@ export function Navigation() {
             <SheetContent
               side="right"
               className="w-[min(92vw,400px)] sm:w-[400px] max-w-[420px] border border-neutral-700/40 bg-neutral-900/95 backdrop-blur-xl shadow-2xl overflow-y-auto p-0"
+              data-sheet-content
             >
-              <SheetHeader className="px-5 sm:px-6 pt-6 pb-4 border-b border-neutral-700/40">
-                <SheetTitle className="text-xl text-white font-semibold">Menu</SheetTitle>
+              <SheetHeader className="px-5 sm:px-6 pt-16 pb-3 border-b border-neutral-700/40">
+                <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
+                <Link href="/" className="flex items-center" onClick={() => setIsOpen(false)}>
+                  <div className="relative w-10 h-10">
+                    <Image
+                      src="/logo.svg"
+                      alt="Swarms Logo"
+                      width={40}
+                      height={40}
+                      className="transition-opacity duration-300 hover:opacity-80"
+                    />
+                  </div>
+                  <span className="ml-3 text-lg font-bold text-white">Swarms</span>
+                </Link>
               </SheetHeader>
-              <div className="px-5 sm:px-6 py-5 sm:py-6 space-y-4 overflow-y-auto max-h-[calc(100vh-120px)]">
+              <div className="px-5 sm:px-6 py-3 space-y-2">
                 <Link
                   href="/"
-                  className="block text-base font-semibold text-white/85 hover:text-white transition-all duration-300 hover:bg-white/[0.05] p-4 rounded-lg border border-transparent hover:border-white/10 active:scale-[0.98] touch-manipulation"
+                  className="block text-sm font-semibold text-white/85 hover:text-white transition-all duration-200 hover:bg-white/[0.05] py-3 px-4 rounded-lg border border-transparent hover:border-white/10 active:scale-[0.98] touch-manipulation"
                   onClick={() => setIsOpen(false)}
                 >
                   Home
                 </Link>
                 <Link
                   href="/pricing"
-                  className="block text-base font-semibold text-white/85 hover:text-white transition-all duration-300 hover:bg-white/[0.05] p-4 rounded-lg border border-transparent hover:border-white/10 active:scale-[0.98] touch-manipulation"
+                  className="block text-sm font-semibold text-white/85 hover:text-white transition-all duration-200 hover:bg-white/[0.05] py-3 px-4 rounded-lg border border-transparent hover:border-white/10 active:scale-[0.98] touch-manipulation"
                   onClick={() => setIsOpen(false)}
                 >
                   Pricing
@@ -651,7 +684,7 @@ export function Navigation() {
                   href="https://status.swarms.ai"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="block text-base font-semibold text-white/85 hover:text-white transition-all duration-300 hover:bg-white/[0.05] p-4 rounded-lg border border-transparent hover:border-white/10 active:scale-[0.98] touch-manipulation"
+                  className="block text-sm font-semibold text-white/85 hover:text-white transition-all duration-200 hover:bg-white/[0.05] py-3 px-4 rounded-lg border border-transparent hover:border-white/10 active:scale-[0.98] touch-manipulation"
                   onClick={() => setIsOpen(false)}
                 >
                   Status
@@ -660,137 +693,137 @@ export function Navigation() {
                   href="https://docs.swarms.world"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="block text-base font-semibold text-white/85 hover:text-white transition-all duration-300 hover:bg-white/[0.05] p-4 rounded-lg border border-transparent hover:border-white/10 active:scale-[0.98] touch-manipulation"
+                  className="block text-sm font-semibold text-white/85 hover:text-white transition-all duration-200 hover:bg-white/[0.05] py-3 px-4 rounded-lg border border-transparent hover:border-white/10 active:scale-[0.98] touch-manipulation"
                   onClick={() => setIsOpen(false)}
                 >
                   Docs
                 </a>
                 <Link
                   href="/blog"
-                  className="block text-base font-semibold text-white/85 hover:text-white transition-all duration-300 hover:bg-white/[0.05] p-4 rounded-lg border border-transparent hover:border-white/10 active:scale-[0.98] touch-manipulation"
+                  className="block text-sm font-semibold text-white/85 hover:text-white transition-all duration-200 hover:bg-white/[0.05] py-3 px-4 rounded-lg border border-transparent hover:border-white/10 active:scale-[0.98] touch-manipulation"
                   onClick={() => setIsOpen(false)}
                 >
                   Blog
                 </Link>
-                <div className="space-y-3">
-                  <div className="text-sm font-semibold text-white/60 px-3 flex items-center">
+                <div className="space-y-1.5 pt-1">
+                  <div className="text-xs font-semibold text-white/40 px-4 uppercase tracking-wider flex items-center">
                     <span>Products</span>
-                    <div className="ml-2 h-px flex-1 bg-gradient-to-r from-white/20 to-transparent"></div>
+                    <div className="ml-2 h-px flex-1 bg-gradient-to-r from-white/10 to-transparent"></div>
                   </div>
                   <Link
                     href="/products"
-                    className="text-base font-semibold text-white/85 hover:text-white transition-all duration-300 hover:bg-white/[0.05] p-4 rounded-lg flex items-center border border-transparent hover:border-white/10 active:scale-[0.98] touch-manipulation"
+                    className="text-sm font-semibold text-white/85 hover:text-white transition-all duration-200 hover:bg-white/[0.05] py-2.5 px-4 rounded-lg flex items-center border border-transparent hover:border-white/10 active:scale-[0.98] touch-manipulation"
                     onClick={() => setIsOpen(false)}
                   >
-                    <Package className="mr-3 h-5 w-5 text-white/60 flex-shrink-0" />
+                    <Package className="mr-2.5 h-4 w-4 text-white/60 flex-shrink-0" />
                     Products Overview
                   </Link>
                   <a
                     href="https://github.com/kyegomez/swarms"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-base font-semibold text-white/85 hover:text-white transition-all duration-300 hover:bg-white/[0.05] p-4 rounded-lg flex items-center border border-transparent hover:border-white/10 active:scale-[0.98] touch-manipulation"
+                    className="text-sm font-semibold text-white/85 hover:text-white transition-all duration-200 hover:bg-white/[0.05] py-2.5 px-4 rounded-lg flex items-center border border-transparent hover:border-white/10 active:scale-[0.98] touch-manipulation"
                     onClick={() => setIsOpen(false)}
                   >
-                    <Github className="mr-3 h-5 w-5 text-white/60 flex-shrink-0" />
+                    <Github className="mr-2.5 h-4 w-4 text-white/60 flex-shrink-0" />
                     Swarms Python
                   </a>
                   <Link
                     href="/api"
-                    className="text-base font-semibold text-white/85 hover:text-white transition-all duration-300 hover:bg-white/[0.05] p-4 rounded-lg flex items-center border border-transparent hover:border-white/10 active:scale-[0.98] touch-manipulation"
+                    className="text-sm font-semibold text-white/85 hover:text-white transition-all duration-200 hover:bg-white/[0.05] py-2.5 px-4 rounded-lg flex items-center border border-transparent hover:border-white/10 active:scale-[0.98] touch-manipulation"
                     onClick={() => setIsOpen(false)}
                   >
-                    <Code className="mr-3 h-5 w-5 text-white/60 flex-shrink-0" />
+                    <Code className="mr-2.5 h-4 w-4 text-white/60 flex-shrink-0" />
                     Swarms API
                   </Link>
                   <a
                     href="https://swarms.world"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-base font-semibold text-white/85 hover:text-white transition-all duration-300 hover:bg-white/[0.05] p-4 rounded-lg flex items-center border border-transparent hover:border-white/10 active:scale-[0.98] touch-manipulation"
+                    className="text-sm font-semibold text-white/85 hover:text-white transition-all duration-200 hover:bg-white/[0.05] py-2.5 px-4 rounded-lg flex items-center border border-transparent hover:border-white/10 active:scale-[0.98] touch-manipulation"
                     onClick={() => setIsOpen(false)}
                   >
-                    <Sparkles className="mr-3 h-5 w-5 text-white/60 flex-shrink-0" />
+                    <Sparkles className="mr-2.5 h-4 w-4 text-white/60 flex-shrink-0" />
                     Swarms Marketplace
                   </a>
                   <Link
                     href="/atp"
-                    className="text-base font-semibold text-white/85 hover:text-white transition-all duration-300 hover:bg-white/[0.05] p-4 rounded-lg flex items-center border border-transparent hover:border-white/10 active:scale-[0.98] touch-manipulation"
+                    className="text-sm font-semibold text-white/85 hover:text-white transition-all duration-200 hover:bg-white/[0.05] py-2.5 px-4 rounded-lg flex items-center border border-transparent hover:border-white/10 active:scale-[0.98] touch-manipulation"
                     onClick={() => setIsOpen(false)}
                   >
-                    <DollarSign className="mr-3 h-5 w-5 text-white/60 flex-shrink-0" />
+                    <DollarSign className="mr-2.5 h-4 w-4 text-white/60 flex-shrink-0" />
                     ATP
                   </Link>
                   <Link
                     href="/mobile"
-                    className="text-base font-semibold text-white/85 hover:text-white transition-all duration-300 hover:bg-white/[0.05] p-4 rounded-lg flex items-center border border-transparent hover:border-white/10 active:scale-[0.98] touch-manipulation"
+                    className="text-sm font-semibold text-white/85 hover:text-white transition-all duration-200 hover:bg-white/[0.05] py-2.5 px-4 rounded-lg flex items-center border border-transparent hover:border-white/10 active:scale-[0.98] touch-manipulation"
                     onClick={() => setIsOpen(false)}
                   >
-                    <Smartphone className="mr-3 h-5 w-5 text-white/60 flex-shrink-0" />
+                    <Smartphone className="mr-2.5 h-4 w-4 text-white/60 flex-shrink-0" />
                     Mobile App
                   </Link>
                   <a
                     href="https://github.com/The-Swarm-Corporation/swarms-rs"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-base font-semibold text-white/85 hover:text-white transition-all duration-300 hover:bg-white/[0.05] p-4 rounded-lg flex items-center border border-transparent hover:border-white/10 active:scale-[0.98] touch-manipulation"
+                    className="text-sm font-semibold text-white/85 hover:text-white transition-all duration-200 hover:bg-white/[0.05] py-2.5 px-4 rounded-lg flex items-center border border-transparent hover:border-white/10 active:scale-[0.98] touch-manipulation"
                     onClick={() => setIsOpen(false)}
                   >
-                    <Rocket className="mr-3 h-5 w-5 text-white/60 flex-shrink-0" />
+                    <Rocket className="mr-2.5 h-4 w-4 text-white/60 flex-shrink-0" />
                     Swarms RS
                   </a>
                 </div>
 
                 <Link
                   href="/hiring"
-                  className="block text-base font-semibold text-white/85 hover:text-white transition-all duration-300 hover:bg-white/[0.05] p-4 rounded-lg border border-transparent hover:border-white/10 active:scale-[0.98] touch-manipulation"
+                  className="block text-sm font-semibold text-white/85 hover:text-white transition-all duration-200 hover:bg-white/[0.05] py-3 px-4 rounded-lg border border-transparent hover:border-white/10 active:scale-[0.98] touch-manipulation"
                   onClick={() => setIsOpen(false)}
                 >
                   Careers
                 </Link>
 
                 {/* Mobile Resources Section with Tabs */}
-                <div className="space-y-3 pt-2">
-                  <div className="text-sm font-semibold text-white/60 px-4 flex items-center">
+                <div className="space-y-2 pt-2">
+                  <div className="text-xs font-semibold text-white/40 px-4 uppercase tracking-wider flex items-center">
                     <span>Resources</span>
-                    <div className="ml-2 h-px flex-1 bg-gradient-to-r from-white/20 to-transparent"></div>
+                    <div className="ml-2 h-px flex-1 bg-gradient-to-r from-white/10 to-transparent"></div>
                   </div>
 
                   <Tabs defaultValue="platform" className="w-full">
-                    <TabsList className="w-full grid grid-cols-2 sm:grid-cols-3 gap-1.5 bg-neutral-900/50 backdrop-blur-sm border border-neutral-700/40 rounded-lg mb-4 h-auto p-1.5">
+                    <TabsList className="w-full grid grid-cols-2 sm:grid-cols-3 gap-1 bg-neutral-900/50 backdrop-blur-sm border border-neutral-700/40 rounded-lg mb-3 h-auto p-1">
                       <TabsTrigger
                         value="platform"
-                        className="text-sm py-2.5 data-[state=active]:bg-white/[0.08] data-[state=active]:text-white data-[state=active]:border-neutral-700/50 border border-transparent hover:bg-white/[0.05] hover:border-white/10 text-neutral-400 transition-all duration-200 touch-manipulation"
+                        className="text-xs py-2 data-[state=active]:bg-white/[0.08] data-[state=active]:text-white data-[state=active]:border-neutral-700/50 border border-transparent hover:bg-white/[0.05] hover:border-white/10 text-neutral-400 transition-all duration-200 touch-manipulation"
                       >
                         Platform
                       </TabsTrigger>
                       <TabsTrigger
                         value="open_source"
-                        className="text-sm py-2.5 data-[state=active]:bg-white/[0.08] data-[state=active]:text-white data-[state=active]:border-neutral-700/50 border border-transparent hover:bg-white/[0.05] hover:border-white/10 text-neutral-400 transition-all duration-200 touch-manipulation"
+                        className="text-xs py-2 data-[state=active]:bg-white/[0.08] data-[state=active]:text-white data-[state=active]:border-neutral-700/50 border border-transparent hover:bg-white/[0.05] hover:border-white/10 text-neutral-400 transition-all duration-200 touch-manipulation"
                       >
                         Open Source
                       </TabsTrigger>
                       <TabsTrigger
                         value="research"
-                        className="text-sm py-2.5 data-[state=active]:bg-white/[0.08] data-[state=active]:text-white data-[state=active]:border-neutral-700/50 border border-transparent hover:bg-white/[0.05] hover:border-white/10 text-neutral-400 transition-all duration-200 touch-manipulation"
+                        className="text-xs py-2 data-[state=active]:bg-white/[0.08] data-[state=active]:text-white data-[state=active]:border-neutral-700/50 border border-transparent hover:bg-white/[0.05] hover:border-white/10 text-neutral-400 transition-all duration-200 touch-manipulation"
                       >
                         Research
                       </TabsTrigger>
                       <TabsTrigger
                         value="community"
-                        className="text-sm py-2.5 data-[state=active]:bg-white/[0.08] data-[state=active]:text-white data-[state=active]:border-neutral-700/50 border border-transparent hover:bg-white/[0.05] hover:border-white/10 text-neutral-400 transition-all duration-200 touch-manipulation"
+                        className="text-xs py-2 data-[state=active]:bg-white/[0.08] data-[state=active]:text-white data-[state=active]:border-neutral-700/50 border border-transparent hover:bg-white/[0.05] hover:border-white/10 text-neutral-400 transition-all duration-200 touch-manipulation"
                       >
                         Community
                       </TabsTrigger>
                       <TabsTrigger
                         value="programs"
-                        className="text-sm py-2.5 data-[state=active]:bg-white/[0.08] data-[state=active]:text-white data-[state=active]:border-neutral-700/50 border border-transparent hover:bg-white/[0.05] hover:border-white/10 text-neutral-400 transition-all duration-200 touch-manipulation"
+                        className="text-xs py-2 data-[state=active]:bg-white/[0.08] data-[state=active]:text-white data-[state=active]:border-neutral-700/50 border border-transparent hover:bg-white/[0.05] hover:border-white/10 text-neutral-400 transition-all duration-200 touch-manipulation"
                       >
                         Programs
                       </TabsTrigger>
                       <TabsTrigger
                         value="learn"
-                        className="text-sm py-2.5 data-[state=active]:bg-white/[0.08] data-[state=active]:text-white data-[state=active]:border-neutral-700/50 border border-transparent hover:bg-white/[0.05] hover:border-white/10 text-neutral-400 transition-all duration-200 touch-manipulation"
+                        className="text-xs py-2 data-[state=active]:bg-white/[0.08] data-[state=active]:text-white data-[state=active]:border-neutral-700/50 border border-transparent hover:bg-white/[0.05] hover:border-white/10 text-neutral-400 transition-all duration-200 touch-manipulation"
                       >
                         Learn
                       </TabsTrigger>

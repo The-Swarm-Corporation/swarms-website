@@ -44,48 +44,8 @@ export function Navigation() {
   const [isOpen, setIsOpen] = React.useState(false)
   const [activeTab, setActiveTab] = React.useState("platform")
   
+  // Add hover state management for dropdowns
   const [hoveredDropdown, setHoveredDropdown] = React.useState<string | null>(null)
-  const [dropdownPosition, setDropdownPosition] = React.useState<{ [key: string]: 'left' | 'right' }>({})
-  const sheetContentRef = React.useRef<HTMLDivElement>(null)
-  
-  React.useEffect(() => {
-    if (isOpen) {
-      const scrollToTop = () => {
-        const sheetElement = document.querySelector('[data-sheet-content]') as HTMLElement
-        if (sheetElement) {
-          sheetElement.scrollTop = 0
-        }
-      }
-      
-      // Scroll immediately
-      scrollToTop()
-      
-      // Also scroll after a short delay to catch any late rendering
-      setTimeout(scrollToTop, 10)
-      setTimeout(scrollToTop, 50)
-      setTimeout(scrollToTop, 100)
-    }
-  }, [isOpen])
-  
-  const handleDropdownEnter = React.useCallback((dropdownName: string, event: React.MouseEvent<HTMLDivElement>) => {
-    setHoveredDropdown(dropdownName)
-    
-    const target = event.currentTarget
-    const rect = target.getBoundingClientRect()
-    const viewportWidth = window.innerWidth
-    const spaceOnRight = viewportWidth - rect.right
-    
-    let position: 'left' | 'right' = 'left'
-    if (dropdownName === 'socials') {
-      position = 'right'
-    } else if (dropdownName === 'resources' && spaceOnRight < 680) {
-      position = 'right'
-    } else if (spaceOnRight < 350) {
-      position = 'right'
-    }
-    
-    setDropdownPosition(prev => ({ ...prev, [dropdownName]: position }))
-  }, [])
 
   const NavLink = ({
     href,
@@ -152,11 +112,11 @@ export function Navigation() {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-[9998] w-full pt-2 sm:pt-3 md:pt-4 pb-2 sm:pb-3 md:pb-4 scroll-optimized">
-      <div className="container mx-auto max-w-[1600px] px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8">
-        <div className="flex h-12 sm:h-14 md:h-16 items-center justify-between px-2 sm:px-3 md:px-4 lg:px-6 rounded-xl sm:rounded-2xl bg-neutral-800/50 backdrop-blur-md border border-neutral-700/40 shadow-xl w-full overflow-hidden">
-        <div className="flex-shrink-0 mr-2 sm:mr-3 md:mr-4 lg:mr-6">
+      <div className="container mx-auto max-w-[1600px] px-2 sm:px-4 md:px-6 lg:px-8">
+        <div className="flex h-12 sm:h-14 md:h-16 items-center justify-between px-2.5 sm:px-4 md:px-6 rounded-xl sm:rounded-2xl bg-neutral-800/50 backdrop-blur-md border border-neutral-700/40 shadow-xl w-full">
+        <div className="flex-shrink-0 mr-2 sm:mr-4 md:mr-6">
           <Link href="/" className="flex items-center group" aria-label="Swarms home">
-            <div className="relative w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 transition-transform duration-300 group-hover:scale-110">
+            <div className="relative w-7 h-7 sm:w-8 sm:h-8 transition-transform duration-300 group-hover:scale-110">
               <Image
                 src="/logo.svg"
                 alt="Swarms Logo"
@@ -169,7 +129,7 @@ export function Navigation() {
         </div>
 
         {/* Desktop Navigation */}
-        <nav className="hidden lg:flex lg:space-x-2 xl:space-x-4 2xl:space-x-6 flex-1 items-center overflow-x-auto scrollbar-hide">
+        <nav className="hidden lg:flex lg:space-x-4 xl:space-x-6 flex-1 items-center">
           
           <NavLink href="/pricing">Pricing</NavLink>
           
@@ -177,13 +137,13 @@ export function Navigation() {
           
           {/* Docs Dropdown */}
           <div 
-            className="relative flex-shrink-0"
-            onMouseEnter={(e) => handleDropdownEnter("docs", e)}
+            className="relative"
+            onMouseEnter={() => setHoveredDropdown("docs")}
             onMouseLeave={() => setHoveredDropdown(null)}
           >
-            <button className="flex items-center text-xs lg:text-sm font-semibold transition-all duration-300 text-white/85 hover:text-white border border-transparent hover:border-white/10 px-2 lg:px-3 py-1.5 rounded-lg hover:bg-white/[0.05] whitespace-nowrap">
+            <button className="flex items-center text-sm font-semibold transition-all duration-300 text-white/85 hover:text-white border border-transparent hover:border-white/10 px-3 py-1.5 rounded-lg hover:bg-white/[0.05]">
               Docs
-              <ChevronDown className={`ml-0.5 lg:ml-1 h-3.5 lg:h-4 w-3.5 lg:w-4 transition-transform duration-300 ${hoveredDropdown === "docs" ? "rotate-180" : ""}`} />
+              <ChevronDown className={`ml-1 h-4 w-4 transition-transform duration-300 ${hoveredDropdown === "docs" ? "rotate-180" : ""}`} />
             </button>
             <AnimatePresence>
               {hoveredDropdown === "docs" && (
@@ -192,7 +152,7 @@ export function Navigation() {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: -10, scale: 0.95 }}
                   transition={{ duration: 0.2, ease: "easeOut" }}
-                  className={`absolute top-full mt-2 w-[280px] sm:w-[300px] max-w-[calc(100vw-2rem)] rounded-2xl bg-neutral-950/95 backdrop-blur-2xl border border-neutral-800/60 shadow-2xl overflow-hidden z-[9999] ${dropdownPosition['docs'] === 'right' ? 'right-0' : 'left-0'}`}
+                  className="absolute top-full left-0 mt-2 w-[300px] rounded-2xl bg-neutral-950/95 backdrop-blur-2xl border border-neutral-800/60 shadow-2xl overflow-hidden z-[9999]"
                 >
                   <div className="p-2 relative">
                     <a
@@ -231,13 +191,13 @@ export function Navigation() {
 
           {/* Products Dropdown */}
           <div 
-            className="relative flex-shrink-0"
-            onMouseEnter={(e) => handleDropdownEnter("products", e)}
+            className="relative"
+            onMouseEnter={() => setHoveredDropdown("products")}
             onMouseLeave={() => setHoveredDropdown(null)}
           >
-            <button className="flex items-center text-xs lg:text-sm font-semibold transition-all duration-300 text-white/85 hover:text-white border border-transparent hover:border-white/10 px-2 lg:px-3 py-1.5 rounded-lg hover:bg-white/[0.05] whitespace-nowrap">
+            <button className="flex items-center text-sm font-semibold transition-all duration-300 text-white/85 hover:text-white border border-transparent hover:border-white/10 px-3 py-1.5 rounded-lg hover:bg-white/[0.05]">
               Products
-              <ChevronDown className={`ml-0.5 lg:ml-1 h-3.5 lg:h-4 w-3.5 lg:w-4 transition-transform duration-300 ${hoveredDropdown === "products" ? "rotate-180" : ""}`} />
+              <ChevronDown className={`ml-1 h-4 w-4 transition-transform duration-300 ${hoveredDropdown === "products" ? "rotate-180" : ""}`} />
             </button>
             
             <AnimatePresence>
@@ -247,7 +207,7 @@ export function Navigation() {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: -10, scale: 0.95 }}
                   transition={{ duration: 0.2, ease: "easeOut" }}
-                  className={`absolute top-full mt-2 w-[320px] sm:w-[340px] max-w-[calc(100vw-2rem)] rounded-2xl bg-neutral-950/95 backdrop-blur-2xl border border-neutral-800/60 shadow-2xl overflow-hidden z-[9999] ${dropdownPosition['products'] === 'right' ? 'right-0' : 'left-0'}`}
+                  className="absolute top-full left-0 mt-2 w-[340px] rounded-2xl bg-neutral-950/95 backdrop-blur-2xl border border-neutral-800/60 shadow-2xl overflow-hidden z-[9999]"
                 >
                   <div className="p-2 relative">
                     <Link href="/products" className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative">
@@ -259,20 +219,15 @@ export function Navigation() {
                         <p className="text-xs text-neutral-400 mt-0.5">Explore all products</p>
                       </div>
                     </Link>
-                    <a
-                      href="https://github.com/kyegomez/swarms"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
-                    >
+                    <Link href="/framework" className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative">
                       <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
                         <Github className="h-4 w-4 text-red-500" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <span className="text-sm font-semibold text-white block">Swarms Python</span>
+                        <span className="text-sm font-semibold text-white block">Swarms Framework</span>
                         <p className="text-xs text-neutral-400 mt-0.5">Core Python framework</p>
                       </div>
-                    </a>
+                    </Link>
                     <Link href="/api" className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative">
                       <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
                         <Code className="h-4 w-4 text-red-500" />
@@ -338,13 +293,13 @@ export function Navigation() {
 
           {/* Resources Dropdown */}
           <div 
-            className="relative flex-shrink-0"
-            onMouseEnter={(e) => handleDropdownEnter("resources", e)}
+            className="relative"
+            onMouseEnter={() => setHoveredDropdown("resources")}
             onMouseLeave={() => setHoveredDropdown(null)}
           >
-            <button className="flex items-center text-xs lg:text-sm font-semibold transition-all duration-300 text-white/85 hover:text-white border border-transparent hover:border-white/10 px-2 lg:px-3 py-1.5 rounded-lg hover:bg-white/[0.05] whitespace-nowrap">
+            <button className="flex items-center text-sm font-semibold transition-all duration-300 text-white/85 hover:text-white border border-transparent hover:border-white/10 px-3 py-1.5 rounded-lg hover:bg-white/[0.05]">
               Resources
-              <ChevronDown className={`ml-0.5 lg:ml-1 h-3.5 lg:h-4 w-3.5 lg:w-4 transition-transform duration-300 ${hoveredDropdown === "resources" ? "rotate-180" : ""}`} />
+              <ChevronDown className={`ml-1 h-4 w-4 transition-transform duration-300 ${hoveredDropdown === "resources" ? "rotate-180" : ""}`} />
             </button>
             
             <AnimatePresence>
@@ -354,11 +309,11 @@ export function Navigation() {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: -10, scale: 0.95 }}
                   transition={{ duration: 0.3, ease: "easeOut" }}
-                  className={`absolute top-full mt-2 w-[600px] xl:w-[650px] max-w-[calc(100vw-2rem)] rounded-2xl bg-neutral-950/95 backdrop-blur-2xl border border-neutral-800/60 shadow-2xl overflow-hidden z-[9999] ${dropdownPosition['resources'] === 'right' ? 'right-0' : 'left-0'}`}
+                  className="absolute top-full left-0 mt-2 w-[650px] max-w-[calc(100vw-3rem)] rounded-2xl bg-neutral-950/95 backdrop-blur-2xl border border-neutral-800/60 shadow-2xl overflow-hidden z-[9999]"
                 >
                   <div className="flex h-full">
                     <Tabs defaultValue="platform" className="w-full flex h-[320px]" value={activeTab} onValueChange={setActiveTab}>
-                      <TabsList className="flex flex-col w-[140px] lg:w-[160px] xl:w-[180px] h-full justify-start space-y-1 bg-neutral-900/50 backdrop-blur-sm border-r border-neutral-800/50 p-2 lg:p-3 rounded-none">
+                      <TabsList className="flex flex-col w-[180px] h-full justify-start space-y-1 bg-neutral-900/50 backdrop-blur-sm border-r border-neutral-800/50 p-3 rounded-none">
                         {[
                           { id: "platform", label: "Platform" },
                           { id: "open_source", label: "Open Source" },
@@ -373,8 +328,8 @@ export function Navigation() {
                             className={`
                               w-full
                               justify-start
-                              px-2 lg:px-3
-                              py-1.5 lg:py-2
+                              px-3
+                              py-2
                               data-[state=active]:bg-white/[0.08] 
                               data-[state=active]:text-white 
                               data-[state=active]:border-neutral-700/50
@@ -382,7 +337,7 @@ export function Navigation() {
                               border border-transparent
                               rounded-lg
                               relative
-                              text-xs lg:text-sm
+                              text-sm
                               font-medium
                               hover:bg-white/[0.05]
                               text-neutral-400
@@ -402,7 +357,7 @@ export function Navigation() {
                         ))}
                       </TabsList>
 
-                      <div className="flex-1 p-3 lg:p-4 bg-transparent overflow-y-auto">
+                      <div className="flex-1 p-4 bg-transparent overflow-y-auto">
                         <AnimatePresence mode="wait">
                           <motion.div
                             key={activeTab}
@@ -507,13 +462,13 @@ export function Navigation() {
 
           {/* Socials Dropdown */}
           <div 
-            className="relative flex-shrink-0"
-            onMouseEnter={(e) => handleDropdownEnter("socials", e)}
+            className="relative"
+            onMouseEnter={() => setHoveredDropdown("socials")}
             onMouseLeave={() => setHoveredDropdown(null)}
           >
-            <button className="flex items-center text-xs lg:text-sm font-semibold transition-all duration-300 text-white/85 hover:text-white border border-transparent hover:border-white/10 px-2 lg:px-3 py-1.5 rounded-lg hover:bg-white/[0.05] whitespace-nowrap">
+            <button className="flex items-center text-sm font-semibold transition-all duration-300 text-white/85 hover:text-white border border-transparent hover:border-white/10 px-3 py-1.5 rounded-lg hover:bg-white/[0.05]">
               Socials
-              <ChevronDown className={`ml-0.5 lg:ml-1 h-3.5 lg:h-4 w-3.5 lg:w-4 transition-transform duration-300 ${hoveredDropdown === "socials" ? "rotate-180" : ""}`} />
+              <ChevronDown className={`ml-1 h-4 w-4 transition-transform duration-300 ${hoveredDropdown === "socials" ? "rotate-180" : ""}`} />
             </button>
             
             <AnimatePresence>
@@ -523,7 +478,7 @@ export function Navigation() {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: -10, scale: 0.95 }}
                   transition={{ duration: 0.3, ease: "easeOut" }}
-                  className="absolute top-full right-0 mt-2 w-[240px] sm:w-[260px] max-w-[calc(100vw-2rem)] rounded-2xl bg-neutral-950/95 backdrop-blur-2xl border border-neutral-800/60 shadow-2xl overflow-hidden z-[9999]"
+                  className="absolute top-full right-0 mt-2 w-[260px] rounded-2xl bg-neutral-950/95 backdrop-blur-2xl border border-neutral-800/60 shadow-2xl overflow-hidden z-[9999]"
                 >
                   <div className="p-2 relative">
                     <a
@@ -617,65 +572,52 @@ export function Navigation() {
           </div>
         </nav>
 
-        <div className="flex items-center justify-end space-x-1 sm:space-x-1.5 lg:space-x-2 flex-shrink-0 ml-2 sm:ml-3 lg:ml-auto">
+        <div className="flex items-center justify-end space-x-1 sm:space-x-1.5 lg:space-x-2 flex-shrink-0 ml-auto">
 
           <Button
             variant="outline"
-            className="hidden xl:inline-flex rounded-xl text-xs 2xl:text-sm px-2 2xl:px-3"
+            className="hidden xl:inline-flex rounded-xl text-xs sm:text-sm"
             asChild
           >
-            <a href="https://github.com/kyegomez/swarms" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 2xl:gap-1.5">
-              <Github className="h-3.5 2xl:h-4 w-3.5 2xl:w-4" />
-              <span className="text-xs 2xl:text-sm font-semibold whitespace-nowrap">Github 5.5k ⭐️</span>
+            <a href="https://github.com/kyegomez/swarms" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5">
+              <Github className="h-4 w-4" />
+              <span className="text-sm font-semibold">Github 5.5k ⭐️</span>
             </a>
           </Button>
 
-          <Button variant="outline" className="hidden lg:inline-flex rounded-xl text-xs lg:text-sm px-2 lg:px-3 xl:px-4" asChild>
-            <a href="https://swarms.world" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 lg:gap-1.5">
-              <ShoppingBag className="h-3.5 lg:h-4 w-3.5 lg:w-4" />
-              <span className="whitespace-nowrap">Marketplace</span>
+          <Button variant="outline" className="hidden lg:inline-flex rounded-xl text-xs sm:text-sm px-3 sm:px-4" asChild>
+            <a href="https://swarms.world" target="_blank" rel="noopener noreferrer">
+              <ShoppingBag className="mr-2 h-4 w-4" />
+              Marketplace
             </a>
           </Button>
 
           {/* Mobile Menu */}
           <Sheet open={isOpen} onOpenChange={setIsOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" aria-label="Open menu" aria-expanded={isOpen} className="lg:hidden hover:bg-red-500/10 border border-transparent hover:border-red-500/40 transition-all duration-300 hover:shadow-[0_0_8px_rgba(239,68,68,0.3)] h-11 w-11 sm:h-12 sm:w-12 active:scale-95 touch-manipulation">
-                <Menu className="h-6 w-6" />
+              <Button variant="ghost" size="icon" aria-label="Open menu" aria-expanded={isOpen} className="lg:hidden hover:bg-red-500/10 border border-transparent hover:border-red-500/40 transition-all duration-300 hover:shadow-[0_0_8px_rgba(239,68,68,0.3)] h-10 w-10 sm:h-11 sm:w-11 active:scale-95">
+                <Menu className="h-5 w-5" />
                 <span className="sr-only">Toggle menu</span>
               </Button>
             </SheetTrigger>
             <SheetContent
               side="right"
-              className="w-[min(92vw,400px)] sm:w-[400px] max-w-[420px] border border-neutral-700/40 bg-neutral-900/95 backdrop-blur-xl shadow-2xl overflow-y-auto p-0"
-              data-sheet-content
+              className="w-[92vw] xs:w-[88vw] sm:w-[400px] max-w-[420px] border border-neutral-700/40 bg-neutral-900/95 backdrop-blur-xl shadow-2xl overflow-y-auto p-0"
             >
-              <SheetHeader className="px-5 sm:px-6 pt-16 pb-3 border-b border-neutral-700/40">
-                <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
-                <Link href="/" className="flex items-center" onClick={() => setIsOpen(false)}>
-                  <div className="relative w-10 h-10">
-                    <Image
-                      src="/logo.svg"
-                      alt="Swarms Logo"
-                      width={40}
-                      height={40}
-                      className="transition-opacity duration-300 hover:opacity-80"
-                    />
-                  </div>
-                  <span className="ml-3 text-lg font-bold text-white">Swarms</span>
-                </Link>
+              <SheetHeader className="px-4 sm:px-6 pt-6 pb-4 border-b border-neutral-700/40">
+                <SheetTitle className="text-lg sm:text-xl text-white font-semibold">Menu</SheetTitle>
               </SheetHeader>
-              <div className="px-5 sm:px-6 py-3 space-y-2">
+              <div className="px-4 sm:px-6 py-4 sm:py-6 space-y-3 sm:space-y-4 overflow-y-auto max-h-[calc(100vh-120px)]">
                 <Link
                   href="/"
-                  className="block text-sm font-semibold text-white/85 hover:text-white transition-all duration-200 hover:bg-white/[0.05] py-3 px-4 rounded-lg border border-transparent hover:border-white/10 active:scale-[0.98] touch-manipulation"
+                  className="block text-sm font-semibold text-white/85 hover:text-white transition-all duration-300 hover:bg-white/[0.05] p-3 rounded-lg border border-transparent hover:border-white/10"
                   onClick={() => setIsOpen(false)}
                 >
                   Home
                 </Link>
                 <Link
                   href="/pricing"
-                  className="block text-sm font-semibold text-white/85 hover:text-white transition-all duration-200 hover:bg-white/[0.05] py-3 px-4 rounded-lg border border-transparent hover:border-white/10 active:scale-[0.98] touch-manipulation"
+                  className="block text-sm font-semibold text-white/85 hover:text-white transition-all duration-300 hover:bg-white/[0.05] p-3 rounded-lg border border-transparent hover:border-white/10"
                   onClick={() => setIsOpen(false)}
                 >
                   Pricing
@@ -684,7 +626,7 @@ export function Navigation() {
                   href="https://status.swarms.ai"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="block text-sm font-semibold text-white/85 hover:text-white transition-all duration-200 hover:bg-white/[0.05] py-3 px-4 rounded-lg border border-transparent hover:border-white/10 active:scale-[0.98] touch-manipulation"
+                  className="block text-sm font-semibold text-white/85 hover:text-white transition-all duration-300 hover:bg-white/[0.05] p-3 rounded-lg border border-transparent hover:border-white/10"
                   onClick={() => setIsOpen(false)}
                 >
                   Status
@@ -693,155 +635,153 @@ export function Navigation() {
                   href="https://docs.swarms.world"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="block text-sm font-semibold text-white/85 hover:text-white transition-all duration-200 hover:bg-white/[0.05] py-3 px-4 rounded-lg border border-transparent hover:border-white/10 active:scale-[0.98] touch-manipulation"
+                  className="block text-sm font-semibold text-white/85 hover:text-white transition-all duration-300 hover:bg-white/[0.05] p-3 rounded-lg border border-transparent hover:border-white/10"
                   onClick={() => setIsOpen(false)}
                 >
                   Docs
                 </a>
                 <Link
                   href="/blog"
-                  className="block text-sm font-semibold text-white/85 hover:text-white transition-all duration-200 hover:bg-white/[0.05] py-3 px-4 rounded-lg border border-transparent hover:border-white/10 active:scale-[0.98] touch-manipulation"
+                  className="block text-sm font-semibold text-white/85 hover:text-white transition-all duration-300 hover:bg-white/[0.05] p-3 rounded-lg border border-transparent hover:border-white/10"
                   onClick={() => setIsOpen(false)}
                 >
                   Blog
                 </Link>
-                <div className="space-y-1.5 pt-1">
-                  <div className="text-xs font-semibold text-white/40 px-4 uppercase tracking-wider flex items-center">
+                <div className="space-y-3">
+                  <div className="text-sm font-semibold text-white/60 px-3 flex items-center">
                     <span>Products</span>
-                    <div className="ml-2 h-px flex-1 bg-gradient-to-r from-white/10 to-transparent"></div>
+                    <div className="ml-2 h-px flex-1 bg-gradient-to-r from-white/20 to-transparent"></div>
                   </div>
                   <Link
                     href="/products"
-                    className="text-sm font-semibold text-white/85 hover:text-white transition-all duration-200 hover:bg-white/[0.05] py-2.5 px-4 rounded-lg flex items-center border border-transparent hover:border-white/10 active:scale-[0.98] touch-manipulation"
+                    className="text-sm font-semibold text-white/85 hover:text-white transition-all duration-300 hover:bg-white/[0.05] p-3 rounded-lg flex items-center border border-transparent hover:border-white/10"
                     onClick={() => setIsOpen(false)}
                   >
-                    <Package className="mr-2.5 h-4 w-4 text-white/60 flex-shrink-0" />
+                    <Package className="mr-3 h-4 w-4 text-white/60 flex-shrink-0" />
                     Products Overview
                   </Link>
-                  <a
-                    href="https://github.com/kyegomez/swarms"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm font-semibold text-white/85 hover:text-white transition-all duration-200 hover:bg-white/[0.05] py-2.5 px-4 rounded-lg flex items-center border border-transparent hover:border-white/10 active:scale-[0.98] touch-manipulation"
+                  <Link
+                    href="/framework"
+                    className="text-sm font-semibold text-white/85 hover:text-white transition-all duration-300 hover:bg-white/[0.05] p-3 rounded-lg flex items-center border border-transparent hover:border-white/10"
                     onClick={() => setIsOpen(false)}
                   >
-                    <Github className="mr-2.5 h-4 w-4 text-white/60 flex-shrink-0" />
-                    Swarms Python
-                  </a>
+                    <Github className="mr-3 h-4 w-4 text-white/60 flex-shrink-0" />
+                    Swarms Framework
+                  </Link>
                   <Link
                     href="/api"
-                    className="text-sm font-semibold text-white/85 hover:text-white transition-all duration-200 hover:bg-white/[0.05] py-2.5 px-4 rounded-lg flex items-center border border-transparent hover:border-white/10 active:scale-[0.98] touch-manipulation"
+                    className="text-sm font-semibold text-white/85 hover:text-white transition-all duration-300 hover:bg-white/[0.05] p-3 rounded-lg flex items-center border border-transparent hover:border-white/10"
                     onClick={() => setIsOpen(false)}
                   >
-                    <Code className="mr-2.5 h-4 w-4 text-white/60 flex-shrink-0" />
+                    <Code className="mr-3 h-4 w-4 text-white/60 flex-shrink-0" />
                     Swarms API
                   </Link>
                   <a
                     href="https://swarms.world"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-sm font-semibold text-white/85 hover:text-white transition-all duration-200 hover:bg-white/[0.05] py-2.5 px-4 rounded-lg flex items-center border border-transparent hover:border-white/10 active:scale-[0.98] touch-manipulation"
+                    className="text-sm font-semibold text-white/85 hover:text-white transition-all duration-300 hover:bg-white/[0.05] p-3 rounded-lg flex items-center border border-transparent hover:border-white/10"
                     onClick={() => setIsOpen(false)}
                   >
-                    <Sparkles className="mr-2.5 h-4 w-4 text-white/60 flex-shrink-0" />
+                    <Sparkles className="mr-3 h-4 w-4 text-white/60 flex-shrink-0" />
                     Swarms Marketplace
                   </a>
                   <Link
                     href="/atp"
-                    className="text-sm font-semibold text-white/85 hover:text-white transition-all duration-200 hover:bg-white/[0.05] py-2.5 px-4 rounded-lg flex items-center border border-transparent hover:border-white/10 active:scale-[0.98] touch-manipulation"
+                    className="text-sm font-semibold text-white/85 hover:text-white transition-all duration-300 hover:bg-white/[0.05] p-3 rounded-lg flex items-center border border-transparent hover:border-white/10"
                     onClick={() => setIsOpen(false)}
                   >
-                    <DollarSign className="mr-2.5 h-4 w-4 text-white/60 flex-shrink-0" />
+                    <DollarSign className="mr-3 h-4 w-4 text-white/60 flex-shrink-0" />
                     ATP
                   </Link>
                   <Link
                     href="/mobile"
-                    className="text-sm font-semibold text-white/85 hover:text-white transition-all duration-200 hover:bg-white/[0.05] py-2.5 px-4 rounded-lg flex items-center border border-transparent hover:border-white/10 active:scale-[0.98] touch-manipulation"
+                    className="text-sm font-semibold text-white/85 hover:text-white transition-all duration-300 hover:bg-white/[0.05] p-3 rounded-lg flex items-center border border-transparent hover:border-white/10"
                     onClick={() => setIsOpen(false)}
                   >
-                    <Smartphone className="mr-2.5 h-4 w-4 text-white/60 flex-shrink-0" />
+                    <Smartphone className="mr-3 h-4 w-4 text-white/60 flex-shrink-0" />
                     Mobile App
                   </Link>
                   <a
                     href="https://github.com/The-Swarm-Corporation/swarms-rs"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-sm font-semibold text-white/85 hover:text-white transition-all duration-200 hover:bg-white/[0.05] py-2.5 px-4 rounded-lg flex items-center border border-transparent hover:border-white/10 active:scale-[0.98] touch-manipulation"
+                    className="text-sm font-semibold text-white/85 hover:text-white transition-all duration-300 hover:bg-white/[0.05] p-3 rounded-lg flex items-center border border-transparent hover:border-white/10"
                     onClick={() => setIsOpen(false)}
                   >
-                    <Rocket className="mr-2.5 h-4 w-4 text-white/60 flex-shrink-0" />
+                    <Rocket className="mr-3 h-4 w-4 text-white/60 flex-shrink-0" />
                     Swarms RS
                   </a>
                 </div>
 
                 <Link
                   href="/hiring"
-                  className="block text-sm font-semibold text-white/85 hover:text-white transition-all duration-200 hover:bg-white/[0.05] py-3 px-4 rounded-lg border border-transparent hover:border-white/10 active:scale-[0.98] touch-manipulation"
+                  className="block text-sm font-semibold text-white/85 hover:text-white transition-all duration-300 hover:bg-white/[0.05] p-3 rounded-lg border border-transparent hover:border-white/10"
                   onClick={() => setIsOpen(false)}
                 >
                   Careers
                 </Link>
 
                 {/* Mobile Resources Section with Tabs */}
-                <div className="space-y-2 pt-2">
-                  <div className="text-xs font-semibold text-white/40 px-4 uppercase tracking-wider flex items-center">
+                <div className="space-y-3">
+                  <div className="text-sm font-semibold text-white/60 px-3 flex items-center">
                     <span>Resources</span>
-                    <div className="ml-2 h-px flex-1 bg-gradient-to-r from-white/10 to-transparent"></div>
+                    <div className="ml-2 h-px flex-1 bg-gradient-to-r from-white/20 to-transparent"></div>
                   </div>
 
                   <Tabs defaultValue="platform" className="w-full">
                     <TabsList className="w-full grid grid-cols-2 sm:grid-cols-3 gap-1 bg-neutral-900/50 backdrop-blur-sm border border-neutral-700/40 rounded-lg mb-3 h-auto p-1">
                       <TabsTrigger
                         value="platform"
-                        className="text-xs py-2 data-[state=active]:bg-white/[0.08] data-[state=active]:text-white data-[state=active]:border-neutral-700/50 border border-transparent hover:bg-white/[0.05] hover:border-white/10 text-neutral-400 transition-all duration-200 touch-manipulation"
+                        className="text-xs data-[state=active]:bg-white/[0.08] data-[state=active]:text-white data-[state=active]:border-neutral-700/50 border border-transparent hover:bg-white/[0.05] hover:border-white/10 text-neutral-400 transition-all duration-200"
                       >
                         Platform
                       </TabsTrigger>
                       <TabsTrigger
                         value="open_source"
-                        className="text-xs py-2 data-[state=active]:bg-white/[0.08] data-[state=active]:text-white data-[state=active]:border-neutral-700/50 border border-transparent hover:bg-white/[0.05] hover:border-white/10 text-neutral-400 transition-all duration-200 touch-manipulation"
+                        className="text-xs data-[state=active]:bg-white/[0.08] data-[state=active]:text-white data-[state=active]:border-neutral-700/50 border border-transparent hover:bg-white/[0.05] hover:border-white/10 text-neutral-400 transition-all duration-200"
                       >
                         Open Source
                       </TabsTrigger>
                       <TabsTrigger
                         value="research"
-                        className="text-xs py-2 data-[state=active]:bg-white/[0.08] data-[state=active]:text-white data-[state=active]:border-neutral-700/50 border border-transparent hover:bg-white/[0.05] hover:border-white/10 text-neutral-400 transition-all duration-200 touch-manipulation"
+                        className="text-xs data-[state=active]:bg-white/[0.08] data-[state=active]:text-white data-[state=active]:border-neutral-700/50 border border-transparent hover:bg-white/[0.05] hover:border-white/10 text-neutral-400 transition-all duration-200"
                       >
                         Research
                       </TabsTrigger>
                       <TabsTrigger
                         value="community"
-                        className="text-xs py-2 data-[state=active]:bg-white/[0.08] data-[state=active]:text-white data-[state=active]:border-neutral-700/50 border border-transparent hover:bg-white/[0.05] hover:border-white/10 text-neutral-400 transition-all duration-200 touch-manipulation"
+                        className="text-xs data-[state=active]:bg-white/[0.08] data-[state=active]:text-white data-[state=active]:border-neutral-700/50 border border-transparent hover:bg-white/[0.05] hover:border-white/10 text-neutral-400 transition-all duration-200"
                       >
                         Community
                       </TabsTrigger>
                       <TabsTrigger
                         value="programs"
-                        className="text-xs py-2 data-[state=active]:bg-white/[0.08] data-[state=active]:text-white data-[state=active]:border-neutral-700/50 border border-transparent hover:bg-white/[0.05] hover:border-white/10 text-neutral-400 transition-all duration-200 touch-manipulation"
+                        className="text-xs data-[state=active]:bg-white/[0.08] data-[state=active]:text-white data-[state=active]:border-neutral-700/50 border border-transparent hover:bg-white/[0.05] hover:border-white/10 text-neutral-400 transition-all duration-200"
                       >
                         Programs
                       </TabsTrigger>
                       <TabsTrigger
                         value="learn"
-                        className="text-xs py-2 data-[state=active]:bg-white/[0.08] data-[state=active]:text-white data-[state=active]:border-neutral-700/50 border border-transparent hover:bg-white/[0.05] hover:border-white/10 text-neutral-400 transition-all duration-200 touch-manipulation"
+                        className="text-xs data-[state=active]:bg-white/[0.08] data-[state=active]:text-white data-[state=active]:border-neutral-700/50 border border-transparent hover:bg-white/[0.05] hover:border-white/10 text-neutral-400 transition-all duration-200"
                       >
                         Learn
                       </TabsTrigger>
                     </TabsList>
 
-                    <TabsContent value="platform" className="space-y-2 mt-0">
+                    <TabsContent value="platform" className="space-y-1 mt-0">
                       <a
                         href="https://ecosystem.swarms.world"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-4 relative active:scale-[0.98] touch-manipulation"
+                        className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
                         onClick={() => setIsOpen(false)}
                       >
-                        <div className="mr-3 h-10 w-10 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
-                          <BookOpen className="h-5 w-5 text-red-500" />
+                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
+                          <BookOpen className="h-4 w-4 text-red-500" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <span className="text-base font-semibold text-white block">Ecosystem Hub</span>
+                          <span className="text-sm font-semibold text-white block">Ecosystem Hub</span>
                         </div>
                       </a>
                       <a

@@ -28,6 +28,8 @@ import {
   Network,
   Smartphone,
 } from "lucide-react"
+import { useGithubStars } from "@/hooks/use-github-stars"
+import { formatStarsShort } from "@/lib/github-stars"
 import { SiDiscord, SiTelegram } from "react-icons/si"
 
 const Discord = SiDiscord as React.ComponentType<{ className?: string }>
@@ -43,9 +45,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 export function Navigation() {
   const [isOpen, setIsOpen] = React.useState(false)
   const [activeTab, setActiveTab] = React.useState("platform")
-  
+
   // Add hover state management for dropdowns
   const [hoveredDropdown, setHoveredDropdown] = React.useState<string | null>(null)
+
+  const stars = useGithubStars()
+  const mainStars = stars["kyegomez/swarms"]
 
   React.useEffect(() => {
     if (isOpen) {
@@ -592,7 +597,7 @@ export function Navigation() {
           >
             <a href="https://github.com/kyegomez/swarms" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5">
               <Github className="h-4 w-4" />
-              <span className="text-sm font-semibold">Github 5.5k ⭐️</span>
+              <span className="text-sm font-semibold">Github {formatStarsShort(mainStars)} ⭐️</span>
             </a>
           </Button>
 

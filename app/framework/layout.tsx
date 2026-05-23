@@ -1,13 +1,18 @@
 import type React from "react"
 import type { Metadata } from "next"
 import { siteConfig } from "../metadata"
+import { getGithubStars, formatStarsLong } from "@/lib/github-stars"
 
 const title = "Swarms Framework — The Premier Python Framework for Multi-Agent Systems"
-const description =
-  "The enterprise-grade Python framework for production multi-agent systems. 7,000+ GitHub stars, 5M+ downloads, 100+ contributors. 15+ swarm architectures, 1,000+ models, MCP support, RAG, tools, structured outputs and full observability. Apache 2.0."
 const url = "https://swarms.ai/framework"
 
-export const metadata: Metadata = {
+export async function generateMetadata(): Promise<Metadata> {
+  const stars = await getGithubStars()
+  const starsStr = formatStarsLong(stars["kyegomez/swarms"])
+  const description =
+    `The enterprise-grade Python framework for production multi-agent systems. ${starsStr} GitHub stars, 5M+ downloads, 100+ contributors. 15+ swarm architectures, 1,000+ models, MCP support, RAG, tools, structured outputs and full observability. Apache 2.0.`
+
+  return {
   title,
   description,
   keywords: [
@@ -89,44 +94,7 @@ export const metadata: Metadata = {
       "max-snippet": -1,
     },
   },
-}
-
-const softwareJsonLd = {
-  "@context": "https://schema.org",
-  "@type": "SoftwareApplication",
-  name: "Swarms",
-  alternateName: "Swarms Framework",
-  applicationCategory: "DeveloperApplication",
-  operatingSystem: "Any",
-  url,
-  description,
-  image: `${siteConfig.url}/seo_image.jpg`,
-  downloadUrl: "https://pypi.org/project/swarms/",
-  codeRepository: "https://github.com/kyegomez/swarms",
-  programmingLanguage: "Python",
-  license: "https://www.apache.org/licenses/LICENSE-2.0",
-  offers: {
-    "@type": "Offer",
-    price: "0",
-    priceCurrency: "USD",
-  },
-  aggregateRating: {
-    "@type": "AggregateRating",
-    ratingValue: "4.9",
-    ratingCount: "7000",
-    bestRating: "5",
-    worstRating: "1",
-  },
-  author: {
-    "@type": "Person",
-    name: "Kye Gomez",
-    url: "https://github.com/kyegomez",
-  },
-  publisher: {
-    "@type": "Organization",
-    name: siteConfig.company.name,
-    url: siteConfig.url,
-  },
+  }
 }
 
 const breadcrumbJsonLd = {
@@ -197,11 +165,55 @@ const faqJsonLd = {
   ],
 }
 
-export default function FrameworkLayout({
+export default async function FrameworkLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const stars = await getGithubStars()
+  const starsStr = formatStarsLong(stars["kyegomez/swarms"])
+  const description =
+    `The enterprise-grade Python framework for production multi-agent systems. ${starsStr} GitHub stars, 5M+ downloads, 100+ contributors. 15+ swarm architectures, 1,000+ models, MCP support, RAG, tools, structured outputs and full observability. Apache 2.0.`
+  const ratingCount = stars["kyegomez/swarms"] ? String(stars["kyegomez/swarms"]) : "7000"
+
+  const softwareJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    name: "Swarms",
+    alternateName: "Swarms Framework",
+    applicationCategory: "DeveloperApplication",
+    operatingSystem: "Any",
+    url,
+    description,
+    image: `${siteConfig.url}/seo_image.jpg`,
+    downloadUrl: "https://pypi.org/project/swarms/",
+    codeRepository: "https://github.com/kyegomez/swarms",
+    programmingLanguage: "Python",
+    license: "https://www.apache.org/licenses/LICENSE-2.0",
+    offers: {
+      "@type": "Offer",
+      price: "0",
+      priceCurrency: "USD",
+    },
+    aggregateRating: {
+      "@type": "AggregateRating",
+      ratingValue: "4.9",
+      ratingCount,
+      bestRating: "5",
+      worstRating: "1",
+    },
+    author: {
+      "@type": "Person",
+      name: "Kye Gomez",
+      url: "https://github.com/kyegomez",
+    },
+    publisher: {
+      "@type": "Organization",
+      name: siteConfig.company.name,
+      url: siteConfig.url,
+    },
+  }
+
   return (
     <>
       <script

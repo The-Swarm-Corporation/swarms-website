@@ -38,13 +38,8 @@ import {
 import { Navigation } from "@/components/navigation"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-
-const stats = [
-  { value: "7,000+", label: "GitHub stars", icon: Star },
-  { value: "5M+", label: "Downloads", icon: Download },
-  { value: "100+", label: "Contributors", icon: Users },
-  { value: "Apache 2.0", label: "Open source license", icon: Heart },
-]
+import { useGithubStars } from "@/hooks/use-github-stars"
+import { formatStarsLong } from "@/lib/github-stars"
 
 const heroBadges = [
   { label: "Python 3.10+", icon: Terminal },
@@ -350,27 +345,6 @@ const useCases = [
   },
 ]
 
-const reasonsCards = [
-  {
-    icon: Shield,
-    title: "Battle-tested",
-    description:
-      "Trusted in production by financial institutions, healthcare networks, and Fortune 500 R&D teams. Hardened by 100+ contributors and 7,000+ stars worth of community usage.",
-  },
-  {
-    icon: Layers,
-    title: "Composable, not opinionated",
-    description:
-      "Swarms gives you primitives, not a walled garden. Drop agents into any architecture, share state across them, and extend with your own Python.",
-  },
-  {
-    icon: Heart,
-    title: "Open source, forever",
-    description:
-      "Apache 2.0 licensed. Read the source, audit the runtime, contribute back, or run on your own infrastructure — no vendor lock-in.",
-  },
-]
-
 const faqs = [
   {
     question: "How is Swarms different from LangChain, CrewAI or AutoGen?",
@@ -489,6 +463,37 @@ function SectionHeading({
 
 export default function FrameworkPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(0)
+  const stars = useGithubStars()
+  const mainStars = stars["kyegomez/swarms"]
+  const starsText = formatStarsLong(mainStars)
+
+  const stats = [
+    { value: starsText, label: "GitHub stars", icon: Star },
+    { value: "5M+", label: "Downloads", icon: Download },
+    { value: "100+", label: "Contributors", icon: Users },
+    { value: "Apache 2.0", label: "Open source license", icon: Heart },
+  ]
+
+  const reasonsCards = [
+    {
+      icon: Shield,
+      title: "Battle-tested",
+      description:
+        `Trusted in production by financial institutions, healthcare networks, and Fortune 500 R&D teams. Hardened by 100+ contributors and ${starsText} stars worth of community usage.`,
+    },
+    {
+      icon: Layers,
+      title: "Composable, not opinionated",
+      description:
+        "Swarms gives you primitives, not a walled garden. Drop agents into any architecture, share state across them, and extend with your own Python.",
+    },
+    {
+      icon: Heart,
+      title: "Open source, forever",
+      description:
+        "Apache 2.0 licensed. Read the source, audit the runtime, contribute back, or run on your own infrastructure — no vendor lock-in.",
+    },
+  ]
 
   return (
     <div className="min-h-screen bg-black text-white">
@@ -920,7 +925,7 @@ export default function FrameworkPage() {
                   <div className="grid grid-cols-2 gap-2.5 sm:gap-4">
                     <div className="rounded-xl border border-white/10 bg-black/40 p-4 sm:p-5">
                       <Star className="h-4 w-4 text-red-500 mb-2" />
-                      <div className="text-xl sm:text-3xl font-bold text-white tracking-tight">7,000+</div>
+                      <div className="text-xl sm:text-3xl font-bold text-white tracking-tight">{starsText}</div>
                       <div className="text-[11px] sm:text-xs text-white/55 mt-0.5">GitHub stars</div>
                     </div>
                     <div className="rounded-xl border border-white/10 bg-black/40 p-4 sm:p-5">

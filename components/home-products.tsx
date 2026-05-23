@@ -4,7 +4,9 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { motion, useScroll, useTransform } from "framer-motion"
 import { ExternalLink, Star } from "lucide-react"
-import { useRef, useEffect, useState } from "react"
+import { useRef } from "react"
+import { useGithubStars } from "@/hooks/use-github-stars"
+import { formatStarsShort } from "@/lib/github-stars"
 import Image from "next/image"
 import Link from "next/link"
 
@@ -152,22 +154,6 @@ const itemVariants = {
   },
 }
 
-function useGithubStars() {
-  const [stars, setStars] = useState<Record<string, number>>({})
-  useEffect(() => {
-    fetch("/api/github-stars")
-      .then((r) => r.json())
-      .then(setStars)
-      .catch(() => {})
-  }, [])
-  return stars
-}
-
-function formatStars(n: number) {
-  if (n >= 1000) return `${(n / 1000).toFixed(1)}k`
-  return String(n)
-}
-
 export function HomeProducts() {
   const stars = useGithubStars()
   return (
@@ -311,7 +297,7 @@ function ProductSection({ product, index, isEven, starCount }: { product: typeof
                   className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-white/60 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all duration-200 text-xs sm:text-sm font-medium w-fit"
                 >
                   <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
-                  <span>{formatStars(starCount)} stars</span>
+                  <span>{formatStarsShort(starCount)} stars</span>
                 </a>
               )}
             </motion.div>

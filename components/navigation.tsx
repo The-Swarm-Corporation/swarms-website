@@ -49,21 +49,12 @@ export function Navigation() {
 
   React.useEffect(() => {
     if (isOpen) {
-      const scrollToTop = () => {
+      setTimeout(() => {
         const sheetElement = document.querySelector('[data-sheet-content]') as HTMLElement
         if (sheetElement) {
           sheetElement.scrollTo({ top: 0, behavior: 'instant' })
         }
-      }
-      
-      // Multiple scroll attempts to ensure it works
-      scrollToTop()
-      requestAnimationFrame(scrollToTop)
-      setTimeout(scrollToTop, 0)
-      setTimeout(scrollToTop, 10)
-      setTimeout(scrollToTop, 50)
-      setTimeout(scrollToTop, 100)
-      setTimeout(scrollToTop, 200)
+      }, 100)
     }
   }, [isOpen])
 

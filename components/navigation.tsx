@@ -47,6 +47,17 @@ export function Navigation() {
   // Add hover state management for dropdowns
   const [hoveredDropdown, setHoveredDropdown] = React.useState<string | null>(null)
 
+  React.useEffect(() => {
+    if (isOpen) {
+      setTimeout(() => {
+        const sheetElement = document.querySelector('[data-sheet-content]') as HTMLElement
+        if (sheetElement) {
+          sheetElement.scrollTo({ top: 0, behavior: 'instant' })
+        }
+      }, 100)
+    }
+  }, [isOpen])
+
   const NavLink = ({
     href,
     children,
@@ -111,7 +122,7 @@ export function Navigation() {
   }
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-[9998] w-full pt-2 sm:pt-3 md:pt-4 pb-2 sm:pb-3 md:pb-4 scroll-optimized">
+    <header className={`fixed top-0 left-0 right-0 z-[9998] w-full pt-2 sm:pt-3 md:pt-4 pb-2 sm:pb-3 md:pb-4 scroll-optimized transition-opacity duration-300 ${isOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
       <div className="container mx-auto max-w-[1600px] px-2 sm:px-4 md:px-6 lg:px-8">
         <div className="flex h-12 sm:h-14 md:h-16 items-center justify-between px-2.5 sm:px-4 md:px-6 rounded-xl sm:rounded-2xl bg-neutral-800/50 backdrop-blur-md border border-neutral-700/40 shadow-xl w-full">
         <div className="flex-shrink-0 mr-2 sm:mr-4 md:mr-6">
@@ -603,11 +614,24 @@ export function Navigation() {
             <SheetContent
               side="right"
               className="w-[92vw] xs:w-[88vw] sm:w-[400px] max-w-[420px] border border-neutral-700/40 bg-neutral-900/95 backdrop-blur-xl shadow-2xl overflow-y-auto p-0"
+              data-sheet-content
             >
-              <SheetHeader className="px-4 sm:px-6 pt-6 pb-4 border-b border-neutral-700/40">
-                <SheetTitle className="text-lg sm:text-xl text-white font-semibold">Menu</SheetTitle>
+              <SheetHeader className="px-5 sm:px-6 pt-6 pb-3 border-b border-neutral-700/40">
+                <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
+                <Link href="/" className="flex items-center" onClick={() => setIsOpen(false)}>
+                  <div className="relative w-10 h-10">
+                    <Image
+                      src="/logo.svg"
+                      alt="Swarms Logo"
+                      width={40}
+                      height={40}
+                      className="transition-opacity duration-300 hover:opacity-80"
+                    />
+                  </div>
+                  <span className="ml-3 text-lg font-bold text-white">Swarms</span>
+                </Link>
               </SheetHeader>
-              <div className="px-4 sm:px-6 py-4 sm:py-6 space-y-3 sm:space-y-4 overflow-y-auto max-h-[calc(100vh-120px)]">
+              <div className="px-5 sm:px-6 py-3 space-y-2">
                 <Link
                   href="/"
                   className="block text-sm font-semibold text-white/85 hover:text-white transition-all duration-300 hover:bg-white/[0.05] p-3 rounded-lg border border-transparent hover:border-white/10"

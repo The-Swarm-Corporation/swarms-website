@@ -199,6 +199,34 @@ export function Navigation() {
                         <p className="text-xs text-neutral-400 mt-0.5">API reference at docs.swarms.ai</p>
                       </div>
                     </a>
+                    <a
+                      href="https://docs.swarms.ai/docs/marketplace"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
+                    >
+                      <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
+                        <ShoppingBag className="h-4 w-4 text-red-500" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <span className="text-sm font-semibold text-white block">Marketplace Docs</span>
+                        <p className="text-xs text-neutral-400 mt-0.5">Marketplace documentation</p>
+                      </div>
+                    </a>
+                    <a
+                      href="https://docs.swarms.ai/docs/atp/vision"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
+                    >
+                      <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
+                        <Activity className="h-4 w-4 text-red-500" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <span className="text-sm font-semibold text-white block">ATP Docs</span>
+                        <p className="text-xs text-neutral-400 mt-0.5">ATP vision documentation</p>
+                      </div>
+                    </a>
                   </div>
                 </motion.div>
               )}

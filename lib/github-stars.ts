@@ -1,7 +1,6 @@
 export const REPOS = [
   "kyegomez/swarms",
   "The-Swarm-Corporation/swarms-rs",
-  "The-Swarm-Corporation/ATP-Protocol",
 ]
 
 export function formatStarsShort(n: number | undefined, fallback = "7k") {

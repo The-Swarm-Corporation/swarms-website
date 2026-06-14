@@ -96,31 +96,6 @@ async fn main() -> Result<()> {
 }`,
   },
   {
-    title: "ATP - Agent Trade Protocol",
-    github: "The-Swarm-Corporation/ATP-Protocol",
-    subtitle: "On-Chain Payment Settlement for AI Agents",
-    description:
-      "A Solana-based payment settlement system that automatically parses usage, executes split payments, and encrypts agent responses until payment is confirmed on-chain.",
-    link: "/atp",
-    docsLink: "https://docs.swarms.ai/docs/atp/overview",
-    code: `from fastapi import FastAPI
-from atp.middleware import ATPSettlementMiddleware
-from atp.schemas import PaymentToken
-
-app = FastAPI(title="ATP-Protected API")
-
-app.add_middleware(
-    ATPSettlementMiddleware,
-    allowed_endpoints=["/v1/chat"],
-    input_cost_per_million_usd=10.0,
-    output_cost_per_million_usd=30.0,
-    recipient_pubkey="YourSolanaWalletPublicKeyHere",
-    payment_token=PaymentToken.SOL,
-    wallet_private_key_header="x-wallet-private-key",
-    settlement_service_url="https://facilitator.swarms.world",
-)`,
-  },
-  {
     title: "Swarms Marketplace",
     subtitle: "Buy & Sell Agents, Prompts & More",
     description:

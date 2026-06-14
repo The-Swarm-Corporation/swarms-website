@@ -4,7 +4,7 @@ import { siteConfig } from "../metadata"
 
 const title = "Products — The Complete Multi-Agent Stack"
 const description =
-  "Swarms Python, Swarms API, Swarms Marketplace, Swarms RS, Swarms Chat, ATP, and Enterprise deployments. The complete suite of frameworks, APIs, marketplaces, and infrastructure for building the agent economy."
+  "Swarms Python, Swarms API, Swarms Marketplace, Swarms RS, Swarms Chat, and Enterprise deployments. The complete suite of frameworks, APIs, marketplaces, and infrastructure for building the agent economy."
 const url = "https://swarms.ai/products"
 
 export const metadata: Metadata = {
@@ -19,8 +19,6 @@ export const metadata: Metadata = {
     "swarms marketplace",
     "swarms chat",
     "swarms enterprise",
-    "atp",
-    "agent trade protocol",
     "multi-agent framework",
     "agent orchestration framework",
     "ai agent platform",

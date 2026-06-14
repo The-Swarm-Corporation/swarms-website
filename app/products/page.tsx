@@ -11,7 +11,6 @@ import {
   Sparkles,
   Rocket,
   MessageCircle,
-  DollarSign,
   Smartphone,
   Building,
   Shield,
@@ -68,15 +67,6 @@ const productCards: ProductCard[] = [
     href: "https://swarms.world",
     external: true,
     meta: "swarms.world",
-  },
-  {
-    title: "ATP",
-    description:
-      "The Agent Trade Protocol. An open standard for autonomous agents to discover, negotiate, and transact with each other.",
-    icon: DollarSign,
-    href: "/atp",
-    external: false,
-    meta: "Agent Trade Protocol",
   },
   {
     title: "Mobile App",

@@ -189,6 +189,7 @@ export function Footer() {
                   { name: "Book a Call", icon: Phone, url: "https://cal.com/swarms" },
                   { name: "Careers", icon: Users, url: "/hiring" },
                   { name: "Status Page", icon: Activity, url: "https://status.swarms.ai" },
+                  { name: "Customer Support", icon: MessageCircle, url: "https://swarms.world/support" },
                   { name: "Email Support", icon: MessageCircle, url: "mailto:kye@swarms.world" },
                 ].map((item, index) => (
                   <Link

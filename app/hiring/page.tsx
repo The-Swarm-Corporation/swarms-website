@@ -5,22 +5,22 @@ import type { Metadata } from "next"
 export const metadata: Metadata = {
   title: "Careers - The Swarms Corporation",
   description:
-    "Join The Swarms Corporation and help accelerate humanity's transition to a fully autonomous and agentic world economy. We're hiring researchers, engineers, and interns.",
+    "Join The Swarms Corporation and advance the agent economy. We're hiring Agent Engineers, Front-end Engineers, Finance, Accounting Interns, CMO, and COO.",
   keywords: [
     "careers",
     "jobs",
     "hiring",
-    "AI research",
-    "agent research",
-    "infrastructure engineering",
-    "internships",
-    "Stanford",
-    "Palo Alto",
+    "agent engineer",
+    "front-end engineer",
+    "CMO",
+    "COO",
+    "AI",
+    "agent economy",
   ],
   openGraph: {
     title: "Careers - The Swarms Corporation",
     description:
-      "Join The Swarms Corporation and help accelerate humanity's transition to a fully autonomous and agentic world economy.",
+      "Join The Swarms Corporation and advance the agent economy.",
     type: "website",
   },
 }

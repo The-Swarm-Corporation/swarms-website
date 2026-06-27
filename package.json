@@ -2,6 +2,13 @@
   "name": "swarms-ai-website",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "pnpm@9.15.9",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "sharp",
+      "unrs-resolver"
+    ]
+  },
   "scripts": {
     "build": "next build",
     "dev": "next dev",

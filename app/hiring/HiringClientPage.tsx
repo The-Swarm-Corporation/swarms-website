@@ -58,10 +58,10 @@ const HiringClientPage = () => {
           </div>
           <div className="space-y-6 text-lg text-neutral-300 leading-relaxed font-light text-center max-w-2xl mx-auto">
             <p>
-              We are building the infrastructure for the agent economy. Our work focuses on creating autonomous agents that collaborate to simulate entire industries and civilizations, enabling a future where AI agents work together to solve complex problems at scale.
+              Our mission is to build the infrastructure necessary to bring the multi-trillion dollar agent economy to life. We do this by creating the best multi-agent tools, our marketplace, and a growing suite of products and research projects that let autonomous agents collaborate at scale.
             </p>
             <p>
-              We seek exceptional individuals who combine deep technical expertise with the drive to push boundaries. We value humanity first, intense focus, research excellence, hard work, and creativity. If you are passionate about building infrastructure for the agent economy and have a track record of shipping complex systems, we want to hear from you.
+              We seek exceptional individuals who combine deep technical expertise with the drive to push boundaries. We value humanity first, intense focus, research excellence, hard work, and creativity. If you are passionate about building the agent economy and have a track record of shipping complex systems, we want to hear from you.
             </p>
           </div>
         </div>

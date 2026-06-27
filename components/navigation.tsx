@@ -46,6 +46,13 @@ export function Navigation() {
   const [isOpen, setIsOpen] = React.useState(false)
   const [activeTab, setActiveTab] = React.useState("platform")
 
+  // Defer the Radix Sheet (mobile menu) until after mount. Its trigger generates
+  // an `aria-controls` id via React's useId; rendering it only on the client keeps
+  // that id out of the server HTML and avoids a hydration mismatch. The hamburger
+  // needs JS to open anyway, so a static placeholder on the server has no UX cost.
+  const [mounted, setMounted] = React.useState(false)
+  React.useEffect(() => setMounted(true), [])
+
   // Add hover state management for dropdowns
   const [hoveredDropdown, setHoveredDropdown] = React.useState<string | null>(null)
 
@@ -616,6 +623,12 @@ export function Navigation() {
           </Button>
 
           {/* Mobile Menu */}
+          {!mounted ? (
+            <Button variant="ghost" size="icon" aria-label="Open menu" className="lg:hidden hover:bg-red-500/10 border border-transparent hover:border-red-500/40 transition-all duration-300 hover:shadow-[0_0_8px_rgba(239,68,68,0.3)] h-10 w-10 sm:h-11 sm:w-11 active:scale-95">
+              <Menu className="h-5 w-5" />
+              <span className="sr-only">Toggle menu</span>
+            </Button>
+          ) : (
           <Sheet open={isOpen} onOpenChange={setIsOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" aria-label="Open menu" aria-expanded={isOpen} className="lg:hidden hover:bg-red-500/10 border border-transparent hover:border-red-500/40 transition-all duration-300 hover:shadow-[0_0_8px_rgba(239,68,68,0.3)] h-10 w-10 sm:h-11 sm:w-11 active:scale-95">
@@ -1162,6 +1175,7 @@ export function Navigation() {
               </div>
             </SheetContent>
           </Sheet>
+          )}
         </div>
         </div>
       </div>

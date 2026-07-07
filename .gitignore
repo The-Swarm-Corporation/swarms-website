@@ -6,6 +6,11 @@
 
 .pnpm-store/
 
+# pnpm 11+ auto-regenerates this locally to record build-script approvals.
+# It must NOT be committed: Vercel's pnpm 9.x treats it as a monorepo config
+# and fails with "packages field missing or empty". This project is not a workspace.
+/pnpm-workspace.yaml
+
 # next.js
 /.next/
 /out/

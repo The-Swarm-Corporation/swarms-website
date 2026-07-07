@@ -1,5 +1,5 @@
 import { Navigation } from "@/components/navigation"
-import { positions, getPositionBySlug } from "@/lib/positions"
+import { positions, getPositionBySlug, getApplyMethod, APPLICATION_EMAIL } from "@/lib/positions"
 import { notFound } from "next/navigation"
 import Link from "next/link"
 import {
@@ -51,8 +51,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 }
 
-const GOOGLE_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSd3f1c_WBVoBm5P_IHwxVFxeEFRy3RbiDslj91o5CTknsca5g/viewform?usp=sf_link'
-
 export default async function PositionPage({ params }: PageProps) {
   const { slug } = await params
   const position = getPositionBySlug(slug)
@@ -60,6 +58,12 @@ export default async function PositionPage({ params }: PageProps) {
   if (!position) {
     notFound()
   }
+
+  const apply = getApplyMethod(position)
+  // Open the application form in a new tab; let mailto links open the mail client in place.
+  const applyTargetProps = apply.type === 'form'
+    ? { target: '_blank', rel: 'noopener noreferrer' as const }
+    : {}
 
   return (
     <>
@@ -110,9 +114,8 @@ export default async function PositionPage({ params }: PageProps) {
             {/* Apply Button */}
             <div className="mt-10 flex justify-start">
               <a
-                href={GOOGLE_FORM_URL}
-                target="_blank"
-                rel="noopener noreferrer"
+                href={apply.href}
+                {...applyTargetProps}
                 className="group inline-flex items-center gap-3 bg-white text-black px-8 py-4 rounded-full font-medium text-base transition-all duration-300 hover:scale-[1.02] hover:bg-neutral-200"
               >
                 Apply for this role
@@ -192,15 +195,24 @@ export default async function PositionPage({ params }: PageProps) {
               Apply for this role
             </h2>
             <p className="text-lg text-neutral-400 mb-8 max-w-2xl mx-auto leading-relaxed font-light">
-              Ready to help build infrastructure for the agent economy? Submit your application and we&apos;ll be in touch soon.
+              {apply.type === 'email' ? (
+                <>
+                  Ready to help build infrastructure for the agent economy? Email us at{' '}
+                  <a href={apply.href} className="text-white underline underline-offset-4 hover:text-neutral-300 transition-colors">
+                    {APPLICATION_EMAIL}
+                  </a>{' '}
+                  and we&apos;ll be in touch soon.
+                </>
+              ) : (
+                <>Ready to help build infrastructure for the agent economy? Submit your application and we&apos;ll be in touch soon.</>
+              )}
             </p>
             <a
-              href={GOOGLE_FORM_URL}
-              target="_blank"
-              rel="noopener noreferrer"
+              href={apply.href}
+              {...applyTargetProps}
               className="group inline-flex items-center gap-3 bg-white text-black px-8 py-4 rounded-full font-medium text-base transition-all duration-300 hover:scale-[1.02] hover:bg-neutral-200"
             >
-              Apply Now
+              {apply.type === 'email' ? 'Apply via Email' : 'Apply Now'}
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
             </a>
           </div>

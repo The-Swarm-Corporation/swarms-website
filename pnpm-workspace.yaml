@@ -1,0 +1,5 @@
+# pnpm 11+ reads settings from here (the package.json "pnpm" field is no longer read).
+# Allow these packages to run their install/build scripts.
+allowBuilds:
+  sharp: true
+  unrs-resolver: true

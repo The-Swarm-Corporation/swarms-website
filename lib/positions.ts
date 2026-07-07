@@ -11,6 +11,7 @@ import {
   Terminal,
   Server,
   BookUser,
+  Handshake,
   LucideIcon
 } from 'lucide-react'
 
@@ -18,7 +19,7 @@ export interface Position {
   slug: string
   title: string
   icon: LucideIcon
-  department: 'Engineering' | 'Finance' | 'Executive' | 'Marketing' | 'Internship' | 'Research'
+  department: 'Engineering' | 'Finance' | 'Executive' | 'Marketing' | 'Internship' | 'Research' | 'Business Development'
   type: 'Full-time' | 'Part-time' | 'Contract' | 'Internship'
   location: string
   priority: 'Critical' | 'High' | 'Medium'
@@ -184,6 +185,32 @@ export const positions: Position[] = [
       'You have strong analytical skills and data-driven approach',
       'You are creative and can develop innovative marketing campaigns',
       'You are passionate about AI and the future of software development'
+    ]
+  },
+  {
+    slug: 'head-of-marketplace-growth',
+    title: 'Head of Marketplace Growth',
+    icon: Handshake,
+    department: 'Business Development',
+    type: 'Full-time',
+    location: 'Palo Alto, CA',
+    priority: 'Critical',
+    description: 'Own business development for the Swarms marketplace — reaching out to new and existing users to drive adoption, retention, and revenue.',
+    requirements: ['Business development', 'Sales / partnerships', 'AI/tech industry'],
+    aboutRole: 'As Head of Marketplace Growth at Swarms, you will own business development for our marketplace. You will proactively reach out to new and existing users, build relationships, and drive adoption of agents and tools across the platform. You will be the connective tissue between our users and our product, turning interest into lasting engagement and revenue as we scale the agent economy.',
+    whatYoullDo: [
+      'Reach out to new and existing marketplace users to drive adoption and retention',
+      'Build and own the business development pipeline for the Swarms marketplace',
+      'Develop partnerships with agent builders, buyers, and enterprise customers',
+      'Gather user feedback and partner with product to improve the marketplace experience',
+      'Define and hit growth, activation, and revenue targets for the marketplace'
+    ],
+    youMayBeAFitIf: [
+      'You have 5+ years of business development, partnerships, or sales experience',
+      'You have a track record of growing marketplaces, platforms, or developer ecosystems',
+      'You are a strong communicator who loves talking to users and closing deals',
+      'You are data-driven and comfortable owning growth and revenue targets',
+      'You are passionate about AI and the future of the agent economy'
     ]
   },
   {
@@ -370,7 +397,7 @@ export const positions: Position[] = [
   }
 ]
 
-export const departments = ['All', 'Engineering', 'Finance', 'Marketing', 'Executive', 'Internship', 'Research'] as const
+export const departments = ['All', 'Engineering', 'Business Development', 'Finance', 'Marketing', 'Executive', 'Internship', 'Research'] as const
 export type Department = typeof departments[number]
 
 export function getPositionBySlug(slug: string): Position | undefined {
@@ -380,4 +407,26 @@ export function getPositionBySlug(slug: string): Position | undefined {
 export function getPositionsByDepartment(department: Department): Position[] {
   if (department === 'All') return positions
   return positions.filter(p => p.department === department)
+}
+
+// Where applications go. Developer (Engineering) roles apply through the
+// application form; every other role applies by emailing the team directly.
+export const GOOGLE_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSd3f1c_WBVoBm5P_IHwxVFxeEFRy3RbiDslj91o5CTknsca5g/viewform?usp=sf_link'
+export const APPLICATION_EMAIL = 'kye@swarms.world'
+
+export function isDeveloperRole(position: Position): boolean {
+  return position.department === 'Engineering'
+}
+
+export interface ApplyMethod {
+  type: 'form' | 'email'
+  href: string
+}
+
+export function getApplyMethod(position: Position): ApplyMethod {
+  if (isDeveloperRole(position)) {
+    return { type: 'form', href: GOOGLE_FORM_URL }
+  }
+  const subject = encodeURIComponent(`Application: ${position.title}`)
+  return { type: 'email', href: `mailto:${APPLICATION_EMAIL}?subject=${subject}` }
 }

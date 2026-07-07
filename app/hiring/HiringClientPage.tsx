@@ -1,26 +1,64 @@
 "use client"
 
-import React, { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
 import {
   MapPin,
   ArrowRight,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Briefcase,
-  Clock
+  Clock,
+  Search,
+  X
 } from 'lucide-react'
-import { positions, departments, type Department } from '@/lib/positions'
+import { positions, departments, GOOGLE_FORM_URL, type Department } from '@/lib/positions'
 
-const GOOGLE_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSd3f1c_WBVoBm5P_IHwxVFxeEFRy3RbiDslj91o5CTknsca5g/viewform?usp=sf_link'
+const PAGE_SIZE = 6
 
 const HiringClientPage = () => {
   const [activeDepartment, setActiveDepartment] = useState<Department>('All')
   const [departmentDropdownOpen, setDepartmentDropdownOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
 
   const filteredPositions = useMemo(() => {
-    if (activeDepartment === 'All') return positions
-    return positions.filter(p => p.department === activeDepartment)
-  }, [activeDepartment])
+    const query = searchQuery.trim().toLowerCase()
+    return positions.filter((p) => {
+      const matchesDepartment = activeDepartment === 'All' || p.department === activeDepartment
+      if (!matchesDepartment) return false
+      if (!query) return true
+      const haystack = [
+        p.title,
+        p.department,
+        p.type,
+        p.location,
+        p.description,
+      ].join(' ').toLowerCase()
+      return haystack.includes(query)
+    })
+  }, [activeDepartment, searchQuery])
+
+  const totalPages = Math.max(1, Math.ceil(filteredPositions.length / PAGE_SIZE))
+
+  // Keep the current page in range whenever the filters change.
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [activeDepartment, searchQuery])
+
+  const pagedPositions = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE
+    return filteredPositions.slice(start, start + PAGE_SIZE)
+  }, [filteredPositions, currentPage])
+
+  const rangeStart = filteredPositions.length === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1
+  const rangeEnd = Math.min(currentPage * PAGE_SIZE, filteredPositions.length)
+
+  const clearFilters = () => {
+    setSearchQuery('')
+    setActiveDepartment('All')
+  }
 
   return (
     <div className="min-h-screen bg-black text-white selection:bg-white/20 selection:text-white antialiased">
@@ -81,11 +119,33 @@ const HiringClientPage = () => {
           </div>
 
           {/* Filters */}
-          <div className="flex flex-col sm:flex-row gap-4 mb-10 justify-center">
-            <div className="relative">
+          <div className="flex flex-col sm:flex-row gap-4 mb-6 justify-center max-w-3xl mx-auto sm:items-center">
+            {/* Search bar */}
+            <div className="relative flex-1 w-full">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500 pointer-events-none" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search roles by title, department, or location..."
+                aria-label="Search roles"
+                className="w-full pl-11 pr-10 py-2.5 bg-neutral-900 border border-white/10 rounded-full text-sm text-white placeholder:text-neutral-500 focus:outline-none focus:border-white/25 focus:bg-neutral-800 transition-colors"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  aria-label="Clear search"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-neutral-500 hover:text-white transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+
+            <div className="relative flex-shrink-0">
               <button
                 onClick={() => setDepartmentDropdownOpen(!departmentDropdownOpen)}
-                className="flex items-center gap-2 px-5 py-2.5 bg-neutral-900 border border-white/10 rounded-full text-white hover:bg-neutral-800 transition-colors"
+                className="flex items-center justify-between gap-2 w-full sm:w-auto px-5 py-2.5 bg-neutral-900 border border-white/10 rounded-full text-white hover:bg-neutral-800 transition-colors"
               >
                 <span className="text-sm font-medium">{activeDepartment}</span>
                 <ChevronDown className={`w-4 h-4 text-neutral-400 transition-transform ${departmentDropdownOpen ? 'rotate-180' : ''}`} />
@@ -112,9 +172,16 @@ const HiringClientPage = () => {
             </div>
           </div>
 
+          {/* Results count */}
+          {filteredPositions.length > 0 && (
+            <p className="text-center text-sm text-neutral-500 mb-6">
+              Showing {rangeStart}–{rangeEnd} of {filteredPositions.length} {filteredPositions.length === 1 ? 'role' : 'roles'}
+            </p>
+          )}
+
           {/* Positions List */}
           <div className="flex flex-col gap-3 max-w-3xl mx-auto">
-            {filteredPositions.map((position) => {
+            {pagedPositions.map((position) => {
               const PositionIcon = position.icon
               return (
                 <Link
@@ -157,14 +224,57 @@ const HiringClientPage = () => {
             })}
           </div>
 
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2 mt-10">
+              <button
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                aria-label="Previous page"
+                className="flex items-center gap-1 px-4 py-2 bg-neutral-900 border border-white/10 rounded-full text-sm text-white hover:bg-neutral-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-neutral-900"
+              >
+                <ChevronLeft className="w-4 h-4" />
+                <span className="hidden sm:inline">Previous</span>
+              </button>
+
+              <div className="flex items-center gap-1.5">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  <button
+                    key={page}
+                    onClick={() => setCurrentPage(page)}
+                    aria-label={`Page ${page}`}
+                    aria-current={currentPage === page ? 'page' : undefined}
+                    className={`w-9 h-9 rounded-full text-sm font-medium transition-colors ${
+                      currentPage === page
+                        ? 'bg-white text-black'
+                        : 'bg-neutral-900 border border-white/10 text-neutral-400 hover:bg-neutral-800 hover:text-white'
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                aria-label="Next page"
+                className="flex items-center gap-1 px-4 py-2 bg-neutral-900 border border-white/10 rounded-full text-sm text-white hover:bg-neutral-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-neutral-900"
+              >
+                <span className="hidden sm:inline">Next</span>
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+
           {filteredPositions.length === 0 && (
             <div className="text-center py-16 text-neutral-400">
-              <p>No positions found for this department.</p>
+              <p>No roles match your search.</p>
               <button
-                onClick={() => setActiveDepartment('All')}
+                onClick={clearFilters}
                 className="mt-4 text-white hover:text-neutral-300 transition-colors"
               >
-                View all positions
+                Clear filters
               </button>
             </div>
           )}

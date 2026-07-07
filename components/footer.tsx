@@ -213,9 +213,26 @@ export function Footer() {
           </div>
 
           {/* Bottom section with copyright */}
-          <div className="relative mt-4 sm:mt-6 border-t border-neutral-800/50 pt-3 sm:pt-4 text-center">
+          <div className="relative mt-4 sm:mt-6 border-t border-neutral-800/50 pt-3 sm:pt-4">
             <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-neutral-700/50 to-transparent" />
-            <div className="text-xs text-gray-500 px-4">© {new Date().getFullYear()} Swarms. All rights reserved.</div>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 px-4 text-center">
+              <div className="text-xs text-gray-500">© {new Date().getFullYear()} Swarms. All rights reserved.</div>
+              <nav className="flex items-center gap-3 sm:gap-4">
+                {[
+                  { name: "Privacy Policy", url: "/privacy" },
+                  { name: "Terms of Service", url: "/terms" },
+                  { name: "Data Policy", url: "/data-policy" },
+                ].map((item) => (
+                  <Link
+                    key={item.url}
+                    href={item.url}
+                    className="text-xs text-gray-500 transition-colors duration-300 hover:text-gray-300"
+                  >
+                    {item.name}
+                  </Link>
+                ))}
+              </nav>
+            </div>
           </div>
         </div>
 

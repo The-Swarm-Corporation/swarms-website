@@ -409,13 +409,22 @@ export function getPositionsByDepartment(department: Department): Position[] {
   return positions.filter(p => p.department === department)
 }
 
-// Where applications go. Developer (Engineering) roles apply through the
-// application form; every other role applies by emailing the team directly.
+// Where applications go. Only true, hands-on engineer roles apply through the
+// application form; every other role (including Growth Engineer and DevRel Lead)
+// applies by emailing the team directly.
 export const GOOGLE_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSd3f1c_WBVoBm5P_IHwxVFxeEFRy3RbiDslj91o5CTknsca5g/viewform?usp=sf_link'
 export const APPLICATION_EMAIL = 'kye@swarms.world'
 
+// Core engineering roles that apply via the form. Everything else emails.
+const FORM_ROLE_SLUGS = new Set<string>([
+  'agent-engineer',
+  'front-end-engineer',
+  'rust-engineer',
+  'infrastructure-engineer',
+])
+
 export function isDeveloperRole(position: Position): boolean {
-  return position.department === 'Engineering'
+  return FORM_ROLE_SLUGS.has(position.slug)
 }
 
 export interface ApplyMethod {

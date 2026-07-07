@@ -247,7 +247,7 @@ export default function OpenSourceClientPage() {
                   Explore Repositories
                 </a>
                 <a
-                  href="https://docs.swarms.world/en/latest/swarms/contributing/"
+                  href="https://docs.swarms.world/community/contributing"
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{ position: "relative", zIndex: 10 }}

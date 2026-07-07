@@ -1201,7 +1201,7 @@ export default function ApplicationsClientPage() {
                         </p>
                         <Button size="lg" className="bg-red-600 hover:bg-red-700" asChild>
                           <a
-                            href="https://docs.swarms.world/en/latest/swarms/research/"
+                            href="https://docs.swarms.world/examples/overviews/paper-implementations"
                             target="_blank"
                             rel="noopener noreferrer"
                           >

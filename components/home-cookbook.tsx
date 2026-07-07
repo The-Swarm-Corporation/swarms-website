@@ -10,25 +10,25 @@ const cookbookResources = [
   {
     title: "Examples Overview",
     description: "Complete examples directory with comprehensive guides and tutorials",
-    link: "https://docs.swarms.world/en/latest/examples/",
+    link: "https://docs.swarms.world/examples/overviews/examples-index",
     badge: "GUIDES"
   },
   {
     title: "Cookbook Index",
     description: "Curated example collection with best practices and patterns",
-    link: "https://docs.swarms.world/en/latest/examples/cookbook_index/",
+    link: "https://docs.swarms.world/examples/overviews/cookbook",
     badge: "COOKBOOK"
   },
   {
     title: "Paper Implementations",
     description: "Research paper implementations and academic examples",
-    link: "https://docs.swarms.world/en/latest/examples/paper_implementations/",
+    link: "https://docs.swarms.world/examples/overviews/paper-implementations",
     badge: "RESEARCH"
   },
   {
     title: "Templates & Applications",
     description: "Reusable templates and production-ready applications",
-    link: "https://docs.swarms.world/en/latest/examples/templates/",
+    link: "https://docs.swarms.world/examples/overviews/templates",
     badge: "TEMPLATES"
   },
   {

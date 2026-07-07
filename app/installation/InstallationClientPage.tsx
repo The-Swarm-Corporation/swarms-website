@@ -389,7 +389,7 @@ export function InstallationClientPage() {
                 <p className="text-sm text-gray-400 mb-4">Learn the basics and create your first agent in minutes</p>
                 <Button variant="outline" className="w-full" asChild>
                   <a
-                    href="https://docs.swarms.world/en/latest/swarms/install/"
+                    href="https://docs.swarms.world/installation"
                     target="_blank"
                     rel="noopener noreferrer"
                   >

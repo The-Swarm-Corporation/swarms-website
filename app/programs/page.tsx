@@ -69,7 +69,7 @@ export default function ProgramsPage() {
                 asChild
               >
                 <a
-                  href="https://docs.swarms.world/en/latest/swarms/research/"
+                  href="https://docs.swarms.world/examples/overviews/paper-implementations"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
@@ -111,7 +111,7 @@ export default function ProgramsPage() {
                 icon: GraduationCap,
                 title: "Academic Support",
                 description: "Dedicated technical support and collaboration with our research team",
-                link: "https://docs.swarms.world/en/latest/swarms/research/",
+                link: "https://docs.swarms.world/examples/overviews/paper-implementations",
                 linkText: "Support Details",
               },
               {
@@ -162,37 +162,37 @@ export default function ProgramsPage() {
               {
                 title: "Multi-Agent Collaboration",
                 description: "Research on how multiple AI agents can effectively collaborate to solve complex problems",
-                link: "https://docs.swarms.world/en/latest/swarms/architectures/",
+                link: "https://docs.swarms.world/architectures/overview",
                 linkText: "Explore Architectures",
               },
               {
                 title: "Agent Communication",
                 description: "Protocols and methods for effective inter-agent communication and knowledge sharing",
-                link: "https://docs.swarms.world/en/latest/swarms/examples/",
+                link: "https://docs.swarms.world/examples/overviews/examples-index",
                 linkText: "View Examples",
               },
               {
                 title: "Emergent Behaviors",
                 description: "Study of emergent intelligence and behaviors in multi-agent systems",
-                link: "https://docs.swarms.world/en/latest/swarms/research/",
+                link: "https://docs.swarms.world/examples/overviews/paper-implementations",
                 linkText: "Research Papers",
               },
               {
                 title: "Specialized Agent Roles",
                 description: "Research on role specialization and division of labor in agent swarms",
-                link: "https://docs.swarms.world/en/latest/swarms/agents/",
+                link: "https://docs.swarms.world/agents/creating-agents",
                 linkText: "Agent Documentation",
               },
               {
                 title: "Swarm Optimization",
                 description: "Techniques for optimizing performance and efficiency of large agent swarms",
-                link: "https://docs.swarms.world/en/latest/swarms/optimization/",
+                link: "https://docs.swarms.world/architectures/overview",
                 linkText: "Optimization Guides",
               },
               {
                 title: "Real-world Applications",
                 description: "Applied research on multi-agent systems in healthcare, finance, and other domains",
-                link: "https://docs.swarms.world/en/latest/swarms/use_cases/",
+                link: "https://docs.swarms.world/examples/overviews/examples-index",
                 linkText: "Use Cases",
               },
             ].map((area, index) => (
@@ -237,7 +237,7 @@ export default function ProgramsPage() {
                 title: "2. Research Evaluation",
                 description:
                   "Our team will review your application and evaluate how our platform can best support your specific multi-agent research objectives.",
-                link: "https://docs.swarms.world/en/latest/swarms/research/evaluation.html",
+                link: "https://docs.swarms.world/examples/overviews/paper-implementations",
                 linkText: "Evaluation Criteria",
               },
               {
@@ -245,7 +245,7 @@ export default function ProgramsPage() {
                 title: "3. Onboarding & Support",
                 description:
                   "Approved researchers receive full platform access, dedicated technical support, and regular check-ins with our research team.",
-                link: "https://docs.swarms.world/en/latest/swarms/research/onboarding.html",
+                link: "https://docs.swarms.world/quickstart",
                 linkText: "Onboarding Process",
               },
             ].map((step, index) => {
@@ -367,7 +367,7 @@ export default function ProgramsPage() {
               {
                 title: "Research Examples",
                 description: "Sample projects and case studies from our research partners",
-                link: "https://docs.swarms.world/en/latest/swarms/examples/",
+                link: "https://docs.swarms.world/examples/overviews/examples-index",
               },
               {
                 title: "GitHub Repository",
@@ -377,7 +377,7 @@ export default function ProgramsPage() {
               {
                 title: "Technical Papers",
                 description: "Research papers and technical documentation on multi-agent systems",
-                link: "https://docs.swarms.world/en/latest/swarms/papers/",
+                link: "https://docs.swarms.world/examples/overviews/paper-implementations",
               },
               {
                 title: "Community Forum",

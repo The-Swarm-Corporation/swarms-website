@@ -87,8 +87,8 @@ export function HomeHero() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.12, ease }}
           >
-            Swarms is the enterprise-grade infrastructure for the agent economy,
-            one platform from your first agent to production swarms.
+            The full-stack agent infrastructure platform. Build, deploy, and
+            monetize agents at scale.
           </motion.p>
 
           <motion.div

@@ -44,10 +44,10 @@ final_post = workflow.run("AI history")`,
   },
   {
     title: "Swarms API",
-    subtitle: "Hosted Runtime",
+    subtitle: "Swarms Cloud",
     file: "agent.py",
     description:
-      "Enterprise-grade hosted API with an ultra-optimized runtime for deploying and scaling your agent swarms in production.",
+      "Build, deploy, and scale enterprise-grade multi-agent systems in the cloud",
     link: "https://docs.swarms.ai",
     docsLink: "https://docs.swarms.ai",
     code: `import requests

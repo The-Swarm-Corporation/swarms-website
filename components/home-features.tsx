@@ -3,128 +3,102 @@
 import { motion } from "framer-motion"
 import { Network, MessageSquare, Zap, Brain, Cpu, Shield } from "lucide-react"
 
+const ease: [number, number, number, number] = [0.22, 1, 0.36, 1]
+
 const features = [
   {
     title: "Multi-Agent Architectures",
-    description: "Build complex hierarchical, sequential, and parallel agent collaboration systems",
+    description: "Build complex hierarchical, sequential, and parallel agent collaboration systems.",
     link: "https://docs.swarms.world",
-    icon: Network
+    icon: Network,
   },
   {
     title: "Agent-To-Agent Communication",
-    description: "Advanced communication protocols for seamless agent interaction",
+    description: "Advanced communication protocols for seamless agent interaction.",
     link: "https://docs.swarms.world",
-    icon: MessageSquare
+    icon: MessageSquare,
   },
   {
     title: "Ultra-Optimized Runtime",
-    description: "High-performance runtime for maximum agent efficiency and speed",
+    description: "High-performance runtime for maximum agent efficiency and speed.",
     link: "https://docs.swarms.world",
-    icon: Zap
+    icon: Zap,
   },
   {
     title: "Multi-Agent Memory Systems",
-    description: "Sophisticated memory management for complex agent workflows",
+    description: "Sophisticated memory management for complex agent workflows.",
     link: "https://docs.swarms.world",
-    icon: Brain
+    icon: Brain,
   },
   {
     title: "Simulation Environments",
-    description: "Advanced simulation environments for testing and training agent swarms",
+    description: "Advanced simulation environments for testing and training agent swarms.",
     link: "https://docs.swarms.world",
-    icon: Cpu
+    icon: Cpu,
   },
   {
     title: "Enterprise Security & Compliance",
-    description: "Built-in security, governance, and compliance features for enterprise deployments",
+    description: "Built-in security, governance, and compliance features for enterprise deployments.",
     link: "https://docs.swarms.world",
-    icon: Shield
-  }
+    icon: Shield,
+  },
 ]
 
 export function HomeFeatures() {
   return (
-    <div className="container py-16 sm:py-20 md:py-24 lg:py-32 xl:py-40 px-4 sm:px-6 bg-black">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        viewport={{ once: true }}
-        className="max-w-3xl mx-auto text-center space-y-3 sm:space-y-4 md:space-y-5 mb-12 sm:mb-16 md:mb-20 px-2 sm:px-0"
-      >
-        <div className="flex items-center gap-2 sm:gap-3 justify-center">
-          <span className="h-px w-6 sm:w-8 bg-gradient-to-r from-transparent to-white/20" />
-          <p className="text-[10px] sm:text-xs text-white/55 tracking-[0.22em] uppercase font-semibold">
-            <span className="text-white font-bold">Capabilities</span>
-          </p>
-          <span className="h-px w-6 sm:w-8 bg-gradient-to-l from-transparent to-white/20" />
-        </div>
-        <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-white leading-tight">
-          Everything you need to ship agents
-        </h2>
-        <p className="text-base sm:text-lg md:text-xl text-white/60 max-w-3xl mx-auto font-normal leading-relaxed px-2 sm:px-0">
-          Pioneered infrastructure for multi-agent collaboration — communication protocols, optimized runtimes, memory systems, and simulation environments.
-        </p>
-      </motion.div>
-
-      <div className="max-w-7xl mx-auto">
+    <section className="border-b border-white/[0.08] bg-black">
+      <div className="container px-4 py-16 sm:px-6 sm:py-24 lg:px-8 lg:py-32">
         <motion.div
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6"
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          transition={{ duration: 0.6 }}
-          viewport={{ once: true }}
+          className="mx-auto mb-10 max-w-7xl sm:mb-14"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.7, ease }}
         >
-          {features.map((feature, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, y: 40 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, delay: index * 0.1 }}
-              viewport={{ once: true }}
-              className="group"
+          <p className="mb-5 font-mono text-[11px] font-medium uppercase tracking-[0.2em] text-white/40">
+            Capabilities
+          </p>
+          <h2 className="max-w-3xl text-3xl font-semibold leading-[1.1] tracking-tighter text-white sm:text-4xl md:text-5xl">
+            Everything you need to ship agents.
+          </h2>
+          <p className="mt-5 max-w-2xl text-base font-normal leading-relaxed text-white/50 sm:text-lg">
+            Pioneered infrastructure for multi-agent collaboration — communication
+            protocols, optimized runtimes, memory systems, and simulation
+            environments.
+          </p>
+        </motion.div>
+
+        <motion.div
+          className="mx-auto grid max-w-7xl grid-cols-1 gap-px overflow-hidden rounded-lg border border-white/[0.08] bg-white/[0.08] sm:grid-cols-2 lg:grid-cols-3"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.7, delay: 0.1, ease }}
+        >
+          {features.map((feature) => (
+            <a
+              key={feature.title}
+              href={feature.link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group flex min-h-[160px] flex-col justify-between gap-6 bg-black p-5 transition-colors duration-300 hover:bg-[#0a0a0a] sm:min-h-[220px] sm:p-8"
             >
-              <a
-                href={feature.link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block h-full"
-              >
-                <div className="relative h-[240px] sm:h-[260px] md:h-[280px] lg:h-[300px] xl:h-[320px] rounded-2xl sm:rounded-3xl overflow-hidden border border-white/10 bg-black/50 backdrop-blur-sm transition-all duration-500 hover:border-white/30 hover:scale-[1.02] hover:shadow-2xl hover:shadow-gray-300/20">
-                  {/* Background gradient */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-gray-500/5 to-transparent opacity-50 group-hover:opacity-100 transition-opacity duration-500" />
-                  
-                  {/* Animated gradient overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-gray-500/20 via-gray-600/10 to-gray-700/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                  
-                  {/* Content */}
-                  <div className="relative z-10 h-full flex flex-col justify-between p-5 sm:p-6 md:p-8">
-                    {/* Icon with border */}
-                    <div className="flex items-start">
-                      <div className="p-2.5 sm:p-3 rounded-xl sm:rounded-2xl border-2 border-red-500/50 bg-red-500/10 group-hover:border-red-500 group-hover:bg-red-500/20 transition-all duration-500">
-                        <feature.icon className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-red-500" />
-                      </div>
-                    </div>
-                    
-                    {/* Title and description */}
-                    <div>
-                      <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-white mb-1.5 sm:mb-2 group-hover:text-white transition-colors">
-                        {feature.title}
-                      </h3>
-                      <p className="text-white/70 text-xs sm:text-sm md:text-base leading-relaxed group-hover:text-white/90 transition-colors">
-                        {feature.description}
-                      </p>
-                    </div>
-                  </div>
-                  
-                  {/* Hover effect line */}
-                </div>
-              </a>
-            </motion.div>
+              <feature.icon
+                className="h-5 w-5 text-white/50 transition-colors duration-300 group-hover:text-white"
+                strokeWidth={1.5}
+              />
+              <div>
+                <h3 className="mb-2 text-base font-medium text-white">
+                  {feature.title}
+                </h3>
+                <p className="text-sm font-normal leading-relaxed text-white/50">
+                  {feature.description}
+                </p>
+              </div>
+            </a>
           ))}
         </motion.div>
       </div>
-    </div>
+    </section>
   )
 }
-

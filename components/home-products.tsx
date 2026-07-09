@@ -1,20 +1,21 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
-import { motion, useScroll, useTransform } from "framer-motion"
-import { ExternalLink, Star } from "lucide-react"
-import { useRef } from "react"
+import { motion } from "framer-motion"
+import { ArrowRight, ArrowUpRight, Star } from "lucide-react"
 import { useGithubStars } from "@/hooks/use-github-stars"
 import { formatStarsShort } from "@/lib/github-stars"
 import Image from "next/image"
 import Link from "next/link"
 
+const ease: [number, number, number, number] = [0.22, 1, 0.36, 1]
+
 const swarmsStack = [
   {
     title: "Swarms Python",
     github: "kyegomez/swarms",
-    subtitle: "Core Swarms Python Framework",
+    subtitle: "Core Framework",
+    file: "workflow.py",
     description:
       "The original Swarms framework in Python with full backwards compatibility with LangChain, AutoGen, and other popular frameworks.",
     link: "https://github.com/kyegomez/swarms",
@@ -43,9 +44,10 @@ final_post = workflow.run("AI history")`,
   },
   {
     title: "Swarms API",
-    subtitle: "Ultra-Optimized Agent Execution Runtime",
+    subtitle: "Hosted Runtime",
+    file: "agent.py",
     description:
-      "Enterprise-grade hosted API with ultra-optimized runtime for deploying and scaling your agent swarms in production.",
+      "Enterprise-grade hosted API with an ultra-optimized runtime for deploying and scaling your agent swarms in production.",
     link: "https://docs.swarms.ai",
     docsLink: "https://docs.swarms.ai",
     code: `import requests
@@ -53,13 +55,13 @@ final_post = workflow.run("AI history")`,
 payload = {
     "agent_config": {
         "agent_name": "Research Analyst",
-        "description": "Expert in analyzing and synthesizing research data",
-        "system_prompt": "You are a Research Analyst with expertise in data analysis and synthesis.",
+        "description": "Expert in analyzing research data",
+        "system_prompt": "You are a Research Analyst...",
         "model_name": "gpt-4o-mini",
         "max_tokens": 8192,
         "temperature": 0.7
     },
-    "task": "Analyze the impact of artificial intelligence on healthcare"
+    "task": "Analyze the impact of AI on healthcare"
 }
 
 response = requests.post(
@@ -71,7 +73,8 @@ response = requests.post(
   {
     title: "Swarms-RS",
     github: "The-Swarm-Corporation/swarms-rs",
-    subtitle: "The First Multi-Agent Framework in Rust",
+    subtitle: "Rust Framework",
+    file: "main.rs",
     description:
       "Ultra-fast, memory-safe, and production-ready multi-agent framework built in Rust for maximum performance and reliability.",
     link: "https://crates.io/crates/swarms-rs",
@@ -97,328 +100,163 @@ async fn main() -> Result<()> {
   },
   {
     title: "Swarms Marketplace",
-    subtitle: "Buy & Sell Agents, Prompts & More",
+    subtitle: "Buy & Sell Agents",
     description:
-      "Discover, buy, and sell agents, prompts, tools, and components on swarms.world - the premier marketplace for AI agents.",
+      "Discover, buy, and sell agents, prompts, tools, and components on swarms.world — the premier marketplace for AI agents.",
     link: "https://swarms.world",
     docsLink: "https://swarms.world",
     image: "/marketplace_banner.png",
   },
 ]
 
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.15,
-      delayChildren: 0.1,
-    },
-  },
-}
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: {
-      duration: 0.6,
-      ease: [0.22, 1, 0.36, 1], // Custom easing for smooth motion
-    },
-  },
-}
-
 export function HomeProducts() {
   const stars = useGithubStars()
-  return (
-    <>
-      {/* Products Section Header */}
-      <div className="container py-8 sm:py-12 md:py-16 lg:py-20 px-2 sm:px-4 md:px-6 relative max-w-full overflow-hidden">
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{
-            duration: 0.8,
-            ease: [0.22, 1, 0.36, 1],
-          }}
-          viewport={{ once: true, margin: "-100px" }}
-          className="max-w-3xl mx-auto text-center space-y-3 sm:space-y-4 md:space-y-5 px-2 sm:px-0"
-        >
-          <div className="flex items-center gap-2 sm:gap-3 justify-center">
-            <span className="h-px w-6 sm:w-8 bg-gradient-to-r from-transparent to-white/20" />
-            <p className="text-[10px] sm:text-xs text-white/55 tracking-[0.22em] uppercase font-semibold">
-              <span className="text-white font-bold">The suite</span>
-            </p>
-            <span className="h-px w-6 sm:w-8 bg-gradient-to-l from-transparent to-white/20" />
-          </div>
-          <motion.h2
-            className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-white leading-tight"
-            initial={{ opacity: 0, scale: 0.95 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            transition={{
-              duration: 0.6,
-              ease: [0.22, 1, 0.36, 1],
-            }}
-            viewport={{ once: true }}
-          >
-            One stack. End-to-end agent infrastructure.
-          </motion.h2>
-          <motion.p 
-            className="text-base sm:text-lg md:text-xl text-white/60 max-w-3xl mx-auto font-normal px-2 sm:px-0"
-            initial={{ opacity: 0, y: 10 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ 
-              duration: 0.6,
-              delay: 0.2,
-              ease: [0.22, 1, 0.36, 1],
-            }}
-            viewport={{ once: true }}
-          >
-            We provide a range of frameworks, interfaces, and cloud services to help you build your own multi-agent systems.
-          </motion.p>
-        </motion.div>
-      </div>
 
-      {/* Product Cards with Scroll Snap */}
-      {swarmsStack.map((product, index) => {
-        const isEven = index % 2 === 0
-        return (
-          <ProductSection
-            key={index}
-            product={product}
-            index={index}
-            isEven={isEven}
-            starCount={product.github ? stars[product.github] : undefined}
-          />
-        )
-      })}
-    </>
+  return (
+    <section className="border-b border-white/[0.08] bg-black">
+      <div className="container px-4 py-16 sm:px-6 sm:py-24 lg:px-8 lg:py-32">
+        <motion.div
+          className="mx-auto mb-8 max-w-7xl sm:mb-10"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.7, ease }}
+        >
+          <p className="mb-5 font-mono text-[11px] font-medium uppercase tracking-[0.2em] text-white/40">
+            Products
+          </p>
+          <h2 className="max-w-3xl text-3xl font-semibold leading-[1.1] tracking-tighter text-white sm:text-4xl md:text-5xl">
+            One stack. End-to-end agent infrastructure.
+          </h2>
+          <p className="mt-5 max-w-2xl text-base font-normal leading-relaxed text-white/50 sm:text-lg">
+            Frameworks, interfaces, and cloud services to help you build your own
+            multi-agent systems.
+          </p>
+        </motion.div>
+
+        <div className="mx-auto max-w-7xl">
+          {swarmsStack.map((product, index) => (
+            <ProductRow
+              key={product.title}
+              product={product}
+              index={index}
+              starCount={product.github ? stars[product.github] : undefined}
+            />
+          ))}
+        </div>
+      </div>
+    </section>
   )
 }
 
-function ProductSection({ product, index, isEven, starCount }: { product: typeof swarmsStack[0], index: number, isEven: boolean, starCount?: number }) {
-  const sectionRef = useRef<HTMLDivElement>(null)
-  const { scrollYProgress } = useScroll({
-    target: sectionRef,
-    offset: ["start end", "end start"]
-  })
-
-  const y = useTransform(scrollYProgress, [0, 1], [30, -30])
-  const opacity = useTransform(scrollYProgress, [0, 0.2, 0.8, 1], [0.3, 1, 1, 0.3])
+function ProductRow({
+  product,
+  index,
+  starCount,
+}: {
+  product: (typeof swarmsStack)[0]
+  index: number
+  starCount?: number
+}) {
+  const isEven = index % 2 === 0
 
   return (
-    <motion.div 
-      ref={sectionRef}
-      className="relative min-h-[80vh] sm:min-h-screen flex items-center py-8 sm:py-12 md:py-16 lg:py-24 xl:py-32 bg-black overflow-hidden scroll-optimized"
-      style={{ opacity }}
+    <motion.div
+      className="grid items-center gap-8 border-t border-white/[0.08] py-10 sm:gap-10 sm:py-16 lg:grid-cols-2 lg:gap-16 lg:py-20"
+      initial={{ opacity: 0, y: 24 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-100px" }}
+      transition={{ duration: 0.7, ease }}
     >
-      {/* Subtle background gradient */}
-      <motion.div 
-        className="absolute inset-0 opacity-30"
-        style={{
-          background: `radial-gradient(circle at ${isEven ? '20%' : '80%'} 50%, rgba(239, 68, 68, 0.1) 0%, transparent 50%)`,
-          y,
-        }}
-      />
-
-      <div className="container px-2 sm:px-4 md:px-6 relative z-10 w-full max-w-full overflow-hidden">
-        <motion.div 
-          className="grid lg:grid-cols-2 gap-6 sm:gap-8 md:gap-10 lg:gap-16 items-center max-w-7xl mx-auto"
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-100px" }}
-          variants={containerVariants}
-        >
-          {/* Content Section */}
-          <motion.div
-            variants={itemVariants}
-            className={`space-y-4 sm:space-y-6 md:space-y-8 ${isEven ? 'lg:order-1' : 'lg:order-2'} w-full max-w-full overflow-visible`}
+      {/* Copy */}
+      <div className={`space-y-5 ${isEven ? "lg:order-1" : "lg:order-2"}`}>
+        <p className="font-mono text-[11px] font-medium uppercase tracking-[0.2em] text-white/40">
+          {String(index + 1).padStart(2, "0")} — {product.subtitle}
+        </p>
+        <div className="flex flex-wrap items-center gap-3">
+          <h3 className="text-xl font-semibold tracking-tight text-white sm:text-3xl md:text-4xl">
+            {product.title}
+          </h3>
+          {starCount !== undefined && (
+            <a
+              href={`https://github.com/${product.github}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.12] bg-white/[0.03] px-3 py-1 text-xs font-medium text-white/60 transition-colors hover:border-white/25 hover:text-white"
+            >
+              <Star className="h-3 w-3" />
+              {formatStarsShort(starCount)}
+            </a>
+          )}
+        </div>
+        <p className="max-w-xl text-base font-normal leading-relaxed text-white/50">
+          {product.description}
+        </p>
+        <div className="flex flex-wrap items-center gap-3 pt-2">
+          <Button
+            className="h-10 rounded-full bg-white px-5 text-sm font-medium text-black hover:bg-neutral-200"
+            asChild
           >
-            <motion.div
-              variants={itemVariants}
-              className="space-y-3 sm:space-y-4"
-            >
-              <motion.h3 
-                className="text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold text-white tracking-tight leading-tight break-words"
-                initial={{ opacity: 0, x: isEven ? -30 : 30 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                transition={{ 
-                  duration: 0.7,
-                  ease: [0.22, 1, 0.36, 1],
-                }}
-                viewport={{ once: true }}
-              >
-                {product.title}
-              </motion.h3>
-              <motion.p
-                className="text-sm sm:text-base md:text-lg lg:text-xl text-white/60 font-medium break-words"
-                initial={{ opacity: 0, x: isEven ? -30 : 30 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                transition={{
-                  duration: 0.7,
-                  delay: 0.1,
-                  ease: [0.22, 1, 0.36, 1],
-                }}
-                viewport={{ once: true }}
-              >
-                {product.subtitle}
-              </motion.p>
-              {starCount !== undefined && (
-                <a
-                  href={`https://github.com/${product.github}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-white/60 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all duration-200 text-xs sm:text-sm font-medium w-fit"
-                >
-                  <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
-                  <span>{formatStarsShort(starCount)} stars</span>
-                </a>
-              )}
-            </motion.div>
-
-            <motion.p 
-              className="text-sm sm:text-base md:text-lg text-white/60 leading-relaxed max-w-2xl break-words"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ 
-                duration: 0.6,
-                delay: 0.2,
-                ease: [0.22, 1, 0.36, 1],
-              }}
-              viewport={{ once: true }}
-            >
-              {product.description}
-            </motion.p>
-
-            <motion.div 
-              className="flex flex-col sm:flex-row gap-2 sm:gap-3 md:gap-4 pt-2 sm:pt-4 w-full p-2 sm:p-3 md:p-4 -m-2 sm:-m-3 md:-m-4"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ 
-                duration: 0.6,
-                delay: 0.3,
-                ease: [0.22, 1, 0.36, 1],
-              }}
-              viewport={{ once: true }}
-            >
-              <Button
-                size="lg"
-                className="bg-white text-black hover:bg-white/90 font-bold w-full sm:w-auto group text-xs sm:text-sm md:text-base px-3 sm:px-4 md:px-6 py-4 sm:py-5 md:py-6 flex-shrink-0"
-                asChild
-              >
-                {product.link.startsWith("/") ? (
-                  <Link href={product.link} className="flex items-center justify-center">
-                    <span>Get Started</span>
-                    <ExternalLink className="h-3 w-3 sm:h-4 sm:w-4 ml-2 transition-transform duration-300 group-hover:translate-x-1 group-hover:-translate-y-1 flex-shrink-0" />
-                  </Link>
-                ) : (
-                  <a href={product.link} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center">
-                    <span>Get Started</span>
-                    <ExternalLink className="h-3 w-3 sm:h-4 sm:w-4 ml-2 transition-transform duration-300 group-hover:translate-x-1 group-hover:-translate-y-1 flex-shrink-0" />
-                  </a>
-                )}
-              </Button>
-              <Button
-                variant="outline"
-                size="lg"
-                className="border-2 border-white/20 text-white hover:bg-white/10 bg-transparent backdrop-blur-sm w-full sm:w-auto group text-xs sm:text-sm md:text-base px-3 sm:px-4 md:px-6 py-4 sm:py-5 md:py-6 flex-shrink-0"
-                asChild
-              >
-                <a href={product.docsLink} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center">
-                  <span>Documentation</span>
-                  <ExternalLink className="h-3 w-3 sm:h-4 sm:w-4 ml-2 transition-transform duration-300 group-hover:translate-x-1 group-hover:-translate-y-1 flex-shrink-0" />
-                </a>
-              </Button>
-            </motion.div>
-          </motion.div>
-
-          {/* Code/Image Card Section */}
-          <motion.div
-            variants={itemVariants}
-            className={`relative ${isEven ? 'lg:order-2' : 'lg:order-1'} mt-8 lg:mt-0 w-full max-w-full overflow-hidden`}
-            initial={{ opacity: 0, x: isEven ? 50 : -50, scale: 0.95 }}
-            whileInView={{ opacity: 1, x: 0, scale: 1 }}
-            transition={{ 
-              duration: 0.8,
-              delay: 0.2,
-              ease: [0.22, 1, 0.36, 1],
-            }}
-            viewport={{ once: true }}
+            {product.link.startsWith("/") ? (
+              <Link href={product.link}>
+                Get Started
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            ) : (
+              <a href={product.link} target="_blank" rel="noopener noreferrer">
+                Get Started
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </a>
+            )}
+          </Button>
+          <a
+            href={product.docsLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group inline-flex h-10 items-center gap-1.5 px-2 text-sm font-medium text-white/60 transition-colors hover:text-white"
           >
-            <motion.div
-              whileHover={{ scale: 1.02, y: -5 }}
-              transition={{ 
-                duration: 0.3,
-                ease: [0.22, 1, 0.36, 1],
-              }}
-            >
-              {product.image ? (
-                <div className="relative rounded-lg overflow-hidden border border-white/10 hover:border-white/20 transition-all duration-500 hover:shadow-2xl hover:shadow-red-500/10 w-full max-w-full">
-                  <Image
-                    src={product.image}
-                    alt={`${product.title} - ${product.subtitle} - Swarms Multi-Agent AI Framework Product Showcase`}
-                    width={800}
-                    height={600}
-                    className="w-full h-auto object-cover max-w-full"
-                    loading="lazy"
-                  />
-                </div>
-              ) : (
-                <Card className="bg-white/[0.02] border border-white/10 backdrop-blur-sm hover:border-white/20 transition-all duration-500 hover:shadow-2xl hover:shadow-red-500/10 w-full max-w-full overflow-hidden">
-                  <div className="p-3 sm:p-4 md:p-5 lg:p-6">
-                    <div className="flex items-center space-x-2 mb-2 sm:mb-3 md:mb-4">
-                      <motion.div 
-                        className="w-2 h-2 bg-white/40 rounded-full flex-shrink-0"
-                        animate={{ opacity: [0.4, 1, 0.4] }}
-                        transition={{ 
-                          duration: 2,
-                          repeat: Infinity,
-                          delay: 0,
-                        }}
-                      />
-                      <motion.div 
-                        className="w-2 h-2 bg-white/40 rounded-full flex-shrink-0"
-                        animate={{ opacity: [0.4, 1, 0.4] }}
-                        transition={{ 
-                          duration: 2,
-                          repeat: Infinity,
-                          delay: 0.3,
-                        }}
-                      />
-                      <motion.div 
-                        className="w-2 h-2 bg-white/40 rounded-full flex-shrink-0"
-                        animate={{ opacity: [0.4, 1, 0.4] }}
-                        transition={{ 
-                          duration: 2,
-                          repeat: Infinity,
-                          delay: 0.6,
-                        }}
-                      />
-                      <span className="text-white/40 text-xs ml-2 sm:ml-4 font-mono flex-shrink-0">code</span>
-                    </div>
-                    <div className="overflow-x-auto w-full -mx-3 sm:-mx-4 md:-mx-5 lg:-mx-6 px-3 sm:px-4 md:px-5 lg:px-6">
-                      <motion.pre 
-                        className="text-white/80 font-mono text-[10px] xs:text-xs sm:text-sm leading-relaxed whitespace-pre"
-                        initial={{ opacity: 0 }}
-                        whileInView={{ opacity: 1 }}
-                        transition={{ 
-                          duration: 0.6,
-                          delay: 0.4,
-                        }}
-                        viewport={{ once: true }}
-                      >
-                        <code>{product.code}</code>
-                      </motion.pre>
-                    </div>
-                  </div>
-                </Card>
-              )}
-            </motion.div>
-          </motion.div>
-        </motion.div>
+            Documentation
+            <ArrowUpRight className="h-4 w-4 text-white/40 transition-colors group-hover:text-white" />
+          </a>
+        </div>
+      </div>
+
+      {/* Code / image panel */}
+      <div className={`w-full min-w-0 ${isEven ? "lg:order-2" : "lg:order-1"}`}>
+        {product.image ? (
+          <a
+            href={product.link}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block overflow-hidden rounded-lg border border-white/[0.08] transition-colors hover:border-white/20"
+          >
+            <Image
+              src={product.image}
+              alt={`${product.title} — ${product.subtitle}`}
+              width={800}
+              height={600}
+              className="h-auto w-full object-cover"
+              loading="lazy"
+            />
+          </a>
+        ) : (
+          <div className="overflow-hidden rounded-lg border border-white/[0.08] bg-[#0a0a0a]">
+            <div className="flex items-center gap-1.5 border-b border-white/[0.08] px-4 py-3">
+              <span className="h-2.5 w-2.5 rounded-full bg-white/[0.12]" />
+              <span className="h-2.5 w-2.5 rounded-full bg-white/[0.12]" />
+              <span className="h-2.5 w-2.5 rounded-full bg-white/[0.12]" />
+              <span className="ml-3 font-mono text-[11px] font-normal text-white/40">
+                {product.file}
+              </span>
+            </div>
+            <div className="overflow-x-auto p-4 sm:p-5">
+              <pre className="font-mono text-[11px] font-normal leading-relaxed text-white/70 sm:text-[12.5px]">
+                <code>{product.code}</code>
+              </pre>
+            </div>
+          </div>
+        )}
       </div>
     </motion.div>
   )
 }
-

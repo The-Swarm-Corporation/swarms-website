@@ -89,7 +89,7 @@ export function Footer() {
                     >
                       <div className="flex items-center gap-2 min-w-0 flex-1">
                         <div className="flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded bg-neutral-800/50 transition-colors duration-300 group-hover:bg-neutral-800/70 flex-shrink-0">
-                          <item.icon className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-red-500" />
+                          <item.icon className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-neutral-400" />
                         </div>
                         <span className="text-xs text-gray-300 transition-colors duration-300 group-hover:text-gray-100 leading-tight truncate">{item.name}</span>
                       </div>
@@ -127,11 +127,11 @@ export function Footer() {
                   >
                     <div className="flex items-center gap-2 min-w-0 flex-1">
                       <div className="flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded bg-neutral-800/50 transition-colors duration-300 group-hover:bg-neutral-800/70 flex-shrink-0">
-                        <item.icon className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-red-500" />
+                        <item.icon className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-neutral-400" />
                       </div>
                       <span className="text-xs text-gray-300 transition-colors duration-300 group-hover:text-gray-100 leading-tight truncate">{item.name}</span>
                       {item.isNew && (
-                        <span className="text-xs px-1.5 py-0.5 bg-red-500/20 text-red-500 rounded-full flex-shrink-0">New</span>
+                        <span className="text-xs px-1.5 py-0.5 bg-white/10 text-white rounded-full flex-shrink-0">New</span>
                       )}
                     </div>
                   </Link>
@@ -166,7 +166,7 @@ export function Footer() {
                     >
                       <div className="flex items-center gap-2 min-w-0 flex-1">
                         <div className="flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded bg-neutral-800/50 transition-colors duration-300 group-hover:bg-neutral-800/70 flex-shrink-0">
-                          <Icon className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-red-500" />
+                          <Icon className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-neutral-400" />
                         </div>
                         <span className="text-xs text-gray-300 transition-colors duration-300 group-hover:text-gray-100 leading-tight truncate">{item.name}</span>
                       </div>
@@ -201,7 +201,7 @@ export function Footer() {
                   >
                     <div className="flex items-center gap-2 min-w-0 flex-1">
                       <div className="flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded bg-neutral-800/50 transition-colors duration-300 group-hover:bg-neutral-800/70 flex-shrink-0">
-                        <item.icon className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-red-500" />
+                        <item.icon className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-neutral-400" />
                       </div>
                       <span className="text-xs text-gray-300 transition-colors duration-300 group-hover:text-gray-100 leading-tight truncate">{item.name}</span>
                     </div>

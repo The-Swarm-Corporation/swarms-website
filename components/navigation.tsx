@@ -95,7 +95,7 @@ export function Navigation() {
     <Button
       variant="ghost"
       size="icon"
-      className="hidden md:inline-flex hover:bg-red-500/10 hover:text-red-500 border border-transparent hover:border-red-500/40 transition-all duration-300 hover:shadow-[0_0_8px_rgba(239,68,68,0.3)]"
+      className="hidden md:inline-flex hover:bg-white/5 hover:text-white border border-transparent hover:border-white/20 transition-all duration-300"
       asChild
     >
       <a href={href} target="_blank" rel="noopener noreferrer" aria-label={label}>
@@ -112,8 +112,8 @@ export function Navigation() {
     isNew = false,
     iconColor = "red",
   }: { icon: any; href: string; children: React.ReactNode; isNew?: boolean; iconColor?: "red" | "neutral" }) => {
-    const iconClass = iconColor === "red" ? "text-red-500" : "text-neutral-400"
-    const borderHoverClass = iconColor === "red" ? "group-hover:border-red-500/40" : "group-hover:border-neutral-600/50"
+    const iconClass = iconColor === "red" ? "text-neutral-300" : "text-neutral-400"
+    const borderHoverClass = iconColor === "red" ? "group-hover:border-white/25" : "group-hover:border-neutral-600/50"
     
     return (
       <a
@@ -128,7 +128,7 @@ export function Navigation() {
         <div className="flex-1 min-w-0">
           <span className="text-sm font-semibold text-white block">{children}</span>
         </div>
-        {isNew && <span className="ml-2 text-xs px-2 py-0.5 bg-red-500/20 text-red-500 rounded-full border border-red-500/30">New</span>}
+        {isNew && <span className="ml-2 text-xs px-2 py-0.5 bg-white/10 text-white rounded-full border border-white/20">New</span>}
       </a>
     )
   }
@@ -155,11 +155,7 @@ export function Navigation() {
         <nav className="hidden lg:flex lg:space-x-4 xl:space-x-6 flex-1 items-center">
           
           <NavLink href="/pricing">Pricing</NavLink>
-          
-          <NavLink href="https://status.swarms.ai" external>Status</NavLink>
 
-          <NavLink href="https://swarms.world/support" external>Support</NavLink>
-          
           {/* Docs Dropdown */}
           <div 
             className="relative"
@@ -186,8 +182,8 @@ export function Navigation() {
                       rel="noopener noreferrer"
                       className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
                     >
-                      <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
-                        <BookOpen className="h-4 w-4 text-red-500" />
+                      <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-white/25 transition-all duration-200">
+                        <BookOpen className="h-4 w-4 text-neutral-300" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <span className="text-sm font-semibold text-white block">Swarms Python Docs</span>
@@ -200,8 +196,8 @@ export function Navigation() {
                       rel="noopener noreferrer"
                       className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
                     >
-                      <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
-                        <Code className="h-4 w-4 text-red-500" />
+                      <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-white/25 transition-all duration-200">
+                        <Code className="h-4 w-4 text-neutral-300" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <span className="text-sm font-semibold text-white block">Swarms API Docs</span>
@@ -214,8 +210,8 @@ export function Navigation() {
                       rel="noopener noreferrer"
                       className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
                     >
-                      <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
-                        <ShoppingBag className="h-4 w-4 text-red-500" />
+                      <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-white/25 transition-all duration-200">
+                        <ShoppingBag className="h-4 w-4 text-neutral-300" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <span className="text-sm font-semibold text-white block">Marketplace Docs</span>
@@ -250,8 +246,8 @@ export function Navigation() {
                 >
                   <div className="p-2 relative">
                     <Link href="/products" className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative">
-                      <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
-                        <Package className="h-4 w-4 text-red-500" />
+                      <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-white/25 transition-all duration-200">
+                        <Package className="h-4 w-4 text-neutral-300" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <span className="text-sm font-semibold text-white block">Products Overview</span>
@@ -259,8 +255,8 @@ export function Navigation() {
                       </div>
                     </Link>
                     <Link href="/framework" className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative">
-                      <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
-                        <Github className="h-4 w-4 text-red-500" />
+                      <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-white/25 transition-all duration-200">
+                        <Github className="h-4 w-4 text-neutral-300" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <span className="text-sm font-semibold text-white block">Swarms Framework</span>
@@ -268,8 +264,8 @@ export function Navigation() {
                       </div>
                     </Link>
                     <Link href="/api" className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative">
-                      <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
-                        <Code className="h-4 w-4 text-red-500" />
+                      <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-white/25 transition-all duration-200">
+                        <Code className="h-4 w-4 text-neutral-300" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <span className="text-sm font-semibold text-white block">Swarms API</span>
@@ -282,8 +278,8 @@ export function Navigation() {
                       rel="noopener noreferrer"
                       className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
                     >
-                      <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
-                        <Sparkles className="h-4 w-4 text-red-500" />
+                      <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-white/25 transition-all duration-200">
+                        <Sparkles className="h-4 w-4 text-neutral-300" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <span className="text-sm font-semibold text-white block">Swarms Marketplace</span>
@@ -291,8 +287,8 @@ export function Navigation() {
                       </div>
                     </a>
                     <Link href="/mobile" className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative">
-                      <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
-                        <Smartphone className="h-4 w-4 text-red-500" />
+                      <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-white/25 transition-all duration-200">
+                        <Smartphone className="h-4 w-4 text-neutral-300" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <span className="text-sm font-semibold text-white block">Mobile App</span>
@@ -305,8 +301,8 @@ export function Navigation() {
                       rel="noopener noreferrer"
                       className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
                     >
-                      <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
-                        <Rocket className="h-4 w-4 text-red-500" />
+                      <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-white/25 transition-all duration-200">
+                        <Rocket className="h-4 w-4 text-neutral-300" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <span className="text-sm font-semibold text-white block">Swarms RS</span>
@@ -377,7 +373,7 @@ export function Navigation() {
                             {activeTab === tab.id && (
                               <motion.div
                                 layoutId="activeTabIndicator"
-                                className="absolute left-0 top-0 bottom-0 w-[2px] bg-red-500/60 rounded-full"
+                                className="absolute left-0 top-0 bottom-0 w-[2px] bg-white/60 rounded-full"
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 transition={{ duration: 0.2 }}
@@ -406,6 +402,9 @@ export function Navigation() {
                               </FuturisticMenuItem>
                               <FuturisticMenuItem icon={Activity} href="https://status.swarms.ai" iconColor="red">
                                 Status Page
+                              </FuturisticMenuItem>
+                              <FuturisticMenuItem icon={MessageCircle} href="https://swarms.world/support" iconColor="red">
+                                Support
                               </FuturisticMenuItem>
                             </TabsContent>
 
@@ -517,8 +516,8 @@ export function Navigation() {
                       rel="noopener noreferrer"
                       className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
                     >
-                      <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
-                        <Twitter className="h-4 w-4 text-red-500" />
+                      <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-white/25 transition-all duration-200">
+                        <Twitter className="h-4 w-4 text-neutral-300" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <span className="text-sm font-semibold text-white block">Twitter/X</span>
@@ -531,8 +530,8 @@ export function Navigation() {
                       rel="noopener noreferrer"
                       className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
                     >
-                      <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
-                        <Discord className="h-4 w-4 text-red-500" />
+                      <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-white/25 transition-all duration-200">
+                        <Discord className="h-4 w-4 text-neutral-300" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <span className="text-sm font-semibold text-white block">Discord</span>
@@ -545,8 +544,8 @@ export function Navigation() {
                       rel="noopener noreferrer"
                       className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
                     >
-                      <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
-                        <Telegram className="h-4 w-4 text-red-500" />
+                      <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-white/25 transition-all duration-200">
+                        <Telegram className="h-4 w-4 text-neutral-300" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <span className="text-sm font-semibold text-white block">Telegram</span>
@@ -559,8 +558,8 @@ export function Navigation() {
                       rel="noopener noreferrer"
                       className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
                     >
-                      <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
-                        <Building className="h-4 w-4 text-red-500" />
+                      <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-white/25 transition-all duration-200">
+                        <Building className="h-4 w-4 text-neutral-300" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <span className="text-sm font-semibold text-white block">LinkedIn</span>
@@ -573,8 +572,8 @@ export function Navigation() {
                       rel="noopener noreferrer"
                       className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
                     >
-                      <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
-                        <FileText className="h-4 w-4 text-red-500" />
+                      <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-white/25 transition-all duration-200">
+                        <FileText className="h-4 w-4 text-neutral-300" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <span className="text-sm font-semibold text-white block">Medium</span>
@@ -587,8 +586,8 @@ export function Navigation() {
                       rel="noopener noreferrer"
                       className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
                     >
-                      <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
-                        <MessageCircle className="h-4 w-4 text-red-500" />
+                      <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-white/25 transition-all duration-200">
+                        <MessageCircle className="h-4 w-4 text-neutral-300" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <span className="text-sm font-semibold text-white block">YouTube</span>
@@ -624,14 +623,14 @@ export function Navigation() {
 
           {/* Mobile Menu */}
           {!mounted ? (
-            <Button variant="ghost" size="icon" aria-label="Open menu" className="lg:hidden hover:bg-red-500/10 border border-transparent hover:border-red-500/40 transition-all duration-300 hover:shadow-[0_0_8px_rgba(239,68,68,0.3)] h-10 w-10 sm:h-11 sm:w-11 active:scale-95">
+            <Button variant="ghost" size="icon" aria-label="Open menu" className="lg:hidden hover:bg-white/5 border border-transparent hover:border-white/20 transition-all duration-300 h-10 w-10 sm:h-11 sm:w-11 active:scale-95">
               <Menu className="h-5 w-5" />
               <span className="sr-only">Toggle menu</span>
             </Button>
           ) : (
           <Sheet open={isOpen} onOpenChange={setIsOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" aria-label="Open menu" aria-expanded={isOpen} className="lg:hidden hover:bg-red-500/10 border border-transparent hover:border-red-500/40 transition-all duration-300 hover:shadow-[0_0_8px_rgba(239,68,68,0.3)] h-10 w-10 sm:h-11 sm:w-11 active:scale-95">
+              <Button variant="ghost" size="icon" aria-label="Open menu" aria-expanded={isOpen} className="lg:hidden hover:bg-white/5 border border-transparent hover:border-white/20 transition-all duration-300 h-10 w-10 sm:h-11 sm:w-11 active:scale-95">
                 <Menu className="h-5 w-5" />
                 <span className="sr-only">Toggle menu</span>
               </Button>
@@ -672,15 +671,6 @@ export function Navigation() {
                   Pricing
                 </Link>
                 <a
-                  href="https://status.swarms.ai"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block text-sm font-semibold text-white/85 hover:text-white transition-all duration-300 hover:bg-white/[0.05] p-3 rounded-lg border border-transparent hover:border-white/10"
-                  onClick={() => setIsOpen(false)}
-                >
-                  Status
-                </a>
-                <a
                   href="https://docs.swarms.world"
                   target="_blank"
                   rel="noopener noreferrer"
@@ -696,15 +686,6 @@ export function Navigation() {
                 >
                   Blog
                 </Link>
-                <a
-                  href="https://swarms.world/support"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block text-sm font-semibold text-white/85 hover:text-white transition-all duration-300 hover:bg-white/[0.05] p-3 rounded-lg border border-transparent hover:border-white/10"
-                  onClick={() => setIsOpen(false)}
-                >
-                  Support
-                </a>
                 <div className="space-y-3">
                   <div className="text-sm font-semibold text-white/60 px-3 flex items-center">
                     <span>Products</span>
@@ -827,8 +808,8 @@ export function Navigation() {
                         className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
                         onClick={() => setIsOpen(false)}
                       >
-                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
-                          <BookOpen className="h-4 w-4 text-red-500" />
+                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-white/25 transition-all duration-200">
+                          <BookOpen className="h-4 w-4 text-neutral-300" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <span className="text-sm font-semibold text-white block">Ecosystem Hub</span>
@@ -841,8 +822,8 @@ export function Navigation() {
                         className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
                         onClick={() => setIsOpen(false)}
                       >
-                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
-                          <Cloud className="h-4 w-4 text-red-500" />
+                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-white/25 transition-all duration-200">
+                          <Cloud className="h-4 w-4 text-neutral-300" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <span className="text-sm font-semibold text-white block">Cloud Platform</span>
@@ -855,11 +836,25 @@ export function Navigation() {
                         className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
                         onClick={() => setIsOpen(false)}
                       >
-                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
-                          <Activity className="h-4 w-4 text-red-500" />
+                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-white/25 transition-all duration-200">
+                          <Activity className="h-4 w-4 text-neutral-300" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <span className="text-sm font-semibold text-white block">Status Page</span>
+                        </div>
+                      </a>
+                      <a
+                        href="https://swarms.world/support"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
+                        onClick={() => setIsOpen(false)}
+                      >
+                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-white/25 transition-all duration-200">
+                          <MessageCircle className="h-4 w-4 text-neutral-300" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <span className="text-sm font-semibold text-white block">Support</span>
                         </div>
                       </a>
                     </TabsContent>
@@ -872,8 +867,8 @@ export function Navigation() {
                         className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
                         onClick={() => setIsOpen(false)}
                       >
-                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
-                          <Github className="h-4 w-4 text-red-500" />
+                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-white/25 transition-all duration-200">
+                          <Github className="h-4 w-4 text-neutral-300" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <span className="text-sm font-semibold text-white block">Main Repository</span>
@@ -886,8 +881,8 @@ export function Navigation() {
                         className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
                         onClick={() => setIsOpen(false)}
                       >
-                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
-                          <Code className="h-4 w-4 text-red-500" />
+                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-white/25 transition-all duration-200">
+                          <Code className="h-4 w-4 text-neutral-300" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <span className="text-sm font-semibold text-white block">Organization</span>
@@ -898,8 +893,8 @@ export function Navigation() {
                         className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
                         onClick={() => setIsOpen(false)}
                       >
-                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
-                          <Code className="h-4 w-4 text-red-500" />
+                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-white/25 transition-all duration-200">
+                          <Code className="h-4 w-4 text-neutral-300" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <span className="text-sm font-semibold text-white block">Open Source</span>
@@ -913,8 +908,8 @@ export function Navigation() {
                         className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
                         onClick={() => setIsOpen(false)}
                       >
-                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
-                          <BookOpen className="h-4 w-4 text-red-500" />
+                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-white/25 transition-all duration-200">
+                          <BookOpen className="h-4 w-4 text-neutral-300" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <span className="text-sm font-semibold text-white block">Research</span>
@@ -925,8 +920,8 @@ export function Navigation() {
                         className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
                         onClick={() => setIsOpen(false)}
                       >
-                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
-                          <FileText className="h-4 w-4 text-red-500" />
+                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-white/25 transition-all duration-200">
+                          <FileText className="h-4 w-4 text-neutral-300" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <span className="text-sm font-semibold text-white block">Research Papers</span>
@@ -937,8 +932,8 @@ export function Navigation() {
                         className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
                         onClick={() => setIsOpen(false)}
                       >
-                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
-                          <Sparkles className="h-4 w-4 text-red-500" />
+                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-white/25 transition-all duration-200">
+                          <Sparkles className="h-4 w-4 text-neutral-300" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <span className="text-sm font-semibold text-white block">Applications</span>
@@ -954,8 +949,8 @@ export function Navigation() {
                         className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
                         onClick={() => setIsOpen(false)}
                       >
-                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
-                          <Discord className="h-4 w-4 text-red-500" />
+                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-white/25 transition-all duration-200">
+                          <Discord className="h-4 w-4 text-neutral-300" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <span className="text-sm font-semibold text-white block">Discord Community</span>
@@ -968,8 +963,8 @@ export function Navigation() {
                         className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
                         onClick={() => setIsOpen(false)}
                       >
-                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
-                          <Telegram className="h-4 w-4 text-red-500" />
+                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-white/25 transition-all duration-200">
+                          <Telegram className="h-4 w-4 text-neutral-300" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <span className="text-sm font-semibold text-white block">Telegram Group</span>
@@ -982,8 +977,8 @@ export function Navigation() {
                         className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
                         onClick={() => setIsOpen(false)}
                       >
-                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
-                          <Twitter className="h-4 w-4 text-red-500" />
+                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-white/25 transition-all duration-200">
+                          <Twitter className="h-4 w-4 text-neutral-300" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <span className="text-sm font-semibold text-white block">Twitter/X</span>
@@ -996,8 +991,8 @@ export function Navigation() {
                         className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
                         onClick={() => setIsOpen(false)}
                       >
-                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
-                          <Calendar className="h-4 w-4 text-red-500" />
+                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-white/25 transition-all duration-200">
+                          <Calendar className="h-4 w-4 text-neutral-300" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <span className="text-sm font-semibold text-white block">Events Calendar</span>
@@ -1010,8 +1005,8 @@ export function Navigation() {
                         className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
                         onClick={() => setIsOpen(false)}
                       >
-                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
-                          <Phone className="h-4 w-4 text-red-500" />
+                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-white/25 transition-all duration-200">
+                          <Phone className="h-4 w-4 text-neutral-300" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <span className="text-sm font-semibold text-white block">Book a Call</span>
@@ -1025,8 +1020,8 @@ export function Navigation() {
                         className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
                         onClick={() => setIsOpen(false)}
                       >
-                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
-                          <Award className="h-4 w-4 text-red-500" />
+                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-white/25 transition-all duration-200">
+                          <Award className="h-4 w-4 text-neutral-300" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <span className="text-sm font-semibold text-white block">Research Program</span>
@@ -1039,8 +1034,8 @@ export function Navigation() {
                         className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
                         onClick={() => setIsOpen(false)}
                       >
-                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
-                          <Rocket className="h-4 w-4 text-red-500" />
+                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-white/25 transition-all duration-200">
+                          <Rocket className="h-4 w-4 text-neutral-300" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <span className="text-sm font-semibold text-white block">Startup Program</span>
@@ -1053,12 +1048,12 @@ export function Navigation() {
                         className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
                         onClick={() => setIsOpen(false)}
                       >
-                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
-                          <DollarSign className="h-4 w-4 text-red-500" />
+                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-white/25 transition-all duration-200">
+                          <DollarSign className="h-4 w-4 text-neutral-300" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <span className="text-sm font-semibold text-white block">Grants Program</span>
-                          <span className="ml-2 text-xs px-2 py-0.5 bg-red-500/20 text-red-500 rounded-full border border-red-500/30">New</span>
+                          <span className="ml-2 text-xs px-2 py-0.5 bg-white/10 text-white rounded-full border border-white/20">New</span>
                         </div>
                       </a>
                     </TabsContent>
@@ -1071,8 +1066,8 @@ export function Navigation() {
                         className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
                         onClick={() => setIsOpen(false)}
                       >
-                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
-                          <FileText className="h-4 w-4 text-red-500" />
+                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-white/25 transition-all duration-200">
+                          <FileText className="h-4 w-4 text-neutral-300" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <span className="text-sm font-semibold text-white block">Documentation</span>
@@ -1083,8 +1078,8 @@ export function Navigation() {
                         className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
                         onClick={() => setIsOpen(false)}
                       >
-                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
-                          <Download className="h-4 w-4 text-red-500" />
+                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-white/25 transition-all duration-200">
+                          <Download className="h-4 w-4 text-neutral-300" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <span className="text-sm font-semibold text-white block">Installation Guide</span>
@@ -1097,8 +1092,8 @@ export function Navigation() {
                         className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
                         onClick={() => setIsOpen(false)}
                       >
-                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
-                          <GraduationCap className="h-4 w-4 text-red-500" />
+                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-white/25 transition-all duration-200">
+                          <GraduationCap className="h-4 w-4 text-neutral-300" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <span className="text-sm font-semibold text-white block">Swarms Course</span>
@@ -1111,8 +1106,8 @@ export function Navigation() {
                         className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
                         onClick={() => setIsOpen(false)}
                       >
-                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
-                          <Users className="h-4 w-4 text-red-500" />
+                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-white/25 transition-all duration-200">
+                          <Users className="h-4 w-4 text-neutral-300" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <span className="text-sm font-semibold text-white block">Contributors Portal</span>
@@ -1123,8 +1118,8 @@ export function Navigation() {
                         className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
                         onClick={() => setIsOpen(false)}
                       >
-                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-red-500/40 transition-all duration-200">
-                          <FileText className="h-4 w-4 text-red-500" />
+                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-white/25 transition-all duration-200">
+                          <FileText className="h-4 w-4 text-neutral-300" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <span className="text-sm font-semibold text-white block">Blog</span>

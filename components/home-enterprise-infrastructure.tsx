@@ -4,10 +4,13 @@ import { Globe } from "@/components/ui/globe"
 import { motion } from "framer-motion"
 import { Shield, Server, Activity, BarChart } from "lucide-react"
 
+const ease: [number, number, number, number] = [0.22, 1, 0.36, 1]
+
 const enterpriseFeatures = [
   {
     title: "Security",
-    description: "HIPAA compliant and ISO 27001 certified infrastructure with enterprise-grade security practices.",
+    description:
+      "HIPAA compliant and ISO 27001 certified infrastructure with enterprise-grade security practices.",
     icon: Shield,
   },
   {
@@ -17,82 +20,81 @@ const enterpriseFeatures = [
   },
   {
     title: "Reliability",
-    description: "99% uptime, 24/7 availability, and global presence across 4 major continents.",
+    description:
+      "99% uptime, 24/7 availability, and global presence across 4 major continents.",
     icon: Activity,
   },
   {
     title: "Monitoring & telemetry",
-    description: "Comprehensive monitoring and extensive telemetry stack for real-time observability.",
+    description:
+      "Comprehensive monitoring and extensive telemetry stack for real-time observability.",
     icon: BarChart,
   },
 ]
 
 export function HomeEnterpriseInfrastructure() {
   return (
-    <div className="container py-16 sm:py-20 md:py-24 lg:py-32 xl:py-40 px-4 sm:px-6 bg-black">
-      <div className="grid lg:grid-cols-2 gap-8 sm:gap-10 md:gap-12 lg:gap-16 items-center max-w-7xl mx-auto">
-        <motion.div
-          initial={{ opacity: 0, x: -50 }}
-          whileInView={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.8 }}
-          viewport={{ once: true }}
-          className="space-y-6 sm:space-y-8"
-        >
-          <div className="space-y-3 sm:space-y-4 md:space-y-5">
-            <div className="flex items-center gap-2 sm:gap-3">
-              <p className="text-[10px] sm:text-xs text-white/55 tracking-[0.22em] uppercase font-semibold">
-                <span className="text-white font-bold">Built for production</span>
+    <section className="border-b border-white/[0.08] bg-black">
+      <div className="container px-4 py-16 sm:px-6 sm:py-24 lg:px-8 lg:py-32">
+        <div className="mx-auto grid max-w-7xl items-center gap-10 lg:grid-cols-2 lg:gap-16">
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.7, ease }}
+            className="space-y-8"
+          >
+            <div className="space-y-5">
+              <p className="font-mono text-[11px] font-medium uppercase tracking-[0.2em] text-white/40">
+                Built for Production
               </p>
-              <span className="h-px w-6 sm:w-8 bg-gradient-to-r from-white/20 to-transparent" />
+              <h2 className="text-3xl font-semibold leading-[1.1] tracking-tighter text-white sm:text-4xl md:text-5xl">
+                Enterprise-grade infrastructure.
+              </h2>
+              <p className="max-w-xl text-base font-normal leading-relaxed text-white/50 sm:text-lg">
+                Global availability, compliance certifications, and custom
+                deployment options — built for the most demanding workloads.
+              </p>
             </div>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-white leading-tight">
-              Enterprise-grade infrastructure
-            </h2>
-            <p className="text-base sm:text-lg md:text-xl text-white/60 max-w-2xl leading-relaxed">
-              Global availability, compliance certifications, and custom deployment options — built for the most demanding workloads.
-            </p>
-          </div>
 
-          <div className="grid sm:grid-cols-2 gap-4 sm:gap-5 md:gap-6">
-            {enterpriseFeatures.map((feature, index) => {
-              const Icon = feature.icon
-              return (
-                <motion.div
-                  key={feature.title}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: index * 0.08 }}
-                  viewport={{ once: true }}
-                  className="rounded-2xl sm:rounded-3xl border border-white/10 bg-white/[0.02] backdrop-blur-sm p-5 sm:p-6"
-                >
-                  <div className="p-2.5 sm:p-3 rounded-xl border-2 border-red-500/50 bg-red-500/10 w-fit mb-4 sm:mb-5">
-                    <Icon className="h-5 w-5 sm:h-6 sm:w-6 text-red-500" />
+            <div className="grid gap-px overflow-hidden rounded-lg border border-white/[0.08] bg-white/[0.08] sm:grid-cols-2">
+              {enterpriseFeatures.map((feature) => {
+                const Icon = feature.icon
+                return (
+                  <div
+                    key={feature.title}
+                    className="group bg-black p-5 transition-colors duration-300 hover:bg-[#0a0a0a] sm:p-6"
+                  >
+                    <Icon
+                      className="mb-4 h-5 w-5 text-white/50 transition-colors duration-300 group-hover:text-white"
+                      strokeWidth={1.5}
+                    />
+                    <h3 className="mb-1.5 text-sm font-medium text-white">
+                      {feature.title}
+                    </h3>
+                    <p className="text-sm font-normal leading-relaxed text-white/50">
+                      {feature.description}
+                    </p>
                   </div>
-                  <h3 className="text-base sm:text-lg font-bold text-white mb-1.5 sm:mb-2">
-                    {feature.title}
-                  </h3>
-                  <p className="text-white/60 text-xs sm:text-sm leading-relaxed">
-                    {feature.description}
-                  </p>
-                </motion.div>
-              )
-            })}
-          </div>
-        </motion.div>
+                )
+              })}
+            </div>
+          </motion.div>
 
-        {/* Interactive Globe */}
-        <motion.div
-          initial={{ opacity: 0, x: 50 }}
-          whileInView={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.8 }}
-          viewport={{ once: true }}
-          className="relative flex items-center justify-center mt-8 lg:mt-0"
-        >
-          <div className="relative w-full max-w-lg aspect-square">
-            <Globe className="relative" />
-          </div>
-        </motion.div>
+          {/* Interactive Globe */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.9, ease }}
+            className="relative flex items-center justify-center"
+          >
+            <div className="relative aspect-square w-full max-w-lg">
+              <Globe className="relative" />
+            </div>
+          </motion.div>
+        </div>
       </div>
-    </div>
+    </section>
   )
 }

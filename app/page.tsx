@@ -24,12 +24,7 @@ export default function Home() {
     <div className="min-h-screen bg-black smooth-scroll">
       <Navigation />
 
-      <main id="main-content" role="main" className="select-text scroll-optimized w-full overflow-x-hidden pt-[64px] sm:pt-[80px] md:pt-[96px]">
-        <div className="sr-only">
-          <h1>Swarms AI - Enterprise Multi-Agent Framework</h1>
-          <p>Build, deploy, and scale autonomous AI agent swarms with unprecedented control and efficiency</p>
-        </div>
-
+      <main id="main-content" role="main" className="select-text scroll-optimized w-full overflow-x-hidden">
         <HomeHero />
         <HomeMission />
         <HomeFeatures />

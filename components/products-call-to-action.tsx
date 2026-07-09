@@ -1,54 +1,59 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { ArrowRight, ExternalLink } from "lucide-react"
+import { ArrowRight, ArrowUpRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
+
+const ease: [number, number, number, number] = [0.22, 1, 0.36, 1]
 
 export function ProductsCallToAction() {
   return (
-    <section className="relative bg-black py-16 sm:py-20 md:py-24 lg:py-32 xl:py-40">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+    <section className="border-b border-white/[0.08] bg-black">
+      <div className="container px-4 py-16 sm:px-6 sm:py-24 lg:px-8 lg:py-32">
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7 }}
-          viewport={{ once: true }}
-          className="relative max-w-5xl mx-auto rounded-3xl border border-white/10 bg-white/[0.02] backdrop-blur-sm overflow-hidden"
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.7, ease }}
+          className="mx-auto flex max-w-7xl flex-col items-start justify-between gap-8 rounded-lg border border-white/[0.08] bg-[#0a0a0a] p-6 sm:p-10 md:flex-row md:items-center lg:p-12"
         >
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_70%_30%,_rgba(239,68,68,0.12)_0%,_rgba(0,0,0,0)_55%)]"
-          />
-          <div className="relative z-10 px-6 sm:px-10 md:px-14 py-12 sm:py-16 md:py-20 text-center space-y-6 sm:space-y-8">
-            <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-white leading-tight">
-              Get started today
+          <div className="max-w-2xl space-y-3">
+            <h2 className="text-3xl font-semibold tracking-tighter text-white sm:text-4xl">
+              Ready to build?
             </h2>
-            <p className="text-base sm:text-lg md:text-xl text-white/60 max-w-2xl mx-auto leading-relaxed">
-              Sign up now and get $5 in free API credits. Join the marketplace and start building with Swarms.
+            <p className="text-base font-normal leading-relaxed text-white/50 sm:text-lg">
+              Sign up now and get $5 in free API credits. Join the marketplace
+              and start building with Swarms.
             </p>
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 md:gap-6 justify-center items-center pt-2">
-              <Button
-                size="lg"
-                className="bg-white text-black hover:bg-white/90 w-full sm:w-auto font-bold text-sm sm:text-base md:text-lg px-6 sm:px-8 md:px-10 py-5 sm:py-6 md:py-7"
-                asChild
+          </div>
+          <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
+            <Button
+              className="h-11 w-full rounded-full bg-white px-6 text-sm font-medium text-black hover:bg-neutral-200 sm:w-auto"
+              asChild
+            >
+              <a
+                href="https://cloud.swarms.world/login"
+                target="_blank"
+                rel="noopener noreferrer"
               >
-                <a href="https://swarms.world/signin" target="_blank" rel="noopener noreferrer">
-                  Sign up now
-                  <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5 ml-2" />
-                </a>
-              </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                className="border-2 border-white/20 text-white hover:bg-white/10 w-full sm:w-auto font-normal text-sm sm:text-base md:text-lg px-6 sm:px-8 md:px-10 py-5 sm:py-6 md:py-7 bg-transparent backdrop-blur-sm"
-                asChild
+                Sign Up Now
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </a>
+            </Button>
+            <Button
+              variant="outline"
+              className="h-11 w-full rounded-full border-white/[0.14] bg-black px-6 text-sm font-medium text-white hover:border-white/30 hover:bg-white/[0.06] hover:text-white sm:w-auto"
+              asChild
+            >
+              <a
+                href="https://swarms.world"
+                target="_blank"
+                rel="noopener noreferrer"
               >
-                <a href="https://swarms.world" target="_blank" rel="noopener noreferrer">
-                  Join marketplace
-                  <ExternalLink className="h-4 w-4 sm:h-5 sm:w-5 ml-2" />
-                </a>
-              </Button>
-            </div>
+                Join Marketplace
+                <ArrowUpRight className="ml-2 h-4 w-4 text-white/50" />
+              </a>
+            </Button>
           </div>
         </motion.div>
       </div>

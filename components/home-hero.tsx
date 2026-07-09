@@ -1,102 +1,135 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { motion } from "framer-motion"
-import { ArrowRight, ExternalLink } from "lucide-react"
-import { useState, useEffect } from "react"
+import { motion, useReducedMotion } from "framer-motion"
+import { ArrowRight, ArrowUpRight } from "lucide-react"
+import { useEffect, useState } from "react"
+
+const ease: [number, number, number, number] = [0.22, 1, 0.36, 1]
+
+// Classic Space Invaders crab sprite, 2 pixel rows per text line.
+// One character per pixel: a mono cell is ~1:2, so half-blocks come out square.
+const CRAB_FRAMES = [
+  `  ▀▄   ▄▀
+ ▄█▀███▀█▄
+█▀███████▀█
+▀ ▀▄▄ ▄▄▀ ▀`,
+  `▄ ▀▄   ▄▀ ▄
+█▄█▀███▀█▄█
+▀█████████▀
+ ▄▀     ▀▄`,
+]
 
 export function HomeHero() {
-  const [mounted, setMounted] = useState(false)
+  const prefersReducedMotion = useReducedMotion()
+  const [frame, setFrame] = useState(0)
 
   useEffect(() => {
-    setMounted(true)
+    const id = setInterval(() => setFrame((f) => (f + 1) % 2), 700)
+    return () => clearInterval(id)
   }, [])
 
   return (
-    <motion.div
-      className="relative overflow-hidden bg-black min-h-screen flex items-center"
-      initial={{ opacity: 0 }}
-      animate={mounted ? { opacity: 1 } : {}}
-      transition={{ duration: 0.8 }}
-    >
-      {/* Background Video */}
-      <video
-        className="absolute inset-0 w-full h-full object-cover opacity-30 z-0"
-        autoPlay
-        muted
-        loop
-        playsInline
-        preload="auto"
-      >
-        <source src="/swarms_characters_video.mp4" type="video/mp4" />
-      </video>
+    <section className="relative flex min-h-screen items-center overflow-hidden border-b border-white/[0.08] bg-black">
+      {/* Hairline grid background */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:72px_72px] [mask-image:radial-gradient(ellipse_75%_70%_at_50%_35%,black_25%,transparent_100%)]"
+      />
+      {/* Soft monochrome glow */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute left-1/2 top-0 h-[480px] w-[880px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/[0.05] blur-3xl"
+      />
 
-      {/* Overlay */}
-      <div className="absolute inset-0 w-full h-full bg-black/20 md:bg-black/15 z-10" />
-
-      <div className="container relative px-4 sm:px-6 lg:px-8 z-50 w-full">
-        <div className="flex flex-col items-center justify-center space-y-6 sm:space-y-8 md:space-y-12 py-12 sm:py-16 md:py-24 text-center max-w-6xl mx-auto">
+      <div className="container relative w-full px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto flex max-w-4xl flex-col items-center pb-16 pt-24 text-center sm:pb-20 sm:pt-28">
+          {/* Crab invader hovering above the wordmark */}
           <motion.div
-            className="space-y-4 sm:space-y-6 md:space-y-8 select-text w-full px-2 sm:px-0"
-            initial={{ opacity: 0, y: 30 }}
-            animate={mounted ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.8, ease: "easeOut" }}
+            aria-hidden="true"
+            className="mb-6 select-none sm:mb-8"
+            initial={{ opacity: 0, y: -16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, ease }}
           >
-
-            <h1
-              id="hero-title"
-              className="text-5xl xs:text-6xl sm:text-7xl md:text-8xl lg:text-[10rem] xl:text-[12rem] 2xl:text-[14rem] font-bold leading-[0.9] sm:leading-none px-2 sm:px-0 text-red-500"
-              style={{ fontSize: 'clamp(2.5rem, 10vw, 14rem)', fontFamily: 'var(--font-orbitron)' }}
+            <motion.pre
+              className="text-center font-mono text-xl leading-none text-white/80 sm:text-2xl md:text-3xl"
+              style={{ textShadow: "0 0 24px rgba(255,255,255,0.35)" }}
+              {...(prefersReducedMotion
+                ? {}
+                : {
+                    animate: { y: [0, -5, 0] },
+                    transition: {
+                      duration: 4,
+                      repeat: Infinity,
+                      ease: "easeInOut" as const,
+                    },
+                  })}
             >
-              swarms
-            </h1>
-
-            <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl text-white/80 max-w-4xl mx-auto font-medium leading-tight px-2 sm:px-0">
-              Build, deploy, scale, and monetize Agents
-            </p>
+              {CRAB_FRAMES[frame]}
+            </motion.pre>
           </motion.div>
 
+          <motion.h1
+            id="hero-title"
+            className="font-bold leading-[0.95] tracking-tighter text-white"
+            style={{ fontSize: "clamp(4.5rem, 13vw, 11rem)" }}
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.05, ease }}
+          >
+            swarms
+          </motion.h1>
+
+          <motion.p
+            className="mt-6 max-w-3xl text-base font-normal leading-relaxed text-white/55 sm:mt-8 sm:text-lg md:text-xl lg:text-2xl"
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.12, ease }}
+          >
+            Swarms is the enterprise-grade infrastructure for the agent economy,
+            one platform from your first agent to production swarms.
+          </motion.p>
+
           <motion.div
-            className="flex flex-col sm:flex-row gap-3 sm:gap-4 md:gap-6 w-full max-w-2xl mx-auto relative z-10 justify-center items-center px-4 sm:px-0"
-            initial={{ opacity: 0, y: 20 }}
-            animate={mounted ? { opacity: 1, y: 0 } : {}}
-            transition={{ delay: 0.6, duration: 0.8 }}
+            className="mt-10 flex w-full flex-col items-center justify-center gap-3 sm:w-auto sm:flex-row"
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.2, ease }}
           >
             <Button
-              size="lg"
-              className="bg-white text-black hover:bg-white/90 w-full sm:w-auto font-bold text-sm sm:text-base md:text-lg px-6 sm:px-8 md:px-10 py-5 sm:py-6 md:py-7"
+              className="h-12 w-full rounded-full bg-white px-8 text-base font-medium text-black hover:bg-neutral-200 sm:h-14 sm:w-auto sm:text-lg"
               asChild
             >
               <a
-                href="https://github.com/kyegomez/swarms"
+                href="https://cloud.swarms.world"
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label="Get started with Swarms AI on GitHub"
+                aria-label="Start building on Swarms Cloud"
               >
-                <span>Get Started</span>
-                <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5 ml-2" />
+                Start Building
+                <ArrowRight className="ml-2 h-5 w-5" />
               </a>
             </Button>
             <Button
-              size="lg"
               variant="outline"
-              className="border-2 border-white/20 text-white hover:bg-white/10 w-full sm:w-auto font-normal text-sm sm:text-base md:text-lg px-6 sm:px-8 md:px-10 py-5 sm:py-6 md:py-7 bg-transparent backdrop-blur-sm"
+              className="h-12 w-full rounded-full border-white/[0.14] bg-[#0a0a0a] px-8 text-base font-medium text-white hover:border-white/30 hover:bg-white/[0.06] hover:text-white sm:h-14 sm:w-auto sm:text-lg"
               asChild
             >
               <a
-                href="https://docs.swarms.world"
+                href="https://docs.swarms.ai"
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Swarms Documentation"
               >
-                <span>Documentation</span>
-                <ExternalLink className="h-4 w-4 sm:h-5 sm:w-5 ml-2" />
+                Documentation
+                <ArrowUpRight className="ml-2 h-5 w-5 text-white/50" />
               </a>
             </Button>
           </motion.div>
+
         </div>
       </div>
-    </motion.div>
+    </section>
   )
 }
-

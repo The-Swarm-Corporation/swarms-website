@@ -135,7 +135,7 @@ export function Navigation() {
 
   return (
     <header className={`fixed top-0 left-0 right-0 z-[9998] w-full pt-2 sm:pt-3 md:pt-4 pb-2 sm:pb-3 md:pb-4 scroll-optimized transition-opacity duration-300 ${isOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
-      <div className="container mx-auto max-w-[1600px] px-2 sm:px-4 md:px-6 lg:px-8">
+      <div className="container mx-auto max-w-[1400px] px-2 sm:px-4 md:px-6 lg:px-8">
         <div className="flex h-12 sm:h-14 md:h-16 items-center justify-between px-2.5 sm:px-4 md:px-6 rounded-xl sm:rounded-2xl bg-neutral-800/50 backdrop-blur-md border border-neutral-700/40 shadow-xl w-full">
         <div className="flex-shrink-0 mr-2 sm:mr-4 md:mr-6">
           <Link href="/" className="flex items-center group" aria-label="Swarms home">
@@ -284,6 +284,20 @@ export function Navigation() {
                       <div className="flex-1 min-w-0">
                         <span className="text-sm font-semibold text-white block">Swarms Marketplace</span>
                         <p className="text-xs text-neutral-400 mt-0.5">Buy & sell agents</p>
+                      </div>
+                    </a>
+                    <a
+                      href="https://cloud.swarms.world"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
+                    >
+                      <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-white/25 transition-all duration-200">
+                        <Cloud className="h-4 w-4 text-neutral-300" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <span className="text-sm font-semibold text-white block">Swarms Cloud</span>
+                        <p className="text-xs text-neutral-400 mt-0.5">Hosted agent runtime</p>
                       </div>
                     </a>
                     <Link href="/mobile" className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative">
@@ -724,6 +738,16 @@ export function Navigation() {
                   >
                     <Sparkles className="mr-3 h-4 w-4 text-white/60 flex-shrink-0" />
                     Swarms Marketplace
+                  </a>
+                  <a
+                    href="https://cloud.swarms.world"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm font-semibold text-white/85 hover:text-white transition-all duration-300 hover:bg-white/[0.05] p-3 rounded-lg flex items-center border border-transparent hover:border-white/10"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    <Cloud className="mr-3 h-4 w-4 text-white/60 flex-shrink-0" />
+                    Swarms Cloud
                   </a>
                   <Link
                     href="/mobile"

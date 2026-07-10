@@ -1,12 +1,8 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { siteConfig } from "../../metadata"
 
 export const metadata: Metadata = {
-  title: {
-    default: "Startup Program | Swarms AI",
-    template: `%s | ${siteConfig.name}`,
-  },
+  title: { absolute: "Startup Program | Swarms AI" },
   description:
     "Accelerate your AI startup with technical support, go-to-market resources, and up to $10,000 in credits.",
 }

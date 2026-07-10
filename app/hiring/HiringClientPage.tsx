@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
+import { motion } from 'framer-motion'
 import {
   MapPin,
   ArrowRight,
@@ -14,6 +15,8 @@ import {
   X
 } from 'lucide-react'
 import { positions, departments, GOOGLE_FORM_URL, type Department } from '@/lib/positions'
+
+const ease: [number, number, number, number] = [0.22, 1, 0.36, 1]
 
 const PAGE_SIZE = 6
 
@@ -62,82 +65,115 @@ const HiringClientPage = () => {
 
   return (
     <div className="min-h-screen bg-black text-white selection:bg-white/20 selection:text-white antialiased">
-      {/* Hero Section — Join Swarms */}
-      <section className="relative min-h-[60vh] sm:min-h-[70vh] flex items-center justify-center px-6 py-24">
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-b from-neutral-900/60 via-black to-black" />
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-neutral-500/10 rounded-full blur-[120px]" />
-          <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.015)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.015)_1px,transparent_1px)] bg-[size:48px_48px] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,black_60%,transparent_110%)]" />
-        </div>
+      {/* Hero Section */}
+      <section className="relative flex min-h-[60vh] items-center overflow-hidden border-b border-white/[0.08] bg-black sm:min-h-[70vh]">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:72px_72px] [mask-image:radial-gradient(ellipse_75%_70%_at_50%_35%,black_25%,transparent_100%)]"
+        />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute left-1/2 top-0 h-[480px] w-[880px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/[0.05] blur-3xl"
+        />
 
-        <div className="relative z-10 text-center max-w-3xl mx-auto">
-          <p className="text-sm font-medium tracking-[0.2em] uppercase text-neutral-500 mb-6">
-            Careers
-          </p>
-          <h1 className="text-6xl sm:text-7xl md:text-8xl font-semibold bg-gradient-to-b from-white to-neutral-400 bg-clip-text text-transparent leading-[0.95] tracking-tight">
-            Join Swarms
-          </h1>
-          <p className="mt-8 text-lg sm:text-xl text-neutral-400 font-light leading-relaxed max-w-xl mx-auto">
-            Help us build the infrastructure for the agent economy.
-          </p>
+        <div className="container relative w-full px-4 sm:px-6 lg:px-8">
+          <motion.div
+            className="mx-auto flex max-w-3xl flex-col items-center py-24 text-center"
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, ease }}
+          >
+            <p className="mb-5 font-mono text-[11px] font-medium uppercase tracking-[0.2em] text-white/40">
+              Careers
+            </p>
+            <h1
+              className="font-bold leading-[0.95] tracking-tighter text-white"
+              style={{ fontSize: "clamp(2.75rem, 8vw, 6rem)" }}
+            >
+              Join Swarms
+            </h1>
+            <p className="mt-6 max-w-xl text-base font-normal leading-relaxed text-white/50 sm:mt-8 sm:text-lg">
+              Help us build the infrastructure for the agent economy.
+            </p>
+          </motion.div>
         </div>
       </section>
 
       {/* Our Mission Section */}
-      <section className="py-24 px-6 bg-black border-t border-white/5">
-        <div className="max-w-3xl mx-auto">
-          <div className="text-center mb-12">
-            <p className="text-sm font-medium tracking-[0.2em] uppercase text-neutral-500 mb-4">
+      <section className="border-b border-white/[0.08] bg-black">
+        <div className="container px-4 py-16 sm:px-6 sm:py-24 lg:px-8 lg:py-32">
+          <motion.div
+            className="mx-auto max-w-3xl text-center"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.7, ease }}
+          >
+            <p className="mb-5 font-mono text-[11px] font-medium uppercase tracking-[0.2em] text-white/40">
               Our Mission
             </p>
-            <h2 className="text-4xl sm:text-5xl font-semibold bg-gradient-to-b from-white to-neutral-400 bg-clip-text text-transparent tracking-tight">
+            <h2 className="text-3xl font-semibold leading-[1.1] tracking-tighter text-white sm:text-4xl md:text-5xl">
               What we&apos;re building
             </h2>
-          </div>
-          <div className="space-y-6 text-lg text-neutral-300 leading-relaxed font-light text-center max-w-2xl mx-auto">
-            <p>
-              Our mission is to build the infrastructure necessary to bring the multi-trillion dollar agent economy to life. We do this by creating the best multi-agent tools, our marketplace, and a growing suite of products and research projects that let autonomous agents collaborate at scale.
-            </p>
-            <p>
-              We seek exceptional individuals who combine deep technical expertise with the drive to push boundaries. We value humanity first, intense focus, research excellence, hard work, and creativity. If you are passionate about building the agent economy and have a track record of shipping complex systems, we want to hear from you.
-            </p>
-          </div>
+            <div className="mt-8 space-y-6 text-base font-normal leading-relaxed text-white/50 sm:text-lg">
+              <p>
+                Our mission is to build the infrastructure necessary to bring
+                the multi-trillion dollar agent economy to life. We do this
+                by creating the best multi-agent tools, our marketplace, and
+                a growing suite of products and research projects that let
+                autonomous agents collaborate at scale.
+              </p>
+              <p>
+                We seek exceptional individuals who combine deep technical
+                expertise with the drive to push boundaries. We value
+                humanity first, intense focus, research excellence, hard
+                work, and creativity. If you are passionate about building
+                the agent economy and have a track record of shipping
+                complex systems, we want to hear from you.
+              </p>
+            </div>
+          </motion.div>
         </div>
       </section>
 
-      {/* Positions Section — Open Roles */}
-      <section className="py-24 px-6 bg-black border-t border-white/5">
-        <div className="max-w-5xl mx-auto">
-          {/* Header */}
-          <div className="text-center mb-12">
-            <p className="text-sm font-medium tracking-[0.2em] uppercase text-neutral-500 mb-4">
+      {/* Positions Section */}
+      <section className="border-b border-white/[0.08] bg-black">
+        <div className="container px-4 py-16 sm:px-6 sm:py-24 lg:px-8 lg:py-32">
+          <motion.div
+            className="mx-auto mb-10 max-w-3xl text-center sm:mb-14"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.7, ease }}
+          >
+            <p className="mb-5 font-mono text-[11px] font-medium uppercase tracking-[0.2em] text-white/40">
               Open Roles
             </p>
-            <h2 className="text-4xl sm:text-5xl font-semibold bg-gradient-to-b from-white to-neutral-400 bg-clip-text text-transparent tracking-tight">
+            <h2 className="text-3xl font-semibold leading-[1.1] tracking-tighter text-white sm:text-4xl md:text-5xl">
               Find your place
             </h2>
-          </div>
+          </motion.div>
 
           {/* Filters */}
-          <div className="flex flex-col sm:flex-row gap-4 mb-6 justify-center max-w-3xl mx-auto sm:items-center">
+          <div className="mx-auto mb-6 flex max-w-3xl flex-col gap-4 sm:flex-row sm:items-center">
             {/* Search bar */}
-            <div className="relative flex-1 w-full">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500 pointer-events-none" />
+            <div className="relative w-full flex-1">
+              <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-white/40" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search roles by title, department, or location..."
                 aria-label="Search roles"
-                className="w-full pl-11 pr-10 py-2.5 bg-neutral-900 border border-white/10 rounded-full text-sm text-white placeholder:text-neutral-500 focus:outline-none focus:border-white/25 focus:bg-neutral-800 transition-colors"
+                className="w-full rounded-full border border-white/[0.14] bg-[#0a0a0a] py-2.5 pl-11 pr-10 text-sm text-white placeholder:text-white/40 transition-colors focus:border-white/30 focus:outline-none"
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery('')}
                   aria-label="Clear search"
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-neutral-500 hover:text-white transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-white/40 transition-colors hover:text-white"
                 >
-                  <X className="w-4 h-4" />
+                  <X className="h-4 w-4" />
                 </button>
               )}
             </div>
@@ -145,14 +181,14 @@ const HiringClientPage = () => {
             <div className="relative flex-shrink-0">
               <button
                 onClick={() => setDepartmentDropdownOpen(!departmentDropdownOpen)}
-                className="flex items-center justify-between gap-2 w-full sm:w-auto px-5 py-2.5 bg-neutral-900 border border-white/10 rounded-full text-white hover:bg-neutral-800 transition-colors"
+                className="flex w-full items-center justify-between gap-2 rounded-full border border-white/[0.14] bg-[#0a0a0a] px-5 py-2.5 text-white transition-colors hover:border-white/30 hover:bg-white/[0.06] sm:w-auto"
               >
                 <span className="text-sm font-medium">{activeDepartment}</span>
-                <ChevronDown className={`w-4 h-4 text-neutral-400 transition-transform ${departmentDropdownOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown className={`h-4 w-4 text-white/40 transition-transform ${departmentDropdownOpen ? 'rotate-180' : ''}`} />
               </button>
 
               {departmentDropdownOpen && (
-                <div className="absolute top-full mt-2 left-0 bg-neutral-900 border border-white/10 rounded-2xl overflow-hidden z-10 min-w-[180px] shadow-2xl shadow-black/50 p-1.5">
+                <div className="absolute left-0 top-full z-10 mt-2 min-w-[180px] overflow-hidden rounded-lg border border-white/[0.08] bg-[#0a0a0a] p-1.5 shadow-2xl shadow-black/50">
                   {departments.map((dept) => (
                     <button
                       key={dept}
@@ -160,8 +196,8 @@ const HiringClientPage = () => {
                         setActiveDepartment(dept)
                         setDepartmentDropdownOpen(false)
                       }}
-                      className={`w-full text-left px-4 py-2 text-sm rounded-lg transition-colors ${
-                        activeDepartment === dept ? 'text-white bg-white/10' : 'text-neutral-400 hover:bg-white/5 hover:text-white'
+                      className={`w-full rounded-md px-4 py-2 text-left text-sm transition-colors ${
+                        activeDepartment === dept ? 'bg-white/[0.08] text-white' : 'text-white/50 hover:bg-white/[0.06] hover:text-white'
                       }`}
                     >
                       {dept}
@@ -174,66 +210,73 @@ const HiringClientPage = () => {
 
           {/* Results count */}
           {filteredPositions.length > 0 && (
-            <p className="text-center text-sm text-neutral-500 mb-6">
+            <p className="mb-6 text-center text-sm text-white/40">
               Showing {rangeStart}–{rangeEnd} of {filteredPositions.length} {filteredPositions.length === 1 ? 'role' : 'roles'}
             </p>
           )}
 
           {/* Positions List */}
-          <div className="flex flex-col gap-3 max-w-3xl mx-auto">
-            {pagedPositions.map((position) => {
+          <div className="mx-auto flex max-w-3xl flex-col gap-3">
+            {pagedPositions.map((position, index) => {
               const PositionIcon = position.icon
               return (
-                <Link
+                <motion.div
                   key={position.slug}
-                  href={`/hiring/${position.slug}`}
-                  className="group relative flex items-center gap-5 bg-neutral-900/60 border border-white/10 rounded-2xl p-5 hover:bg-neutral-900 hover:border-white/20 transition-all duration-300"
+                  initial={{ opacity: 0, y: 16 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: "-100px" }}
+                  transition={{ duration: 0.5, delay: index * 0.05, ease }}
                 >
-                  <div className="p-3 bg-white/5 border border-white/10 rounded-xl group-hover:bg-white/10 transition-all duration-300 flex-shrink-0">
-                    <PositionIcon className="w-5 h-5 text-neutral-300" />
-                  </div>
-
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-lg font-semibold text-white mb-1">
-                      {position.title}
-                    </h3>
-                    <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-sm text-neutral-400">
-                      <span className="flex items-center gap-1.5">
-                        <Briefcase className="w-3.5 h-3.5 text-neutral-500" />
-                        {position.department}
-                      </span>
-                      <span className="flex items-center gap-1.5">
-                        <Clock className="w-3.5 h-3.5 text-neutral-500" />
-                        {position.type}
-                      </span>
-                      <span className="flex items-center gap-1.5">
-                        <MapPin className="w-3.5 h-3.5 text-neutral-500" />
-                        {position.location}
-                      </span>
+                  <Link
+                    href={`/hiring/${position.slug}`}
+                    className="group relative flex items-center gap-5 rounded-lg border border-white/[0.08] bg-black p-5 transition-colors duration-300 hover:bg-[#0a0a0a]"
+                  >
+                    <div className="flex-shrink-0 rounded-lg border border-white/[0.08] bg-[#0a0a0a] p-3 transition-colors duration-300 group-hover:border-white/20">
+                      <PositionIcon className="h-5 w-5 text-white/50 transition-colors duration-300 group-hover:text-white" strokeWidth={1.5} />
                     </div>
-                  </div>
 
-                  <div className="flex-shrink-0 flex items-center gap-2 text-neutral-500 group-hover:text-white transition-colors duration-300">
-                    <span className="text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-300 hidden sm:inline">
-                      Apply
-                    </span>
-                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
-                  </div>
-                </Link>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="mb-1 text-lg font-semibold text-white">
+                        {position.title}
+                      </h3>
+                      <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-sm text-white/50">
+                        <span className="flex items-center gap-1.5">
+                          <Briefcase className="h-3.5 w-3.5 text-white/30" />
+                          {position.department}
+                        </span>
+                        <span className="flex items-center gap-1.5">
+                          <Clock className="h-3.5 w-3.5 text-white/30" />
+                          {position.type}
+                        </span>
+                        <span className="flex items-center gap-1.5">
+                          <MapPin className="h-3.5 w-3.5 text-white/30" />
+                          {position.location}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-shrink-0 items-center gap-2 text-white/40 transition-colors duration-300 group-hover:text-white">
+                      <span className="hidden text-sm font-medium opacity-0 transition-opacity duration-300 group-hover:opacity-100 sm:inline">
+                        Apply
+                      </span>
+                      <ArrowRight className="h-5 w-5 transition-transform duration-300 group-hover:translate-x-1" />
+                    </div>
+                  </Link>
+                </motion.div>
               )
             })}
           </div>
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-center gap-2 mt-10">
+            <div className="mt-10 flex items-center justify-center gap-2">
               <button
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
                 aria-label="Previous page"
-                className="flex items-center gap-1 px-4 py-2 bg-neutral-900 border border-white/10 rounded-full text-sm text-white hover:bg-neutral-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-neutral-900"
+                className="flex items-center gap-1 rounded-full border border-white/[0.14] bg-[#0a0a0a] px-4 py-2 text-sm text-white transition-colors hover:border-white/30 hover:bg-white/[0.06] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-white/[0.14] disabled:hover:bg-[#0a0a0a]"
               >
-                <ChevronLeft className="w-4 h-4" />
+                <ChevronLeft className="h-4 w-4" />
                 <span className="hidden sm:inline">Previous</span>
               </button>
 
@@ -244,10 +287,10 @@ const HiringClientPage = () => {
                     onClick={() => setCurrentPage(page)}
                     aria-label={`Page ${page}`}
                     aria-current={currentPage === page ? 'page' : undefined}
-                    className={`w-9 h-9 rounded-full text-sm font-medium transition-colors ${
+                    className={`h-9 w-9 rounded-full text-sm font-medium transition-colors ${
                       currentPage === page
                         ? 'bg-white text-black'
-                        : 'bg-neutral-900 border border-white/10 text-neutral-400 hover:bg-neutral-800 hover:text-white'
+                        : 'border border-white/[0.14] bg-[#0a0a0a] text-white/50 hover:border-white/30 hover:text-white'
                     }`}
                   >
                     {page}
@@ -259,20 +302,20 @@ const HiringClientPage = () => {
                 onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                 disabled={currentPage === totalPages}
                 aria-label="Next page"
-                className="flex items-center gap-1 px-4 py-2 bg-neutral-900 border border-white/10 rounded-full text-sm text-white hover:bg-neutral-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-neutral-900"
+                className="flex items-center gap-1 rounded-full border border-white/[0.14] bg-[#0a0a0a] px-4 py-2 text-sm text-white transition-colors hover:border-white/30 hover:bg-white/[0.06] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-white/[0.14] disabled:hover:bg-[#0a0a0a]"
               >
                 <span className="hidden sm:inline">Next</span>
-                <ChevronRight className="w-4 h-4" />
+                <ChevronRight className="h-4 w-4" />
               </button>
             </div>
           )}
 
           {filteredPositions.length === 0 && (
-            <div className="text-center py-16 text-neutral-400">
+            <div className="py-16 text-center text-white/50">
               <p>No roles match your search.</p>
               <button
                 onClick={clearFilters}
-                className="mt-4 text-white hover:text-neutral-300 transition-colors"
+                className="mt-4 text-white transition-colors hover:text-white/70"
               >
                 Clear filters
               </button>
@@ -282,20 +325,29 @@ const HiringClientPage = () => {
       </section>
 
       {/* Bottom CTA */}
-      <section className="py-24 px-6 bg-black border-t border-white/5">
-        <div className="max-w-3xl mx-auto text-center">
-          <p className="text-lg text-neutral-400 mb-8 leading-relaxed font-light">
-            Don&apos;t see a role that fits? We&apos;re always looking for exceptional talent.
-          </p>
-          <a
-            href={GOOGLE_FORM_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group inline-flex items-center gap-3 bg-white text-black px-8 py-4 rounded-full font-medium text-base transition-all duration-300 hover:scale-[1.02] hover:bg-neutral-200"
+      <section className="bg-black">
+        <div className="container px-4 py-16 sm:px-6 sm:py-24 lg:px-8 lg:py-32">
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.7, ease }}
+            className="mx-auto flex max-w-3xl flex-col items-center gap-6 rounded-lg border border-white/[0.08] bg-[#0a0a0a] p-8 text-center sm:p-12"
           >
-            Submit General Application
-            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
-          </a>
+            <p className="max-w-xl text-base font-normal leading-relaxed text-white/50 sm:text-lg">
+              Don&apos;t see a role that fits? We&apos;re always looking for
+              exceptional talent.
+            </p>
+            <a
+              href={GOOGLE_FORM_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-medium text-black transition-colors hover:bg-neutral-200"
+            >
+              Submit General Application
+              <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+            </a>
+          </motion.div>
         </div>
       </section>
     </div>

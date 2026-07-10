@@ -1,12 +1,8 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { siteConfig } from "../metadata"
 
 export const metadata: Metadata = {
-  title: {
-    default: "Research Programs | Swarms AI",
-    template: `%s | ${siteConfig.name}`,
-  },
+  title: { absolute: "Research Programs | Swarms AI" },
   description: "Accelerate cutting-edge multi-agent research with limitless swarms credits and comprehensive support.",
 }
 

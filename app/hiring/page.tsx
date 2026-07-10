@@ -3,7 +3,7 @@ import { Navigation } from "@/components/navigation"
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
-  title: "Careers - The Swarms Corporation",
+  title: { absolute: "Careers - The Swarms Corporation" },
   description:
     "Join The Swarms Corporation and advance the agent economy. We're hiring Agent Engineers, Front-end Engineers, Finance, Accounting Interns, CMO, and COO.",
   keywords: [

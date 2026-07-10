@@ -1,11 +1,15 @@
 import type { Metadata } from "next"
 import { siteConfig } from "../metadata"
 
+const BLOG_TITLE = "Swarms Blog | Multi-Agent AI Insights, Tutorials & Updates"
+const BLOG_DESCRIPTION =
+  "The Swarms Blog: engineering deep-dives, tutorials, and product updates on multi-agent AI systems, agent orchestration, enterprise automation, and the Swarms framework."
+
 export const metadata: Metadata = {
-  title: "Blog | Swarms AI - Multi-Agent AI Insights & Tutorials",
-  description: "Explore cutting-edge insights, tutorials, and developments in multi-agent AI systems. Stay updated with the latest in AI agent orchestration, enterprise automation, and Swarms framework advancements.",
+  title: { absolute: BLOG_TITLE },
+  description: BLOG_DESCRIPTION,
   keywords: [
-    "swarms blog", "AI blog", "multi-agent blog", "AI agents", "enterprise AI", 
+    "swarms blog", "AI blog", "multi-agent blog", "AI agents", "enterprise AI",
     "AI orchestration", "agent collaboration", "AI automation", "AI tutorials",
     "AI insights", "AI development", "AI framework", "AI technology", "machine learning",
     "artificial intelligence", "multi-agent systems", "AI deployment", "AI production"
@@ -23,8 +27,8 @@ export const metadata: Metadata = {
     canonical: `${siteConfig.url}/blog`,
   },
   openGraph: {
-    title: "Blog | Swarms AI - Multi-Agent AI Insights & Tutorials",
-    description: "Explore cutting-edge insights, tutorials, and developments in multi-agent AI systems. Stay updated with the latest in AI agent orchestration and enterprise automation.",
+    title: BLOG_TITLE,
+    description: BLOG_DESCRIPTION,
     url: `${siteConfig.url}/blog`,
     siteName: siteConfig.name,
     images: [
@@ -32,7 +36,7 @@ export const metadata: Metadata = {
         url: "/seo_image.jpg",
         width: 1200,
         height: 630,
-        alt: "Swarms AI Blog - Multi-Agent AI Insights and Tutorials",
+        alt: "Swarms Blog - Multi-Agent AI Insights and Tutorials",
         type: "image/jpeg",
       },
     ],
@@ -41,14 +45,14 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Blog | Swarms AI - Multi-Agent AI Insights & Tutorials",
-    description: "Explore cutting-edge insights, tutorials, and developments in multi-agent AI systems",
+    title: BLOG_TITLE,
+    description: BLOG_DESCRIPTION,
     images: [
       {
         url: "/seo_image.jpg",
         width: 1200,
         height: 630,
-        alt: "Swarms AI Blog - Multi-Agent AI Insights and Tutorials",
+        alt: "Swarms Blog - Multi-Agent AI Insights and Tutorials",
       },
     ],
     creator: "@swarms_corp",
@@ -64,9 +68,6 @@ export const metadata: Metadata = {
       "max-image-preview": "large",
       "max-snippet": -1,
     },
-  },
-  verification: {
-    google: "your-google-verification-code",
   },
   category: "technology",
 }

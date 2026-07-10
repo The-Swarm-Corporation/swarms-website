@@ -28,12 +28,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   if (!position) {
     return {
-      title: 'Position Not Found - The Swarms Corporation',
+      title: { absolute: 'Position Not Found - The Swarms Corporation' },
     }
   }
 
   return {
-    title: `${position.title} - Careers - The Swarms Corporation`,
+    title: { absolute: `${position.title} - Careers - The Swarms Corporation` },
     description: `Join The Swarms Corporation as a ${position.title}. ${position.description}`,
     keywords: [
       'careers',

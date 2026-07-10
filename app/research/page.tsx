@@ -2,9 +2,11 @@
 
 import { Navigation } from "@/components/navigation"
 import { motion } from "framer-motion"
+import { Button } from "@/components/ui/button"
 import {
   Users,
   ArrowRight,
+  ArrowUpRight,
   Brain,
   Cpu,
   Hospital,
@@ -17,6 +19,8 @@ import {
   X,
 } from "lucide-react"
 import { useState, useMemo } from "react"
+
+const ease: [number, number, number, number] = [0.22, 1, 0.36, 1]
 
 const researchProjects = [
   {
@@ -150,74 +154,87 @@ export default function ResearchPage() {
     <div className="min-h-screen bg-black text-white selection:bg-white/20 selection:text-white antialiased">
       <Navigation />
 
-      <main className="select-text">
+      <main>
         {/* Hero */}
-        <section className="relative min-h-[60vh] sm:min-h-[70vh] flex items-center justify-center px-6 py-24 pt-32">
-          <div className="absolute inset-0 overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-b from-neutral-900/60 via-black to-black" />
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-neutral-500/10 rounded-full blur-[120px]" />
-            <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.015)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.015)_1px,transparent_1px)] bg-[size:48px_48px] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,black_60%,transparent_110%)]" />
-          </div>
+        <section className="relative flex min-h-[60vh] items-center overflow-hidden border-b border-white/[0.08] bg-black sm:min-h-[70vh]">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:72px_72px] [mask-image:radial-gradient(ellipse_75%_70%_at_50%_35%,black_25%,transparent_100%)]"
+          />
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute left-1/2 top-0 h-[480px] w-[880px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/[0.05] blur-3xl"
+          />
 
-          <motion.div
-            className="relative z-10 text-center max-w-3xl mx-auto"
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-          >
-            <p className="text-sm font-medium tracking-[0.2em] uppercase text-neutral-500 mb-6">
-              Research
-            </p>
-            <h1 className="text-6xl sm:text-7xl md:text-8xl font-semibold bg-gradient-to-b from-white to-neutral-400 bg-clip-text text-transparent leading-[0.95] tracking-tight">
-              Swarms Research
-            </h1>
-            <p className="mt-8 text-lg sm:text-xl text-neutral-400 font-light leading-relaxed max-w-xl mx-auto">
-              Advancing multi-agent collaboration, multimodal intelligence, and large-scale agentic simulation.
-            </p>
-            <div className="mt-10 flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center">
-              <a
-                href="/hiring"
-                className="group inline-flex items-center gap-2 bg-white text-black px-7 py-3.5 rounded-full font-medium text-base transition-all duration-300 hover:bg-neutral-200"
+          <div className="container relative w-full px-4 sm:px-6 lg:px-8">
+            <motion.div
+              className="mx-auto flex max-w-3xl flex-col items-center py-24 text-center"
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, ease }}
+            >
+              <p className="mb-5 font-mono text-[11px] font-medium uppercase tracking-[0.2em] text-white/40">
+                Research
+              </p>
+              <h1
+                className="font-bold leading-[0.95] tracking-tighter text-white"
+                style={{ fontSize: "clamp(2.75rem, 8vw, 6rem)" }}
               >
-                <Users className="w-4 h-4" />
-                Join the team
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" />
-              </a>
-              <a
-                href="https://discord.gg/EamjgSaEQf"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 bg-neutral-900 border border-white/10 text-white px-7 py-3.5 rounded-full font-medium text-base transition-colors duration-300 hover:bg-neutral-800 hover:border-white/20"
-              >
-                Join Discord
-              </a>
-            </div>
-          </motion.div>
+                Swarms Research
+              </h1>
+              <p className="mt-6 max-w-xl text-base font-normal leading-relaxed text-white/50 sm:mt-8 sm:text-lg">
+                Advancing multi-agent collaboration, multimodal intelligence,
+                and large-scale agentic simulation.
+              </p>
+              <div className="mt-10 flex w-full flex-col items-center justify-center gap-3 sm:w-auto sm:flex-row">
+                <Button
+                  className="h-11 w-full rounded-full bg-white px-6 text-sm font-medium text-black hover:bg-neutral-200 sm:w-auto"
+                  asChild
+                >
+                  <a href="/hiring">
+                    Join the team
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </a>
+                </Button>
+                <Button
+                  variant="outline"
+                  className="h-11 w-full rounded-full border-white/[0.14] bg-[#0a0a0a] px-6 text-sm font-medium text-white hover:border-white/30 hover:bg-white/[0.06] hover:text-white sm:w-auto"
+                  asChild
+                >
+                  <a href="https://discord.gg/EamjgSaEQf" target="_blank" rel="noopener noreferrer">
+                    Join Discord
+                    <ArrowUpRight className="ml-2 h-4 w-4 text-white/50" />
+                  </a>
+                </Button>
+              </div>
+            </motion.div>
+          </div>
         </section>
 
         {/* Research Projects */}
-        <section className="py-24 px-6 bg-black border-t border-white/5">
-          <div className="max-w-6xl mx-auto">
+        <section className="border-b border-white/[0.08] bg-black">
+          <div className="container px-4 py-16 sm:px-6 sm:py-24 lg:px-8 lg:py-32">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              viewport={{ once: true }}
-              className="text-center mb-12"
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.7, ease }}
+              className="mx-auto mb-10 max-w-3xl text-center sm:mb-14"
             >
-              <p className="text-sm font-medium tracking-[0.2em] uppercase text-neutral-500 mb-4">
+              <p className="mb-5 font-mono text-[11px] font-medium uppercase tracking-[0.2em] text-white/40">
                 Portfolio
               </p>
-              <h2 className="text-4xl sm:text-5xl font-semibold bg-gradient-to-b from-white to-neutral-400 bg-clip-text text-transparent tracking-tight">
+              <h2 className="text-3xl font-semibold leading-[1.1] tracking-tighter text-white sm:text-4xl md:text-5xl">
                 Active projects
               </h2>
-              <p className="mt-6 text-lg text-neutral-400 font-light leading-relaxed max-w-2xl mx-auto">
-                Past and present research in multi-agent collaboration and multimodal intelligence.
+              <p className="mt-5 text-base font-normal leading-relaxed text-white/50 sm:text-lg">
+                Past and present research in multi-agent collaboration and
+                multimodal intelligence.
               </p>
             </motion.div>
 
             {/* Filters + view toggle */}
-            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-10">
+            <div className="mx-auto mb-10 flex max-w-7xl flex-col items-start justify-between gap-4 lg:flex-row lg:items-center">
               <div className="flex flex-wrap gap-2">
                 {filterOptions.map((filter) => {
                   const Icon = filter.icon
@@ -226,10 +243,10 @@ export default function ResearchPage() {
                     <button
                       key={filter.id}
                       onClick={() => toggleFilter(filter.id)}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors duration-200 border ${
+                      className={`flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-colors duration-200 ${
                         isActive
-                          ? 'bg-white text-black border-white'
-                          : 'bg-neutral-900 text-neutral-400 border-white/10 hover:bg-neutral-800 hover:text-white'
+                          ? 'border-white bg-white text-black'
+                          : 'border-white/[0.14] bg-[#0a0a0a] text-white/50 hover:border-white/30 hover:text-white'
                       }`}
                     >
                       <Icon className="h-4 w-4" />
@@ -240,7 +257,7 @@ export default function ResearchPage() {
                 {activeFilters.length > 0 && (
                   <button
                     onClick={clearFilters}
-                    className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium text-neutral-500 hover:text-white transition-colors duration-200"
+                    className="flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium text-white/40 transition-colors duration-200 hover:text-white"
                   >
                     <X className="h-4 w-4" />
                     Clear
@@ -248,11 +265,11 @@ export default function ResearchPage() {
                 )}
               </div>
 
-              <div className="flex items-center bg-neutral-900 rounded-full p-1 border border-white/10 flex-shrink-0">
+              <div className="flex flex-shrink-0 items-center rounded-full border border-white/[0.14] bg-[#0a0a0a] p-1">
                 <button
                   onClick={() => setViewMode('grid')}
-                  className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium transition-colors duration-200 ${
-                    viewMode === 'grid' ? 'bg-white text-black' : 'text-neutral-400 hover:text-white'
+                  className={`flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-medium transition-colors duration-200 ${
+                    viewMode === 'grid' ? 'bg-white text-black' : 'text-white/50 hover:text-white'
                   }`}
                 >
                   <Grid3X3 className="h-4 w-4" />
@@ -260,8 +277,8 @@ export default function ResearchPage() {
                 </button>
                 <button
                   onClick={() => setViewMode('table')}
-                  className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium transition-colors duration-200 ${
-                    viewMode === 'table' ? 'bg-white text-black' : 'text-neutral-400 hover:text-white'
+                  className={`flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-medium transition-colors duration-200 ${
+                    viewMode === 'table' ? 'bg-white text-black' : 'text-white/50 hover:text-white'
                   }`}
                 >
                   <Table className="h-4 w-4" />
@@ -272,7 +289,7 @@ export default function ResearchPage() {
 
             {/* Projects */}
             {viewMode === 'grid' ? (
-              <div className="grid gap-4 md:gap-5 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+              <div className="mx-auto grid max-w-7xl grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2 lg:grid-cols-3">
                 {filteredProjects.map((project, index) => {
                   const Icon = project.icon
                   return (
@@ -283,42 +300,42 @@ export default function ResearchPage() {
                       rel="noopener noreferrer"
                       initial={{ opacity: 0, y: 20 }}
                       whileInView={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.5, delay: index * 0.06 }}
-                      viewport={{ once: true }}
-                      className="group flex flex-col bg-neutral-900/60 border border-white/10 rounded-2xl p-6 hover:bg-neutral-900 hover:border-white/20 transition-all duration-300"
+                      transition={{ duration: 0.5, delay: index * 0.06, ease }}
+                      viewport={{ once: true, margin: "-100px" }}
+                      className="group flex flex-col rounded-lg border border-white/[0.08] bg-black p-6 transition-colors duration-300 hover:bg-[#0a0a0a] sm:p-8"
                     >
-                      <div className="flex items-center justify-between mb-5">
-                        <div className="p-3 bg-white/5 border border-white/10 rounded-xl group-hover:bg-white/10 transition-colors duration-300">
-                          <Icon className="w-5 h-5 text-neutral-300" strokeWidth={1.5} />
+                      <div className="mb-5 flex items-center justify-between">
+                        <div className="rounded-lg border border-white/[0.08] bg-[#0a0a0a] p-3 transition-colors duration-300 group-hover:border-white/20">
+                          <Icon className="h-5 w-5 text-white/50 transition-colors duration-300 group-hover:text-white" strokeWidth={1.5} />
                         </div>
-                        <span className="flex items-center gap-1.5 text-xs text-neutral-400">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                        <span className="flex items-center gap-1.5 text-xs text-white/40">
+                          <span className="h-1.5 w-1.5 rounded-full bg-white/50" />
                           {project.status}
                         </span>
                       </div>
 
-                      <h3 className="text-xl font-semibold text-white mb-1 tracking-tight">
+                      <h3 className="mb-1 text-xl font-semibold tracking-tight text-white">
                         {project.title}
                       </h3>
-                      <p className="text-sm text-neutral-400 font-medium mb-3">
+                      <p className="mb-3 text-sm font-medium text-white/50">
                         {project.subtitle}
                       </p>
-                      <p className="text-sm text-neutral-400 font-light leading-relaxed mb-5 flex-grow">
+                      <p className="mb-5 flex-grow text-sm font-normal leading-relaxed text-white/50">
                         {project.description}
                       </p>
 
-                      <div className="flex flex-wrap gap-1.5 mb-5">
+                      <div className="mb-5 flex flex-wrap gap-1.5">
                         {project.tags.map((tag) => (
-                          <span key={tag} className="px-2.5 py-1 text-xs bg-white/5 text-neutral-400 rounded-full border border-white/10">
+                          <span key={tag} className="rounded-full border border-white/[0.08] bg-white/[0.03] px-2.5 py-1 text-xs text-white/50">
                             {tag}
                           </span>
                         ))}
                       </div>
 
-                      <div className="flex items-center gap-2 text-sm text-neutral-500 group-hover:text-white transition-colors duration-300">
-                        <Github className="w-4 h-4" />
+                      <div className="flex items-center gap-2 text-sm text-white/40 transition-colors duration-300 group-hover:text-white">
+                        <Github className="h-4 w-4" />
                         <span>View on GitHub</span>
-                        <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" />
+                        <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
                       </div>
                     </motion.a>
                   )
@@ -326,21 +343,21 @@ export default function ResearchPage() {
               </div>
             ) : (
               <motion.div
-                className="overflow-hidden rounded-2xl border border-white/10 bg-neutral-900/60"
+                className="mx-auto max-w-7xl overflow-hidden rounded-lg border border-white/[0.08]"
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-                viewport={{ once: true }}
+                transition={{ duration: 0.5, ease }}
+                viewport={{ once: true, margin: "-100px" }}
               >
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
-                      <tr className="border-b border-white/10">
-                        <th className="text-left p-4 md:p-5 text-neutral-500 font-medium text-xs uppercase tracking-[0.15em]">Project</th>
-                        <th className="text-left p-4 md:p-5 text-neutral-500 font-medium text-xs uppercase tracking-[0.15em]">Description</th>
-                        <th className="text-left p-4 md:p-5 text-neutral-500 font-medium text-xs uppercase tracking-[0.15em]">Categories</th>
-                        <th className="text-left p-4 md:p-5 text-neutral-500 font-medium text-xs uppercase tracking-[0.15em]">Status</th>
-                        <th className="text-left p-4 md:p-5 text-neutral-500 font-medium text-xs uppercase tracking-[0.15em]">Link</th>
+                      <tr className="border-b border-white/[0.08]">
+                        <th className="p-4 text-left text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40 md:p-5">Project</th>
+                        <th className="p-4 text-left text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40 md:p-5">Description</th>
+                        <th className="p-4 text-left text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40 md:p-5">Categories</th>
+                        <th className="p-4 text-left text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40 md:p-5">Status</th>
+                        <th className="p-4 text-left text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40 md:p-5">Link</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -349,21 +366,21 @@ export default function ResearchPage() {
                         return (
                           <tr
                             key={project.title}
-                            className="border-b border-white/5 last:border-b-0 hover:bg-white/[0.03] transition-colors duration-200"
+                            className="border-b border-white/[0.08] transition-colors duration-200 last:border-b-0 hover:bg-[#0a0a0a]"
                           >
                             <td className="p-4 md:p-5">
                               <div className="flex items-center gap-3">
-                                <div className="p-2.5 bg-white/5 border border-white/10 rounded-lg flex-shrink-0">
-                                  <Icon className="h-4 w-4 text-neutral-300" strokeWidth={1.5} />
+                                <div className="flex-shrink-0 rounded-lg border border-white/[0.08] bg-[#0a0a0a] p-2.5">
+                                  <Icon className="h-4 w-4 text-white/50" strokeWidth={1.5} />
                                 </div>
                                 <div className="min-w-0">
-                                  <h3 className="text-sm md:text-base font-semibold text-white truncate">{project.title}</h3>
-                                  <p className="text-neutral-500 text-xs truncate">{project.subtitle}</p>
+                                  <h3 className="truncate text-sm font-semibold text-white md:text-base">{project.title}</h3>
+                                  <p className="truncate text-xs text-white/40">{project.subtitle}</p>
                                 </div>
                               </div>
                             </td>
                             <td className="p-4 md:p-5">
-                              <p className="text-neutral-400 text-xs md:text-sm font-light leading-relaxed max-w-xs line-clamp-3">
+                              <p className="line-clamp-3 max-w-xs text-xs font-normal leading-relaxed text-white/50 md:text-sm">
                                 {project.description}
                               </p>
                             </td>
@@ -372,7 +389,7 @@ export default function ResearchPage() {
                                 {project.categories.map((category) => {
                                   const filter = filterOptions.find(f => f.id === category)
                                   return (
-                                    <span key={category} className="px-2 py-0.5 text-xs bg-white/5 text-neutral-400 rounded-full border border-white/10">
+                                    <span key={category} className="rounded-full border border-white/[0.08] bg-white/[0.03] px-2 py-0.5 text-xs text-white/50">
                                       {filter?.label}
                                     </span>
                                   )
@@ -380,8 +397,8 @@ export default function ResearchPage() {
                               </div>
                             </td>
                             <td className="p-4 md:p-5">
-                              <span className="flex items-center gap-1.5 text-xs text-neutral-400">
-                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                              <span className="flex items-center gap-1.5 text-xs text-white/40">
+                                <span className="h-1.5 w-1.5 rounded-full bg-white/50" />
                                 {project.status}
                               </span>
                             </td>
@@ -390,7 +407,7 @@ export default function ResearchPage() {
                                 href={project.github}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-neutral-800 border border-white/10 rounded-full text-xs font-medium text-white hover:bg-neutral-700 transition-colors duration-200"
+                                className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.14] bg-[#0a0a0a] px-3.5 py-1.5 text-xs font-medium text-white transition-colors duration-200 hover:border-white/30 hover:bg-white/[0.06]"
                               >
                                 <Github className="h-3.5 w-3.5" />
                                 View
@@ -406,11 +423,11 @@ export default function ResearchPage() {
             )}
 
             {filteredProjects.length === 0 && (
-              <div className="text-center py-16 text-neutral-400">
+              <div className="py-16 text-center text-white/50">
                 <p>No projects match your filters.</p>
                 <button
                   onClick={clearFilters}
-                  className="mt-4 text-white hover:text-neutral-300 transition-colors"
+                  className="mt-4 text-white transition-colors hover:text-white/70"
                 >
                   Clear filters
                 </button>
@@ -420,91 +437,106 @@ export default function ResearchPage() {
         </section>
 
         {/* Research Focus Areas */}
-        <section className="py-24 px-6 bg-black border-t border-white/5">
-          <div className="max-w-6xl mx-auto">
+        <section className="border-b border-white/[0.08] bg-black">
+          <div className="container px-4 py-16 sm:px-6 sm:py-24 lg:px-8 lg:py-32">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              viewport={{ once: true }}
-              className="text-center mb-12"
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.7, ease }}
+              className="mx-auto mb-10 max-w-3xl text-center sm:mb-14"
             >
-              <p className="text-sm font-medium tracking-[0.2em] uppercase text-neutral-500 mb-4">
+              <p className="mb-5 font-mono text-[11px] font-medium uppercase tracking-[0.2em] text-white/40">
                 Domains
               </p>
-              <h2 className="text-4xl sm:text-5xl font-semibold bg-gradient-to-b from-white to-neutral-400 bg-clip-text text-transparent tracking-tight">
+              <h2 className="text-3xl font-semibold leading-[1.1] tracking-tighter text-white sm:text-4xl md:text-5xl">
                 Research focus areas
               </h2>
-              <p className="mt-6 text-lg text-neutral-400 font-light leading-relaxed max-w-2xl mx-auto">
+              <p className="mt-5 text-base font-normal leading-relaxed text-white/50 sm:text-lg">
                 Core domains driving our research initiatives.
               </p>
             </motion.div>
 
-            <div className="grid gap-4 md:gap-5 sm:grid-cols-2 lg:grid-cols-4">
-              {focusAreas.map((area, index) => {
+            <motion.div
+              className="mx-auto grid max-w-7xl grid-cols-1 gap-px overflow-hidden rounded-lg border border-white/[0.08] bg-white/[0.08] sm:grid-cols-2 lg:grid-cols-4"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.7, delay: 0.1, ease }}
+            >
+              {focusAreas.map((area) => {
                 const Icon = area.icon
                 return (
-                  <motion.div
+                  <div
                     key={area.title}
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: index * 0.06 }}
-                    viewport={{ once: true }}
-                    className="flex flex-col bg-neutral-900/60 border border-white/10 rounded-2xl p-6 hover:bg-neutral-900 hover:border-white/20 transition-all duration-300"
+                    className="group flex min-h-[220px] flex-col bg-black p-5 transition-colors duration-300 hover:bg-[#0a0a0a] sm:p-8"
                   >
-                    <div className="p-3 bg-white/5 border border-white/10 rounded-xl w-fit mb-5">
-                      <Icon className="w-5 h-5 text-neutral-300" strokeWidth={1.5} />
-                    </div>
-                    <h3 className="text-lg font-semibold text-white mb-2 tracking-tight">
+                    <Icon
+                      className="mb-5 h-5 w-5 text-white/50 transition-colors duration-300 group-hover:text-white"
+                      strokeWidth={1.5}
+                    />
+                    <h3 className="mb-2 text-base font-medium text-white">
                       {area.title}
                     </h3>
-                    <p className="text-sm text-neutral-400 font-light leading-relaxed mb-5">
+                    <p className="mb-5 text-sm font-normal leading-relaxed text-white/50">
                       {area.description}
                     </p>
                     <ul className="mt-auto space-y-2">
                       {area.focus.map((item) => (
                         <li key={item} className="flex items-center gap-2.5">
-                          <span className="w-1 h-1 rounded-full bg-neutral-500 flex-shrink-0" />
-                          <span className="text-xs text-neutral-500">{item}</span>
+                          <span className="h-1 w-1 flex-shrink-0 rounded-full bg-white/30" />
+                          <span className="text-xs text-white/40">{item}</span>
                         </li>
                       ))}
                     </ul>
-                  </motion.div>
+                  </div>
                 )
               })}
-            </div>
+            </motion.div>
           </div>
         </section>
 
         {/* CTA */}
-        <section className="py-24 px-6 bg-black border-t border-white/5">
-          <div className="max-w-3xl mx-auto text-center">
-            <p className="text-sm font-medium tracking-[0.2em] uppercase text-neutral-500 mb-4">
-              Careers
-            </p>
-            <h2 className="text-4xl sm:text-5xl font-semibold bg-gradient-to-b from-white to-neutral-400 bg-clip-text text-transparent tracking-tight">
-              Join our research team
-            </h2>
-            <p className="mt-6 text-lg text-neutral-400 mb-10 leading-relaxed font-light max-w-xl mx-auto">
-              Help shape the future of autonomous systems and multimodal intelligence.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center">
-              <a
-                href="/hiring"
-                className="group inline-flex items-center gap-2 bg-white text-black px-8 py-4 rounded-full font-medium text-base transition-all duration-300 hover:bg-neutral-200"
-              >
-                See open roles
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
-              </a>
-              <a
-                href="https://discord.gg/EamjgSaEQf"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 bg-neutral-900 border border-white/10 text-white px-8 py-4 rounded-full font-medium text-base transition-colors duration-300 hover:bg-neutral-800 hover:border-white/20"
-              >
-                Join Discord
-              </a>
-            </div>
+        <section className="bg-black">
+          <div className="container px-4 py-16 sm:px-6 sm:py-24 lg:px-8 lg:py-32">
+            <motion.div
+              initial={{ opacity: 0, y: 24 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.7, ease }}
+              className="mx-auto flex max-w-7xl flex-col items-start justify-between gap-8 rounded-lg border border-white/[0.08] bg-[#0a0a0a] p-6 sm:p-10 md:flex-row md:items-center lg:p-12"
+            >
+              <div className="max-w-2xl space-y-3">
+                <h2 className="text-3xl font-semibold tracking-tighter text-white sm:text-4xl">
+                  Join our research team
+                </h2>
+                <p className="text-base font-normal leading-relaxed text-white/50 sm:text-lg">
+                  Help shape the future of autonomous systems and multimodal
+                  intelligence.
+                </p>
+              </div>
+              <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
+                <Button
+                  className="h-11 w-full rounded-full bg-white px-6 text-sm font-medium text-black hover:bg-neutral-200 sm:w-auto"
+                  asChild
+                >
+                  <a href="/hiring">
+                    See open roles
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </a>
+                </Button>
+                <Button
+                  variant="outline"
+                  className="h-11 w-full rounded-full border-white/[0.14] bg-black px-6 text-sm font-medium text-white hover:border-white/30 hover:bg-white/[0.06] hover:text-white sm:w-auto"
+                  asChild
+                >
+                  <a href="https://discord.gg/EamjgSaEQf" target="_blank" rel="noopener noreferrer">
+                    Join Discord
+                    <ArrowUpRight className="ml-2 h-4 w-4 text-white/50" />
+                  </a>
+                </Button>
+              </div>
+            </motion.div>
           </div>
         </section>
       </main>

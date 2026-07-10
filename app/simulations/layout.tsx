@@ -1,27 +1,23 @@
-import type { Metadata, Viewport } from "next"
+import type { Metadata } from "next"
 import { siteConfig } from "../metadata"
 
-const title = "Swarms Mobile App — Join the Waitlist"
+const title = "Swarms Simulations — Large-Scale Multi-Agent Organization Simulation"
 const description =
-  "Join the waitlist for the Swarms mobile app and be among the first to build, monitor, and orchestrate multi-agent AI systems from your phone."
-const url = "https://swarms.ai/mobile"
-
-export const viewport: Viewport = {
-  width: "device-width",
-  initialScale: 1,
-  maximumScale: 5,
-  viewportFit: "cover",
-}
+  "Swarms is building large-scale multi-agent infrastructure to simulate organizations with thousands of coordinated agents, from hospitals to enterprises to governments."
+const url = "https://swarms.ai/simulations"
 
 export const metadata: Metadata = {
   title: { absolute: title },
   description,
   keywords: [
-    "swarms mobile app",
-    "swarms mobile waitlist",
-    "ai agents mobile",
-    "multi-agent app",
-    "mobile agent orchestration",
+    "swarms simulations",
+    "multi-agent simulation",
+    "large scale agent simulation",
+    "organization simulation",
+    "enterprise simulation ai",
+    "agent based modeling",
+    "hospital simulation ai",
+    "multi-agent coordination",
   ],
   alternates: { canonical: url },
   openGraph: {
@@ -73,11 +69,11 @@ const breadcrumbJsonLd = {
   "@type": "BreadcrumbList",
   itemListElement: [
     { "@type": "ListItem", position: 1, name: "Home", item: siteConfig.url },
-    { "@type": "ListItem", position: 2, name: "Mobile", item: url },
+    { "@type": "ListItem", position: 2, name: "Simulations", item: url },
   ],
 }
 
-export default function MobileLayout({
+export default function SimulationsLayout({
   children,
 }: {
   children: React.ReactNode

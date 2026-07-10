@@ -1,0 +1,87 @@
+---
+title: "All-New Swarms Cloud Updates"
+description: "Swarms Cloud adds a token usage dashboard, model pages spanning 1,500+ models, subscription management, and a wave of platform improvements for teams building production multi-agent systems."
+date: "2026-07-10"
+author: "Swarms Team"
+categories: ["Product", "Cloud"]
+readTime: "8 min read"
+featured: true
+image: "https://pbs.twimg.com/media/HMz5cmiW0AAzgf1?format=jpg&name=small"
+---
+
+# All-New Swarms Cloud Updates
+
+Over the past several days, we have shipped a substantial set of upgrades to Swarms Cloud. The centerpiece of this release is a new token usage dashboard that gives teams real-time visibility into consumption and cost, alongside a redesigned model catalog covering more than 1,500 models from the industry's leading providers.
+
+Together, these changes are aimed at a single goal: making it easier for individual developers and enterprise teams alike to monitor usage, discover the right models for a given task, deploy agents with confidence, and operate multi-agent workflows at scale, all from a single unified platform. This post walks through what shipped, why it matters, and how to start using it today.
+
+## Token Usage Observability
+
+As multi-agent systems move from prototypes into production, the question teams ask most often is no longer "can this work" but "what is this costing us, and where." Without granular visibility into token consumption, that question is difficult to answer once more than a handful of agents and workflows are running concurrently.
+
+The new Token Usage dashboard addresses this directly. It gives engineering and finance stakeholders a shared, authoritative view of exactly how tokens, requests, and spend are distributed across an organization's agents, workflows, and API traffic.
+
+Key capabilities in this release include:
+
+- **Usage tracking.** Monitor token consumption, request volume, and overall AI spend across your entire organization from a single view, rather than piecing it together from logs or ad hoc scripts.
+- **Agent-level analytics.** Break down usage by individual agent and by workflow, making it straightforward to identify which parts of a system are driving cost and where optimization efforts will have the most impact.
+- **Flexible filtering.** Slice usage data by time range, API key, agent, or workflow, so teams can answer both broad questions ("how much did we spend last month") and narrow ones ("which API key generated this spike").
+- **Real-time cost visibility.** Track infrastructure costs and spending patterns as they happen, instead of waiting for an end-of-month invoice to understand where budget went.
+
+For teams operating in regulated or cost-sensitive environments, this level of observability is often a prerequisite for moving multi-agent workloads into production, not a nice-to-have. The dashboard is designed to support that transition without requiring custom tooling.
+
+Try it now at [cloud.swarms.world/token-usage](https://cloud.swarms.world/token-usage).
+
+## All-New Model Pages
+
+Choosing the right model for a task, and then wiring it up correctly, has historically involved jumping between provider documentation, pricing pages, and trial-and-error integration code. The redesigned Swarms Cloud Model Pages are built to collapse that entire process into a single, consistent experience.
+
+The catalog now spans more than 1,500 models from leading providers, including Anthropic, OpenAI, Google Gemini, OpenRouter, and others, all searchable and comparable in one place.
+
+The new experience includes:
+
+- **Model discovery.** Browse the full catalog by provider, category, and capability, making it fast to narrow down to models that fit a specific use case, whether that is long-context reasoning, low-latency chat, or multimodal input.
+- **Instant code examples.** Every model page ships with ready-to-run examples in Python, TypeScript, and cURL, so integration starts from working code rather than a blank file.
+- **Single-agent and multi-agent support.** Any model in the catalog can be deployed as a standalone agent or composed into a larger multi-agent team, without switching tools or rewriting configuration.
+- **Playground integration.** Test a model's behavior directly in the browser before writing any integration code, which shortens the evaluation cycle considerably when comparing several candidate models for the same task.
+
+Explore the full catalog at [cloud.swarms.world/models](https://cloud.swarms.world/models).
+
+## Other Improvements
+
+Beyond the two headline features, this release includes a number of smaller but meaningful improvements across the platform:
+
+- **Model selection for Auto Generate Prompts.** Teams can now choose the specific model used when auto-generating prompts, rather than relying on a fixed default, giving more control over prompt quality and cost.
+- **Improved home dashboard.** The dashboard now surfaces real completion counts and total available credits at a glance, so account status is clear the moment a user logs in.
+- **Subscription management.** Plans can now be upgraded directly from the settings page, removing the need to go through support to make routine account changes.
+- **UI and UX improvements.** Dozens of bug fixes, performance optimizations, and usability refinements have been rolled out across the platform based on ongoing user feedback.
+
+Each of these changes is incremental on its own, but collectively they remove friction from the day-to-day experience of running and managing agents on the platform.
+
+## Built for Production Workflows
+
+The thread connecting all of these updates is a focus on production readiness. Token usage observability gives teams the cost and performance signals they need to operate responsibly at scale. The model catalog reduces the time between deciding to try a new model and actually shipping it. Subscription management and dashboard improvements reduce the operational overhead of simply running an account.
+
+None of this is incidental. As organizations move from single-agent experiments to coordinated multi-agent systems handling real workloads, the tooling around those systems has to mature just as quickly as the agents themselves. This release is a direct response to that shift.
+
+## Conclusion
+
+These updates mark another step toward making Swarms Cloud the most capable platform for building, deploying, and managing production-grade multi-agent AI systems. From model discovery to usage analytics to day-to-day account management, every feature in this release is designed to give developers and enterprises more control, more visibility, and more flexibility.
+
+We are continuing to invest in Swarms Cloud with new capabilities that make deploying and operating swarms at scale simpler over time.
+
+Get started today at [cloud.swarms.world](https://cloud.swarms.world).
+
+## Links and Resources
+
+| Resource | Link |
+| --- | --- |
+| Swarms Cloud | [cloud.swarms.world](https://cloud.swarms.world) |
+| Models Page | [cloud.swarms.world/models](https://cloud.swarms.world/models) |
+| Usage Page | [cloud.swarms.world/token-usage](https://cloud.swarms.world/token-usage) |
+| Documentation | [docs.swarms.ai](https://docs.swarms.ai) |
+| Discord Community | [discord.gg/VapjxpSyHC](https://discord.gg/VapjxpSyHC) |
+
+---
+
+*Have questions or feedback? Join our [Discord community](https://discord.gg/VapjxpSyHC) or check out the [documentation](https://docs.swarms.ai).*

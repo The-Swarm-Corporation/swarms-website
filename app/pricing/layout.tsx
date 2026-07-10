@@ -8,7 +8,7 @@ const description =
 const url = "https://swarms.ai/pricing"
 
 export const metadata: Metadata = {
-  title,
+  title: { absolute: title },
   description,
   keywords: [
     "swarms pricing",

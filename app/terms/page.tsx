@@ -3,7 +3,7 @@ import Link from "next/link"
 import { LegalPage, CONTACT_EMAIL } from "@/components/legal-page"
 
 export const metadata: Metadata = {
-  title: "Terms of Service - The Swarms Corporation",
+  title: { absolute: "Terms of Service - The Swarms Corporation" },
   description:
     "The terms that govern your use of the Swarms platform, API, and marketplace across the Free, Pro, and Premium tiers — including subscription and usage-based credit billing, marketplace listing and transaction fees, acceptable use, content rights, disclaimers, and dispute resolution.",
   openGraph: {

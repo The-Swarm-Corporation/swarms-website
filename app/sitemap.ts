@@ -3,16 +3,20 @@ import { siteConfig } from "./metadata"
 import { getAllPosts } from "@/lib/blog"
 import { positions } from "@/lib/positions"
 
+type ChangeFrequency = MetadataRoute.Sitemap[0]["changeFrequency"]
+
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = siteConfig.url
   const now = new Date()
 
-  // Core marketing pages, weighted by importance
-  const routes: { path: string; priority: number; changeFrequency: MetadataRoute.Sitemap[0]["changeFrequency"] }[] = [
+  // Pages that are actively maintained and iterated on — a build-time
+  // lastModified is a reasonable freshness signal for these.
+  const activeRoutes: { path: string; priority: number; changeFrequency: ChangeFrequency }[] = [
     { path: "", priority: 1, changeFrequency: "daily" },
     { path: "/products", priority: 0.9, changeFrequency: "weekly" },
     { path: "/framework", priority: 0.9, changeFrequency: "weekly" },
     { path: "/pricing", priority: 0.9, changeFrequency: "weekly" },
+    { path: "/api", priority: 0.8, changeFrequency: "weekly" },
     { path: "/installation", priority: 0.8, changeFrequency: "weekly" },
     { path: "/applications", priority: 0.8, changeFrequency: "weekly" },
     { path: "/open-source", priority: 0.8, changeFrequency: "weekly" },
@@ -25,19 +29,31 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/programs/startups", priority: 0.6, changeFrequency: "monthly" },
     { path: "/hiring", priority: 0.6, changeFrequency: "weekly" },
     { path: "/newsletter", priority: 0.5, changeFrequency: "monthly" },
+  ]
+
+  // Stable legal pages: content rarely changes, so a fabricated "modified
+  // today" signal on every build would be misleading. Omit lastModified and
+  // let crawlers rely on actual HTTP caching headers instead.
+  const stableRoutes: { path: string; priority: number; changeFrequency: ChangeFrequency }[] = [
     { path: "/privacy", priority: 0.3, changeFrequency: "yearly" },
     { path: "/terms", priority: 0.3, changeFrequency: "yearly" },
     { path: "/data-policy", priority: 0.3, changeFrequency: "yearly" },
   ]
 
-  const staticEntries: MetadataRoute.Sitemap = routes.map((route) => ({
+  const activeEntries: MetadataRoute.Sitemap = activeRoutes.map((route) => ({
     url: `${baseUrl}${route.path}`,
     lastModified: now,
     changeFrequency: route.changeFrequency,
     priority: route.priority,
   }))
 
-  // Blog posts
+  const stableEntries: MetadataRoute.Sitemap = stableRoutes.map((route) => ({
+    url: `${baseUrl}${route.path}`,
+    changeFrequency: route.changeFrequency,
+    priority: route.priority,
+  }))
+
+  // Blog posts: real per-post dates from frontmatter.
   const blogEntries: MetadataRoute.Sitemap = getAllPosts().map((post) => ({
     url: `${baseUrl}/blog/${post.slug}`,
     lastModified: post.date ? new Date(post.date) : now,
@@ -45,13 +61,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.7,
   }))
 
-  // Open positions
+  // Open positions: no per-posting timestamp is tracked, so omit
+  // lastModified rather than fabricate one.
   const hiringEntries: MetadataRoute.Sitemap = positions.map((position) => ({
     url: `${baseUrl}/hiring/${position.slug}`,
-    lastModified: now,
     changeFrequency: "weekly" as const,
     priority: 0.5,
   }))
 
-  return [...staticEntries, ...blogEntries, ...hiringEntries]
+  return [...activeEntries, ...stableEntries, ...blogEntries, ...hiringEntries]
 }

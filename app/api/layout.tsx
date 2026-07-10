@@ -7,7 +7,7 @@ const description =
 const url = "https://swarms.ai/api"
 
 export const metadata: Metadata = {
-  title,
+  title: { absolute: title },
   description,
   keywords: [
     "swarms api",
@@ -101,7 +101,7 @@ const productJsonLd = {
       name: "Free",
       price: "0",
       priceCurrency: "USD",
-      url: "https://swarms.world/platform/api-keys",
+      url: "https://cloud.swarms.world/api-keys",
       description: "100 requests / minute, 1,200 / day, 200K tokens per agent.",
     },
     {

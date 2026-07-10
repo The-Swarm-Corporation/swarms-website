@@ -13,7 +13,7 @@ export async function generateMetadata(): Promise<Metadata> {
     `The enterprise-grade Python framework for production multi-agent systems. ${starsStr} GitHub stars, 5M+ downloads, 100+ contributors. 15+ swarm architectures, 1,000+ models, MCP support, RAG, tools, structured outputs and full observability. Apache 2.0.`
 
   return {
-  title,
+  title: { absolute: title },
   description,
   keywords: [
     "swarms framework",

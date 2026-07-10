@@ -5,9 +5,8 @@ import Link from "next/link"
 import { motion } from "framer-motion"
 import {
   ArrowRight,
-  ExternalLink,
+  ArrowUpRight,
   CheckCircle,
-  Key,
   Code,
   ChevronDown,
   Database,
@@ -29,6 +28,8 @@ import {
 
 import { Navigation } from "@/components/navigation"
 import { Button } from "@/components/ui/button"
+
+const ease: [number, number, number, number] = [0.22, 1, 0.36, 1]
 
 type PricingTier = {
   name: string
@@ -55,7 +56,7 @@ const tiers: PricingTier[] = [
       "Marketplace access",
       "Community support",
     ],
-    cta: { label: "Get API key", href: "https://swarms.world/platform/api-keys" },
+    cta: { label: "Get API key", href: "https://cloud.swarms.world/api-keys" },
   },
   {
     name: "Pro",
@@ -72,7 +73,7 @@ const tiers: PricingTier[] = [
       "Pro models",
       "Premium endpoints: batch, reasoning, advanced workflows",
     ],
-    cta: { label: "Upgrade to Pro", href: "https://swarms.world/platform/account?tab=subscription" },
+    cta: { label: "Upgrade to Pro", href: "https://cloud.swarms.world/settings" },
   },
   {
     name: "Premium",
@@ -91,7 +92,7 @@ const tiers: PricingTier[] = [
       "Priority region/zone routing",
       "24/7 email & Discord support",
     ],
-    cta: { label: "Upgrade to Premium", href: "https://swarms.world/platform/account?tab=subscription" },
+    cta: { label: "Upgrade to Premium", href: "https://cloud.swarms.world/settings" },
   },
   {
     name: "Enterprise",
@@ -108,7 +109,7 @@ const tiers: PricingTier[] = [
       "Custom agent development",
       "White-label options",
     ],
-    cta: { label: "Talk to sales", href: "https://cal.com/swarms" },
+    cta: { label: "Talk to sales", href: "https://cal.com/swarms/swarms-strategy-session" },
   },
 ]
 
@@ -256,7 +257,7 @@ const faqs = [
   {
     question: "Can I switch between plans?",
     answer:
-      "Yes. Upgrade or downgrade any time from the platform Account Dashboard → Billing → Plans. Changes take effect immediately. Your API keys are preserved.",
+      "Yes. Upgrade or downgrade any time from cloud.swarms.world/settings. Changes take effect immediately. Your API keys are preserved.",
   },
   {
     question: "What happens when I run out of credits?",
@@ -284,36 +285,29 @@ function SectionHeading({
   eyebrow,
   title,
   description,
-  align = "center",
 }: {
   eyebrow?: string
   title: React.ReactNode
   description?: string
-  align?: "center" | "left"
 }) {
-  const alignClass = align === "center" ? "text-center mx-auto" : "text-left"
   return (
     <motion.div
+      className="mx-auto mb-10 max-w-7xl sm:mb-14"
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6 }}
-      viewport={{ once: true }}
-      className={`max-w-3xl ${alignClass} space-y-3 sm:space-y-4 md:space-y-5 mb-10 sm:mb-14 md:mb-20 px-2 sm:px-0`}
+      viewport={{ once: true, margin: "-100px" }}
+      transition={{ duration: 0.7, ease }}
     >
       {eyebrow && (
-        <div className={`flex items-center gap-2 sm:gap-3 ${align === "center" ? "justify-center" : ""}`}>
-          {align === "center" && <span className="h-px w-6 sm:w-8 bg-gradient-to-r from-transparent to-white/20" />}
-          <p className="text-[10px] sm:text-xs text-white/55 tracking-[0.22em] uppercase font-semibold">
-            <span className="text-white font-bold">{eyebrow}</span>
-          </p>
-          {align === "center" && <span className="h-px w-6 sm:w-8 bg-gradient-to-l from-transparent to-white/20" />}
-        </div>
+        <p className="mb-5 font-mono text-[11px] font-medium uppercase tracking-[0.2em] text-white/40">
+          {eyebrow}
+        </p>
       )}
-      <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-white leading-tight">
+      <h2 className="max-w-3xl text-3xl font-semibold leading-[1.1] tracking-tighter text-white sm:text-4xl md:text-5xl">
         {title}
       </h2>
       {description && (
-        <p className="text-base sm:text-lg md:text-xl text-white/60 max-w-3xl font-normal leading-relaxed">
+        <p className="mt-5 max-w-2xl text-base font-normal leading-relaxed text-white/50 sm:text-lg">
           {description}
         </p>
       )}
@@ -330,111 +324,124 @@ export default function PricingPage() {
 
       <main className="pt-[64px] sm:pt-[80px] md:pt-[96px]">
         {/* HERO */}
-        <section className="relative overflow-hidden bg-black min-h-[70vh] flex items-center">
-          <div className="absolute inset-0 pointer-events-none">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,_rgba(239,68,68,0.10)_0%,_rgba(0,0,0,0)_60%)]" />
-          </div>
+        <section className="relative flex min-h-[80vh] items-center overflow-hidden border-b border-white/[0.08] bg-black">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:72px_72px] [mask-image:radial-gradient(ellipse_75%_70%_at_50%_35%,black_25%,transparent_100%)]"
+          />
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute left-1/2 top-0 h-[480px] w-[880px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/[0.05] blur-3xl"
+          />
 
-          <div className="container relative z-10 mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-24 md:py-32">
-            <motion.div
-              initial={{ opacity: 0, y: 24 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-              className="max-w-5xl mx-auto text-center space-y-6 sm:space-y-8 md:space-y-10"
-            >
-              <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 backdrop-blur-sm">
-                <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
-                <span className="text-xs sm:text-sm text-white/70 font-medium">
-                  Transparent. Usage-based. Enterprise-ready.
-                </span>
-              </div>
+          <div className="container relative w-full px-4 sm:px-6 lg:px-8">
+            <div className="mx-auto flex max-w-4xl flex-col items-center py-20 text-center sm:py-24">
+              <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.7, ease }}
+                className="inline-flex items-center gap-2 rounded-full border border-white/[0.12] bg-white/[0.03] px-3 py-1.5 text-xs font-medium text-white/60 sm:text-sm"
+              >
+                <span className="h-1.5 w-1.5 rounded-full bg-white/70" />
+                Transparent. Usage-based. Enterprise-ready.
+              </motion.div>
 
-              <h1
-                className="font-bold leading-[0.9] tracking-tight text-red-500"
-                style={{ fontSize: "clamp(2.75rem, 9vw, 9rem)", fontFamily: "var(--font-orbitron)" }}
+              <motion.h1
+                className="mt-6 font-bold leading-[0.95] tracking-tighter text-white sm:mt-8"
+                style={{ fontSize: "clamp(3.5rem, 10vw, 8rem)" }}
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.7, delay: 0.05, ease }}
               >
                 Pricing
-              </h1>
+              </motion.h1>
 
-              <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl text-white/80 max-w-3xl mx-auto font-medium leading-tight px-2 sm:px-0">
+              <motion.p
+                className="mt-6 max-w-3xl text-base font-normal leading-relaxed text-white/55 sm:mt-8 sm:text-lg md:text-xl lg:text-2xl"
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.7, delay: 0.12, ease }}
+              >
                 Start free. Pay per use. Scale to enterprise on the same API key.
-              </p>
+              </motion.p>
 
-              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 md:gap-6 justify-center items-center w-full max-w-2xl mx-auto pt-2">
+              <motion.div
+                className="mt-10 flex w-full flex-col items-center justify-center gap-3 sm:w-auto sm:flex-row"
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.7, delay: 0.2, ease }}
+              >
                 <Button
-                  size="lg"
-                  className="bg-white text-black hover:bg-white/90 w-full sm:w-auto font-bold text-sm sm:text-base md:text-lg px-6 sm:px-8 md:px-10 py-5 sm:py-6 md:py-7"
+                  className="h-12 w-full rounded-full bg-white px-8 text-base font-medium text-black hover:bg-neutral-200 sm:h-14 sm:w-auto sm:text-lg"
                   asChild
                 >
-                  <a href="https://swarms.world/platform/api-keys" target="_blank" rel="noopener noreferrer">
-                    <Key className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
+                  <a href="https://cloud.swarms.world/api-keys" target="_blank" rel="noopener noreferrer">
                     Get started free
-                    <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5 ml-2" />
+                    <ArrowRight className="ml-2 h-5 w-5" />
                   </a>
                 </Button>
                 <Button
-                  size="lg"
                   variant="outline"
-                  className="border-2 border-white/20 text-white hover:bg-white/10 w-full sm:w-auto font-normal text-sm sm:text-base md:text-lg px-6 sm:px-8 md:px-10 py-5 sm:py-6 md:py-7 bg-transparent backdrop-blur-sm"
+                  className="h-12 w-full rounded-full border-white/[0.14] bg-[#0a0a0a] px-8 text-base font-medium text-white hover:border-white/30 hover:bg-white/[0.06] hover:text-white sm:h-14 sm:w-auto sm:text-lg"
                   asChild
                 >
-                  <a href="https://cal.com/swarms" target="_blank" rel="noopener noreferrer">
+                  <a href="https://cal.com/swarms/swarms-strategy-session" target="_blank" rel="noopener noreferrer">
                     Talk to sales
-                    <ExternalLink className="h-4 w-4 sm:h-5 sm:w-5 ml-2" />
+                    <ArrowUpRight className="ml-2 h-5 w-5 text-white/50" />
                   </a>
                 </Button>
-              </div>
-            </motion.div>
+              </motion.div>
+            </div>
           </div>
         </section>
 
         {/* SUBSCRIPTION TIERS */}
-        <section className="bg-black py-16 sm:py-20 md:py-24 lg:py-32">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <section className="border-b border-white/[0.08] bg-black">
+          <div className="container px-4 py-16 sm:px-6 sm:py-24 lg:px-8 lg:py-32">
             <SectionHeading
               eyebrow="Subscription plans"
               title="A plan for every stage"
               description="Free for prototyping. Pro and Premium for production teams. Enterprise for mission-critical workloads."
             />
 
-            <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 md:gap-6">
+            <div className="mx-auto grid max-w-7xl grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-4 lg:gap-6">
               {tiers.map((tier, i) => (
                 <motion.div
                   key={tier.name}
-                  initial={{ opacity: 0, y: 30 }}
+                  initial={{ opacity: 0, y: 24 }}
                   whileInView={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: i * 0.07 }}
-                  viewport={{ once: true }}
-                  className={`relative flex flex-col rounded-2xl sm:rounded-3xl border backdrop-blur-sm p-6 sm:p-7 md:p-8 ${
+                  transition={{ duration: 0.5, delay: i * 0.07, ease }}
+                  viewport={{ once: true, margin: "-100px" }}
+                  className={`relative flex flex-col rounded-lg border p-6 transition-colors duration-300 sm:p-7 md:p-8 ${
                     tier.highlight
-                      ? "border-red-500/40 bg-gradient-to-b from-red-500/[0.06] to-white/[0.02]"
-                      : "border-white/10 bg-white/[0.02]"
+                      ? "border-white/20 bg-[#0a0a0a]"
+                      : "border-white/[0.08] bg-black hover:bg-[#0a0a0a]"
                   }`}
                 >
                   {tier.highlight && (
-                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 inline-flex items-center rounded-full border border-red-500/40 bg-red-500/15 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-red-300">
+                    <div className="absolute -top-3 left-1/2 inline-flex -translate-x-1/2 items-center rounded-full border border-white/20 bg-white px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-black">
                       Most popular
                     </div>
                   )}
                   <div className="mb-5 sm:mb-6">
-                    <h3 className="text-lg sm:text-xl font-bold text-white mb-1">{tier.name}</h3>
-                    <p className="text-xs sm:text-sm text-white/55 leading-relaxed">{tier.description}</p>
+                    <h3 className="mb-1 text-lg font-semibold text-white sm:text-xl">{tier.name}</h3>
+                    <p className="text-xs leading-relaxed text-white/50 sm:text-sm">{tier.description}</p>
                   </div>
-                  <div className="mb-5 sm:mb-6 pb-5 sm:pb-6 border-b border-white/5">
+                  <div className="mb-5 border-b border-white/[0.08] pb-5 sm:mb-6 sm:pb-6">
                     <div className="flex items-baseline gap-1">
-                      <span className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-white">
+                      <span className="text-3xl font-bold tracking-tight text-white sm:text-4xl md:text-5xl">
                         {tier.price}
                       </span>
                     </div>
-                    <p className="text-xs sm:text-sm text-white/50 mt-1">{tier.cadence}</p>
+                    <p className="mt-1 text-xs text-white/50 sm:text-sm">{tier.cadence}</p>
                   </div>
-                  <ul className="space-y-2.5 sm:space-y-3 mb-6 sm:mb-8 flex-1">
+                  <ul className="mb-6 flex-1 space-y-2.5 sm:mb-8 sm:space-y-3">
                     {tier.features.map((feature) => (
                       <li
                         key={feature}
-                        className="flex items-start gap-2.5 text-xs sm:text-sm text-white/75 leading-relaxed"
+                        className="flex items-start gap-2.5 text-xs leading-relaxed text-white/70 sm:text-sm"
                       >
-                        <CheckCircle className="h-4 w-4 text-red-500 flex-shrink-0 mt-0.5" />
+                        <CheckCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-white/40" strokeWidth={1.75} />
                         <span className={feature.startsWith("Everything in") ? "font-semibold text-white" : ""}>
                           {feature}
                         </span>
@@ -444,15 +451,15 @@ export default function PricingPage() {
                   <Button
                     className={
                       tier.highlight
-                        ? "bg-white text-black hover:bg-white/90 font-bold w-full"
-                        : "border-2 border-white/20 text-white hover:bg-white/10 bg-transparent backdrop-blur-sm font-normal w-full"
+                        ? "w-full rounded-full bg-white font-medium text-black hover:bg-neutral-200"
+                        : "w-full rounded-full border-white/[0.14] bg-black font-medium text-white hover:border-white/30 hover:bg-white/[0.06] hover:text-white"
                     }
                     variant={tier.highlight ? "default" : "outline"}
                     asChild
                   >
                     <a href={tier.cta.href} target="_blank" rel="noopener noreferrer">
                       {tier.cta.label}
-                      <ArrowRight className="h-4 w-4 ml-2" />
+                      <ArrowRight className="ml-2 h-4 w-4" />
                     </a>
                   </Button>
                 </motion.div>
@@ -462,73 +469,76 @@ export default function PricingPage() {
         </section>
 
         {/* USAGE-BASED PRICING TABLE */}
-        <section className="bg-black py-16 sm:py-20 md:py-24 lg:py-32">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <section className="border-b border-white/[0.08] bg-black">
+          <div className="container px-4 py-16 sm:px-6 sm:py-24 lg:px-8 lg:py-32">
             <SectionHeading
               eyebrow="Usage-based pricing"
               title="Pay only for what you use"
               description="Transparent per-operation pricing across every endpoint. No surprises, no minimums."
             />
 
-            <div className="max-w-5xl mx-auto rounded-2xl border border-white/10 bg-white/[0.02] backdrop-blur-sm overflow-hidden">
-              <div className="hidden md:grid md:grid-cols-12 gap-4 px-6 lg:px-8 py-4 border-b border-white/10 text-[10px] uppercase tracking-[0.18em] text-white/40 font-semibold">
-                <div className="col-span-5">Item</div>
-                <div className="col-span-3 text-right">Price</div>
-                <div className="col-span-4 text-right">Notes</div>
-              </div>
-              {usageItems.map((row, i) => (
-                <motion.div
-                  key={row.item}
-                  initial={{ opacity: 0, y: 10 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4, delay: i * 0.04 }}
-                  viewport={{ once: true }}
-                  className="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-4 px-4 sm:px-6 lg:px-8 py-5 sm:py-6 border-b border-white/5 last:border-b-0 hover:bg-white/[0.02] transition-colors"
-                >
-                  <div className="md:col-span-5 flex items-center gap-3 sm:gap-4">
-                    <div className="h-9 w-9 sm:h-10 sm:w-10 flex-shrink-0 rounded-lg border border-white/10 bg-white/[0.03] flex items-center justify-center">
-                      <row.icon className="h-4 w-4 text-red-500" />
+            <div className="mx-auto max-w-7xl">
+              <div className="max-w-5xl overflow-hidden rounded-lg border border-white/[0.08]">
+                <div className="hidden gap-4 border-b border-white/[0.08] px-6 py-4 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40 md:grid md:grid-cols-12 lg:px-8">
+                  <div className="col-span-5">Item</div>
+                  <div className="col-span-3 text-right">Price</div>
+                  <div className="col-span-4 text-right">Notes</div>
+                </div>
+                {usageItems.map((row, i) => (
+                  <motion.div
+                    key={row.item}
+                    initial={{ opacity: 0, y: 10 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: i * 0.04, ease }}
+                    viewport={{ once: true, margin: "-100px" }}
+                    className="grid grid-cols-1 gap-3 border-b border-white/[0.08] px-4 py-5 transition-colors duration-300 last:border-b-0 hover:bg-[#0a0a0a] sm:px-6 md:grid-cols-12 md:gap-4 md:py-6 lg:px-8"
+                  >
+                    <div className="flex items-center gap-3 sm:gap-4 md:col-span-5">
+                      <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg border border-white/[0.08] bg-black sm:h-10 sm:w-10">
+                        <row.icon className="h-4 w-4 text-white/50" strokeWidth={1.5} />
+                      </div>
+                      <span className="text-sm font-medium text-white sm:text-base">{row.item}</span>
                     </div>
-                    <span className="text-sm sm:text-base text-white font-medium">{row.item}</span>
-                  </div>
-                  <div className="md:col-span-3 md:text-right">
-                    <span className="font-mono text-base sm:text-lg text-white font-semibold">{row.cost}</span>
-                    <span className="text-xs sm:text-sm text-white/50 ml-1.5">{row.unit}</span>
-                  </div>
-                  <div className="md:col-span-4 md:text-right text-xs sm:text-sm text-white/50">{row.note}</div>
-                </motion.div>
-              ))}
+                    <div className="md:col-span-3 md:text-right">
+                      <span className="font-mono text-base font-semibold text-white sm:text-lg">{row.cost}</span>
+                      <span className="ml-1.5 text-xs text-white/50 sm:text-sm">{row.unit}</span>
+                    </div>
+                    <div className="text-xs text-white/50 sm:text-sm md:col-span-4 md:text-right">{row.note}</div>
+                  </motion.div>
+                ))}
+              </div>
             </div>
           </div>
         </section>
 
         {/* DISCOUNTS */}
-        <section className="bg-black py-16 sm:py-20 md:py-24 lg:py-32">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <section className="border-b border-white/[0.08] bg-black">
+          <div className="container px-4 py-16 sm:px-6 sm:py-24 lg:px-8 lg:py-32">
             <SectionHeading
               eyebrow="Discounts & policies"
               title="Built-in savings"
               description="Time-based discounts, unified token pricing, and automatic promotional credits."
             />
 
-            <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
+            <div className="mx-auto grid max-w-7xl grid-cols-1 gap-px overflow-hidden rounded-lg border border-white/[0.08] bg-white/[0.08] md:grid-cols-3">
               {discounts.map((d, i) => (
                 <motion.div
                   key={d.title}
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: i * 0.05 }}
-                  viewport={{ once: true }}
-                  className="rounded-2xl sm:rounded-3xl border border-white/10 bg-white/[0.02] backdrop-blur-sm p-5 sm:p-6 md:p-8"
+                  transition={{ duration: 0.5, delay: i * 0.05, ease }}
+                  viewport={{ once: true, margin: "-100px" }}
+                  className="group bg-black p-6 transition-colors duration-300 hover:bg-[#0a0a0a] sm:p-8"
                 >
-                  <div className="p-2.5 sm:p-3 rounded-xl sm:rounded-2xl border-2 border-red-500/50 bg-red-500/10 w-fit mb-4 sm:mb-5">
-                    <d.icon className="w-5 h-5 sm:w-6 sm:h-6 text-red-500" />
-                  </div>
-                  <h3 className="text-lg sm:text-xl font-bold text-white mb-1">{d.title}</h3>
-                  <p className="text-xs sm:text-sm text-red-300 font-semibold uppercase tracking-wider mb-3">
+                  <d.icon
+                    className="mb-4 h-5 w-5 text-white/50 transition-colors duration-300 group-hover:text-white sm:mb-5"
+                    strokeWidth={1.5}
+                  />
+                  <h3 className="mb-1 text-lg font-semibold text-white sm:text-xl">{d.title}</h3>
+                  <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-white/40 sm:text-sm">
                     {d.label}
                   </p>
-                  <p className="text-white/65 text-sm sm:text-base leading-relaxed">{d.description}</p>
+                  <p className="text-sm leading-relaxed text-white/50 sm:text-base">{d.description}</p>
                 </motion.div>
               ))}
             </div>
@@ -536,29 +546,30 @@ export default function PricingPage() {
         </section>
 
         {/* CREDIT DETAILS */}
-        <section className="bg-black py-16 sm:py-20 md:py-24 lg:py-32">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <section className="border-b border-white/[0.08] bg-black">
+          <div className="container px-4 py-16 sm:px-6 sm:py-24 lg:px-8 lg:py-32">
             <SectionHeading
               eyebrow="Billing"
               title="How billing works"
               description="Predictable deductions, clear priority order, and a live cost endpoint to power your dashboards."
             />
 
-            <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
+            <div className="mx-auto grid max-w-7xl grid-cols-1 gap-px overflow-hidden rounded-lg border border-white/[0.08] bg-white/[0.08] md:grid-cols-3">
               {creditDetails.map((d, i) => (
                 <motion.div
                   key={d.title}
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: i * 0.05 }}
-                  viewport={{ once: true }}
-                  className="rounded-2xl border border-white/10 bg-white/[0.02] backdrop-blur-sm p-5 sm:p-6 md:p-8"
+                  transition={{ duration: 0.5, delay: i * 0.05, ease }}
+                  viewport={{ once: true, margin: "-100px" }}
+                  className="group bg-black p-6 transition-colors duration-300 hover:bg-[#0a0a0a] sm:p-8"
                 >
-                  <div className="p-2.5 sm:p-3 rounded-xl border-2 border-red-500/50 bg-red-500/10 w-fit mb-4 sm:mb-5">
-                    <d.icon className="w-5 h-5 sm:w-6 sm:h-6 text-red-500" />
-                  </div>
-                  <h3 className="text-base sm:text-lg font-bold text-white mb-2">{d.title}</h3>
-                  <p className="text-white/65 text-sm sm:text-base leading-relaxed">{d.description}</p>
+                  <d.icon
+                    className="mb-4 h-5 w-5 text-white/50 transition-colors duration-300 group-hover:text-white sm:mb-5"
+                    strokeWidth={1.5}
+                  />
+                  <h3 className="mb-2 text-base font-semibold text-white sm:text-lg">{d.title}</h3>
+                  <p className="text-sm leading-relaxed text-white/50 sm:text-base">{d.description}</p>
                 </motion.div>
               ))}
             </div>
@@ -566,70 +577,71 @@ export default function PricingPage() {
         </section>
 
         {/* ENTERPRISE & ON-PREMISE */}
-        <section className="bg-black py-16 sm:py-20 md:py-24 lg:py-32 xl:py-40">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="max-w-7xl mx-auto rounded-3xl border border-white/10 bg-white/[0.02] backdrop-blur-sm overflow-hidden">
-              <div className="grid lg:grid-cols-5 gap-0">
-                <div className="lg:col-span-2 p-6 sm:p-8 md:p-10 lg:p-12 border-b lg:border-b-0 lg:border-r border-white/10 flex flex-col justify-between gap-8">
+        <section className="border-b border-white/[0.08] bg-black">
+          <div className="container px-4 py-16 sm:px-6 sm:py-24 lg:px-8 lg:py-32 xl:py-40">
+            <motion.div
+              className="mx-auto max-w-7xl overflow-hidden rounded-lg border border-white/[0.08] bg-black"
+              initial={{ opacity: 0, y: 24 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.7, ease }}
+            >
+              <div className="grid gap-0 lg:grid-cols-5">
+                <div className="flex flex-col justify-between gap-8 border-b border-white/[0.08] p-6 sm:p-8 md:p-10 lg:col-span-2 lg:border-b-0 lg:border-r lg:p-12">
                   <div>
-                    <p className="text-[10px] sm:text-xs text-white font-bold tracking-[0.22em] uppercase mb-4">
+                    <p className="mb-4 font-mono text-[11px] font-medium uppercase tracking-[0.2em] text-white/40">
                       Enterprise & on-premise
                     </p>
-                    <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-white leading-tight mb-4 sm:mb-5">
-                      Run Swarms&nbsp;
-                      <span className="text-red-500">your way</span>.
+                    <h2 className="mb-4 text-3xl font-semibold leading-[1.1] tracking-tighter text-white sm:mb-5 sm:text-4xl md:text-5xl">
+                      Run Swarms your way.
                     </h2>
-                    <p className="text-base sm:text-lg text-white/60 leading-relaxed">
+                    <p className="text-base leading-relaxed text-white/50 sm:text-lg">
                       Dedicated capacity, custom SLAs, white-label options, and full on-premise deployments. Built for regulated industries and large-scale agentic workloads.
                     </p>
                   </div>
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    <Button
-                      className="bg-white text-black hover:bg-white/90 font-bold"
-                      asChild
-                    >
-                      <a href="https://cal.com/swarms" target="_blank" rel="noopener noreferrer">
+                  <div className="flex flex-col gap-3 sm:flex-row">
+                    <Button className="rounded-full bg-white font-medium text-black hover:bg-neutral-200" asChild>
+                      <a href="https://cal.com/swarms/swarms-strategy-session" target="_blank" rel="noopener noreferrer">
                         Talk to sales
-                        <ArrowRight className="h-4 w-4 ml-2" />
+                        <ArrowRight className="ml-2 h-4 w-4" />
                       </a>
                     </Button>
                     <Button
                       variant="outline"
-                      className="border-2 border-white/20 text-white hover:bg-white/10 bg-transparent backdrop-blur-sm font-normal"
+                      className="rounded-full border-white/[0.14] bg-black font-medium text-white hover:border-white/30 hover:bg-white/[0.06] hover:text-white"
                       asChild
                     >
                       <Link href="/api">
-                        <Code className="h-4 w-4 mr-2" />
+                        <Code className="mr-2 h-4 w-4" />
                         API reference
                       </Link>
                     </Button>
                   </div>
                 </div>
-                <div className="lg:col-span-3 grid grid-cols-1 sm:grid-cols-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 lg:col-span-3">
                   {enterpriseBenefits.map((b, i) => (
                     <div
                       key={b.title}
-                      className={`p-6 sm:p-7 md:p-8 ${i < enterpriseBenefits.length - 1 ? "border-b sm:border-b-0 sm:border-r border-white/10" : ""}`}
+                      className={`p-6 sm:p-7 md:p-8 ${i < enterpriseBenefits.length - 1 ? "border-b border-white/[0.08] sm:border-b-0 sm:border-r" : ""}`}
                     >
-                      <div className="p-2.5 rounded-xl border-2 border-red-500/50 bg-red-500/10 w-fit mb-4">
-                        <b.icon className="w-5 h-5 text-red-500" />
-                      </div>
-                      <h3 className="text-base sm:text-lg font-bold text-white mb-2">{b.title}</h3>
-                      <p className="text-sm text-white/60 leading-relaxed">{b.description}</p>
+                      <b.icon className="mb-4 h-5 w-5 text-white/50" strokeWidth={1.5} />
+                      <h3 className="mb-2 text-base font-semibold text-white sm:text-lg">{b.title}</h3>
+                      <p className="text-sm leading-relaxed text-white/50">{b.description}</p>
                     </div>
                   ))}
                 </div>
               </div>
-            </div>
+            </motion.div>
           </div>
         </section>
 
         {/* FAQ */}
-        <section className="bg-black py-16 sm:py-20 md:py-24 lg:py-32">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <section className="border-b border-white/[0.08] bg-black">
+          <div className="container px-4 py-16 sm:px-6 sm:py-24 lg:px-8 lg:py-32">
             <SectionHeading eyebrow="FAQ" title="Common pricing questions" />
 
-            <div className="max-w-3xl mx-auto space-y-3 sm:space-y-4">
+            <div className="mx-auto max-w-7xl">
+            <div className="max-w-3xl space-y-3 sm:space-y-4">
               {faqs.map((faq, i) => {
                 const isOpen = openFaq === i
                 return (
@@ -637,22 +649,22 @@ export default function PricingPage() {
                     key={faq.question}
                     initial={{ opacity: 0, y: 12 }}
                     whileInView={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4, delay: i * 0.03 }}
-                    viewport={{ once: true }}
-                    className="rounded-2xl border border-white/10 bg-white/[0.02] backdrop-blur-sm overflow-hidden"
+                    transition={{ duration: 0.4, delay: i * 0.03, ease }}
+                    viewport={{ once: true, margin: "-100px" }}
+                    className="overflow-hidden rounded-lg border border-white/[0.08] bg-black transition-colors duration-300 hover:bg-[#0a0a0a]"
                   >
                     <button
                       type="button"
                       onClick={() => setOpenFaq(isOpen ? null : i)}
                       aria-expanded={isOpen}
-                      className="flex w-full items-center justify-between gap-4 px-5 sm:px-6 py-4 sm:py-5 text-left hover:bg-white/[0.02] transition-colors"
+                      className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left sm:px-6 sm:py-5"
                     >
-                      <span className="text-sm sm:text-base md:text-lg font-semibold text-white leading-snug">
+                      <span className="text-sm font-medium leading-snug text-white sm:text-base md:text-lg">
                         {faq.question}
                       </span>
                       <ChevronDown
                         className={`h-5 w-5 flex-shrink-0 text-white/50 transition-transform duration-300 ${
-                          isOpen ? "rotate-180 text-red-500" : ""
+                          isOpen ? "rotate-180 text-white" : ""
                         }`}
                       />
                     </button>
@@ -662,10 +674,10 @@ export default function PricingPage() {
                         height: isOpen ? "auto" : 0,
                         opacity: isOpen ? 1 : 0,
                       }}
-                      transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                      transition={{ duration: 0.3, ease }}
                       className="overflow-hidden"
                     >
-                      <div className="px-5 sm:px-6 pb-5 sm:pb-6 text-sm sm:text-base text-white/65 leading-relaxed">
+                      <div className="px-5 pb-5 text-sm leading-relaxed text-white/50 sm:px-6 sm:pb-6 sm:text-base">
                         {faq.answer}
                       </div>
                     </motion.div>
@@ -673,53 +685,48 @@ export default function PricingPage() {
                 )
               })}
             </div>
+            </div>
           </div>
         </section>
 
         {/* CTA */}
-        <section className="bg-black py-16 sm:py-20 md:py-24 lg:py-32 xl:py-40">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <section className="bg-black">
+          <div className="container px-4 py-16 sm:px-6 sm:py-24 lg:px-8 lg:py-32">
             <motion.div
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 24 }}
               whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7 }}
-              viewport={{ once: true }}
-              className="relative max-w-5xl mx-auto rounded-3xl border border-white/10 bg-white/[0.02] backdrop-blur-sm overflow-hidden"
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.7, ease }}
+              className="mx-auto flex max-w-7xl flex-col items-start justify-between gap-8 rounded-lg border border-white/[0.08] bg-[#0a0a0a] p-6 sm:p-10 md:flex-row md:items-center lg:p-12"
             >
-              <div
-                aria-hidden="true"
-                className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_70%_30%,_rgba(239,68,68,0.12)_0%,_rgba(0,0,0,0)_55%)]"
-              />
-              <div className="relative z-10 px-6 sm:px-10 md:px-14 py-12 sm:py-16 md:py-20 text-center space-y-6 sm:space-y-8">
-                <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-white leading-tight">
-                  Start free. Scale when you're ready.
+              <div className="max-w-2xl space-y-3">
+                <h2 className="text-3xl font-semibold tracking-tighter text-white sm:text-4xl">
+                  Start free. Scale when you&apos;re ready.
                 </h2>
-                <p className="text-base sm:text-lg md:text-xl text-white/60 max-w-2xl mx-auto leading-relaxed">
+                <p className="text-base font-normal leading-relaxed text-white/50 sm:text-lg">
                   Generate an API key in under a minute. Upgrade to Pro, Premium, or Enterprise on the same key — no migrations, no downtime.
                 </p>
-                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 md:gap-6 justify-center items-center pt-2">
-                  <Button
-                    size="lg"
-                    className="bg-white text-black hover:bg-white/90 w-full sm:w-auto font-bold text-sm sm:text-base md:text-lg px-6 sm:px-8 md:px-10 py-5 sm:py-6 md:py-7"
-                    asChild
-                  >
-                    <a href="https://swarms.world/platform/api-keys" target="_blank" rel="noopener noreferrer">
-                      Get API key
-                      <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5 ml-2" />
-                    </a>
-                  </Button>
-                  <Button
-                    size="lg"
-                    variant="outline"
-                    className="border-2 border-white/20 text-white hover:bg-white/10 w-full sm:w-auto font-normal text-sm sm:text-base md:text-lg px-6 sm:px-8 md:px-10 py-5 sm:py-6 md:py-7 bg-transparent backdrop-blur-sm"
-                    asChild
-                  >
-                    <a href="https://cal.com/swarms" target="_blank" rel="noopener noreferrer">
-                      Talk to sales
-                      <ExternalLink className="h-4 w-4 sm:h-5 sm:w-5 ml-2" />
-                    </a>
-                  </Button>
-                </div>
+              </div>
+              <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
+                <Button
+                  className="h-11 w-full rounded-full bg-white px-6 text-sm font-medium text-black hover:bg-neutral-200 sm:w-auto"
+                  asChild
+                >
+                  <a href="https://cloud.swarms.world/api-keys" target="_blank" rel="noopener noreferrer">
+                    Get API key
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </a>
+                </Button>
+                <Button
+                  variant="outline"
+                  className="h-11 w-full rounded-full border-white/[0.14] bg-black px-6 text-sm font-medium text-white hover:border-white/30 hover:bg-white/[0.06] hover:text-white sm:w-auto"
+                  asChild
+                >
+                  <a href="https://cal.com/swarms/swarms-strategy-session" target="_blank" rel="noopener noreferrer">
+                    Talk to sales
+                    <ArrowUpRight className="ml-2 h-4 w-4 text-white/50" />
+                  </a>
+                </Button>
               </div>
             </motion.div>
           </div>

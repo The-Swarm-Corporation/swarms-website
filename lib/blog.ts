@@ -8,51 +8,47 @@ export interface BlogPost {
   description: string
   date: string
   author: string
-  tags: string[]
+  categories: string[]
   readTime: string
   featured: boolean
   excerpt: string
   content: string
+  /** Optional cover art: a local path under /public (e.g. "/blog/my-post.png") or a remote image URL. */
+  image?: string
 }
 
 const postsDirectory = path.join(process.cwd(), 'content/blog')
 
 export function getAllPosts(): BlogPost[] {
-  // Check if the directory exists
   if (!fs.existsSync(postsDirectory)) {
     return []
   }
 
   const fileNames = fs.readdirSync(postsDirectory)
   const allPostsData = fileNames
-    .filter(fileName => fileName.endsWith('.md'))
-    .map(fileName => {
-      // Remove ".md" from file name to get slug
-      const slug = fileName.replace(/\.md$/, '')
+    .filter((fileName) => fileName.endsWith('.mdx'))
+    .map((fileName) => {
+      const slug = fileName.replace(/\.mdx$/, '')
 
-      // Read markdown file as string
       const fullPath = path.join(postsDirectory, fileName)
       const fileContents = fs.readFileSync(fullPath, 'utf8')
 
-      // Use gray-matter to parse the post metadata section
       const matterResult = matter(fileContents)
 
-      // Create excerpt from content (first 200 characters)
       const content = matterResult.content
-      const excerpt = content.length > 200 
-        ? content.substring(0, 200) + '...'
-        : content
+      const excerpt = content.length > 200 ? content.substring(0, 200) + '...' : content
 
-      // Combine the data with the slug
+      const data = matterResult.data as Omit<BlogPost, 'slug' | 'content' | 'excerpt'>
+
       return {
         slug,
         content,
         excerpt,
-        ...(matterResult.data as Omit<BlogPost, 'slug' | 'content' | 'excerpt'>)
+        ...data,
+        categories: data.categories ?? [],
       }
     })
 
-  // Sort posts by date
   return allPostsData.sort((a, b) => {
     if (a.date < b.date) {
       return 1
@@ -64,8 +60,8 @@ export function getAllPosts(): BlogPost[] {
 
 export function getPostBySlug(slug: string): BlogPost | null {
   try {
-    const fullPath = path.join(postsDirectory, `${slug}.md`)
-    
+    const fullPath = path.join(postsDirectory, `${slug}.mdx`)
+
     if (!fs.existsSync(fullPath)) {
       return null
     }
@@ -73,17 +69,16 @@ export function getPostBySlug(slug: string): BlogPost | null {
     const fileContents = fs.readFileSync(fullPath, 'utf8')
     const matterResult = matter(fileContents)
 
-    // Create excerpt from content (first 200 characters)
     const content = matterResult.content
-    const excerpt = content.length > 200 
-      ? content.substring(0, 200) + '...'
-      : content
+    const excerpt = content.length > 200 ? content.substring(0, 200) + '...' : content
+    const data = matterResult.data as Omit<BlogPost, 'slug' | 'content' | 'excerpt'>
 
     return {
       slug,
       content,
       excerpt,
-      ...(matterResult.data as Omit<BlogPost, 'slug' | 'content' | 'excerpt'>)
+      ...data,
+      categories: data.categories ?? [],
     }
   } catch (error) {
     console.error(`Error reading post ${slug}:`, error)
@@ -91,18 +86,18 @@ export function getPostBySlug(slug: string): BlogPost | null {
   }
 }
 
-export function getPostsByTag(tag: string): BlogPost[] {
+export function getPostsByCategory(category: string): BlogPost[] {
   const allPosts = getAllPosts()
-  return allPosts.filter(post => post.tags.includes(tag))
+  return allPosts.filter((post) => post.categories.includes(category))
 }
 
 export function getFeaturedPosts(): BlogPost[] {
   const allPosts = getAllPosts()
-  return allPosts.filter(post => post.featured)
+  return allPosts.filter((post) => post.featured)
 }
 
-export function getAllTags(): string[] {
+export function getAllCategories(): string[] {
   const allPosts = getAllPosts()
-  const tags = allPosts.flatMap(post => post.tags)
-  return Array.from(new Set(tags))
-} 
+  const categories = allPosts.flatMap((post) => post.categories)
+  return Array.from(new Set(categories)).sort()
+}

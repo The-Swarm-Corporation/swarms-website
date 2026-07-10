@@ -4,25 +4,30 @@ import { getPostBySlug, getAllPosts } from "@/lib/blog"
 
 interface BlogPostLayoutProps {
   children: React.ReactNode
-  params: { slug: string }
+  params: Promise<{ slug: string }>
 }
 
 export async function generateMetadata({ params }: BlogPostLayoutProps): Promise<Metadata> {
-  const post = getPostBySlug(params.slug)
-  
+  const { slug } = await params
+  const post = getPostBySlug(slug)
+
   if (!post) {
     return {
-      title: "Post Not Found | Swarms AI Blog",
+      title: { absolute: "Post Not Found | Swarms Blog" },
       description: "The requested blog post could not be found.",
     }
   }
 
+  // post.image may be a local /public path or a remote URL; local paths resolve
+  // against the metadataBase inherited from app/blog/layout.tsx.
+  const ogImage = post.image ?? "/seo_image.jpg"
+
   return {
-    title: `${post.title} | Swarms AI Blog`,
+    title: { absolute: `${post.title} | Swarms Blog` },
     description: post.description,
     keywords: [
-      ...post.tags,
-      "swarms blog", "AI blog", "multi-agent blog", "AI agents", "enterprise AI", 
+      ...post.categories,
+      "swarms blog", "AI blog", "multi-agent blog", "AI agents", "enterprise AI",
       "AI orchestration", "agent collaboration", "AI automation", "AI tutorials"
     ],
     authors: [{ name: post.author }],
@@ -33,18 +38,17 @@ export async function generateMetadata({ params }: BlogPostLayoutProps): Promise
       siteName: siteConfig.name,
       images: [
         {
-          url: "/seo_image.jpg",
+          url: ogImage,
           width: 1200,
           height: 630,
           alt: post.title,
-          type: "image/jpeg",
         },
       ],
       locale: "en_US",
       type: "article",
       publishedTime: post.date,
       authors: [post.author],
-      tags: post.tags,
+      tags: post.categories,
     },
     twitter: {
       card: "summary_large_image",
@@ -52,7 +56,7 @@ export async function generateMetadata({ params }: BlogPostLayoutProps): Promise
       description: post.description,
       images: [
         {
-          url: "/seo_image.jpg",
+          url: ogImage,
           width: 1200,
           height: 630,
           alt: post.title,
@@ -85,9 +89,10 @@ export async function generateStaticParams() {
   }))
 }
 
-export default function BlogPostLayout({ children, params }: BlogPostLayoutProps) {
-  const post = getPostBySlug(params.slug)
-  
+export default async function BlogPostLayout({ children, params }: BlogPostLayoutProps) {
+  const { slug } = await params
+  const post = getPostBySlug(slug)
+
   if (!post) {
     return (
       <>
@@ -100,7 +105,7 @@ export default function BlogPostLayout({ children, params }: BlogPostLayoutProps
               "@type": "WebPage",
               "name": "Post Not Found",
               "description": "The requested blog post could not be found.",
-              "url": `${siteConfig.url}/blog/${params.slug}`,
+              "url": `${siteConfig.url}/blog/${slug}`,
             }),
           }}
         />
@@ -140,7 +145,7 @@ export default function BlogPostLayout({ children, params }: BlogPostLayoutProps
               "@type": "WebPage",
               "@id": `${siteConfig.url}/blog/${post.slug}`
             },
-            "keywords": post.tags.join(", "),
+            "keywords": post.categories.join(", "),
             "articleSection": "AI & Technology",
             "inLanguage": "en-US",
             "potentialAction": {

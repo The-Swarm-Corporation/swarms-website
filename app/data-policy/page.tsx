@@ -3,7 +3,7 @@ import Link from "next/link"
 import { LegalPage, CONTACT_EMAIL } from "@/components/legal-page"
 
 export const metadata: Metadata = {
-  title: "Data Policy - The Swarms Corporation",
+  title: { absolute: "Data Policy - The Swarms Corporation" },
   description:
     "A comprehensive explanation of how Swarms uses completions to train and enhance our models, how personal details are removed, our commitment never to sell data, our security and retention practices, and how to opt out with No Data Tracking.",
   openGraph: {

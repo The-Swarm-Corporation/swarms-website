@@ -4,8 +4,7 @@ import Link from "next/link"
 import { motion } from "framer-motion"
 import {
   ArrowRight,
-  ExternalLink,
-  BookOpen,
+  ArrowUpRight,
   Github,
   Code,
   Sparkles,
@@ -17,12 +16,13 @@ import {
   Layers,
   Activity,
   Headphones,
-  Package,
 } from "lucide-react"
 
 import { Navigation } from "@/components/navigation"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+const ease: [number, number, number, number] = [0.22, 1, 0.36, 1]
 
 const stats = [
   { value: "8", label: "Products in the suite" },
@@ -100,7 +100,7 @@ const productCards: ProductCard[] = [
     description:
       "Dedicated infrastructure, on-premise deployments, custom SLAs and white-label options for mission-critical workloads.",
     icon: Building,
-    href: "https://cal.com/swarms",
+    href: "https://cal.com/swarms/swarms-strategy-session",
     external: true,
     meta: "Custom deployment",
   },
@@ -109,6 +109,7 @@ const productCards: ProductCard[] = [
 const featuredCode = [
   {
     lang: "Python",
+    file: "workflow.py",
     code: `from swarms import Agent, SequentialWorkflow
 
 researcher = Agent(
@@ -129,6 +130,7 @@ print(result)`,
   },
   {
     lang: "Swarms API",
+    file: "request.py",
     code: `import os
 import requests
 
@@ -158,6 +160,7 @@ print(response.json())`,
   },
   {
     lang: "Rust",
+    file: "main.rs",
     code: `use anyhow::Result;
 use swarms_rs::llm::provider::openai::OpenAI;
 use swarms_rs::structs::concurrent_workflow::ConcurrentWorkflow;
@@ -219,34 +222,40 @@ const pillars = [
   },
 ]
 
-function CodeBlock({ code }: { code: string }) {
+function CodePanel({ file, code }: { file: string; code: string }) {
   return (
-    <div className="w-full max-w-full overflow-hidden rounded-2xl border border-white/10 bg-white/[0.02] backdrop-blur-sm">
-      <div className="flex items-center gap-1.5 border-b border-white/5 px-4 py-3">
-        <span className="h-2 w-2 rounded-full bg-white/20" />
-        <span className="h-2 w-2 rounded-full bg-white/20" />
-        <span className="h-2 w-2 rounded-full bg-white/20" />
-        <span className="ml-3 font-mono text-[10px] uppercase tracking-widest text-white/40">code</span>
+    <div className="overflow-hidden rounded-lg border border-white/[0.08] bg-[#0a0a0a]">
+      <div className="flex items-center gap-1.5 border-b border-white/[0.08] px-4 py-3">
+        <span className="h-2.5 w-2.5 rounded-full bg-white/[0.12]" />
+        <span className="h-2.5 w-2.5 rounded-full bg-white/[0.12]" />
+        <span className="h-2.5 w-2.5 rounded-full bg-white/[0.12]" />
+        <span className="ml-3 font-mono text-[11px] font-normal text-white/40">{file}</span>
       </div>
-      <div className="overflow-x-auto">
-        <pre className="px-4 py-5 sm:px-6 sm:py-6 font-mono text-[11px] sm:text-xs md:text-sm leading-relaxed text-white/85 whitespace-pre">
-          {code}
+      <div className="overflow-x-auto p-4 sm:p-5">
+        <pre className="font-mono text-[11px] font-normal leading-relaxed text-white/70 sm:text-[12.5px]">
+          <code>{code}</code>
         </pre>
       </div>
     </div>
   )
 }
 
-function CodeTabs({ examples, defaultLang }: { examples: { lang: string; code: string }[]; defaultLang?: string }) {
+function CodeTabs({
+  examples,
+  defaultLang,
+}: {
+  examples: { lang: string; file: string; code: string }[]
+  defaultLang?: string
+}) {
   const initial = defaultLang ?? examples[0].lang
   return (
     <Tabs defaultValue={initial} className="w-full">
-      <TabsList className="mb-4 flex w-full flex-wrap justify-start gap-1 bg-white/[0.03] border border-white/10 p-1 rounded-xl h-auto">
+      <TabsList className="mb-4 flex h-auto w-full flex-wrap justify-start gap-2 bg-transparent p-0">
         {examples.map((ex) => (
           <TabsTrigger
             key={ex.lang}
             value={ex.lang}
-            className="text-xs sm:text-sm font-medium text-white/60 data-[state=active]:bg-white/10 data-[state=active]:text-white data-[state=active]:border-white/20 border border-transparent rounded-lg px-3 py-1.5 transition-all"
+            className="rounded-full border border-white/[0.14] bg-[#0a0a0a] px-4 py-1.5 text-xs font-medium text-white/60 transition-colors data-[state=active]:border-white/30 data-[state=active]:bg-white data-[state=active]:text-black"
           >
             {ex.lang}
           </TabsTrigger>
@@ -254,7 +263,7 @@ function CodeTabs({ examples, defaultLang }: { examples: { lang: string; code: s
       </TabsList>
       {examples.map((ex) => (
         <TabsContent key={ex.lang} value={ex.lang} className="mt-0">
-          <CodeBlock code={ex.code} />
+          <CodePanel file={ex.file} code={ex.code} />
         </TabsContent>
       ))}
     </Tabs>
@@ -265,36 +274,29 @@ function SectionHeading({
   eyebrow,
   title,
   description,
-  align = "center",
 }: {
   eyebrow?: string
   title: React.ReactNode
   description?: string
-  align?: "center" | "left"
 }) {
-  const alignClass = align === "center" ? "text-center mx-auto" : "text-left"
   return (
     <motion.div
+      className="mx-auto mb-10 max-w-7xl sm:mb-14"
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6 }}
-      viewport={{ once: true }}
-      className={`max-w-3xl ${alignClass} space-y-2.5 sm:space-y-4 md:space-y-5 mb-8 sm:mb-14 md:mb-20 px-1 sm:px-0`}
+      viewport={{ once: true, margin: "-100px" }}
+      transition={{ duration: 0.7, ease }}
     >
       {eyebrow && (
-        <div className={`flex items-center gap-2 sm:gap-3 ${align === "center" ? "justify-center" : ""}`}>
-          {align === "center" && <span className="h-px w-6 sm:w-8 bg-gradient-to-r from-transparent to-white/20" />}
-          <p className="text-[10px] sm:text-xs text-white/55 tracking-[0.22em] uppercase font-semibold">
-            <span className="text-white font-bold">{eyebrow}</span>
-          </p>
-          {align === "center" && <span className="h-px w-6 sm:w-8 bg-gradient-to-l from-transparent to-white/20" />}
-        </div>
+        <p className="mb-5 font-mono text-[11px] font-medium uppercase tracking-[0.2em] text-white/40">
+          {eyebrow}
+        </p>
       )}
-      <h2 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-white leading-tight">
+      <h2 className="max-w-3xl text-3xl font-semibold leading-[1.1] tracking-tighter text-white sm:text-4xl md:text-5xl">
         {title}
       </h2>
       {description && (
-        <p className="text-sm sm:text-lg md:text-xl text-white/60 max-w-3xl font-normal leading-relaxed">
+        <p className="mt-5 max-w-2xl text-base font-normal leading-relaxed text-white/50 sm:text-lg">
           {description}
         </p>
       )}
@@ -330,193 +332,202 @@ export default function ProductsPage() {
     <div className="min-h-screen bg-black text-white">
       <Navigation />
 
-      <main className="pt-[64px] sm:pt-[80px] md:pt-[96px] overflow-x-hidden">
+      <main className="pt-[64px] sm:pt-[80px] md:pt-[96px]">
         {/* HERO */}
-        <section className="relative overflow-hidden bg-black sm:min-h-[80vh] flex items-center">
-          <div className="absolute inset-0 pointer-events-none">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,_rgba(239,68,68,0.10)_0%,_rgba(0,0,0,0)_60%)]" />
-          </div>
+        <section className="relative flex min-h-[80vh] items-center overflow-hidden border-b border-white/[0.08] bg-black">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:72px_72px] [mask-image:radial-gradient(ellipse_75%_70%_at_50%_35%,black_25%,transparent_100%)]"
+          />
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute left-1/2 top-0 h-[480px] w-[880px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/[0.05] blur-3xl"
+          />
 
-          <div className="container relative z-10 mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-24 md:py-32">
-            <motion.div
-              initial={{ opacity: 0, y: 24 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-              className="max-w-5xl mx-auto text-center space-y-5 sm:space-y-8 md:space-y-10"
-            >
-              <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 backdrop-blur-sm">
-                <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
-                <span className="text-[11px] sm:text-sm text-white/70 font-medium">
-                  The complete multi-agent stack
-                </span>
-              </div>
+          <div className="container relative w-full px-4 sm:px-6 lg:px-8">
+            <div className="mx-auto flex max-w-4xl flex-col items-center py-20 text-center sm:py-24">
+              <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.7, ease }}
+                className="inline-flex items-center gap-2 rounded-full border border-white/[0.12] bg-white/[0.03] px-3 py-1.5 text-xs font-medium text-white/60 sm:text-sm"
+              >
+                <span className="h-1.5 w-1.5 rounded-full bg-white/70" />
+                The complete multi-agent stack
+              </motion.div>
 
-              <h1
-                className="font-bold leading-[0.9] tracking-tight text-red-500 break-words"
-                style={{ fontSize: "clamp(2.5rem, 10vw, 9rem)", fontFamily: "var(--font-orbitron)" }}
+              <motion.h1
+                className="mt-6 font-bold leading-[0.95] tracking-tighter text-white sm:mt-8"
+                style={{ fontSize: "clamp(3.5rem, 10vw, 8rem)" }}
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.7, delay: 0.05, ease }}
               >
                 Products
-              </h1>
+              </motion.h1>
 
-              <p className="text-base sm:text-xl md:text-2xl lg:text-3xl text-white/80 max-w-3xl mx-auto font-medium leading-snug sm:leading-tight px-1 sm:px-0">
+              <motion.p
+                className="mt-6 max-w-3xl text-base font-normal leading-relaxed text-white/55 sm:mt-8 sm:text-lg md:text-xl lg:text-2xl"
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.7, delay: 0.12, ease }}
+              >
                 Frameworks, APIs, marketplaces, and infrastructure for building the agent economy.
-              </p>
+              </motion.p>
 
-              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 md:gap-6 justify-center items-center w-full max-w-2xl mx-auto pt-2">
+              <motion.div
+                className="mt-10 flex w-full flex-col items-center justify-center gap-3 sm:w-auto sm:flex-row"
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.7, delay: 0.2, ease }}
+              >
                 <Button
-                  size="lg"
-                  className="bg-white text-black hover:bg-white/90 w-full sm:w-auto font-bold text-sm sm:text-base md:text-lg px-5 sm:px-8 md:px-10 py-3.5 sm:py-6 md:py-7 h-auto"
+                  className="h-12 w-full rounded-full bg-white px-8 text-base font-medium text-black hover:bg-neutral-200 sm:h-14 sm:w-auto sm:text-lg"
                   asChild
                 >
                   <a href="https://github.com/kyegomez/swarms" target="_blank" rel="noopener noreferrer">
-                    <Github className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
                     Get started
-                    <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5 ml-2" />
+                    <ArrowRight className="ml-2 h-5 w-5" />
                   </a>
                 </Button>
                 <Button
-                  size="lg"
                   variant="outline"
-                  className="border-2 border-white/20 text-white hover:bg-white/10 w-full sm:w-auto font-normal text-sm sm:text-base md:text-lg px-5 sm:px-8 md:px-10 py-3.5 sm:py-6 md:py-7 h-auto bg-transparent backdrop-blur-sm"
+                  className="h-12 w-full rounded-full border-white/[0.14] bg-[#0a0a0a] px-8 text-base font-medium text-white hover:border-white/30 hover:bg-white/[0.06] hover:text-white sm:h-14 sm:w-auto sm:text-lg"
                   asChild
                 >
                   <a href="https://docs.swarms.world" target="_blank" rel="noopener noreferrer">
-                    <BookOpen className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
-                    Read the docs
-                    <ExternalLink className="h-4 w-4 sm:h-5 sm:w-5 ml-2" />
+                    Documentation
+                    <ArrowUpRight className="ml-2 h-5 w-5 text-white/50" />
                   </a>
                 </Button>
-              </div>
-            </motion.div>
-          </div>
-        </section>
-
-        {/* STATS */}
-        <section className="bg-black py-10 sm:py-16 md:py-20">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="max-w-7xl mx-auto grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4 md:gap-6">
-              {stats.map((stat, i) => (
-                <motion.div
-                  key={stat.label}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: i * 0.05 }}
-                  viewport={{ once: true }}
-                  className="rounded-xl sm:rounded-2xl border border-white/10 bg-white/[0.02] backdrop-blur-sm p-4 sm:p-6 md:p-8"
-                >
-                  <div className="text-2xl sm:text-4xl md:text-5xl font-bold text-white tracking-tight mb-1 sm:mb-2 break-words">
-                    {stat.value}
-                  </div>
-                  <div className="text-[11px] sm:text-sm md:text-base text-white/55 font-medium leading-snug">
-                    {stat.label}
-                  </div>
-                </motion.div>
-              ))}
+              </motion.div>
             </div>
           </div>
         </section>
 
+        {/* STATS */}
+        <section className="border-b border-white/[0.08] bg-black">
+          <div className="container px-4 py-16 sm:px-6 sm:py-24 lg:px-8 lg:py-32">
+            <motion.div
+              className="mx-auto grid max-w-7xl grid-cols-2 gap-px overflow-hidden rounded-lg border border-white/[0.08] bg-white/[0.08] lg:grid-cols-4"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.7, ease }}
+            >
+              {stats.map((stat) => (
+                <div
+                  key={stat.label}
+                  className="bg-black p-5 transition-colors duration-300 hover:bg-[#0a0a0a] sm:p-8"
+                >
+                  <div className="text-2xl font-semibold tracking-tighter text-white sm:text-4xl md:text-5xl">
+                    {stat.value}
+                  </div>
+                  <div className="mt-1.5 text-xs font-normal leading-relaxed text-white/50 sm:text-sm">
+                    {stat.label}
+                  </div>
+                </div>
+              ))}
+            </motion.div>
+          </div>
+        </section>
+
         {/* PRODUCT GRID */}
-        <section className="bg-black py-12 sm:py-20 md:py-24 lg:py-32 xl:py-40">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <section className="border-b border-white/[0.08] bg-black">
+          <div className="container px-4 py-16 sm:px-6 sm:py-24 lg:px-8 lg:py-32">
             <SectionHeading
               eyebrow="The suite"
               title="One stack. End-to-end agent infrastructure."
               description="Pick the surface that fits your team — Python, Rust, REST, hosted, on-prem, or no-code."
             />
 
-            <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-5 md:gap-6">
-              {productCards.map((product, i) => (
-                <motion.div
+            <motion.div
+              className="mx-auto grid max-w-7xl grid-cols-1 gap-px overflow-hidden rounded-lg border border-white/[0.08] bg-white/[0.08] sm:grid-cols-2 lg:grid-cols-3"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.7, delay: 0.1, ease }}
+            >
+              {productCards.map((product) => (
+                <ProductLink
                   key={product.title}
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: i * 0.04 }}
-                  viewport={{ once: true }}
-                  className="group"
+                  product={product}
+                  className="group flex min-h-[220px] flex-col justify-between gap-6 bg-black p-5 transition-colors duration-300 hover:bg-[#0a0a0a] sm:p-8"
                 >
-                  <ProductLink
-                    product={product}
-                    className="block h-full"
-                  >
-                    <div className="relative h-full rounded-2xl sm:rounded-3xl overflow-hidden border border-white/10 bg-black/50 backdrop-blur-sm transition-all duration-500 hover:border-white/30 hover:scale-[1.01] hover:shadow-2xl hover:shadow-white/5">
-                      <div className="relative z-10 p-4 sm:p-6 md:p-8 flex flex-col gap-3 sm:gap-5 md:gap-6 min-h-0 sm:min-h-[280px] md:min-h-[300px]">
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="p-2 sm:p-3 rounded-xl sm:rounded-2xl border-2 border-red-500/50 bg-red-500/10 group-hover:border-red-500 group-hover:bg-red-500/20 transition-all duration-500">
-                            <product.icon className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-red-500" />
-                          </div>
-                          <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 text-white/30 group-hover:text-white group-hover:translate-x-1 transition-all duration-300 flex-shrink-0 mt-1" />
-                        </div>
-                        <div className="flex-1 flex flex-col min-w-0">
-                          <h3 className="text-base sm:text-xl md:text-2xl font-bold text-white mb-1.5 sm:mb-2 leading-snug">
-                            {product.title}
-                          </h3>
-                          <p className="text-white/65 text-[13px] sm:text-base leading-relaxed flex-1">
-                            {product.description}
-                          </p>
-                          <div className="mt-3 sm:mt-5 inline-flex items-center font-mono text-[10px] sm:text-xs text-white/50 group-hover:text-white/75 transition-colors break-all">
-                            {product.meta}
-                          </div>
-                        </div>
-                      </div>
+                  <div className="flex items-start justify-between gap-2">
+                    <product.icon
+                      className="h-5 w-5 text-white/50 transition-colors duration-300 group-hover:text-white"
+                      strokeWidth={1.5}
+                    />
+                    <ArrowRight className="h-4 w-4 flex-shrink-0 text-white/30 transition-all duration-300 group-hover:translate-x-1 group-hover:text-white" />
+                  </div>
+                  <div>
+                    <h3 className="mb-2 text-base font-medium text-white sm:text-lg">
+                      {product.title}
+                    </h3>
+                    <p className="text-sm font-normal leading-relaxed text-white/50">
+                      {product.description}
+                    </p>
+                    <div className="mt-4 font-mono text-[11px] text-white/40 transition-colors group-hover:text-white/60">
+                      {product.meta}
                     </div>
-                  </ProductLink>
-                </motion.div>
+                  </div>
+                </ProductLink>
               ))}
-            </div>
+            </motion.div>
           </div>
         </section>
 
         {/* FEATURED CODE */}
-        <section className="bg-black py-12 sm:py-20 md:py-24 lg:py-32">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="max-w-7xl mx-auto grid lg:grid-cols-5 gap-6 sm:gap-10 md:gap-12 lg:gap-16 items-start">
+        <section className="border-b border-white/[0.08] bg-black">
+          <div className="container px-4 py-16 sm:px-6 sm:py-24 lg:px-8 lg:py-32">
+            <div className="mx-auto grid max-w-7xl items-start gap-10 lg:grid-cols-5 lg:gap-16">
               <motion.div
-                initial={{ opacity: 0, x: -30 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.6 }}
-                viewport={{ once: true }}
-                className="lg:col-span-2 space-y-4 sm:space-y-6 lg:sticky lg:top-32 min-w-0"
+                className="space-y-5 lg:sticky lg:top-32 lg:col-span-2"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-100px" }}
+                transition={{ duration: 0.7, ease }}
               >
-                <p className="text-[10px] sm:text-xs text-white font-bold tracking-[0.22em] uppercase">
+                <p className="font-mono text-[11px] font-medium uppercase tracking-[0.2em] text-white/40">
                   Same swarm. Any language.
                 </p>
-                <h2 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-white leading-tight">
-                  Ship in&nbsp;
-                  <span className="text-red-500">your stack</span>.
+                <h2 className="text-3xl font-semibold leading-[1.1] tracking-tighter text-white sm:text-4xl md:text-5xl">
+                  Ship in your stack.
                 </h2>
-                <p className="text-sm sm:text-lg md:text-xl text-white/60 leading-relaxed">
-                  Idiomatic SDKs in Python and Rust, plus a hosted REST API for any language. The same agents, the same swarms, the same runtime.
+                <p className="max-w-xl text-base font-normal leading-relaxed text-white/50 sm:text-lg">
+                  Idiomatic SDKs in Python and Rust, plus a hosted REST API for any language. The same agents,
+                  the same swarms, the same runtime.
                 </p>
-                <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                <div className="flex flex-col gap-3 pt-2 sm:flex-row">
                   <Button
-                    className="bg-white text-black hover:bg-white/90 font-bold w-full sm:w-auto"
+                    className="h-10 rounded-full bg-white px-5 text-sm font-medium text-black hover:bg-neutral-200"
                     asChild
                   >
                     <a href="https://docs.swarms.world" target="_blank" rel="noopener noreferrer">
-                      <BookOpen className="h-4 w-4 mr-2" />
                       Documentation
+                      <ArrowRight className="ml-2 h-4 w-4" />
                     </a>
                   </Button>
                   <Button
                     variant="outline"
-                    className="border-2 border-white/20 text-white hover:bg-white/10 bg-transparent backdrop-blur-sm font-normal w-full sm:w-auto"
+                    className="h-10 rounded-full border-white/[0.14] bg-[#0a0a0a] px-5 text-sm font-medium text-white hover:border-white/30 hover:bg-white/[0.06] hover:text-white"
                     asChild
                   >
                     <Link href="/api">
-                      <Code className="h-4 w-4 mr-2" />
                       API reference
+                      <ArrowUpRight className="ml-2 h-4 w-4 text-white/50" />
                     </Link>
                   </Button>
                 </div>
               </motion.div>
 
               <motion.div
-                initial={{ opacity: 0, x: 30 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.6, delay: 0.1 }}
-                viewport={{ once: true }}
-                className="lg:col-span-3 min-w-0 w-full"
+                className="min-w-0 w-full lg:col-span-3"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-100px" }}
+                transition={{ duration: 0.7, delay: 0.1, ease }}
               >
                 <CodeTabs examples={featuredCode} />
               </motion.div>
@@ -525,84 +536,76 @@ export default function ProductsPage() {
         </section>
 
         {/* WHY SWARMS */}
-        <section className="bg-black py-12 sm:py-20 md:py-24 lg:py-32 xl:py-40">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <section className="border-b border-white/[0.08] bg-black">
+          <div className="container px-4 py-16 sm:px-6 sm:py-24 lg:px-8 lg:py-32">
             <SectionHeading
               eyebrow="Built for production"
               title="The foundations every team needs"
               description="Security, scale, reliability, and support — built into every product in the suite."
             />
 
-            <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-5 md:gap-6">
-              {pillars.map((pillar, i) => (
-                <motion.div
+            <motion.div
+              className="mx-auto grid max-w-7xl grid-cols-1 gap-px overflow-hidden rounded-lg border border-white/[0.08] bg-white/[0.08] sm:grid-cols-2 lg:grid-cols-4"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.7, delay: 0.1, ease }}
+            >
+              {pillars.map((pillar) => (
+                <div
                   key={pillar.title}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: i * 0.05 }}
-                  viewport={{ once: true }}
-                  className="rounded-2xl sm:rounded-3xl border border-white/10 bg-white/[0.02] backdrop-blur-sm p-4 sm:p-6 md:p-8"
+                  className="group bg-black p-5 transition-colors duration-300 hover:bg-[#0a0a0a] sm:p-8"
                 >
-                  <div className="p-2 sm:p-3 rounded-xl sm:rounded-2xl border-2 border-red-500/50 bg-red-500/10 w-fit mb-3 sm:mb-5">
-                    <pillar.icon className="w-5 h-5 sm:w-6 sm:h-6 text-red-500" />
-                  </div>
-                  <h3 className="text-base sm:text-xl font-bold text-white mb-1.5 sm:mb-2 leading-snug">
-                    {pillar.title}
-                  </h3>
-                  <p className="text-white/65 text-[13px] sm:text-base leading-relaxed">
-                    {pillar.description}
-                  </p>
-                </motion.div>
+                  <pillar.icon
+                    className="mb-4 h-5 w-5 text-white/50 transition-colors duration-300 group-hover:text-white"
+                    strokeWidth={1.5}
+                  />
+                  <h3 className="mb-2 text-base font-medium text-white">{pillar.title}</h3>
+                  <p className="text-sm font-normal leading-relaxed text-white/50">{pillar.description}</p>
+                </div>
               ))}
-            </div>
+            </motion.div>
           </div>
         </section>
 
         {/* CTA */}
-        <section className="bg-black py-12 sm:py-20 md:py-24 lg:py-32 xl:py-40">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <section className="bg-black">
+          <div className="container px-4 py-16 sm:px-6 sm:py-24 lg:px-8 lg:py-32">
             <motion.div
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 24 }}
               whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7 }}
-              viewport={{ once: true }}
-              className="relative max-w-5xl mx-auto rounded-2xl sm:rounded-3xl border border-white/10 bg-white/[0.02] backdrop-blur-sm overflow-hidden"
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.7, ease }}
+              className="mx-auto flex max-w-7xl flex-col items-start justify-between gap-8 rounded-lg border border-white/[0.08] bg-[#0a0a0a] p-6 sm:p-10 md:flex-row md:items-center lg:p-12"
             >
-              <div
-                aria-hidden="true"
-                className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_70%_30%,_rgba(239,68,68,0.12)_0%,_rgba(0,0,0,0)_55%)]"
-              />
-              <div className="relative z-10 px-5 sm:px-10 md:px-14 py-10 sm:py-16 md:py-20 text-center space-y-5 sm:space-y-8">
-                <h2 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-white leading-tight">
+              <div className="max-w-2xl space-y-3">
+                <h2 className="text-3xl font-semibold tracking-tighter text-white sm:text-4xl">
                   Pick a product. Ship a swarm.
                 </h2>
-                <p className="text-sm sm:text-lg md:text-xl text-white/60 max-w-2xl mx-auto leading-relaxed">
+                <p className="text-base font-normal leading-relaxed text-white/50 sm:text-lg">
                   Open-source frameworks. Hosted APIs. Enterprise deployments. The stack is yours.
                 </p>
-                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 md:gap-6 justify-center items-center pt-2">
-                  <Button
-                    size="lg"
-                    className="bg-white text-black hover:bg-white/90 w-full sm:w-auto font-bold text-sm sm:text-base md:text-lg px-5 sm:px-8 md:px-10 py-3.5 sm:py-6 md:py-7 h-auto"
-                    asChild
-                  >
-                    <a href="https://github.com/kyegomez/swarms" target="_blank" rel="noopener noreferrer">
-                      <Github className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
-                      Get started
-                      <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5 ml-2" />
-                    </a>
-                  </Button>
-                  <Button
-                    size="lg"
-                    variant="outline"
-                    className="border-2 border-white/20 text-white hover:bg-white/10 w-full sm:w-auto font-normal text-sm sm:text-base md:text-lg px-5 sm:px-8 md:px-10 py-3.5 sm:py-6 md:py-7 h-auto bg-transparent backdrop-blur-sm"
-                    asChild
-                  >
-                    <a href="https://cal.com/swarms" target="_blank" rel="noopener noreferrer">
-                      Talk to sales
-                      <ExternalLink className="h-4 w-4 sm:h-5 sm:w-5 ml-2" />
-                    </a>
-                  </Button>
-                </div>
+              </div>
+              <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
+                <Button
+                  className="h-11 w-full rounded-full bg-white px-6 text-sm font-medium text-black hover:bg-neutral-200 sm:w-auto"
+                  asChild
+                >
+                  <a href="https://github.com/kyegomez/swarms" target="_blank" rel="noopener noreferrer">
+                    Get started
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </a>
+                </Button>
+                <Button
+                  variant="outline"
+                  className="h-11 w-full rounded-full border-white/[0.14] bg-black px-6 text-sm font-medium text-white hover:border-white/30 hover:bg-white/[0.06] hover:text-white sm:w-auto"
+                  asChild
+                >
+                  <a href="https://cal.com/swarms/swarms-strategy-session" target="_blank" rel="noopener noreferrer">
+                    Talk to sales
+                    <ArrowUpRight className="ml-2 h-4 w-4 text-white/50" />
+                  </a>
+                </Button>
               </div>
             </motion.div>
           </div>

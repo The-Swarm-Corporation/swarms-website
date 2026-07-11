@@ -77,6 +77,7 @@ export function Footer() {
                   },
                   { name: "Swarms RS", icon: Rocket, url: "https://github.com/The-Swarm-Corporation/swarms-rs" },
                   { name: "Swarms Marketplace", icon: Sparkles, url: "https://swarms.world" },
+                  { name: "Swarms Cloud", icon: Cloud, url: "https://cloud.swarms.world" },
                   { name: "Agent Economy", icon: DollarSign, url: "https://swarms.world/agent-economy" },
                   { name: "Launch on Marketplace", icon: Rocket, url: "https://swarms.world/launch" },
                 ].map((item, index) => (

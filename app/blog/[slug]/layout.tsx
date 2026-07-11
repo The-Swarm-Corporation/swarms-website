@@ -18,10 +18,10 @@ export async function generateMetadata({ params }: BlogPostLayoutProps): Promise
     }
   }
 
-  // post.image may be a local /public path or a remote URL; local paths resolve
-  // against the metadataBase inherited from app/blog/layout.tsx.
-  const ogImage = post.image ?? "/seo_image.jpg"
-
+  // The og:image / twitter:image tags are generated automatically by the
+  // sibling opengraph-image.tsx / twitter-image.tsx files in this route
+  // segment (they pass through post.image when set, otherwise render a
+  // branded title+date card), so no manual images array is needed here.
   return {
     title: { absolute: `${post.title} | Swarms Blog` },
     description: post.description,
@@ -36,14 +36,6 @@ export async function generateMetadata({ params }: BlogPostLayoutProps): Promise
       description: post.description,
       url: `${siteConfig.url}/blog/${post.slug}`,
       siteName: siteConfig.name,
-      images: [
-        {
-          url: ogImage,
-          width: 1200,
-          height: 630,
-          alt: post.title,
-        },
-      ],
       locale: "en_US",
       type: "article",
       publishedTime: post.date,
@@ -54,14 +46,6 @@ export async function generateMetadata({ params }: BlogPostLayoutProps): Promise
       card: "summary_large_image",
       title: post.title,
       description: post.description,
-      images: [
-        {
-          url: ogImage,
-          width: 1200,
-          height: 630,
-          alt: post.title,
-        },
-      ],
       creator: "@swarms_corp",
       site: "@swarms_corp",
     },
@@ -125,7 +109,7 @@ export default async function BlogPostLayout({ children, params }: BlogPostLayou
             "@type": "BlogPosting",
             "headline": post.title,
             "description": post.description,
-            "image": "/seo_image.jpg",
+            "image": post.image ?? `${siteConfig.url}/blog/${post.slug}/opengraph-image`,
             "author": {
               "@type": "Person",
               "name": post.author

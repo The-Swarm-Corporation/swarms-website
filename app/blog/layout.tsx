@@ -31,15 +31,6 @@ export const metadata: Metadata = {
     description: BLOG_DESCRIPTION,
     url: `${siteConfig.url}/blog`,
     siteName: siteConfig.name,
-    images: [
-      {
-        url: "/seo_image.jpg",
-        width: 1200,
-        height: 630,
-        alt: "Swarms Blog - Multi-Agent AI Insights and Tutorials",
-        type: "image/jpeg",
-      },
-    ],
     locale: "en_US",
     type: "website",
   },
@@ -47,14 +38,6 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: BLOG_TITLE,
     description: BLOG_DESCRIPTION,
-    images: [
-      {
-        url: "/seo_image.jpg",
-        width: 1200,
-        height: 630,
-        alt: "Swarms Blog - Multi-Agent AI Insights and Tutorials",
-      },
-    ],
     creator: "@swarms_corp",
     site: "@swarms_corp",
   },

@@ -1,0 +1,80 @@
+---
+title: "Inside the Swarms Cloud Workflow Builder: Visual Multi-Agent Graphs"
+description: "A detailed look at how the Swarms Cloud Workflow Builder turns agents into a visual, connectable graph, how the underlying graph workflow execution model works, and how to build a production multi-agent pipeline with it."
+date: "2026-07-11"
+author: "Swarms Team"
+categories: ["Product", "Cloud"]
+readTime: "9 min read"
+featured: true
+---
+
+# Inside the Swarms Cloud Workflow Builder: Visual Multi-Agent Graphs
+
+Most multi-agent systems start the same way: a single agent with a single prompt. The moment a real task needs more than one step, teams almost always end up writing orchestration code by hand, wiring one agent's output into the next agent's input, handling failure cases, and re-testing the whole chain every time a step changes. That works, but it is slow to iterate on and hard to reason about once a pipeline has more than three or four steps.
+
+The Workflow Builder, available at [cloud.swarms.world/workflow-builder](https://cloud.swarms.world/workflow-builder), is Swarms Cloud's answer to that problem: a visual canvas for composing agents into a directed graph, running that graph directly against production infrastructure, and exporting the exact API call needed to reproduce it in code. This post walks through how it actually works, mechanically, and how to build a real pipeline with it.
+
+## The Canvas
+
+The Workflow Builder is a single full-screen canvas built on a node-graph editor, the same category of interface used by tools like n8n or Node-RED, but purpose-built around one concept: agents as nodes in a directed acyclic graph (DAG). There is no separate sidebar of node types to drag in. Instead, a single "Add agent" button in the toolbar drops a new agent node onto the canvas, auto-named `Agent1`, `Agent2`, and so on. Nodes can be dragged to reposition them, and dragging from the small handle on the right edge of one node to the left edge of another draws a directed connection between them.
+
+That constraint, agents only, is deliberate. Rather than modeling a workflow as a mix of triggers, conditionals, and transform nodes, the builder treats the agent as the atomic unit of work and lets the graph topology itself express sequencing, branching, and fan-out. Two agents connected in a line is a sequential pipeline. One agent connected to two others is a fan-out. Multiple agents feeding into one is a fan-in, or convergence, step.
+
+Each node on the canvas shows its name, its model, and a short preview of its system prompt, along with automatic badges: a green marker if the node has no incoming edges (an entry point) and a yellow marker if it has no outgoing edges (an end point). These are computed from the graph topology itself, not set manually, so the canvas always reflects an accurate picture of where execution starts and ends without any extra bookkeeping.
+
+## Configuring an Agent Node
+
+Clicking any node opens a configuration drawer on the right side of the screen, organized into clear sections:
+
+- **Identity.** The agent's name (which also serves as its unique key in the graph), the model it runs on, its role (worker, manager, executor, or analyst), and a free-text description. Model selection accepts any model ID the platform supports, with common options like GPT-5.4, GPT-4o, and Claude Opus 4.5 offered as suggestions rather than a locked list.
+- **Prompt.** The system prompt for the node, plus an "auto-generate prompt" toggle that lets the agent derive its own system prompt from the workflow's task rather than requiring one to be written by hand.
+- **Generation.** Temperature, max tokens, and max loops. A node can also be set to "autonomous" mode, which replaces a fixed loop count with open-ended looping that continues until the agent determines the task is complete.
+- **Reasoning.** An optional reasoning mode with configurable effort (low, medium, high) and a thinking-token budget, for models and tasks that benefit from extended internal reasoning before producing output.
+- **Tools and MCP.** A field to connect the node to an MCP (Model Context Protocol) server, giving it access to external tools and data sources. When a node is in autonomous mode, this section also exposes a specific set of safe tools it can call: creating and following a plan, marking subtasks done, creating and reading files, listing directories, and, notably, creating sub-agents and assigning them tasks. That last pair means a single autonomous node can itself spin up and delegate to additional agents at runtime, layering dynamic delegation on top of the static graph you have drawn.
+- **Advanced.** A raw JSON field for passing through additional model parameters, like `top_p` or `frequency_penalty`, that are not exposed as dedicated controls.
+
+Every field here maps directly onto the underlying execution API, so nothing configured in the UI is cosmetic. It is the literal payload that gets sent when the graph runs.
+
+## How Execution Works
+
+A workflow needs one more thing beyond its nodes and edges: a task. A single task field, pinned to the bottom of the screen alongside the Run button, holds the objective for the entire graph. Before a run is allowed, the builder validates the graph in real time: every node needs a name, names must be unique, a multi-node graph needs at least one edge connecting its nodes, and the task field cannot be empty. Any unmet condition disables the Run button and explains exactly what needs to be fixed, both inline and in a dedicated checklist.
+
+Running a workflow sends the entire graph, its nodes, their configurations, the edges between them, and the shared task, to the Swarms API's graph workflow completions endpoint in a single request. This is a real execution against production infrastructure, not a preview or dry run. Execution is currently a single blocking call rather than a streamed, node-by-node progress feed: while a run is in flight, the output panel shows a spinner noting that complex graphs can take a few minutes, but the canvas does not animate or highlight individual nodes as they complete.
+
+When results come back, they land in a dedicated output panel: an overall status indicator, the total number of node outputs, aggregate token usage, and total cost, followed by one expandable card per agent showing that agent's individual output. Long outputs collapse automatically so the panel stays scannable even for graphs with many nodes, and the entire result set can be copied as JSON in one click.
+
+## From Canvas to Production Code
+
+One deliberate design choice stands out: the Workflow Builder does not currently save or persist graphs. There is no database-backed save button, and refreshing the page resets the canvas to its default starting graph. Instead, a "Code" panel in the toolbar generates the exact equivalent API request for the graph currently on the canvas, as a cURL command, or as Python, TypeScript, or Go code, targeting the same graph workflow endpoint the Run button calls.
+
+This reframes the builder's role: it is not meant to be a place where production workflows live long-term, but a fast, visual environment for designing and testing a graph's shape and agent configurations before locking that design into version-controlled code. Once a graph behaves the way you want on the canvas, the Code panel gives you the exact payload to drop into a backend service, a scheduled job, or a CI pipeline, with no manual translation step and no risk of the deployed version drifting from what was tested.
+
+## Use Cases
+
+A few patterns come up repeatedly for teams building on the Workflow Builder:
+
+- **Research and synthesis pipelines.** A research agent gathers and summarizes information, feeding a downstream analysis agent that draws conclusions, which in turn feeds a writing agent that produces a final report. Each stage uses a model and prompt suited to its specific job rather than asking one agent to do everything.
+- **Document processing chains.** An extraction agent pulls structured data out of unstructured input, a validation agent checks that data against business rules, and a formatting agent produces the final output, with each step independently inspectable and swappable.
+- **Fan-out review workflows.** A single input feeds several specialist agents in parallel, for example a security reviewer, a style reviewer, and a correctness reviewer, whose outputs then converge into a summarizing agent that produces one consolidated verdict.
+- **Delegating hierarchies.** An autonomous manager-role node, configured with the `create_sub_agent` and `assign_task` tools, dynamically spins up and assigns work to additional agents at runtime, useful for tasks whose exact shape is not known ahead of time and cannot be fully hand-drawn as a static graph.
+
+## Building Your First Graph
+
+To try it directly: open [cloud.swarms.world/workflow-builder](https://cloud.swarms.world/workflow-builder), click "Add agent" to create your first node, and open it to set a name, model, and system prompt. Add a second node the same way, then drag from the first node's right handle to the second node's left handle to connect them. Enter a task describing what the graph should accomplish, and click Run. Once you are happy with the result, open the Code panel to copy the equivalent API call in your language of choice and integrate it into your own application.
+
+The Workflow Builder is available on Pro and Ultra plans. Usage from every run is tracked in the same [token usage dashboard](https://cloud.swarms.world/token-usage) used across the rest of Swarms Cloud, so multi-agent graph runs are just as visible and auditable as any single-agent call.
+
+## Links and Resources
+
+| Resource | Link |
+| --- | --- |
+| Workflow Builder | [cloud.swarms.world/workflow-builder](https://cloud.swarms.world/workflow-builder) |
+| Compare Agents | [cloud.swarms.world/compare](https://cloud.swarms.world/compare) |
+| Manage Agents | [cloud.swarms.world/agents](https://cloud.swarms.world/agents) |
+| Usage Page | [cloud.swarms.world/token-usage](https://cloud.swarms.world/token-usage) |
+| Documentation | [docs.swarms.ai](https://docs.swarms.ai) |
+| Discord Community | [discord.gg/VapjxpSyHC](https://discord.gg/VapjxpSyHC) |
+
+---
+
+*Have questions or feedback? Join our [Discord community](https://discord.gg/VapjxpSyHC) or check out the [documentation](https://docs.swarms.ai).*

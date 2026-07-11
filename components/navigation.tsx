@@ -155,6 +155,7 @@ export function Navigation() {
         <nav className="hidden lg:flex lg:space-x-4 xl:space-x-6 flex-1 items-center">
           
           <NavLink href="/pricing">Pricing</NavLink>
+          <NavLink href="/blog">Blog</NavLink>
 
           {/* Docs Dropdown */}
           <div 

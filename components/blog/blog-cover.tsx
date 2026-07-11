@@ -30,7 +30,7 @@ export function BlogCover({
 }) {
   if (image) {
     return (
-      <div className={cn("relative overflow-hidden bg-black", className)}>
+      <div className={cn("relative overflow-hidden bg-black border border-white/10", className)}>
         {/* Cover art may be a local /public path or an arbitrary remote URL, so a
             plain <img> is used instead of next/image to avoid a remotePatterns allowlist. */}
         {/* eslint-disable-next-line @next/next/no-img-element */}

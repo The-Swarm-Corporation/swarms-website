@@ -1,12 +1,15 @@
+import { isValidElement } from "react"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { format, parseISO } from "date-fns"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
+import rehypeRaw from "rehype-raw"
 import { ArrowLeft, Calendar, Clock, User } from "lucide-react"
 import { Navigation } from "@/components/navigation"
 import { BlogCover } from "@/components/blog/blog-cover"
 import { BlogCard } from "@/components/blog/blog-card"
+import { MermaidDiagram } from "@/components/blog/mermaid-diagram"
 import { getAllPosts, getPostBySlug } from "@/lib/blog"
 
 interface BlogPostPageProps {
@@ -99,20 +102,31 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
             </div>
           </article>
 
-          <div className="mx-auto mt-10 max-w-4xl">
-            <BlogCover
-              slug={post.slug}
-              image={post.image}
-              alt={post.title}
-              className="aspect-[16/9] w-full rounded-2xl border border-white/10"
-            />
-          </div>
+          {post.image && (
+            <div className="mx-auto mt-10 max-w-4xl">
+              <BlogCover
+                slug={post.slug}
+                image={post.image}
+                alt={post.title}
+                className="aspect-[16/9] w-full rounded-2xl"
+              />
+            </div>
+          )}
 
           <div className="mx-auto max-w-4xl py-14 sm:py-16">
             <div className="prose-blog">
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
+                rehypePlugins={[rehypeRaw]}
                 components={{
+                  video: ({ children, node, ...props }) => (
+                    <video
+                      {...props}
+                      className="mb-8 w-full rounded-2xl border border-white/10"
+                    >
+                      {children}
+                    </video>
+                  ),
                   h1: ({ children }) => (
                     <h1 className="mb-6 mt-12 text-3xl font-semibold tracking-tighter text-white first:mt-0 sm:text-4xl">
                       {children}
@@ -156,6 +170,9 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                   ),
                   code: ({ children, className }) => {
                     const isInline = !className
+                    if (className?.includes("language-mermaid")) {
+                      return <MermaidDiagram chart={String(children)} />
+                    }
                     if (isInline) {
                       return (
                         <code className="rounded bg-white/[0.08] px-1.5 py-0.5 font-mono text-[0.9em] text-white/85">
@@ -169,11 +186,17 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                       </code>
                     )
                   },
-                  pre: ({ children }) => (
-                    <pre className="mb-8 overflow-x-auto rounded-lg border border-white/10 bg-white/[0.03] p-0 text-sm">
-                      {children}
-                    </pre>
-                  ),
+                  pre: ({ children }) => {
+                    const child = Array.isArray(children) ? children[0] : children
+                    if (isValidElement(child) && child.type === MermaidDiagram) {
+                      return child
+                    }
+                    return (
+                      <pre className="mb-8 overflow-x-auto rounded-lg border border-white/10 bg-white/[0.03] p-0 text-sm">
+                        {children}
+                      </pre>
+                    )
+                  },
                   table: ({ children }) => (
                     <div className="mb-8 overflow-x-auto rounded-lg border border-white/10">
                       <table className="min-w-full">{children}</table>

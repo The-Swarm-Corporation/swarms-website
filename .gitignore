@@ -12,6 +12,8 @@
 /pnpm-workspace.yaml
 
 # next.js
+.claude
+secretive
 /.next/
 /out/
 

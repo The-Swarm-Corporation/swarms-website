@@ -7,8 +7,9 @@ import { BlogCover } from "@/components/blog/blog-cover"
 import { BlogCard } from "@/components/blog/blog-card"
 import { BlogMarkdown } from "@/components/blog/blog-markdown"
 import { ShareButtons } from "@/components/blog/share-buttons"
+import { CopyPageButton } from "@/components/blog/copy-page-button"
 import { LanguageToggle } from "@/components/language-toggle"
-import { getAllPosts, getPostBySlug } from "@/lib/blog"
+import { formatPostMarkdown, getAllPosts, getPostBySlug } from "@/lib/blog"
 import { siteConfig } from "@/app/metadata"
 
 interface ZhBlogPostPageProps {
@@ -70,7 +71,23 @@ export default async function ZhBlogPostPage({ params }: ZhBlogPostPageProps) {
                 <ArrowLeft className="h-4 w-4" />
                 返回博客
               </Link>
-              <LanguageToggle href={`/blog/${post.slug}`} label="English" />
+              <div className="flex flex-wrap items-center gap-2">
+                <CopyPageButton
+                  markdown={formatPostMarkdown(post)}
+                  markdownUrl={`/zh/blog/${post.slug}/markdown`}
+                  pageUrl={`${siteConfig.url}/zh/blog/${post.slug}`}
+                  labels={{
+                    copyPage: "复制页面",
+                    copied: "已复制",
+                    copyPageDescription: "以 Markdown 格式复制，便于用于 LLM",
+                    viewMarkdown: "以 Markdown 查看",
+                    viewMarkdownDescription: "以纯文本查看此页面",
+                    copyLink: "复制链接",
+                    copyLinkDescription: "复制本文链接",
+                  }}
+                />
+                <LanguageToggle href={`/blog/${post.slug}`} label="English" />
+              </div>
             </div>
 
             <div className="mt-8 flex flex-wrap items-center gap-2">

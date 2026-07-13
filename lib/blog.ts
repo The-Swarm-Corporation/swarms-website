@@ -99,6 +99,16 @@ export function hasZhTranslation(slug: string): boolean {
   return fs.existsSync(path.join(localeDirectory('zh'), `${slug}.mdx`))
 }
 
+/**
+ * The post as a single self-contained markdown document (title, description,
+ * body). Used by the "Copy page" button and the /blog/<slug>/markdown routes
+ * so LLM-ready markdown matches what readers see.
+ */
+export function formatPostMarkdown(post: BlogPost): string {
+  const body = post.content.replace(/^\s*#\s+.+(\r?\n)+/, '')
+  return `# ${post.title}\n\n> ${post.description}\n\n${body.trim()}\n`
+}
+
 export function getPostsByCategory(category: string, locale: BlogLocale = 'en'): BlogPost[] {
   const allPosts = getAllPosts(locale)
   return allPosts.filter((post) => post.categories.includes(category))

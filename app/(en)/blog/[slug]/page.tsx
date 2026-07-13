@@ -7,8 +7,9 @@ import { BlogCover } from "@/components/blog/blog-cover"
 import { BlogCard } from "@/components/blog/blog-card"
 import { BlogMarkdown } from "@/components/blog/blog-markdown"
 import { ShareButtons } from "@/components/blog/share-buttons"
+import { CopyPageButton } from "@/components/blog/copy-page-button"
 import { LanguageToggle } from "@/components/language-toggle"
-import { getAllPosts, getPostBySlug, hasZhTranslation } from "@/lib/blog"
+import { formatPostMarkdown, getAllPosts, getPostBySlug, hasZhTranslation } from "@/lib/blog"
 import { siteConfig } from "@/app/metadata"
 
 interface BlogPostPageProps {
@@ -68,7 +69,14 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                 <ArrowLeft className="h-4 w-4" />
                 Back to blog
               </Link>
-              {zhAvailable && <LanguageToggle href={`/zh/blog/${post.slug}`} label="中文" />}
+              <div className="flex flex-wrap items-center gap-2">
+                <CopyPageButton
+                  markdown={formatPostMarkdown(post)}
+                  markdownUrl={`/blog/${post.slug}/markdown`}
+                  pageUrl={`${siteConfig.url}/blog/${post.slug}`}
+                />
+                {zhAvailable && <LanguageToggle href={`/zh/blog/${post.slug}`} label="中文" />}
+              </div>
             </div>
 
             <div className="mt-8 flex flex-wrap items-center gap-2">

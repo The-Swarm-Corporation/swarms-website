@@ -1,15 +1,17 @@
 import Link from "next/link"
 import { format, parseISO } from "date-fns"
-import type { BlogPost } from "@/lib/blog"
+import type { BlogLocale, BlogPost } from "@/lib/blog"
 import { BlogCover } from "./blog-cover"
 
-export function BlogCard({ post }: { post: BlogPost }) {
+export function BlogCard({ post, locale = "en" }: { post: BlogPost; locale?: BlogLocale }) {
   // Without cover art the title becomes the cover itself, so skip the
   // heading below to avoid showing it twice.
   const titleInCover = !post.image
+  const href = locale === "zh" ? `/zh/blog/${post.slug}` : `/blog/${post.slug}`
+  const dateFormat = locale === "zh" ? "yyyy年M月d日" : "MMM d, yyyy"
 
   return (
-    <Link href={`/blog/${post.slug}`} className="group block">
+    <Link href={href} className="group block">
       <div className="overflow-hidden rounded-xl border border-white/10">
         <BlogCover
           slug={post.slug}
@@ -22,7 +24,7 @@ export function BlogCard({ post }: { post: BlogPost }) {
       <div className="mt-4 flex items-center gap-2 text-xs font-medium uppercase tracking-[0.15em] text-white/40">
         {post.categories[0] && <span className="text-white/60">{post.categories[0]}</span>}
         {post.categories[0] && <span aria-hidden="true">&middot;</span>}
-        <time dateTime={post.date}>{format(parseISO(post.date), "MMM d, yyyy")}</time>
+        <time dateTime={post.date}>{format(parseISO(post.date), dateFormat)}</time>
       </div>
       {!titleInCover && (
         <h3 className="mt-2 text-lg font-medium leading-snug tracking-tight text-white transition-colors duration-300 group-hover:text-white/75">

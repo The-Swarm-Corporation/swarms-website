@@ -114,3 +114,59 @@ export const siteConfig = {
     },
   },
 }
+
+// Simplified Chinese site config for the /zh route tree. Keywords are native
+// Baidu search terms, not translations of the English keyword list.
+export const zhSiteConfig = {
+  name: "Swarms AI - 企业级多智能体框架与智能体市场",
+  description:
+    "Swarms 是企业级多智能体框架，支持用 Python 和 Rust 构建、部署和扩展 AI 智能体，提供托管智能体 API 以及交易智能体、提示词、工具与技能的市场。从第一个智能体到生产级智能体集群，一个平台全部搞定。",
+  url: `${siteConfig.url}/zh`,
+  keywords: [
+    // 核心
+    "智能体框架",
+    "多智能体框架",
+    "多智能体系统",
+    "AI智能体",
+    "AI智能体开发",
+    "智能体编排",
+    "多智能体编排",
+    "智能体基础设施",
+    // 市场
+    "智能体市场",
+    "AI智能体平台",
+    "提示词市场",
+    "提示词工程",
+    "智能体模板",
+    "购买AI智能体",
+    // 平台与运行时
+    "智能体API",
+    "托管智能体API",
+    "智能体部署",
+    "智能体云平台",
+    "企业级AI智能体",
+    "生产级AI智能体",
+    "自主智能体",
+    "大模型智能体",
+    "LLM智能体",
+    "LLM编排",
+    "AI工作流自动化",
+    // 框架细分
+    "Python智能体框架",
+    "Rust智能体框架",
+    "开源智能体框架",
+    "群体智能",
+    "多智能体协作",
+    "智能体间通信",
+    "MCP协议",
+    "MCP集成",
+    "RAG集成",
+    "结构化输出",
+    // 品牌
+    "swarms",
+    "swarms中文",
+    "swarms框架",
+    "swarms教程",
+    "LangChain替代品",
+  ],
+}

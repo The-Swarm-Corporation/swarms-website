@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next"
 import { siteConfig } from "./metadata"
-import { getAllPosts } from "@/lib/blog"
+import { getAllPosts, hasZhTranslation } from "@/lib/blog"
 import { positions } from "@/lib/positions"
 
 type ChangeFrequency = MetadataRoute.Sitemap[0]["changeFrequency"]
@@ -59,6 +59,43 @@ export default function sitemap(): MetadataRoute.Sitemap {
     lastModified: post.date ? new Date(post.date) : now,
     changeFrequency: "monthly" as const,
     priority: 0.7,
+    ...(hasZhTranslation(post.slug) && {
+      alternates: {
+        languages: {
+          en: `${baseUrl}/blog/${post.slug}`,
+          "zh-Hans": `${baseUrl}/zh/blog/${post.slug}`,
+        },
+      },
+    }),
+  }))
+
+  // Simplified Chinese route tree (/zh) for Baidu/Google zh-Hans indexing.
+  const zhRoutes: { path: string; priority: number; changeFrequency: ChangeFrequency }[] = [
+    { path: "/zh", priority: 0.9, changeFrequency: "weekly" },
+    { path: "/zh/framework", priority: 0.8, changeFrequency: "weekly" },
+    { path: "/zh/pricing", priority: 0.8, changeFrequency: "weekly" },
+    { path: "/zh/installation", priority: 0.8, changeFrequency: "weekly" },
+    { path: "/zh/blog", priority: 0.8, changeFrequency: "daily" },
+  ]
+
+  const zhEntries: MetadataRoute.Sitemap = zhRoutes.map((route) => ({
+    url: `${baseUrl}${route.path}`,
+    lastModified: now,
+    changeFrequency: route.changeFrequency,
+    priority: route.priority,
+  }))
+
+  const zhBlogEntries: MetadataRoute.Sitemap = getAllPosts("zh").map((post) => ({
+    url: `${baseUrl}/zh/blog/${post.slug}`,
+    lastModified: post.date ? new Date(post.date) : now,
+    changeFrequency: "monthly" as const,
+    priority: 0.6,
+    alternates: {
+      languages: {
+        en: `${baseUrl}/blog/${post.slug}`,
+        "zh-Hans": `${baseUrl}/zh/blog/${post.slug}`,
+      },
+    },
   }))
 
   // Open positions: no per-posting timestamp is tracked, so omit
@@ -69,5 +106,5 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.5,
   }))
 
-  return [...activeEntries, ...stableEntries, ...blogEntries, ...hiringEntries]
+  return [...activeEntries, ...stableEntries, ...blogEntries, ...zhEntries, ...zhBlogEntries, ...hiringEntries]
 }

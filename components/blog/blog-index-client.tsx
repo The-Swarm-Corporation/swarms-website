@@ -3,28 +3,60 @@
 import { useMemo, useState } from "react"
 import { motion } from "framer-motion"
 import { Search, X } from "lucide-react"
-import type { BlogPost } from "@/lib/blog"
+import type { BlogLocale, BlogPost } from "@/lib/blog"
 import { cn } from "@/lib/utils"
 import { BlogCard } from "./blog-card"
 
 const ease: [number, number, number, number] = [0.22, 1, 0.36, 1]
 const POSTS_PER_PAGE = 9
 
+const LABELS = {
+  en: {
+    all: "All",
+    searchPlaceholder: "Search articles...",
+    searchAria: "Search blog articles",
+    clearSearch: "Clear search",
+    count: (n: number) => `${n} ${n === 1 ? "article" : "articles"}`,
+    inCategory: (c: string) => ` in ${c}`,
+    matching: (q: string) => ` matching "${q}"`,
+    empty: "No articles found. Try a different search or category.",
+    pagination: "Blog pagination",
+    previous: "Previous",
+    next: "Next",
+  },
+  zh: {
+    all: "全部",
+    searchPlaceholder: "搜索文章…",
+    searchAria: "搜索博客文章",
+    clearSearch: "清除搜索",
+    count: (n: number) => `共 ${n} 篇文章`,
+    inCategory: (c: string) => `（分类：${c}）`,
+    matching: (q: string) => `（搜索："${q}"）`,
+    empty: "未找到相关文章，请尝试其他搜索词或分类。",
+    pagination: "博客分页",
+    previous: "上一页",
+    next: "下一页",
+  },
+}
+
 export function BlogIndexClient({
   posts,
   categories,
+  locale = "en",
 }: {
   posts: BlogPost[]
   categories: string[]
+  locale?: BlogLocale
 }) {
+  const t = LABELS[locale]
   const [query, setQuery] = useState("")
-  const [active, setActive] = useState("All")
+  const [active, setActive] = useState(t.all)
   const [page, setPage] = useState(1)
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
     return posts.filter((post) => {
-      const matchesCategory = active === "All" || post.categories.includes(active)
+      const matchesCategory = active === t.all || post.categories.includes(active)
       const matchesQuery =
         !q ||
         post.title.toLowerCase().includes(q) ||
@@ -52,7 +84,7 @@ export function BlogIndexClient({
     <div>
       <div className="flex flex-col gap-4 border-b border-white/[0.08] pb-6 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-wrap gap-2">
-          {["All", ...categories].map((category) => (
+          {[t.all, ...categories].map((category) => (
             <button
               key={category}
               type="button"
@@ -75,15 +107,15 @@ export function BlogIndexClient({
             type="text"
             value={query}
             onChange={(event) => handleQuery(event.target.value)}
-            placeholder="Search articles..."
-            aria-label="Search blog articles"
+            placeholder={t.searchPlaceholder}
+            aria-label={t.searchAria}
             className="w-full rounded-full border border-white/10 bg-white/[0.02] py-2 pl-10 pr-9 text-sm text-white placeholder-white/35 outline-none transition-colors duration-300 focus:border-white/30"
           />
           {query && (
             <button
               type="button"
               onClick={() => handleQuery("")}
-              aria-label="Clear search"
+              aria-label={t.clearSearch}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-white/35 transition-colors duration-300 hover:text-white"
             >
               <X className="h-4 w-4" />
@@ -93,15 +125,13 @@ export function BlogIndexClient({
       </div>
 
       <p className="mt-6 text-sm text-white/40">
-        {filtered.length} {filtered.length === 1 ? "article" : "articles"}
-        {active !== "All" ? ` in ${active}` : ""}
-        {query ? ` matching "${query}"` : ""}
+        {t.count(filtered.length)}
+        {active !== t.all ? t.inCategory(active) : ""}
+        {query ? t.matching(query) : ""}
       </p>
 
       {paged.length === 0 ? (
-        <p className="py-16 text-center text-white/40">
-          No articles found. Try a different search or category.
-        </p>
+        <p className="py-16 text-center text-white/40">{t.empty}</p>
       ) : (
         <motion.div
           key={`${active}-${query}-${currentPage}`}
@@ -111,20 +141,20 @@ export function BlogIndexClient({
           transition={{ duration: 0.5, ease }}
         >
           {paged.map((post) => (
-            <BlogCard key={post.slug} post={post} />
+            <BlogCard key={post.slug} post={post} locale={locale} />
           ))}
         </motion.div>
       )}
 
       {totalPages > 1 && (
-        <nav aria-label="Blog pagination" className="mt-14 flex items-center justify-center gap-2">
+        <nav aria-label={t.pagination} className="mt-14 flex items-center justify-center gap-2">
           <button
             type="button"
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={currentPage === 1}
             className="rounded-full border border-white/15 bg-white/[0.02] px-4 py-2 text-sm font-medium text-white/70 transition-all duration-300 hover:border-white/30 hover:text-white disabled:pointer-events-none disabled:opacity-30"
           >
-            Previous
+            {t.previous}
           </button>
           <div className="flex items-center gap-1">
             {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
@@ -148,7 +178,7 @@ export function BlogIndexClient({
             disabled={currentPage === totalPages}
             className="rounded-full border border-white/15 bg-white/[0.02] px-4 py-2 text-sm font-medium text-white/70 transition-all duration-300 hover:border-white/30 hover:text-white disabled:pointer-events-none disabled:opacity-30"
           >
-            Next
+            {t.next}
           </button>
         </nav>
       )}

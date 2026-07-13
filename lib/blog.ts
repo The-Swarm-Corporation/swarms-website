@@ -2,6 +2,8 @@ import fs from 'fs'
 import path from 'path'
 import matter from 'gray-matter'
 
+export type BlogLocale = 'en' | 'zh'
+
 export interface BlogPost {
   slug: string
   title: string
@@ -19,18 +21,24 @@ export interface BlogPost {
 
 const postsDirectory = path.join(process.cwd(), 'content/blog')
 
-export function getAllPosts(): BlogPost[] {
-  if (!fs.existsSync(postsDirectory)) {
+// Chinese translations live in content/blog/zh/<same-slug>.mdx
+function localeDirectory(locale: BlogLocale) {
+  return locale === 'zh' ? path.join(postsDirectory, 'zh') : postsDirectory
+}
+
+export function getAllPosts(locale: BlogLocale = 'en'): BlogPost[] {
+  const dir = localeDirectory(locale)
+  if (!fs.existsSync(dir)) {
     return []
   }
 
-  const fileNames = fs.readdirSync(postsDirectory)
+  const fileNames = fs.readdirSync(dir)
   const allPostsData = fileNames
     .filter((fileName) => fileName.endsWith('.mdx'))
     .map((fileName) => {
       const slug = fileName.replace(/\.mdx$/, '')
 
-      const fullPath = path.join(postsDirectory, fileName)
+      const fullPath = path.join(dir, fileName)
       const fileContents = fs.readFileSync(fullPath, 'utf8')
 
       const matterResult = matter(fileContents)
@@ -58,9 +66,9 @@ export function getAllPosts(): BlogPost[] {
   })
 }
 
-export function getPostBySlug(slug: string): BlogPost | null {
+export function getPostBySlug(slug: string, locale: BlogLocale = 'en'): BlogPost | null {
   try {
-    const fullPath = path.join(postsDirectory, `${slug}.mdx`)
+    const fullPath = path.join(localeDirectory(locale), `${slug}.mdx`)
 
     if (!fs.existsSync(fullPath)) {
       return null
@@ -86,18 +94,23 @@ export function getPostBySlug(slug: string): BlogPost | null {
   }
 }
 
-export function getPostsByCategory(category: string): BlogPost[] {
-  const allPosts = getAllPosts()
+/** True when a Simplified Chinese translation exists for the slug. */
+export function hasZhTranslation(slug: string): boolean {
+  return fs.existsSync(path.join(localeDirectory('zh'), `${slug}.mdx`))
+}
+
+export function getPostsByCategory(category: string, locale: BlogLocale = 'en'): BlogPost[] {
+  const allPosts = getAllPosts(locale)
   return allPosts.filter((post) => post.categories.includes(category))
 }
 
-export function getFeaturedPosts(): BlogPost[] {
-  const allPosts = getAllPosts()
+export function getFeaturedPosts(locale: BlogLocale = 'en'): BlogPost[] {
+  const allPosts = getAllPosts(locale)
   return allPosts.filter((post) => post.featured)
 }
 
-export function getAllCategories(): string[] {
-  const allPosts = getAllPosts()
+export function getAllCategories(locale: BlogLocale = 'en'): string[] {
+  const allPosts = getAllPosts(locale)
   const categories = allPosts.flatMap((post) => post.categories)
   return Array.from(new Set(categories)).sort()
 }

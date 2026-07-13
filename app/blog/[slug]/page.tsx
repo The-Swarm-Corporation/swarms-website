@@ -10,7 +10,9 @@ import { Navigation } from "@/components/navigation"
 import { BlogCover } from "@/components/blog/blog-cover"
 import { BlogCard } from "@/components/blog/blog-card"
 import { MermaidDiagram } from "@/components/blog/mermaid-diagram"
+import { ShareButtons } from "@/components/blog/share-buttons"
 import { getAllPosts, getPostBySlug } from "@/lib/blog"
+import { siteConfig } from "@/app/metadata"
 
 interface BlogPostPageProps {
   params: Promise<{ slug: string }>
@@ -229,6 +231,19 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
               >
                 {bodyContent}
               </ReactMarkdown>
+            </div>
+
+            <div className="mt-16 border-t border-white/[0.08] pt-10">
+              <h2 className="text-sm font-medium uppercase tracking-[0.15em] text-white/45">
+                Share this post
+              </h2>
+              <div className="mt-5">
+                <ShareButtons
+                  title={post.title}
+                  description={post.description}
+                  url={`${siteConfig.url}/blog/${post.slug}`}
+                />
+              </div>
             </div>
           </div>
 

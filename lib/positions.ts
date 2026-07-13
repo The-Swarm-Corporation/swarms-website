@@ -1,9 +1,9 @@
-import { 
-  Brain, 
-  Code, 
-  Target, 
-  GraduationCap, 
-  Rocket, 
+import {
+  Brain,
+  Code,
+  Target,
+  GraduationCap,
+  Rocket,
   Users,
   TrendingUp,
   Megaphone,
@@ -12,6 +12,9 @@ import {
   Server,
   BookUser,
   Handshake,
+  Store,
+  Cloud,
+  Microscope,
   LucideIcon
 } from 'lucide-react'
 
@@ -185,6 +188,84 @@ export const positions: Position[] = [
       'You have strong analytical skills and data-driven approach',
       'You are creative and can develop innovative marketing campaigns',
       'You are passionate about AI and the future of software development'
+    ]
+  },
+  {
+    slug: 'head-of-marketplace',
+    title: 'Head of Marketplace',
+    icon: Store,
+    department: 'Engineering',
+    type: 'Full-time',
+    location: 'Palo Alto, CA',
+    priority: 'Critical',
+    description: 'Lead the Swarms marketplace end to end: own the product, lead the engineering team, and recruit the talent to scale it.',
+    requirements: ['Built and scaled marketplaces', 'Engineering leadership', 'Recruiting experience'],
+    aboutRole: 'As Head of Marketplace at Swarms, you will own the marketplace where agents, tools, and swarms are published, discovered, and monetized. We are looking for an experienced individual who has built and scaled marketplaces before. You will lead the marketplace engineering team, set the technical and product direction, and recruit the people needed to make the Swarms marketplace the default destination of the agent economy.',
+    whatYoullDo: [
+      'Own the marketplace end to end, from product strategy to production systems',
+      'Lead and manage the marketplace engineering team',
+      'Recruit, interview, and hire engineers to grow the marketplace team',
+      'Design the liquidity, discovery, and monetization mechanics of the marketplace',
+      'Scale marketplace infrastructure for millions of agents, tools, and transactions'
+    ],
+    youMayBeAFitIf: [
+      'You have built and scaled a marketplace before and can speak to what worked and what did not',
+      'You have 5+ years of experience leading engineering teams',
+      'You have owned recruiting for a team and know how to attract strong engineers',
+      'You understand marketplace dynamics: supply, demand, liquidity, and take rates',
+      'You are passionate about building the commercial layer of the agent economy'
+    ]
+  },
+  {
+    slug: 'head-of-swarms-cloud',
+    title: 'Head of Swarms Cloud',
+    icon: Cloud,
+    department: 'Engineering',
+    type: 'Full-time',
+    location: 'Palo Alto, CA',
+    priority: 'Critical',
+    description: 'Own Swarms Cloud, the hosted platform for deploying and orchestrating agents and swarms at scale.',
+    requirements: ['Cloud platform leadership', 'Distributed systems', 'Team building'],
+    aboutRole: 'As Head of Swarms Cloud, you will own our hosted platform for deploying, orchestrating, and monitoring agents and swarms at scale. You will set the product and technical direction for Swarms Cloud, lead the team that builds it, and ensure the platform delivers the reliability, performance, and developer experience that autonomous corporations will run on.',
+    whatYoullDo: [
+      'Own the product and technical direction of Swarms Cloud',
+      'Lead the engineering team building the platform, and recruit to grow it',
+      'Ensure reliability, scalability, and security for production agent workloads',
+      'Drive the roadmap across deployment, orchestration, observability, and billing',
+      'Partner with research and marketplace teams to ship platform capabilities'
+    ],
+    youMayBeAFitIf: [
+      'You have 5+ years of experience building or leading cloud platforms or developer infrastructure',
+      'You have deep knowledge of distributed systems and production operations',
+      'You have led engineering teams and shipped platforms developers depend on',
+      'You care about developer experience as much as system design',
+      'You want to build the infrastructure that autonomous corporations run on'
+    ]
+  },
+  {
+    slug: 'head-of-multi-agent-research',
+    title: 'Head of Multi-Agent Research',
+    icon: Microscope,
+    department: 'Research',
+    type: 'Full-time',
+    location: 'Palo Alto, CA',
+    priority: 'Critical',
+    description: 'Lead the Swarms research organization: set the multi-agent research agenda, recruit researchers, and publish at top conferences.',
+    requirements: ['Cited multi-agent research', 'Research leadership', 'Publication record'],
+    aboutRole: 'As Head of Multi-Agent Research at Swarms, you will lead our research organization. We are looking for an experienced researcher with citations and an extensive body of multi-agent research. You will set the research agenda, recruit and lead a team of researchers, and publish at top conferences. Any compute demands will be met, including unlimited API credits for OpenAI, Anthropic, and other frontier model providers.',
+    whatYoullDo: [
+      'Set and lead the multi-agent research agenda for Swarms',
+      'Recruit, mentor, and lead a team of world-class researchers',
+      'Publish research at top AI conferences and represent Swarms in the research community',
+      'Direct large-scale experiments with unrestricted compute and unlimited API credits for OpenAI, Anthropic, and other providers',
+      'Partner with engineering to move research results into the Swarms platform'
+    ],
+    youMayBeAFitIf: [
+      'You are an experienced researcher with a cited, extensive body of multi-agent research',
+      'You have a strong publication record at top AI venues',
+      'You have recruited and led researchers, or are ready to build a team from the ground up',
+      'You have ambitious research ideas that have been limited by compute or API budgets',
+      'You want to define the research frontier of autonomous corporations'
     ]
   },
   {

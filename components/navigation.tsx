@@ -27,6 +27,8 @@ import {
   ShoppingBag,
   Network,
   Smartphone,
+  Mail,
+  Briefcase,
 } from "lucide-react"
 import { useGithubStars } from "@/hooks/use-github-stars"
 import { formatStarsShort } from "@/lib/github-stars"
@@ -362,6 +364,7 @@ export function Navigation() {
                           { id: "community", label: "Community" },
                           { id: "programs", label: "Programs" },
                           { id: "learn", label: "Learn" },
+                          { id: "about", label: "About" },
                         ].map((tab) => (
                           <TabsTrigger
                             key={tab.id}
@@ -492,6 +495,27 @@ export function Navigation() {
                               </FuturisticMenuItem>
                               <FuturisticMenuItem icon={FileText} href="/blog" iconColor="red">
                                 Blog
+                              </FuturisticMenuItem>
+                            </TabsContent>
+
+                            <TabsContent value="about" className="space-y-1 mt-0 h-full">
+                              <FuturisticMenuItem icon={Briefcase} href="/hiring" iconColor="red">
+                                Hiring
+                              </FuturisticMenuItem>
+                              <FuturisticMenuItem icon={FileText} href="/blog" iconColor="red">
+                                Blog
+                              </FuturisticMenuItem>
+                              <FuturisticMenuItem icon={BookOpen} href="/research" iconColor="red">
+                                Research
+                              </FuturisticMenuItem>
+                              <FuturisticMenuItem icon={Mail} href="/newsletter" iconColor="red">
+                                Newsletter
+                              </FuturisticMenuItem>
+                              <FuturisticMenuItem icon={Calendar} href="https://lu.ma/swarms_calendar" iconColor="red">
+                                Events Calendar
+                              </FuturisticMenuItem>
+                              <FuturisticMenuItem icon={Phone} href="https://cal.com/swarms" iconColor="red">
+                                Book a Call
                               </FuturisticMenuItem>
                             </TabsContent>
                           </motion.div>
@@ -823,6 +847,12 @@ export function Navigation() {
                       >
                         Learn
                       </TabsTrigger>
+                      <TabsTrigger
+                        value="about"
+                        className="text-xs data-[state=active]:bg-white/[0.08] data-[state=active]:text-white data-[state=active]:border-neutral-700/50 border border-transparent hover:bg-white/[0.05] hover:border-white/10 text-neutral-400 transition-all duration-200"
+                      >
+                        About
+                      </TabsTrigger>
                     </TabsList>
 
                     <TabsContent value="platform" className="space-y-1 mt-0">
@@ -1150,6 +1180,85 @@ export function Navigation() {
                           <span className="text-sm font-semibold text-white block">Blog</span>
                         </div>
                       </Link>
+                    </TabsContent>
+
+                    <TabsContent value="about" className="space-y-1 mt-0">
+                      <Link
+                        href="/hiring"
+                        className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
+                        onClick={() => setIsOpen(false)}
+                      >
+                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-white/25 transition-all duration-200">
+                          <Briefcase className="h-4 w-4 text-neutral-300" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <span className="text-sm font-semibold text-white block">Hiring</span>
+                        </div>
+                      </Link>
+                      <Link
+                        href="/blog"
+                        className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
+                        onClick={() => setIsOpen(false)}
+                      >
+                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-white/25 transition-all duration-200">
+                          <FileText className="h-4 w-4 text-neutral-300" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <span className="text-sm font-semibold text-white block">Blog</span>
+                        </div>
+                      </Link>
+                      <Link
+                        href="/research"
+                        className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
+                        onClick={() => setIsOpen(false)}
+                      >
+                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-white/25 transition-all duration-200">
+                          <BookOpen className="h-4 w-4 text-neutral-300" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <span className="text-sm font-semibold text-white block">Research</span>
+                        </div>
+                      </Link>
+                      <Link
+                        href="/newsletter"
+                        className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
+                        onClick={() => setIsOpen(false)}
+                      >
+                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-white/25 transition-all duration-200">
+                          <Mail className="h-4 w-4 text-neutral-300" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <span className="text-sm font-semibold text-white block">Newsletter</span>
+                        </div>
+                      </Link>
+                      <a
+                        href="https://lu.ma/swarms_calendar"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
+                        onClick={() => setIsOpen(false)}
+                      >
+                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-white/25 transition-all duration-200">
+                          <Calendar className="h-4 w-4 text-neutral-300" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <span className="text-sm font-semibold text-white block">Events Calendar</span>
+                        </div>
+                      </a>
+                      <a
+                        href="https://cal.com/swarms"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
+                        onClick={() => setIsOpen(false)}
+                      >
+                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-white/25 transition-all duration-200">
+                          <Phone className="h-4 w-4 text-neutral-300" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <span className="text-sm font-semibold text-white block">Book a Call</span>
+                        </div>
+                      </a>
                     </TabsContent>
                   </Tabs>
                 </div>

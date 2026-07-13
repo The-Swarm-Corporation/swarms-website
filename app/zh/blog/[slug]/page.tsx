@@ -41,7 +41,7 @@ export default async function ZhBlogPostPage({ params }: ZhBlogPostPageProps) {
 
       <main className="pt-28 sm:pt-32">
         <div className="container px-4 sm:px-6 lg:px-8">
-          <nav aria-label="面包屑导航" className="mx-auto max-w-4xl">
+          <nav aria-label="面包屑导航" className="mx-auto max-w-6xl">
             <ol className="flex items-center gap-2 text-sm text-white/40">
               <li>
                 <Link href="/zh" className="transition-colors duration-300 hover:text-white">
@@ -61,7 +61,7 @@ export default async function ZhBlogPostPage({ params }: ZhBlogPostPageProps) {
             </ol>
           </nav>
 
-          <article className="mx-auto max-w-4xl">
+          <article className="mx-auto max-w-6xl">
             <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
               <Link
                 href="/zh/blog"
@@ -109,7 +109,7 @@ export default async function ZhBlogPostPage({ params }: ZhBlogPostPageProps) {
           </article>
 
           {post.image && (
-            <div className="mx-auto mt-10 max-w-4xl">
+            <div className="mx-auto mt-10 max-w-6xl">
               <BlogCover
                 slug={post.slug}
                 image={post.image}
@@ -119,7 +119,7 @@ export default async function ZhBlogPostPage({ params }: ZhBlogPostPageProps) {
             </div>
           )}
 
-          <div className="mx-auto max-w-4xl py-14 sm:py-16">
+          <div className="mx-auto max-w-6xl py-14 sm:py-16">
             <div className="prose-blog">
               <BlogMarkdown content={bodyContent} />
             </div>
@@ -139,7 +139,7 @@ export default async function ZhBlogPostPage({ params }: ZhBlogPostPageProps) {
           </div>
 
           {relatedPosts.length > 0 && (
-            <div className="mx-auto max-w-4xl border-t border-white/[0.08] py-16 sm:py-20">
+            <div className="mx-auto max-w-6xl border-t border-white/[0.08] py-16 sm:py-20">
               <h2 className="mb-10 text-2xl font-semibold tracking-tighter text-white sm:text-3xl">
                 更多文章
               </h2>

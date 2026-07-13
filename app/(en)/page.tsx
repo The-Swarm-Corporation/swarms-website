@@ -19,6 +19,9 @@ const HomeCookbook = dynamic(() => import("@/components/home-cookbook").then(m =
 const HomeCommunity = dynamic(() => import("@/components/home-community").then(m => m.HomeCommunity), {
   ssr: false,
 })
+const HomeHiring = dynamic(() => import("@/components/home-hiring").then(m => m.HomeHiring), {
+  ssr: false,
+})
 
 export default function Home() {
   return (
@@ -34,6 +37,7 @@ export default function Home() {
         <HomeCookbook />
         <HomeNewsletter />
         <ProductsCallToAction />
+        <HomeHiring />
         <HomeCommunity />
       </main>
     </div>

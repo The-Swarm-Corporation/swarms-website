@@ -4,6 +4,10 @@ import type { BlogPost } from "@/lib/blog"
 import { BlogCover } from "./blog-cover"
 
 export function BlogCard({ post }: { post: BlogPost }) {
+  // Without cover art the title becomes the cover itself, so skip the
+  // heading below to avoid showing it twice.
+  const titleInCover = !post.image
+
   return (
     <Link href={`/blog/${post.slug}`} className="group block">
       <div className="overflow-hidden rounded-xl border border-white/10">
@@ -11,6 +15,7 @@ export function BlogCard({ post }: { post: BlogPost }) {
           slug={post.slug}
           image={post.image}
           alt={post.title}
+          title={titleInCover ? post.title : undefined}
           className="aspect-[4/3] w-full transition-transform duration-500 ease-out group-hover:scale-[1.03]"
         />
       </div>
@@ -19,9 +24,11 @@ export function BlogCard({ post }: { post: BlogPost }) {
         {post.categories[0] && <span aria-hidden="true">&middot;</span>}
         <time dateTime={post.date}>{format(parseISO(post.date), "MMM d, yyyy")}</time>
       </div>
-      <h3 className="mt-2 text-lg font-medium leading-snug tracking-tight text-white transition-colors duration-300 group-hover:text-white/75">
-        {post.title}
-      </h3>
+      {!titleInCover && (
+        <h3 className="mt-2 text-lg font-medium leading-snug tracking-tight text-white transition-colors duration-300 group-hover:text-white/75">
+          {post.title}
+        </h3>
+      )}
       <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-white/45">{post.description}</p>
     </Link>
   )

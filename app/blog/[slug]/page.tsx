@@ -234,8 +234,8 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
             </div>
 
             <div className="mt-16 border-t border-white/[0.08] pt-10">
-              <h2 className="text-sm font-medium uppercase tracking-[0.15em] text-white/45">
-                Share this post
+              <h2 className="text-sm font-medium tracking-[0.15em] text-white/45">
+                Share this article now 
               </h2>
               <div className="mt-5">
                 <ShareButtons

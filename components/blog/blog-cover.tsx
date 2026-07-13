@@ -21,11 +21,13 @@ export function BlogCover({
   slug,
   image,
   alt,
+  title,
   className,
 }: {
   slug: string
   image?: string
   alt?: string
+  title?: string
   className?: string
 }) {
   if (image) {
@@ -55,6 +57,13 @@ export function BlogCover({
         style={{ width: size, height: size }}
       />
       <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-t from-black via-black/10 to-transparent" />
+      {title && (
+        <div className="absolute inset-0 flex items-end p-5 sm:p-6">
+          <span className="line-clamp-4 text-xl font-semibold leading-[1.15] tracking-tighter text-white/85 sm:text-2xl">
+            {title}
+          </span>
+        </div>
+      )}
     </div>
   )
 }

@@ -14,7 +14,7 @@ const LABELS = {
   en: {
     eyebrow: "Newsletter",
     heading: "Get the latest from Swarms.",
-    sub: "Cloud for builders who want to build agents, and the Marketplace for builders who want already-made agents. Sign up now and get $5 in free API credits. Join the marketplace and start building with Swarms.",
+    sub: "Build with Swarms Cloud or discover agents in the Marketplace. Sign up and get $5 in free API credits.",
     placeholder: "Enter your email address",
     emailAria: "Email address",
     cta: "Subscribe",

@@ -47,7 +47,9 @@ export function HomeCommunity() {
               Join the swarm.
             </h2>
             <p className="mt-5 max-w-2xl text-base font-normal leading-relaxed text-white/50 sm:text-lg">
-              Thousands of engineers building multi-agent systems together.
+              Join thousands of engineers building multi-agent systems together:
+              discussions on agent architectures, research papers, live events,
+              and direct access to the team behind Swarms.
             </p>
           </div>
 

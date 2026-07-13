@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { Navigation } from "@/components/navigation"
+import { HomeNewsletter } from "@/components/home-newsletter"
 import {
   ArrowRight,
   ArrowUpRight,
@@ -349,6 +350,8 @@ export default function ZhHomePage() {
             </div>
           </div>
         </section>
+
+        <HomeNewsletter locale="zh" />
       </main>
     </div>
   )

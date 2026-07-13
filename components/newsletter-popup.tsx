@@ -43,6 +43,9 @@ export function NewsletterPopup({ isOpen, onClose }: NewsletterPopupProps) {
       console.log("Response:", data)
 
       if (response.ok) {
+        // Remember the subscription so the site greets them as subscribed
+        // (landing-page section) and never re-prompts.
+        localStorage.setItem("swarms-newsletter-subscribed", email.trim())
         setIsSuccess(true)
         setTimeout(() => {
           onClose()

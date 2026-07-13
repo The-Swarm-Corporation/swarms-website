@@ -6,10 +6,11 @@ export function useNewsletterPopup() {
   const [isOpen, setIsOpen] = useState(false)
 
   useEffect(() => {
-    // Check if user has already seen the popup
+    // Check if user has already seen the popup or already subscribed
     const hasSeenPopup = localStorage.getItem("swarms-newsletter-popup-seen")
+    const isSubscribed = localStorage.getItem("swarms-newsletter-subscribed")
 
-    if (!hasSeenPopup) {
+    if (!hasSeenPopup && !isSubscribed) {
       // Show popup after 15 seconds to give users time to explore
       const timer = setTimeout(() => {
         setIsOpen(true)

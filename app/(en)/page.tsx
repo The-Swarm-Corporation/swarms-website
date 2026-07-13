@@ -6,6 +6,7 @@ import { HomeHero } from "@/components/home-hero"
 import { HomeMission } from "@/components/home-mission"
 import { HomeEnterpriseInfrastructure } from "@/components/home-enterprise-infrastructure"
 import { HomeFeatures } from "@/components/home-features"
+import { HomeNewsletter } from "@/components/home-newsletter"
 import { ProductsCallToAction } from "@/components/products-call-to-action"
 
 // Dynamically load heavier, below-the-fold sections to reduce initial JS
@@ -31,6 +32,7 @@ export default function Home() {
         <HomeProducts />
         <HomeEnterpriseInfrastructure />
         <HomeCookbook />
+        <HomeNewsletter />
         <ProductsCallToAction />
         <HomeCommunity />
       </main>

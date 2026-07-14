@@ -25,6 +25,14 @@ Crucially, the agent is not guessing at vocabulary in a vacuum. Every hour, it r
 
 The agent responds with a structured set of filter instructions. Those instructions pass through strict validation on our servers, so a misbehaving model can never inject anything unexpected into the page. Then the interesting part happens: the filters are applied one at a time, with a live status line narrating each move. You see "Setting show agents," then "Setting pricing: free," then "Setting industry: healthcare," while the corresponding filter chips pop into place in the interface. The agent drives the exact same controls you would use by hand, so you can inspect its work, remove any single chip, or adjust the result manually. Nothing is hidden.
 
+```mermaid
+graph LR
+    A[Natural language query] --> FA((Filter search agent))
+    B[(Filter schema)] --> FA
+    C[(Hourly catalog tags)] --> FA
+    FA --> D[Structured filter instructions]
+```
+
 ## Step by Step
 
 1. Open the registry at [swarms.world/platform/registry](https://swarms.world/platform/registry).

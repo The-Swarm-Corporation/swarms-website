@@ -1,0 +1,143 @@
+---
+title: "Swarms Cloud Changelog: Two Months of Platform Updates"
+description: "A week by week, day by day log of everything that shipped on Swarms Cloud over the past two months: a redesigned Agents workspace, a public model catalog spanning 1,500+ models, subscription billing, free credit for new accounts, guided onboarding, and dozens of reliability fixes, with what each change actually means for you."
+date: "2026-07-14"
+author: "Swarms Team"
+categories: ["Product"]
+readTime: "12 min read"
+featured: true
+image: "/backend.jpg"
+---
+
+# Swarms Cloud Changelog: Two Months of Platform Updates
+
+This is a log, not a highlight reel. Instead of grouping two months of work into a handful of headline features, this post walks through what shipped week by week and, within each week, day by day, in the order it actually landed. Each entry says what changed and what it means for you as someone building on Swarms Cloud, not just what changed internally.
+
+A couple of notes before the log. First, this only lists work that is live in production today. A few things shipped and were later rolled back during this window (an experimental per-agent spend column, a promotional banner), and those are left out entirely since they never ended up in your hands. Second, two of the larger systems below (Token Usage and the Workflow Builder) already have their own deep dive posts, linked inline, so their entries here are intentionally short.
+
+## Week of June 1
+
+**June 6**
+
+- Fixed an intermittent bug where valid API keys were sometimes reported as not found. If you were getting spurious authentication failures with a key you knew was correct, this is why, and it is fixed.
+- Fixed a cross account caching bug: switching between accounts in the same browser session could briefly show cached data belonging to the previous account. Account scoped data is no longer served from a shared cache, and local storage is cleared on sign out so nothing lingers after you log out.
+
+**June 7**
+
+- Shipped a large batch of dashboard and page level fixes: a hydration mismatch that could cause a visible flash or console error on load, duplicate log fetches on the dashboard, and static files like `robots.txt` and `sitemap.xml` incorrectly being blocked by the auth gate.
+- Dates and timestamps across the platform are now pinned to a consistent `en-US` format regardless of your browser's locale, so a timestamp reads the same for every user.
+- Added date range filters (including quick presets and a custom range) and CSV export to the [History page](https://cloud.swarms.world/history), and CSV export plus model and role filters to the [Agents page](https://cloud.swarms.world/agents).
+- Redesigned the Agents page header and toolbar, split History's search and filter controls into separate rows, and simplified the refresh control to an icon only button, all in service of the same goal: less visual clutter as more filters get added over time.
+- Added a cost column to the recent executions preview on the dashboard and a call to action on the rate limits section linking straight to billing and upgrade options.
+
+## Week of June 8
+
+**June 11**
+
+- Error messages got more useful. When a request to the underlying model provider fails, Swarms Cloud now parses the actual upstream error detail and shows it to you, instead of a generic "request failed" message. Debugging a bad prompt or an invalid parameter is faster as a result.
+- Newly created agents now default to `GPT-5.4` instead of an older model, reflecting the current recommended baseline for new workloads.
+
+**June 12**
+
+- Shipped a new [API Keys page](https://cloud.swarms.world/api-keys) for creating and managing credentials without digging through settings.
+- Shipped a new public [Learn More page](https://cloud.swarms.world/learn-more), browsable without an account, for evaluating the platform before signing up.
+- Added a Discover category to the Apps directory that surfaces entry points like API Keys and Learn More in one place, and introduced a red brand accent used across new interface elements from this point forward.
+
+**June 13**
+
+- Fixed the "Learn More" call to action link and refreshed the site header for consistency with the new brand accent.
+
+## Week of June 15
+
+**June 15**
+
+- Fixed a scroll bug in the navigation bar that could leave it in an inconsistent state on certain pages.
+
+**June 16**
+
+- Increased cache lifetimes on frequently read API routes. Pages that read mostly static account data now load faster and generate fewer redundant requests to the backend.
+
+**June 19**
+
+- Hardened validation on agent execution requests, catching malformed input earlier and with a clearer error instead of letting it fail deeper in the pipeline.
+
+## Week of June 22
+
+**June 28**
+
+- You can now choose which model powers Auto Generate Prompt, rather than it always using a fixed default. Pick a stronger model for higher quality generated prompts, or a cheaper one when you are iterating quickly.
+- Improved the agent history table with clearer formatting and easier to scan rows.
+
+## Week of June 29
+
+**June 29**
+
+- Shipped the first version of the [Workflow Builder](https://cloud.swarms.world/workflow-builder), a visual canvas for composing agents into a multi agent graph. The full mechanics are covered in [Inside the Swarms Cloud Workflow Builder](/blog/workflow-builder-swarms-cloud).
+
+**July 1**
+
+- Shipped Stripe backed subscription billing for Pro and Premium plans, upgradeable directly from the settings page, with automatic sync and reconciliation so your plan stays accurate even if a payment event arrives out of order.
+- Added a billing history table to the account page, so past charges are visible without contacting support.
+
+**July 3**
+
+- Shipped the [Rate Limits page](https://cloud.swarms.world/rate-limits), showing a live countdown to when your current rate limits reset, plus direct links to manage billing or upgrade if you are hitting limits regularly.
+
+**July 5**
+
+- Shipped the [Token Usage dashboard](https://cloud.swarms.world/token-usage): real time token consumption, request volume, and spend, broken down by agent, workflow, and API key, with flexible time range filtering. Full detail in [All-New Swarms Cloud Updates](/blog/all-new-swarms-cloud-updates).
+
+## Week of July 6
+
+**July 6**
+
+- The home dashboard now shows your true lifetime completion count, pulled from a dedicated metrics endpoint, instead of an approximate or partially cached figure.
+
+**July 7**
+
+- Every model page picked up ready to run example requests in Python, TypeScript, and cURL, generated from that specific model's parameters, plus an enterprise upgrade prompt and a redesigned upgrade card for premium accounts.
+
+**July 8**
+
+- The model catalog was rebuilt: it now spans more than 1,500 models across providers including Anthropic, OpenAI, Google Gemini, and OpenRouter, every model has its own page, and the entire catalog is browsable without an account. Provider filter chips make narrowing the list fast. Fixed a bug where some model version numbers displayed with broken formatting, and the catalog now automatically retries transient upstream failures instead of surfacing an error right away.
+
+**July 10**
+
+- Model documentation is now available as plain markdown on every model page, with a one click copy button, useful for feeding a model's full spec into your own AI coding tools. Fixed broken links from model pages into the documentation site.
+
+## Week of July 13
+
+**July 13**
+
+- Shipped a guided onboarding tour for new accounts, including a dedicated step for discovering the model catalog. If you want to go through it again later, a button in Settings restarts it at any time.
+
+**July 14**
+
+- The Agents table now shows a row number, name, and description at a glance, with heavier detail moved into an expandable row you open on demand. Clicking a row reveals the agent's full configuration as formatted JSON, alongside ready to copy request examples in cURL, Python, TypeScript, Go, and raw JSON.
+- Added a dedicated copy action on each row that copies that agent's configuration straight to the clipboard, useful for scripting or handing a configuration to a teammate without opening the row.
+- New accounts now receive five dollars of free credit automatically at signup, so you can start running agents immediately without adding a payment method first.
+
+## Conclusion
+
+Laid out day by day, the pattern is consistent even though the work itself was not: fix what is broken as soon as it is found, give you more direct visibility into cost and usage, and remove friction from getting started and managing an account. None of these were single big bang releases. They landed in small, shippable pieces, most weeks, sometimes most days, which is also why a log like this is more honest than a highlights reel: it shows the actual pace and shape of the work, including the two experiments that did not make the cut.
+
+If you want the deeper technical walkthroughs behind two of the larger systems mentioned above, read [All-New Swarms Cloud Updates](/blog/all-new-swarms-cloud-updates) for the Token Usage dashboard and the model catalog, or [Inside the Swarms Cloud Workflow Builder](/blog/workflow-builder-swarms-cloud) for a full walkthrough of building multi agent graphs visually.
+
+## Links and Resources
+
+| Resource | Link |
+| --- | --- |
+| Swarms Cloud | [cloud.swarms.world](https://cloud.swarms.world) |
+| Agents Page | [cloud.swarms.world/agents](https://cloud.swarms.world/agents) |
+| History Page | [cloud.swarms.world/history](https://cloud.swarms.world/history) |
+| Models Page | [cloud.swarms.world/models](https://cloud.swarms.world/models) |
+| Token Usage | [cloud.swarms.world/token-usage](https://cloud.swarms.world/token-usage) |
+| Rate Limits | [cloud.swarms.world/rate-limits](https://cloud.swarms.world/rate-limits) |
+| API Keys | [cloud.swarms.world/api-keys](https://cloud.swarms.world/api-keys) |
+| Workflow Builder | [cloud.swarms.world/workflow-builder](https://cloud.swarms.world/workflow-builder) |
+| Documentation | [docs.swarms.ai](https://docs.swarms.ai) |
+| Discord Community | [discord.gg/VapjxpSyHC](https://discord.gg/VapjxpSyHC) |
+
+---
+
+*Have questions or feedback? Join our [Discord community](https://discord.gg/VapjxpSyHC) or check out the [documentation](https://docs.swarms.ai).*

@@ -1,0 +1,130 @@
+---
+title: "The Agent Economy Now Takes Card, Powered by Stripe"
+description: "The Swarms Marketplace now supports fiat payments powered by Stripe. Buyers in 100+ countries can purchase AI agents and prompts with cards, Apple Pay, Google Pay, Alipay, Klarna, and more, while sellers get automatic bank payouts on every sale."
+date: "2026-07-16"
+author: "Swarms Team"
+categories: ["Product"]
+readTime: "10 min read"
+featured: true
+image: "/swarms_blog_fiat_cover.png"
+---
+
+# The Agent Economy Now Takes Card, Powered by Stripe
+
+Today marks one of the most significant releases in the history of the [Swarms Marketplace](https://swarms.world). Fiat payments are now live, powered by a fully integrated Stripe payment infrastructure. Buyers in more than 100 countries can purchase AI agents and prompts with the payment methods they already use every day: bank cards, Apple Pay, Google Pay, Alipay, Klarna, and many more, in over 100 currencies. Sellers onboard once, publish paid listings in minutes, and receive automatic payouts directly to their bank accounts.
+
+Until now, participating in the agent economy on swarms.world meant holding crypto. That worked well for the crypto-native community that helped build the marketplace into what it is today, and crypto payments remain fully supported. But it also meant that a large share of the world's developers, businesses, and teams stood on the other side of a wall. A procurement department cannot easily buy SOL. A developer in a region with limited exchange access cannot easily fund a wallet. An enterprise that wants to purchase a production-ready research agent should not have to learn about seed phrases first.
+
+That wall comes down today. The marketplace now speaks the language of global commerce, and anyone with a card can participate in the agent economy.
+
+## Why This Release Matters
+
+The Swarms Marketplace is the home of thousands of agents, prompts, and tools that developers and enterprises discover, trade, and deploy every day. It is the commercial layer of the agent economy: the place where the people who build great agents meet the people who need them.
+
+A commercial layer is only as strong as its payment rails. Every step of friction between a buyer and a purchase is a tax on the entire ecosystem. When the only way to pay is crypto, that tax is steep for everyone who does not already hold it: creating a wallet, passing an exchange's onboarding, buying tokens, bridging funds, and only then completing the purchase. Each of those steps loses buyers, and every lost buyer is lost revenue for the creators who publish their work on the marketplace.
+
+Fiat support removes that tax in a single stroke. The checkout experience is now identical to buying from any major online store. You click a product, you pay with the method you prefer, and you get instant access. No wallet, no tokens, no bridging, no regional workarounds. For sellers, the addressable market expands from people who hold crypto to everyone with a bank card, which is to say, most of the connected world.
+
+This is what it takes to move the agent economy from early adopters to the mainstream, and it is why we consider this release a foundational milestone rather than an incremental feature.
+
+## What Is Launching
+
+Here is the release at a glance:
+
+- **Global reach.** Buyers in more than 100 countries can complete purchases, with no crypto wallet or regional workaround required.
+- **Multi-currency support.** Payments work in over 100 currencies. Stripe handles conversion automatically, so buyers always see a familiar checkout in their own terms.
+- **Every major payment method.** Bank cards, Apple Pay, Google Pay, Alipay, Klarna, and many more, depending on the buyer's region. Stripe's checkout even supports paying with crypto for buyers who prefer it.
+- **Automatic seller payouts.** Sellers receive 90% of every sale, transferred by Stripe and paid out to their linked bank account on Stripe's standard payout schedule. There is no claiming step and no manual withdrawal.
+- **Instant, lifetime access for buyers.** Purchased content unlocks the moment payment completes. One-time payment, no recurring fees.
+- **The same fair fee as crypto.** Swarms retains a 10% transaction fee on fiat sales, identical to crypto sales. Publishing remains free.
+- **Enterprise-grade security.** Payments are processed end to end by Stripe. Swarms never sees or stores card details, and every seller is KYC-verified through Stripe's onboarding.
+
+## How It Works Under the Hood
+
+The marketplace's fiat infrastructure is built on Stripe Connect, the same platform architecture that powers payments for many of the world's largest marketplaces. Each seller onboards once as a connected Stripe account. Buyers pay through Stripe Checkout, Stripe's hosted, PCI-compliant payment page.
+
+Every sale is processed as a destination charge: the buyer pays through the platform, Stripe automatically routes the seller's 90% share to their connected account, and the 10% platform fee is collected as an application fee in the same transaction. There is no settlement lag between the marketplace and the seller, no invoicing, and no reconciliation work. The split happens at the moment of payment, every time, by construction.
+
+Reliability was a core design goal. Purchases are recorded redundantly through two independent paths: Stripe's webhook notification and the checkout success redirect. If either path is delayed, the other unlocks access, so buyers get what they paid for the moment the payment confirms, even under adverse network conditions.
+
+The result is a payment system where the money flow and the access flow are both automatic, auditable, and fast.
+
+## For Sellers: Onboard Once, Get Paid Forever
+
+If you build agents or prompts, this release is your invitation to monetize them for a global audience. The entire setup takes a few minutes.
+
+First, open the [Seller tab](https://swarms.world/platform/account?tab=seller) in your account settings, select your country, and click **Set up seller account**. You will be redirected to Stripe's hosted Express onboarding, where you provide your payout details, business or personal information, and any required identity verification. Verification is usually instant, though Stripe may take longer in some regions. If you step away partway through, your progress is saved and you can continue where you left off.
+
+Once your account is active, head to the [launch page](https://swarms.world/launch) and publish an agent or prompt the way you always have. In the pricing section, mark the product as **Paid**, choose the **Card / Fiat (Stripe)** rail, and set your price in USD. That is the whole flow. No crypto wallet is needed at any point for fiat listings.
+
+From then on, every sale is automatic. Buyers pay by card or wallet, Stripe transfers your 90% share, and payouts land in your bank account on Stripe's standard schedule. The Seller tab gives you full visibility into your business: aggregate stats for total sales, net earnings, products sold, and unique buyers, plus a complete table of every card sale with the fee breakdown, pagination, and CSV export for your accounting. One click opens your Stripe Express dashboard for balances, payout history, and transaction-level detail on Stripe's side.
+
+One more detail worth highlighting: the payment rail is chosen per listing. You can sell some products in fiat and others in crypto side by side, under the same account, with the same 10% fee on both rails. Sell your way.
+
+## For Buyers: Checkout in Under a Minute
+
+Buying a paid agent or prompt now takes less time than reading this section.
+
+Browse the [marketplace registry](https://swarms.world/platform/registry) and open any paid product. Paid listings carry a Premium badge and show their price in USD. Click the purchase button, choose **Pay with card**, and you are redirected to Stripe's secure checkout showing the product and price. Pay with a bank card, Apple Pay, Google Pay, Klarna, Alipay, or whatever methods Stripe offers in your region, in your local currency.
+
+The moment the payment completes, you are redirected back to the product with full access unlocked: the complete prompt text or the agent's code and configuration, ready to use. Access is lifetime. There are no subscriptions and no recurring fees.
+
+Every purchase leaves a clean paper trail. Your [Purchases tab](https://swarms.world/platform/account?tab=purchases) shows recent activity with card purchases displayed in USD and labeled as card transactions, and the full [transaction history](https://swarms.world/platform/account/transactions) is a filterable, exportable ledger where every row links back to the product it belongs to.
+
+And because Stripe processes the payment end to end, your card details never touch Swarms infrastructure. The checkout is the same hosted, secured flow you already trust at your favorite online stores.
+
+## Fees at a Glance
+
+The fee structure is deliberately simple. Publishing is free. Swarms retains 10% of each completed sale, and the seller receives 90%. The fee is identical across both payment rails, so there is no financial penalty for choosing fiat over crypto or the reverse.
+
+| Sale price | Platform fee (10%) | Seller receives |
+| ---------- | ------------------ | --------------- |
+| $5.00      | $0.50              | $4.50           |
+| $20.00     | $2.00              | $18.00          |
+| $100.00    | $10.00             | $90.00          |
+
+No listing fees, no subscription tiers, no minimums. The marketplace earns only when sellers earn.
+
+## Crypto Is Not Going Anywhere
+
+Fiat support is an expansion, not a replacement. Crypto payments in SOL remain fully supported, and the crypto-native workflows that the community relies on continue to work exactly as before. Each listing selects its payment rail at publish time, and each product's purchase dialog shows buyers which method it accepts.
+
+The two rails serve different audiences, and the marketplace is stronger for supporting both. Crypto offers permissionless, wallet-native commerce for the on-chain community. Fiat offers familiar, frictionless checkout for everyone else. Sellers can meet their buyers wherever those buyers are.
+
+## What This Means for the Agent Economy
+
+We talk often about the agent economy: a world where autonomous agents are built, traded, composed, and deployed like any other economic good. For that economy to become real, its infrastructure has to meet the standards of real commerce. Discovery has to be fast. Quality has to be visible. And payments have to be universal.
+
+With this release, the payment layer catches up to that ambition. A student in one country can publish a prompt tonight and sell it tomorrow to a company on the other side of the world, with Stripe handling currency conversion, fraud protection, and bank payouts in between. A business can put an agent purchase on a corporate card and expense it like any other software tool. The gap between building something valuable and earning from it has never been smaller.
+
+This is also just the beginning. Fiat rails unlock a roadmap of commerce features that were previously out of reach, and the aggregate effect compounds: more buyers attract more sellers, more sellers publish better products, and better products attract more buyers. Payment friction was the bottleneck. It is gone now.
+
+## Frequently Asked Questions
+
+**Do sellers need a crypto wallet to sell with fiat?**
+No. Fiat listings pay out to your bank account through Stripe, and no Solana wallet is required at any point. The wallet input only appears for crypto listings and tokenized launches.
+
+**Can I sell some products in crypto and others in fiat?**
+Yes. The payment rail is chosen per listing on the launch page, and both rails carry the same 10% platform fee, so you can serve both audiences from a single account.
+
+**Which payment methods can buyers actually use?**
+Whatever Stripe offers in their region: bank cards, Apple Pay, Google Pay, Alipay, Klarna, and many more, in their local currency. Availability varies by country, and Stripe presents the right options automatically at checkout.
+
+**Where do I track my sales and payouts?**
+The Seller tab lists every card sale with the sale amount, platform fee, and your earnings, alongside aggregate stats and CSV export. The Stripe Express dashboard, one click away from the same tab, covers balances and payout history.
+
+**Is there a subscription or listing fee?**
+No. Publishing is free. The only cost is the 10% fee on completed sales, which is deducted automatically at the moment of payment.
+
+**What if a purchase does not unlock immediately?**
+Access is recorded through two independent paths, so this should be rare. Refresh the product page first, and if the content still looks locked, contact [support](https://swarms.world/support) with your purchase time and the product name.
+
+## Get Started Today
+
+Fiat payments are live for every user on the Swarms Marketplace right now. Here is where to go next:
+
+- **Sellers:** follow the [vendor tutorial](https://docs.swarms.ai/docs/marketplace/fiat-payments-vendor-tutorial) to set up your Stripe seller account and publish your first fiat-paid listing. The whole process takes a few minutes.
+- **Buyers:** follow the [buyer tutorial](https://docs.swarms.ai/docs/marketplace/fiat-payments-buyer-tutorial) and purchase your first agent or prompt by card in under a minute.
+- **Everyone:** read the [fiat payments overview](https://docs.swarms.ai/docs/marketplace/fiat-payments) for a complete picture of how the money flows, or head straight to the [marketplace](https://swarms.world) and start browsing.
+
+The agent economy is now open to anyone with a card. We cannot wait to see what you build, publish, and buy.

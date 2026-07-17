@@ -154,10 +154,10 @@ export default function AcademyPage() {
                   className="h-12 w-full rounded-full bg-white px-8 text-base font-medium text-black hover:bg-neutral-200 sm:h-14 sm:w-auto sm:text-lg"
                   asChild
                 >
-                  <a href="https://docs.swarms.world" target="_blank" rel="noopener noreferrer">
+                  <Link href="/academy/swarms-api">
                     Start learning
                     <ArrowRight className="ml-2 h-5 w-5" />
-                  </a>
+                  </Link>
                 </Button>
                 <Button
                   variant="outline"

@@ -4,7 +4,7 @@ export const academyFaq: FaqItem[] = [
   {
     question: "What is Swarms Academy?",
     answer:
-      "Swarms Academy is the free learning hub for the Swarms multi-agent AI stack. It offers structured courses and learning tracks for the Swarms API, the Swarms Marketplace, the open-source Swarms framework, and the rest of the agent engineering toolchain, taking you from your first AI agent to production multi-agent systems.",
+      "Swarms Academy is the free learning hub for the Swarms multi-agent AI stack. It opens with a full four-part course on the Swarms API, with dedicated courses for the Swarms Marketplace and the open-source Swarms framework coming soon, taking you from your first AI agent to production multi-agent systems.",
   },
   {
     question: "Are Swarms Academy courses free?",

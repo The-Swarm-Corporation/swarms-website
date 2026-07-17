@@ -18,6 +18,7 @@ type AcademyTrack = {
   href: string
   external: boolean
   meta: string
+  comingSoon?: boolean
 }
 
 const tracks: AcademyTrack[] = [
@@ -38,6 +39,7 @@ const tracks: AcademyTrack[] = [
     href: "https://swarms.world",
     external: true,
     meta: "swarms.world",
+    comingSoon: true,
   },
   {
     title: "Swarms Framework",
@@ -47,6 +49,7 @@ const tracks: AcademyTrack[] = [
     href: "https://docs.swarms.world",
     external: true,
     meta: "pip install swarms",
+    comingSoon: true,
   },
   {
     title: "And More",
@@ -68,6 +71,9 @@ function TrackLink({
   children: React.ReactNode
   className?: string
 }) {
+  if (track.comingSoon) {
+    return <div className={className}>{children}</div>
+  }
   if (track.external) {
     return (
       <a href={track.href} target="_blank" rel="noopener noreferrer" className={className}>
@@ -208,7 +214,13 @@ export default function AcademyPage() {
                       className="h-5 w-5 text-white/50 transition-colors duration-300 group-hover:text-white"
                       strokeWidth={1.5}
                     />
-                    <ArrowRight className="h-4 w-4 flex-shrink-0 text-white/30 transition-all duration-300 group-hover:translate-x-1 group-hover:text-white" />
+                    {track.comingSoon ? (
+                      <span className="rounded-full border border-white/[0.14] bg-white/[0.03] px-3 py-1 font-mono text-[10px] font-medium uppercase tracking-[0.15em] text-white/50">
+                        Coming soon
+                      </span>
+                    ) : (
+                      <ArrowRight className="h-4 w-4 flex-shrink-0 text-white/30 transition-all duration-300 group-hover:translate-x-1 group-hover:text-white" />
+                    )}
                   </div>
                   <div>
                     <h3 className="mb-2 text-base font-medium text-white sm:text-lg">
@@ -218,7 +230,7 @@ export default function AcademyPage() {
                       {track.description}
                     </p>
                     <div className="mt-4 font-mono text-[11px] text-white/40 transition-colors group-hover:text-white/60">
-                      {track.meta}
+                      {track.comingSoon ? "Course coming soon" : track.meta}
                     </div>
                   </div>
                 </TrackLink>

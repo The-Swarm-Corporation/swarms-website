@@ -41,7 +41,9 @@ export const metadata: Metadata = {
 export default function ZhBlogPage() {
   const posts = getAllPosts("zh")
   const categories = getAllCategories("zh")
-  const [featured] = posts
+  // Hero shows the newest post flagged featured in frontmatter; falls back to
+  // the newest post overall if none is flagged.
+  const featured = posts.find((post) => post.featured) ?? posts[0]
 
   return (
     <div className="min-h-screen bg-black">

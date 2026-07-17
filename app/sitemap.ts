@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next"
 import { siteConfig } from "./metadata"
 import { getAllPosts, hasZhTranslation } from "@/lib/blog"
 import { positions } from "@/lib/positions"
+import { courseParts } from "@/lib/academy/swarms-api-course"
 
 type ChangeFrequency = MetadataRoute.Sitemap[0]["changeFrequency"]
 
@@ -13,6 +14,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
   // lastModified is a reasonable freshness signal for these.
   const activeRoutes: { path: string; priority: number; changeFrequency: ChangeFrequency }[] = [
     { path: "", priority: 1, changeFrequency: "daily" },
+    { path: "/academy", priority: 0.9, changeFrequency: "weekly" },
+    { path: "/academy/swarms-api", priority: 0.9, changeFrequency: "weekly" },
+    ...courseParts.map((part) => ({
+      path: `/academy/swarms-api/${part.slug}`,
+      priority: 0.8,
+      changeFrequency: "weekly" as ChangeFrequency,
+    })),
     { path: "/products", priority: 0.9, changeFrequency: "weekly" },
     { path: "/framework", priority: 0.9, changeFrequency: "weekly" },
     { path: "/pricing", priority: 0.9, changeFrequency: "weekly" },

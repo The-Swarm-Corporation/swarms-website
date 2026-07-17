@@ -1,0 +1,66 @@
+---
+title: "Introducing Swarms Academy: Free Courses for the Multi-Agent Stack"
+description: "Swarms Academy is live at swarms.ai/academy. The flagship Swarms API course spans four parts and 31 lessons, with live API trials you run directly in the page, checkpoint projects, graded quizzes, and a points system that ranks you from Recruit to Swarm Architect. All of it is free."
+date: "2026-07-17"
+author: "Swarms Team"
+categories: ["Product"]
+readTime: "6 min read"
+featured: false
+---
+
+# Introducing Swarms Academy: Free Courses for the Multi-Agent Stack
+
+Today we are launching [Swarms Academy](https://swarms.ai/academy), a free learning hub for every product in the Swarms ecosystem. The academy opens with a flagship course on the Swarms API, alongside learning tracks for the Swarms Marketplace, the open-source Swarms framework, and the rest of the stack.
+
+The goal is simple: take a developer who has never touched an AI agent and get them to production multi-agent systems, one lesson at a time, without charging a cent.
+
+## The Swarms API Course
+
+The centerpiece of the launch is [The Swarms API Course](https://swarms.ai/academy/swarms-api), a four-part curriculum built directly from the official API documentation. It contains 31 lessons, takes about six hours to complete, and assumes nothing beyond basic Python.
+
+The four parts build on each other in order:
+
+**Part 1, Foundations.** What the Swarms API is, how authentication works, and the anatomy of an agent. You run a health check, execute your first agent completion against `POST /v1/agent/completions`, discover available models, and learn to read the `usage` field and every common error status before moving on.
+
+**Part 2, Single-Agent Capabilities.** One agent can do far more than answer a prompt. This part covers multi-turn conversation history, real-time streaming, schema-enforced structured outputs, function tools, web search, MCP integration for connecting agents to external systems, autonomous execution with `max_loops` set to auto, and the OpenAI-compatible endpoint that works as a drop-in replacement for existing SDK code.
+
+**Part 3, Multi-Agent Orchestration.** The heart of the course. Every orchestration architecture the API supports, each with a runnable example: SequentialWorkflow pipelines, ConcurrentWorkflow fan-outs, HierarchicalSwarm teams with a director, GroupChat, MixtureOfAgents, MajorityVoting, debate and council patterns, AgentRearrange flows, and GraphWorkflow for directed acyclic graphs. The part closes with a practical guide to choosing the right architecture for a given task.
+
+**Part 4, Production.** The gap between a working demo and a production system is operational. This part covers batch processing at scale, reasoning agents for hard analytical problems, rate limits and retry strategies, cost optimization through model tiering and overnight scheduling, observability through logs and metrics endpoints, and a production readiness checklist you can walk before shipping.
+
+## Run Real API Requests Inside the Lessons
+
+Reading about an API is a poor substitute for calling one. The course embeds twelve live API trials directly in the lessons. Paste your API key once (it stays in your browser and is sent only to `api.swarms.world`), and you can execute real requests from the page: run the health check, fire your first agent completion, launch a two-agent sequential swarm, and inspect your own rate limits.
+
+Every POST trial has an editable JSON body. Change the task, rewrite the system prompt, adjust the temperature, and run it again. Each trial shows the status code, latency, and full response, and every one is labeled with whether it consumes credits. A copy button produces the equivalent cURL command when you want to move to your terminal.
+
+## Points, Ranks, and Badges
+
+Progress through the course is tracked in your browser, no account required. The course awards points for every completed activity:
+
+- 10 points for each completed lesson
+- 15 points for each live API trial you run successfully
+- 25 points for each checkpoint project
+- 5 points per correct quiz answer, with a 10 point bonus for a perfect score
+
+Points accumulate into ranks, from Recruit through Agent Operator, Swarm Builder, and Orchestrator, up to Swarm Architect. Completing every lesson, the checkpoint, and the quiz in a part earns that part's badge. A progress dashboard on the course page shows your rank, your per-part completion, and a continue button that returns you to wherever you left off.
+
+## Checkpoints and Quizzes
+
+Each part ends with two things: a checkpoint project and a knowledge check.
+
+The checkpoint projects are hands-on builds that exercise everything in the part. You build a working research agent in Part 1, a structured research assistant in Part 2, the same investment memo three different ways in Part 3 (so you can compare cost against quality across architectures), and an overnight batch pipeline with cost verification as the Part 4 capstone.
+
+The quizzes are graded multiple choice, 26 questions across the course, each with an explanation of the correct answer. Only your best score counts toward your points, so retaking a quiz to improve is always worth it.
+
+## Start Today
+
+Swarms Academy is live now:
+
+1. Visit [swarms.ai/academy](https://swarms.ai/academy) to see every learning track
+2. Start [Part 1 of the Swarms API course](https://swarms.ai/academy/swarms-api/foundations)
+3. Grab a free API key at [swarms.world/platform/api-keys](https://swarms.world/platform/api-keys) to run the live trials
+
+More courses are on the way, including deeper tracks for the Swarms Marketplace and the open-source framework. If there is a topic you want covered, tell us in the [Discord](https://discord.gg/EamjgSaEQf).
+
+The agent economy needs builders. The academy is how we train them.

@@ -128,6 +128,11 @@ export function HomeNewsletter({ locale = "en" }: { locale?: "en" | "zh" }) {
                     placeholder={t.placeholder}
                     aria-label={t.emailAria}
                     required
+                    autoComplete="email"
+                    data-lpignore="true"
+                    data-1p-ignore=""
+                    data-bwignore="true"
+                    data-form-type="other"
                     className="w-full rounded-full border border-white/15 bg-white/[0.03] py-3 pl-11 pr-4 text-sm text-white placeholder-white/35 outline-none transition-colors duration-300 focus:border-white/40"
                   />
                 </div>

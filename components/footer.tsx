@@ -109,6 +109,8 @@ export function Footer() {
 
               <div className="grid gap-1 sm:gap-2">
                 {[
+                  { name: "Swarms Academy", icon: GraduationCap, url: "/academy", isNew: true },
+                  { name: "Swarms API Course", icon: GraduationCap, url: "/academy/swarms-api" },
                   { name: "Documentation", icon: BookOpen, url: "https://docs.swarms.world" },
                   { name: "Research Program", icon: Award, url: "/programs" },
                   { name: "Foundry Program", icon: Award, url: "https://swarms.world/foundry" },

@@ -1,0 +1,123 @@
+---
+title: "How to Sell Your Agents and Prompts on the Swarms Marketplace: A Step-by-Step Guide to Stripe and Crypto Payouts"
+description: "A practical, step-by-step guide to selling AI agents, prompts, and tools on the Swarms Marketplace. Set up Stripe seller payouts, price your listing, choose a payment rail, and understand exactly how fiat and crypto payouts work."
+date: "2026-07-18"
+author: "Swarms Team"
+categories: ["Guides", "Product"]
+readTime: "8 min read"
+featured: false
+---
+
+# How to Sell Your Agents and Prompts on the Swarms Marketplace: A Step-by-Step Guide to Stripe and Crypto Payouts
+
+If you have built an agent, a system prompt, or a tool worth reusing, the [Swarms Marketplace](https://swarms.world) is where you turn that work into revenue. Buyers browse the [registry](https://swarms.world/platform/registry), pay a one-time price you set, and get instant access. You keep 90% of every sale, whether the buyer pays by card or in crypto.
+
+This guide walks through the actual process, in order: setting up payouts, pricing your listing, publishing it, and understanding what happens the moment someone buys. Every mechanic described here reflects how the marketplace works today, not how it might work someday.
+
+## Why sell on the marketplace at all
+
+The Swarms Marketplace exists to connect people who build agent components with the teams that need them instead of building their own from scratch. If you have already written a solid research agent, a well-tuned system prompt, or a reusable tool function, publishing it costs nothing and the upside is direct: every sale routes 90% straight to you. There is no listing fee, no subscription tier, and, as of today, no minimum number of published items or star rating required before you are allowed to publish a paid listing. Any account can list a paid product.
+
+## Step 1: Set up your Stripe seller account (if you want to accept cards)
+
+Do this first if you want buyers to be able to pay with a card. It is entirely optional for crypto-only sellers, but it takes only a few minutes and it unlocks the largest possible pool of buyers, since not everyone holds SOL.
+
+1. Go to the [Seller tab](https://swarms.world/platform/account?tab=seller) in your account settings.
+2. Pick your country from the dropdown.
+3. Click **Set up seller account**.
+
+That click creates a Stripe Express connected account for you and redirects you into Stripe's own hosted onboarding flow, where you provide payout details, identity information, and anything else Stripe needs to verify you (standard KYC). If you get interrupted and leave partway through, your progress is saved. Come back to the Seller tab and continue exactly where you left off.
+
+Your account is not active yet just because you finished the onboarding form. Status flips to active once Stripe reports back that your transfers capability is live and payouts are enabled on your account. In practice this happens quickly for most sellers, though Stripe's own verification timing can vary by country and risk profile. Once your account is active, the same Seller tab gives you a one-click link straight into your Stripe Express dashboard, where you can check your balance and payout history at any time.
+
+You can safely skip this step if you only plan to sell for SOL. Crypto payouts do not touch Stripe at all.
+
+## Step 2: Decide your pricing and pick agent, prompt, or tool
+
+The marketplace supports three kinds of listings, and all three can be sold as paid products:
+
+| Type | What it contains | Typical use |
+| --- | --- | --- |
+| **Agent** | Executable code, dependencies, environment variables | Multi-step workflows, integrations, orchestrated analysis |
+| **Prompt** | Natural language instructions only | Personas, task instructions, structured output templates |
+| **Tool** | A typed Python function | Single-purpose operations pulled into other agents |
+
+Pick whichever matches what you actually built. Then set a one-time price in USD. There are no subscriptions on the marketplace: a buyer pays once and gets full, permanent access to the content, whether that is the complete prompt text or the agent's code and configuration.
+
+Price it the way you would price any piece of reusable software: think about how much time or expertise it would take a buyer to build the equivalent themselves, and price under that.
+
+## Step 3: Publish from /launch and choose your payment rail
+
+Head to the [launch page](https://swarms.world/launch) and publish the way you normally would: name it, describe it, attach the code or prompt content, and mark it as **Paid**.
+
+In the pricing section you will see a question: **How do you want to get paid?** with two options:
+
+- **Crypto (SOL)**, which pays out to your registered Solana wallet
+- **Card / Fiat (Stripe)**, which pays out to your connected Stripe account
+
+Pick per listing, not per account. You can have one agent selling in crypto and another prompt selling in fiat under the exact same profile, and the platform fee is identical either way.
+
+If you pick Card / Fiat and your Stripe account is not active yet (transfers not enabled), the launch page blocks publishing right there and shows you a message pointing back to the Seller tab to finish onboarding first. Finish that step, come back, and the block clears.
+
+One rail is fixed regardless of your choice here: tokenized launches always settle in crypto. Fiat is only available for direct, non-tokenized paid listings.
+
+## Step 4: What happens when someone buys
+
+This is where the two rails genuinely diverge, because the money moves through completely different infrastructure.
+
+**Crypto (SOL).** The buyer's wallet signs a single Solana transaction that contains two transfer instructions at once: one instruction sends the platform's 10% fee to the treasury wallet, and the other sends your 90% share directly to your registered wallet. Both transfers land in the same transaction as the purchase itself. There is no intermediary holding your funds and no separate payout step. Settlement is instant and non-custodial.
+
+**Card / Fiat (Stripe).** The buyer pays through Stripe's hosted checkout. Stripe splits the payment automatically: your 90% share goes into your Stripe Express account balance as an application-fee split on the underlying charge, and the 10% platform fee is collected in the same step. From there, Stripe pays your account balance out to your linked bank account on Stripe's own normal payout schedule, the same schedule used by any business running Stripe Connect. That schedule varies by country and account risk profile, so treat it as "Stripe's standard payout timing" rather than a fixed number of days.
+
+| | Crypto (SOL) | Card / Fiat (Stripe) |
+| --- | --- | --- |
+| Where funds land | Your Solana wallet | Your Stripe Express balance |
+| When | Instantly, in the purchase transaction | On Stripe's standard payout schedule |
+| Who moves the money | The buyer's own signed transaction | Stripe, as the payment processor |
+| Platform fee | 10% | 10% |
+| You keep | 90% | 90% |
+
+## The fee structure
+
+The fee is flat, and it does not change based on the payment rail, your account history, or the price of the item. Swarms takes 10% of every completed sale. You keep 90%.
+
+| Sale price | Platform fee (10%) | You receive |
+| ---------- | ------------------ | ----------- |
+| $5.00      | $0.50               | $4.50        |
+| $20.00     | $2.00               | $18.00       |
+| $100.00    | $10.00              | $90.00       |
+
+No listing fees. No subscription tiers. No sliding scale based on volume or rating. The marketplace only earns when you earn.
+
+## Frequently Asked Questions
+
+**Do I need a minimum number of published items or a rating to sell a paid listing?**
+No. There is currently no minimum published-item count and no minimum rating required before you can publish a paid product on the marketplace. Any account can list one.
+
+**Do I need a Stripe account to sell at all?**
+No. Stripe is only required if you want to accept card payments. If you only want to sell for SOL, skip the Seller tab entirely and just choose Crypto (SOL) at publish time.
+
+**Can I sell some listings in crypto and others in fiat?**
+Yes. The payment rail is chosen per listing on the launch page, not per account, so a single seller profile can run both rails side by side. The fee is the same 10% either way.
+
+**Is the fee different for fiat versus crypto?**
+No. It is a flat 10% platform fee on both rails, defined in one place in the codebase and applied identically regardless of how the buyer pays.
+
+**How fast do I actually get paid?**
+Crypto payouts happen instantly, in the same transaction as the purchase, straight to your wallet. Fiat payouts land in your Stripe Express balance immediately at time of sale, then pay out to your bank account on Stripe's own standard payout schedule, which depends on your country and account status.
+
+**Can tokenized listings be sold for fiat?**
+No. Tokenized launches always settle in crypto. Fiat (Stripe) is only available for direct, non-tokenized paid listings.
+
+**What can I sell?**
+Agents, prompts, and tools can all be listed as paid products. Price whichever one you built based on the time or expertise it saves a buyer.
+
+## Get started
+
+If you are ready to sell, here is the order to do it in:
+
+1. **Set up payouts (if you want cards):** open the [Seller tab](https://swarms.world/platform/account?tab=seller), pick your country, and click Set up seller account.
+2. **Publish your listing:** go to [/launch](https://swarms.world/launch), mark your agent, prompt, or tool as Paid, set your price, and pick your payment rail.
+3. **See what's already out there:** browse the [marketplace registry](https://swarms.world/platform/registry) to see how similar listings are priced and described before you publish your own.
+
+Publishing costs nothing, there is no gate to clear first, and you keep 90% of every sale. The rest is just building something worth buying.

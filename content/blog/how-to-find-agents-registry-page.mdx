@@ -1,0 +1,103 @@
+---
+title: "How to Find Agents, Prompts, Tools, and Bundles on the Swarms Registry"
+description: "A practical walkthrough of the Swarms Registry page: the search bar, AI auto-search, every filter, sort order, grid vs. table view, and the refresh button, so you can find the right agent or prompt in seconds."
+date: "2026-07-18"
+author: "Swarms Team"
+categories: ["Guides"]
+readTime: "9 min read"
+featured: false
+---
+
+# How to Find Agents, Prompts, Tools, and Bundles on the Swarms Registry
+
+The [Swarms Registry](https://swarms.world/platform/registry) lists agents, prompts, tools, and bundles published by the whole community, and that catalog grows every day. A big catalog is only useful if you can get to the right item quickly, so the Registry page is built around several overlapping ways to narrow the list down to exactly what you need. This guide walks through each one, starting with the two you will use most.
+
+## Start with the search bar, or let AI do the searching
+
+At the top of the Registry page sits a single input with a placeholder that reads "Search by name, description, or tags...". Type anything there and it matches against an item's name, its description, and its tags at once. That covers most quick lookups: a product name you already know, a keyword like "trading" or "customer support," or a tag someone tagged their agent with.
+
+For everything else, there is a second mode built into the same input. Click the "AI" button on the right edge of the search bar (it has a sparkles icon) and the field switches into auto-search mode. Instead of typing keywords, describe what you want in plain English, exactly the way you'd ask a colleague. The placeholder text gives a real example of the kind of query it's built for:
+
+> "top free healthcare agents this month, no x402"
+
+Press Enter, and the request goes to an agent behind the scenes that reads your sentence and translates it into actual filter settings: item type, pricing, exclusions, industry, sort order, and date range. You don't set anything by hand. The page narrates what it's doing as it goes, applying one filter at a time with a short status line like "Setting industry: healthcare..." or "Setting from the last month...", so you can watch your query turn into a concrete set of filters instead of getting a black-box result.
+
+Two details make this more than a novelty search box:
+
+- **It's conversational.** If you follow up with something like "actually only paid ones," the agent doesn't start over. It receives your previous query and the filters currently in effect as context, and edits them, so a quick refinement stays a refinement instead of a fresh search.
+- **It recovers from zero results.** If the filters the agent chose turn up nothing, the page doesn't just show an empty state. It waits briefly, then progressively loosens the least essential filters, one at a time: first it widens the date range back to all time, then it drops the industry filter, then it drops the keyword search if one was set, narrating each step. If it runs out of filters to loosen and still finds nothing, it tells you so directly rather than looping forever.
+
+Auto-search is worth reaching for whenever your request has more than one dimension to it (a business model, a time window, an industry, an exclusion) since expressing all of that by hand across five separate dropdowns is slower than just saying it.
+
+## The filter bar
+
+Below the search input sits a row of filters. All of them can be combined, and all of them are multi-select unless noted otherwise.
+
+| Filter | Options | Behavior |
+|---|---|---|
+| **Item Type** | Agents, Prompts, Tools, Bundles | Multi-select. Leave it empty to see all four types at once. |
+| **Pricing** | Free, Paid, Tokenized, Vault, Frenzy | Multi-select. Matches how the item is actually sold: Free/Paid are mutually exclusive by definition, Tokenized means it has an on-chain token attached, Vault and Frenzy are their respective sale modes. |
+| **Exclude** | Free, Paid, Tokenized, Vault, Frenzy, x402 Agents | Multi-select. The inverse of Pricing: hides anything matching a selected trait instead of requiring it. |
+| **Tag** | Free-text input | Substring match, case-insensitive, against an item's tags. |
+| **Industry** | Multi-select category list | The same category list used on the Launch publishing form, so the categories you filter by here are the same ones creators pick when they publish. |
+
+A couple of these deserve more explanation.
+
+**The x402 exclusion.** Any agent whose name starts with "x402" is, by default, always pushed to the back of every listing on the Registry, regardless of what filters or sort order you have set. That's a deliberate design choice: there are enough x402-named agents in the catalog that without this rule they would bury everything else on the page. They still show up if you scroll or page far enough, but they never crowd out the rest of the results near the top. If you'd rather not see them at all, select "x402 Agents" under Exclude and they disappear from the list entirely.
+
+**Pricing vs. Exclude.** Pricing is a "show me only these" filter; Exclude is a "hide anything like this" filter. You can combine them, for example filtering Pricing to Free while also excluding Vault items, to see only free items that aren't sold through the vault mechanism.
+
+## Sort order and the date filter
+
+Next to the filter row are two dropdowns: sort order and date range.
+
+Sort options are Newest First (the default), Oldest First, Most Popular, and Most Upvoted. The last two look similar but behave differently, and the difference matters:
+
+- **Most Upvoted** ranks every matching item by total upvotes, highest first, with no floor. An item with a single upvote can still appear near the top if little else has more.
+- **Most Popular** applies the same upvote ranking, but first filters out anything with fewer than 2 upvotes. It's meant to surface items with some real community validation behind them rather than letting one early upvote put an untested listing at the top of the page.
+
+If you want a quick pulse check on what the community actually rates highly, reach for Most Popular. If you want the full ranked list including brand-new or barely-upvoted items, use Most Upvoted.
+
+The date filter narrows results by when an item was published: All Time (default), Today, This Week, This Month, or This Year. It stacks with every other filter, so "Agents, Free, This Month, Most Popular" is a perfectly valid combination.
+
+## Grid view vs. table view
+
+Two view-mode buttons sit next to the filter row. Grid view shows each item as a full card, with its image, description, rating, price, and tags visible at a glance, and is the better default when you're browsing and want a feel for what an item actually is before clicking in. Table view compresses the same items into rows: name and creator, type, a truncated description, tags (each one clickable to instantly set it as your tag filter), rating, price, and a View or Buy action. Table view is the better choice once you already know roughly what you're looking for and want to scan or compare many items by price and rating quickly, since it fits far more rows on screen than the grid ever could.
+
+## Active filters, stats, and pagination
+
+Every filter you set (item type, pricing, exclusions, tag, industry, sort, and date) shows up as an individually removable chip below the filter bar, with a Clear All button to reset everything at once. A small stats row underneath shows live counts for the filtered result set: how many agents, prompts, bundles, and tools currently match, plus how many distinct vendors created them.
+
+Results paginate at 10, 20, 50, or 100 items per page, selectable from a dropdown next to the page controls.
+
+## The refresh button, and why it exists
+
+Registry results are cached in your browser for a few minutes so that switching between filters, or coming back to a search you already ran, feels instant instead of re-fetching everything from scratch. Most of the time that's invisible and simply makes the page feel fast. Occasionally though, you might publish something new, or a friend just published something, and want to confirm it's live without waiting out the cache window. The **Refresh** button in the page header, next to Bulk Publish, exists for exactly that: it clears the cached data for your current filter combination and pulls everything fresh from the server, including item data, bundles, ratings, and upvote counts.
+
+## Shareable, bookmarkable links
+
+Every filter choice on the page, search text, item type, pricing, exclusions, tag, industry, sort order, date range, view mode, and page number, is written into the URL as a query parameter. That means any specific filtered view, "free healthcare agents from this month, sorted by popularity, in table view," is a real, shareable link. Set up the search you want, copy the URL, and send it to a teammate or bookmark it for later; it will load back into exactly the same state.
+
+## Frequently asked questions
+
+**What's the single fastest way to find something specific?**
+If you already know a name or keyword, use the plain search bar. If your request has multiple conditions (a business model, a time window, an industry, something to exclude), switch to AI auto-search and describe it in one sentence.
+
+**What exactly does "Most Popular" filter out that "Most Upvoted" doesn't?**
+Most Popular only shows items with 2 or more upvotes. Most Upvoted shows every item ranked by upvote count with no minimum, so items with 0 or 1 upvotes can still appear.
+
+**Can I get rid of x402 agents completely instead of just deprioritizing them?**
+Yes. They're already sorted to the back of every list by default, but selecting "x402 Agents" under the Exclude filter removes them from the results entirely.
+
+**Why can't I find something I just published?**
+Results are cached client-side for a few minutes for performance. Click the Refresh button in the page header to force a live refetch.
+
+**Does the tag filter require an exact match?**
+No, it's a case-insensitive substring match, so searching "health" will match a tag like "healthcare."
+
+**Can I share a specific search with someone else?**
+Yes. Every filter is reflected in the page's URL, so copying the address bar link preserves your exact search.
+
+## Get started
+
+The best way to get a feel for all of this is to try it. Head to the [Swarms Registry](https://swarms.world/platform/registry) and run a real search, or try the AI auto-search with your own plain-English request. If you go looking and realize the thing you want doesn't exist yet, you can [publish your own agent, prompt, tool, or bundle](https://swarms.world/launch) and let the same discovery tools bring buyers to you.

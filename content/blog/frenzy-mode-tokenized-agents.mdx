@@ -1,0 +1,86 @@
+---
+title: "Frenzy Mode: How to Launch a Tokenized Agent With 2x Creator Fees"
+description: "A focused deep dive into Frenzy Mode on the Swarms Marketplace: the exact fee mechanics, how Frenzy-mode tokens show up in the registry, and a step-by-step guide to launching a tokenized agent or prompt with it enabled."
+date: "2026-07-18"
+author: "Swarms Team"
+categories: ["Guides", "Product"]
+featured: false
+readTime: "8 min read"
+image: "/frenzy_mode_banner_main.png"
+---
+
+# Frenzy Mode: How to Launch a Tokenized Agent With 2x Creator Fees
+
+A tokenized agent or prompt on the [Swarms Marketplace](https://swarms.world) is a normal listing with a live, tradeable token attached to it on Solana. Instead of getting paid once per buyer, a creator earns a small fee on every trade of that token, for as long as people keep trading it. For the full picture, the bonding curve, market-cap checkpoints, and complete launch flow, read [Tokenized Agents: What They Are, How to Launch One, and How Creators Earn Ongoing Revenue](https://swarms.world/blog/tokenized-agents-launch-revenue) first.
+
+This post goes deep on one specific toggle inside that flow: Frenzy Mode, which changes the fee math on your token and how it appears in the marketplace. It is worth understanding in detail before you flip it on at launch time.
+
+## What Frenzy Mode Actually Does
+
+By default, every tokenized listing on Swarms charges a total trading fee of 1.0% per trade, split evenly: 0.5% to the creator and 0.5% to the Swarms platform. That is the baseline economics for any tokenized agent or prompt.
+
+Frenzy Mode is an optional toggle available at launch time, sitting next to the ticker and quote currency fields, for agents and prompts only (tools do not support tokenization at all, with or without Frenzy). Enabling it does not just shift the existing 1.0% between creator and platform, it routes the token through a different fee tier entirely. The standard flow calls the Jupiter partner API with one API key; Frenzy mode calls it with a second, dedicated key, referenced in the codebase as `JUPITER_API_KEY_TWO_PERCENT_FEE`. The launch API's own documentation comment spells out what that key means: "frenzy" uses the 2x fee Jupiter API key and lists the token on the Frenzy leaderboard.
+
+That is the core fact worth being precise about: Frenzy Mode does not just double the creator's cut of the existing fee, it doubles the total trading fee taken from every trade. The in-app copy shown to a creator deciding whether to enable it reads, verbatim: "Earn 2x fees on all volume. You receive 1% of all buy and sell volume." That sentence is identical across the launch page, the tokenize modal, and the bulk-publish flow, and it confirms the creator's share directly: 1% of all buy and sell volume, double the standard 0.5%. Since the total fee under Frenzy is 2% (the "two percent fee" API key) and the creator's declared share is 1%, the remaining 1% goes to the Swarms platform, also double its standard 0.5% cut. That platform-side figure is not printed as a literal string anywhere in the code, it follows directly from subtracting the stated creator share from the stated total fee.
+
+| | Standard | Frenzy Mode |
+| --- | --- | --- |
+| Total trading fee per trade | 1.0% | 2.0% |
+| Creator's share | 0.5% | 1.0% |
+| Platform's share | 0.5% | 1.0% |
+| Applies to | Agents and prompts | Agents and prompts |
+
+Nothing else about tokenization changes. The bonding curve, the market-cap checkpoints, the one-time 0.04 SOL launch fee, the Quote Mint choice between SOL and USDC: all of it works exactly the same whether Frenzy is on or off. Frenzy only touches the trading fee and where it goes.
+
+## How Frenzy-Mode Tokens Show Up in the Marketplace
+
+Every tokenized listing stores a `fee_selection` field, set to `"frenzy"` when the toggle was on at launch. That field drives everything a buyer sees:
+
+- On the [registry](https://swarms.world/platform/registry), listing cards for Frenzy-mode tokens carry an animated, orange flame badge, distinct from the indigo lock badge used for Vault Mode.
+- The registry's pricing filter includes "Frenzy" as one of its options, alongside Free, Paid, Tokenized, and Vault, letting a buyer filter down to only Frenzy-mode listings. The same options exist as an exclusion list, so a buyer who wants to avoid the higher round-trip fee can exclude Frenzy-mode tokens just as easily.
+- The marketplace's explorer homepage runs a dedicated "Top Frenzy Agents & Prompts" carousel, labeled "Agents and prompts launched in Frenzy Mode," pulling from a `/api/frenzy-tokens` endpoint that queries every agent and prompt with `fee_selection = 'frenzy'` and ranks them by live market cap via Jupiter. A "view all" link from that carousel routes straight to the registry pre-filtered to `pricing=frenzy`.
+
+Frenzy is not a hidden setting that only affects your own fee statement. It is a visible, filterable, browsable trait, and buyers who care about round-trip trading costs have a straightforward way to spot it before they trade.
+
+## How to Launch a Tokenized Agent or Prompt With Frenzy Mode Enabled
+
+1. Go to the [launch page](https://swarms.world/launch) and fill out your listing as usual: name, description, content, and everything else you would set for a normal agent or prompt.
+2. Toggle Tokenization on, in the Pricing section (agents and prompts only).
+3. Set a Ticker Name (up to 10 uppercase letters and numbers) and choose your Quote Mint, SOL or USDC.
+4. In the same tokenization panel, flip the Frenzy Mode toggle: an orange-bordered card with a flame icon, labeled "Frenzy Mode," with the "Earn 2x fees on all volume. You receive 1% of all buy and sell volume" description underneath.
+5. Vault Mode sits directly below as a separate, independent toggle. Nothing forces you to pick one or the other, and enabling both at once (a gated, Frenzy-fee token) is a valid combination the flow supports.
+6. Connect a Solana wallet, required for any tokenized listing since the token mints as part of the publish action.
+7. Publish, and pay the one-time 0.04 SOL launch fee when prompted. Your listing goes live with a token carrying the `frenzy` fee selection, the orange flame badge, and the doubled 2% trading fee from its first trade onward.
+
+Creator fees, Frenzy or standard, accrue on-chain in real time and are claimed the same way in both cases: connect your wallet on the Creator Fees tab in your account settings, where unclaimed and claimed fees per token are shown and can be claimed with a transaction you sign yourself.
+
+## The Tradeoff: Is Frenzy Mode Worth It?
+
+Neither the launch flow nor the docs make a recommendation here, so this section is reasoning, not a documented claim, and it cuts both ways.
+
+A 2% total round-trip fee is twice what a standard listing charges, and traders comparing two similar tokens can see the difference directly, since Frenzy status is filterable in the registry. Fee-sensitive traders may simply prefer the 1% standard tier when a similar listing exists without Frenzy, a real cost against expected volume.
+
+Against that, a creator who enables Frenzy Mode captures twice the revenue on every trade that does happen, from the first swap onward. For a listing you expect will get attention regardless, a well-known agent, a promoted prompt, something with a following that trades it out of genuine interest more than fee arbitrage, doubling your take is a straightforward win. Frenzy Mode also puts a listing in front of a dedicated audience: the Frenzy carousel and registry filter exist for buyers actively comfortable with higher-fee tokens, a different discovery surface than a standard listing gets.
+
+In short, Frenzy Mode rewards confidence in demand. Unsure whether a listing will generate real trading volume? The standard 1% split is the lower-risk default. Confident people will trade it regardless of the fee? Frenzy Mode is a direct way to double what you earn from that activity.
+
+## Frequently Asked Questions
+
+**What is the exact fee difference between standard and Frenzy Mode?**
+Standard listings charge 1.0% total per trade, split 0.5% to the creator and 0.5% to the platform. Frenzy Mode charges 2.0% total per trade, split 1.0% to the creator and 1.0% to the platform. The creator's take doubles, and so does the total cost to traders.
+
+**Can I enable Frenzy Mode and Vault Mode on the same listing?**
+Yes. They are independent toggles, and enabling both produces a token-gated listing (only holders can use it) that also carries the doubled Frenzy fee on every trade.
+
+**Does Frenzy Mode work for tools?**
+No. Tokenization is only available for agents and prompts, so Frenzy Mode is unavailable for tools as well.
+
+**How do buyers know a token is in Frenzy Mode before trading it?**
+Frenzy-mode listings carry an orange flame badge on their marketplace card, and the registry's pricing filter has a dedicated "Frenzy" option. The explorer homepage also runs a "Top Frenzy Agents & Prompts" carousel, ranked by live market cap, with a link through to the registry pre-filtered to Frenzy listings.
+
+**Can I turn Frenzy Mode on after I have already launched a token?**
+The toggle is set at launch time as part of the same on-chain action that mints your token. This post covers the launch-time flow; if you need to change fee settings on an already-live token, check your account's Creator Fees tab or contact support.
+
+## Get Started
+
+If you understand the fee tradeoff and want to move ahead: launch a tokenized agent or prompt with Frenzy Mode enabled on the [launch page](https://swarms.world/launch), browse what is already trading in Frenzy Mode on the [marketplace registry](https://swarms.world/platform/registry) with the Frenzy filter applied, or go back to the [full tokenization guide](https://swarms.world/blog/tokenized-agents-launch-revenue) for everything else about how tokenized listings work.

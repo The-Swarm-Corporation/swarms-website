@@ -20,6 +20,14 @@ export function BlogMarkdown({ content }: { content: string }) {
             {children}
           </video>
         ),
+        img: ({ node, ...props }) => (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            {...props}
+            alt={props.alt ?? ""}
+            className="mb-8 w-full rounded-2xl border border-white/10"
+          />
+        ),
         h1: ({ children }) => (
           <h1 className="mb-6 mt-12 text-3xl font-semibold tracking-tighter text-white first:mt-0 sm:text-4xl">
             {children}

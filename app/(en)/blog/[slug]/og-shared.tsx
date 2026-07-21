@@ -1,9 +1,35 @@
 import { ImageResponse } from "next/og"
 import { format, parseISO } from "date-fns"
+import { readFile } from "node:fs/promises"
+import path from "node:path"
 import type { BlogPost } from "@/lib/blog"
 
 export const size = { width: 1200, height: 630 }
 export const contentType = "image/png"
+
+// satori (the engine behind ImageResponse) cannot resolve a root-relative
+// path like "/banner.png" on its own. Remote images can be passed straight
+// through, but local public/ assets must be embedded as data URLs, otherwise
+// the card renders blank on Twitter and other social previews.
+async function resolveImageSrc(image: string): Promise<string | null> {
+  if (/^https?:\/\//.test(image)) return image
+  try {
+    const filePath = path.join(process.cwd(), "public", image.replace(/^\//, ""))
+    const data = await readFile(filePath)
+    const ext = path.extname(image).slice(1).toLowerCase()
+    const mime =
+      ext === "jpg" || ext === "jpeg"
+        ? "image/jpeg"
+        : ext === "webp"
+          ? "image/webp"
+          : ext === "gif"
+            ? "image/gif"
+            : "image/png"
+    return `data:${mime};base64,${data.toString("base64")}`
+  } catch {
+    return null
+  }
+}
 
 export async function renderBlogCard(post: BlogPost | null) {
   if (!post) {
@@ -11,20 +37,24 @@ export async function renderBlogCard(post: BlogPost | null) {
   }
 
   if (post.image) {
-    return new ImageResponse(
-      (
-        <div style={{ display: "flex", width: "100%", height: "100%", backgroundColor: "#000000" }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={post.image}
-            width={size.width}
-            height={size.height}
-            style={{ objectFit: "cover", width: "100%", height: "100%" }}
-          />
-        </div>
-      ),
-      size
-    )
+    const src = await resolveImageSrc(post.image)
+    if (src) {
+      return new ImageResponse(
+        (
+          <div style={{ display: "flex", width: "100%", height: "100%", backgroundColor: "#000000" }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={src}
+              width={size.width}
+              height={size.height}
+              style={{ objectFit: "cover", width: "100%", height: "100%" }}
+            />
+          </div>
+        ),
+        size
+      )
+    }
+    // If the asset can't be read, fall through to the branded card below.
   }
 
   return new ImageResponse(<BrandedCard post={post} />, size)

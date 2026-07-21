@@ -1,0 +1,231 @@
+---
+title: "Swarms Marketplace Changelog June 1st - July 21: Fiat Payments, Upvotes, and More"
+description: "A day by day log of everything that shipped on the Swarms Marketplace from June through July: marketplace bundles, an upvote system, card payments through Stripe, natural language search, faster pages, unique avatars, and dozens of fixes, each written in plain language so you know what changed and what it means for you."
+date: "2026-07-21"
+author: "Swarms Team"
+categories: ["Product"]
+readTime: "11 min read"
+featured: false
+image: /swarms_marketplace_changelog_june.png
+---
+
+# Swarms Marketplace Changelog: June and July
+
+June and July were the two busiest months in the history of the [Swarms Marketplace](https://swarms.world). Nearly 200 changes shipped, spanning brand-new ways to pay, discover, and package products, alongside a steady stream of fixes and speed work. This post is the full record, written in plain language so you know exactly what changed and what it means for you, whether you publish agents, buy them, or just browse.
+
+## Overview
+
+If you read nothing else, these are the changes that matter most.
+
+- **Card payments through Stripe.** Paid listings can now be bought with a credit card, not just crypto. Sellers get a dedicated tab to onboard, take card payments, track sales, and export their history.
+- **Marketplace bundles.** You can now package several products together and sell them as one, with their own pages, ratings, and a spot on your profile.
+- **Natural language search.** Describe what you want in plain English and an agent sets the registry filters for you, live, then relaxes them automatically if nothing matches.
+- **Upvotes and ratings everywhere.** A community upvote system launched, "most popular" now sorts by it, and ratings show up right where you decide to buy.
+- **Dramatically faster pages.** The registry and product pages load much faster after a major performance pass.
+- **A more personal marketplace.** Every creator now has a username on every card, and users without a profile picture get a unique, stable space-invader avatar.
+
+The rest of this post is the day-by-day log behind those headlines.
+
+Two notes before the log. First, it only covers work that is live today. A handful of things shipped and were rolled back during this window, and those are left out since they never reached you. Second, the internal plumbing (caching rewrites, package tooling, dependency cleanups) is summarized rather than listed line by line, because it matters to us and not to you.
+
+## June 1
+
+- The registry gained **multi-select filters**, so you can hold several filters at once instead of picking a single category and starting over.
+- Hidden tags on list-view products now show on hover, and a copy button was added so you can grab what you need without opening the full page.
+- The launch flow was reworked to reach the wallet signing prompt faster, splitting tokenization into a prepare step and a submit step so less happens while you wait.
+- Claiming your creator fees now plays a sound, a small touch of delight.
+- The bookmarks page got cleaner circular remove buttons.
+
+## June 3
+
+- Creator fees got a proper redesign: the summary is now three clear stat cards instead of a dense block, the refresh control moved to a tidy icon in the filter row, and the product search box widened so long names fit.
+- You can now **filter your creator fees**, which matters once you have more than a handful of products earning.
+
+## June 4
+
+- SOL price now comes primarily from Coinbase, with Jupiter and CoinGecko as automatic fallbacks, and every part of the app that needs a SOL price routes through one function, so numbers stay consistent across the marketplace.
+- Market cap targets for token launches are now converted using the live SOL price rather than a stale estimate.
+- Fixed a registry bug where filtering could leave **empty pages between agents and prompts**, so pagination counts are now correct.
+
+## June 9
+
+- Tokenized products gained **Vault mode**, a button that lets creators lock a product behind token holding.
+- A new **Agent Holdings tab** shows your wallet's tokens in a clean table.
+- The agent code section was flattened into a single editor window that is easier to read.
+
+## June 10
+
+- The holdings table now has a search bar, pagination beyond the first five rows, and a column showing vault status per holding.
+- Fixed a display bug that cut off long agent code.
+
+## June 11
+
+- The account refresh button now correctly updates your holdings even when you switch wallets.
+- Info cards got a subtle hover animation.
+- Smaller fixes: the Rust code sample on the dashboard stopped wrapping awkwardly, a broken documentation link was repaired, and the profile dropdown's selected state was made more visible.
+
+## June 14
+
+- "Launch" was renamed to **"Publish product"** in several places, since that is what it actually does.
+- The wallet button now shows for everyone rather than only signed-in users.
+- The old apps gallery page, which no longer had a purpose, was removed, and unused AI SDK dependencies were cleared out to keep the app lean.
+
+## June 15
+
+- The featured section was redesigned into a **swipeable carousel**.
+- The navbar search box was improved.
+- Tokenized vault products gained a disclaimer making the token-holding requirement explicit before you commit.
+
+## June 16
+
+This was the big one: **marketplace bundles** launched. A bundle is a packaged set of products sold together.
+
+- Bundles shipped as a full feature: clickable rows, recommended products, inline registry cards, a bookmark button, a ratings tab, a metadata tab, an owner edit button, an expandable view for reading a full prompt in a modal, and a reused social share modal.
+- Your user profile gained a **Bundle tab** and a total bundle count, so a creator's bundles are now part of their public presence.
+- Bundle pages were tuned for search engines so they can be discovered from Google.
+- Fixed several bundle bugs, including one where bundles used the wrong identifier and another where the logged-out navbar caused a refresh glitch.
+
+## June 21
+
+- The paid purchase popup was redesigned to match the cleaner vault popup, and it now **shows ratings** right in the purchase flow, so you can see what other buyers thought before you pay.
+- Fixed a registry bug that miscounted filtered pagination.
+
+## June 22 to 23
+
+- The **upvote feature** first landed, letting the community signal which products are worth attention.
+- The "most popular" filter was reworked to sort by upvotes rather than a vaguer signal.
+- The ratings modal was redesigned, bundles gained their own ratings tab, and pagination buttons got a clearer selected state.
+
+## June 24 to 25
+
+- A new **Upvoted products section** appeared on user profiles, so you can see what someone has endorsed.
+- Fixed a bug where upvoted products failed to actually show up, and made upvote fetching on the registry faster and more reliable.
+- The upvote button now works properly on mobile.
+
+## June 26
+
+- Products without an image now get **nicer placeholders** instead of a blank box.
+- Info cards show their upvote count, and the "most popular" threshold was lowered to two upvotes so good new products surface sooner.
+- Image loading was sped up by skipping the optimizer for images already in storage.
+
+## June 29 to 30
+
+- A blank creator section on product pages was fixed to show the creator's username.
+- That username now also appears on each info card in the marketplace, so you can see who made something at a glance.
+
+## July 1
+
+- Owners and upvoters are now **notified by email** on an upvote, and reviewers get a confirmation email.
+- The shared email system learned to handle bundles and different actor types.
+- Added two new endpoints, for product fees and a user's product list.
+
+## July 2
+
+- The chat page got three fixes: editing prompts no longer throws an error, the outer scrollbar was removed, and the menu button was centered and resized.
+
+## July 3 to 4
+
+- A Fourth of July banner went up for the holiday, later removed once the week passed.
+- The durable win was **search engine coverage**: dynamic sitemaps were added for agents, tools, bundles, and creator profiles, the prompt sitemap was fixed to paginate past a 1000-row limit, and all of them were registered so search engines can find every page. If you publish here, this is the work that helps your product get discovered from outside.
+
+## July 6
+
+- Silenced console noise from Jupiter 404 errors on tokenized products, and corrected several broken documentation links in Yuki, the marketplace assistant.
+
+## July 8
+
+- A major speed day: the **registry and marketplace listings load dramatically faster**, and **entity detail pages** (agent, prompt, and tool pages) were massively sped up.
+- An external rate-limiting service was removed entirely and replaced with a lighter in-memory approach plus Next.js data caching, which is both faster and simpler.
+- The American flag was removed from the navbar now that the holiday had passed.
+
+## July 9 to 10
+
+- Documentation links were pointed at the correct Swarms introduction.
+- A **public bundle publishing endpoint** was added, so bundles can be created programmatically.
+- A full test suite was written covering every user-facing marketplace endpoint, which means fewer regressions reach you going forward.
+
+## July 13
+
+A dense, high-impact day.
+
+- The headline feature was **AI auto-search**: describe what you want in plain English and an agent sets the registry filters for you, live. Follow-up queries refine the current filters instead of starting over, and if nothing matches, the filters automatically relax until results appear. We covered this in depth in [Introducing Autonomous Filter Search](https://swarms.ai/blog).
+- The registry gained a dedicated **tag filter**: tags are now searchable, and clicking a tag chip filters by it.
+- Comment notifications now email both the vendor and the commenter, the leaderboard defaults to its highest-rated tab, and the username prompt was redesigned and made mandatory so every creator has a real name.
+- The marketplace switched its package manager to pnpm for faster, more reliable builds.
+
+## July 14
+
+- The navbar swapped its GitHub and docs links for a **support link and a socials dropdown** (Discord, Twitter, YouTube, GitHub).
+- The registry and leaderboard pages were added to the sitemap, and richer page metadata plus structured data were added so the marketplace presents well in search results and link previews.
+- An orphaned history page was deleted.
+
+## July 15
+
+**Card payments arrived.** This is the largest addition of the two months.
+
+- The marketplace integrated **Stripe Connect**, so paid listings can now be bought with a card, not just crypto. Sellers get a dedicated seller tab to onboard and manage payouts, buyers get a straightforward card checkout, and the platform takes a flat fee.
+- The seller experience was fleshed out with a **sales stats bar** (total sales, products sold, net earnings, unique buyers), a paginated sales table, **CSV export** of all sales, and clickable item names that link back to product pages.
+- Card purchases now show in your history in USD with a card label, and Solana-specific details are hidden on those rows so nothing looks out of place.
+- Paid publishing was opened up: the old trustworthiness gate was removed, the wallet no longer pops up automatically, and the paid section got a neutral palette with distinct buttons for crypto and card.
+
+## July 16
+
+- The purchase gate was redesigned to match the vault gate, now showing an image, description, ratings, upvotes, and purchase count, so there is real social proof before you buy.
+- The holiday banner was replaced with one announcing card payments.
+
+## July 17 to 18
+
+- The marketplace gained a **refresh button**, and dynamically generated profile pictures were fixed on profile pages.
+- A standout visual touch shipped: **unique space-invader avatars** for users without a profile picture. Each is seeded by username, so every user gets a distinct, stable alien across cards, the leaderboard, reviews, comments, chats, and account settings.
+- Connect-wallet was correctly limited to signed-in users.
+
+## July 19 to 21
+
+- Creators can now **claim fees in bulk** rather than one at a time.
+- The launch page now prevents selecting paid and tokenized at the same time, since those are two different models, and paid products carry a clear tag on their info card.
+- Blog links were updated across the platform, and the seller page got its bottom spacing fixed.
+- The [micro-agents page](https://swarms.world/micro-agents) was updated to reflect the growing set of small AI helpers running the marketplace, which we cover in [The Micro Agents Running the Swarms Marketplace](https://swarms.ai/blog).
+
+## Conclusion
+
+Step back from the day-to-day and a shape emerges. In June the marketplace became more social: upvotes, ratings, bundles, and creator identity on every card. In July it became faster, more discoverable, and finally able to take a credit card. Search went from a set of filters you had to learn to a sentence you can just type, and a set of small agents quietly took over the chores of tagging, summarizing, naming, and illustrating listings.
+
+None of these is the whole story on its own. Together they are the difference between a marketplace you have to learn and one you can simply use. That is the direction, and there is much more coming. The fastest way to see it is to publish something, browse the registry, or just ask Yuki a question, all of which are live right now.
+
+## Frequently Asked Questions
+
+**Can I really pay with a credit card now?**
+Yes. As of July 15, any paid listing can be bought with a card through Stripe, in addition to crypto. On checkout you will see the price in USD, and the purchase shows up in your history labeled as a card payment.
+
+**How do I sell for fiat instead of crypto?**
+Open the seller tab on your account, complete the Stripe onboarding, and then choose the card or fiat rail when you publish a paid product. You get a sales dashboard with totals, unique buyers, net earnings, and CSV export.
+
+**What is a bundle?**
+A bundle is a set of products packaged and sold together as one listing. Bundles have their own pages, ratings, bookmarks, and a tab on your profile, so you can group related agents, prompts, or tools into a single offering.
+
+**How does the natural language search work?**
+On the [registry](https://swarms.world/platform/registry), type what you are looking for in plain English, such as "free healthcare agents from this month." An agent translates that into filters and applies them in front of you. If nothing matches, it automatically relaxes the filters until results appear. There is a deeper explanation in [Introducing Autonomous Filter Search](https://swarms.ai/blog).
+
+**What are upvotes, and how is "most popular" decided?**
+Upvotes let the community signal which products are worth attention. The "most popular" sort is now driven by upvote count, and products need only a couple of upvotes to start surfacing, so good new listings are not buried.
+
+**Why does my profile have a little alien on it?**
+If you have not set a profile picture, the marketplace generates a unique space-invader avatar seeded by your username, so you get the same distinctive alien everywhere you appear. Upload a picture any time to replace it.
+
+**Did anything get removed or rolled back?**
+A few experiments and holiday banners shipped and were pulled during this window. This log only lists what is live today, so those are intentionally left out.
+
+## Links and Resources
+
+| Resource | Link |
+| --- | --- |
+| Swarms Marketplace | [swarms.world](https://swarms.world) |
+| Agent Registry | [swarms.world/platform/registry](https://swarms.world/platform/registry) |
+| Publish a product | [swarms.world/launch](https://swarms.world/launch) |
+| Leaderboard | [swarms.world/platform/leaderboard](https://swarms.world/platform/leaderboard) |
+| Micro-agents | [swarms.world/micro-agents](https://swarms.world/micro-agents) |
+| Yuki assistant | [swarms.world/yuki/chat](https://swarms.world/yuki/chat) |
+| Autonomous Filter Search deep dive | [swarms.ai/blog](https://swarms.ai/blog) |
+| The Micro Agents Running the Marketplace | [swarms.ai/blog](https://swarms.ai/blog) |
+| Documentation | [docs.swarms.ai](https://docs.swarms.ai) |
+| Support | [swarms.world/support](https://swarms.world/support) |

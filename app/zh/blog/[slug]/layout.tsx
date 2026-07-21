@@ -54,6 +54,7 @@ export async function generateMetadata({ params }: ZhBlogPostLayoutProps): Promi
       description: post.description,
       creator: "@swarms_corp",
       site: "@swarms_corp",
+      images: [post.image ?? "/seo_image.jpg"],
     },
     alternates: {
       canonical: url,

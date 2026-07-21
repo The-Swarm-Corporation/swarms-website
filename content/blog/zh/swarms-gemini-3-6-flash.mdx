@@ -1,0 +1,186 @@
+---
+title: "在 Swarms 上使用 Gemini 3.6 Flash 构建智能体：开发者指南"
+description: "Google 全新的 Gemini 3.6 Flash 与 3.5 Flash-Lite 模型现已在 Swarms API 上可用。本指南带开发者一步步完成：获取 API 密钥、运行单个智能体，以及使用全新 Flash 系列编排多智能体蜂群，并附有完整的 Python 与 curl 示例。"
+date: "2026-07-21"
+author: "Swarms 团队"
+categories: ["工程"]
+readTime: "6 分钟阅读"
+featured: false
+image: "/gemini_banner_swarms.png"
+---
+
+# 在 Swarms 上使用 Gemini 3.6 Flash 构建智能体：开发者指南
+
+Google 刚刚发布了迄今效率最高的 Flash 模型，而它们已经在 Swarms API 上可用。**Gemini 3.6 Flash** 是新的主力模型：在编程、知识工作与多模态表现上更强，同时输出 token 用量比 3.5 Flash 减少 17%，定价为每百万输入 token 1.50 美元、每百万输出 token 7.50 美元。**Gemini 3.5 Flash-Lite** 则是速度与吞吐量之选，以每秒 350 个输出 token 的速度运行，定价为每百万输入 0.30 美元、每百万输出 2.50 美元。
+
+高质量加上低 token 成本，这正是智能体工作负载成败所系的关键。本指南将演示如何从 Swarms API 调用这两个模型：先是单个智能体，再是一个把每个模型都放到合适位置的多智能体蜂群。你需要的一切都记录在 [docs.swarms.ai](https://docs.swarms.ai)，机器可读的索引位于 [docs.swarms.ai/llms.txt](https://docs.swarms.ai/llms.txt)。
+
+## 模型名称
+
+在 Swarms API 中，你通过 `model_name` 字段选择模型。新的 Gemini 模型使用带有服务商前缀的标识符：
+
+| 模型 | `model_name` | 最适合 |
+|---|---|---|
+| Gemini 3.6 Flash | `google/gemini-3.6-flash` | 编程、推理、多模态、智能体监督 |
+| Gemini 3.5 Flash-Lite | `google/gemini-3.5-flash-lite` | 高吞吐工作智能体、文档处理、搜索 |
+
+切换模型只需修改配置中的一行，因此你可以针对自己的任务对两者进行基准测试，而无需重写任何代码。
+
+## 第一步：获取 API 密钥
+
+在 [Swarms 平台面板](https://cloud.swarms.world/api-keys) 中创建密钥，并将其导出为环境变量：
+
+```bash
+export SWARMS_API_KEY="your_api_key_here"
+```
+
+所有请求都发往 `https://api.swarms.world`，并使用 `x-api-key` 请求头进行身份验证。在花费任何 token 之前，先用健康检查端点确认连通性：
+
+```bash
+curl https://api.swarms.world/health
+```
+
+## 第二步：运行单个智能体
+
+最小的工作单元是一个智能体加一个任务，发送到 `POST /v1/agent/completions`。一个智能体完全由其配置定义：名称、系统提示词、模型，以及若干执行参数。这里我们让它使用 `google/gemini-3.6-flash`：
+
+```python
+import os
+import requests
+
+BASE_URL = "https://api.swarms.world"
+HEADERS = {
+    "x-api-key": os.environ["SWARMS_API_KEY"],
+    "Content-Type": "application/json",
+}
+
+payload = {
+    "agent_config": {
+        "agent_name": "Code Reviewer",
+        "description": "Reviews pull requests and reports concrete issues",
+        "system_prompt": (
+            "You are a senior code reviewer. Given a diff, report "
+            "correctness bugs, security issues, and risky edits. Be "
+            "specific: cite the line and give a one-line fix."
+        ),
+        "model_name": "google/gemini-3.6-flash",
+        "max_loops": 1,
+        "temperature": 0.2,
+    },
+    "task": "Review this diff: added a raw SQL query built with f-string interpolation of a request parameter.",
+}
+
+response = requests.post(
+    f"{BASE_URL}/v1/agent/completions",
+    headers=HEADERS,
+    json=payload,
+)
+print(response.json())
+```
+
+这里没有需要预置的基础设施，也没有需要安装的框架。智能体就是一个 JSON 对象，而 3.6 Flash 以 Flash 的价格提供了强大的编程判断力。对于高并发、对延迟敏感的任务，只需把 `model_name` 换成 `google/gemini-3.5-flash-lite`，其余部分保持不变。
+
+## 第三步：编排多智能体蜂群
+
+单个智能体处理单个任务。真正的工作是一条由专家组成的流水线，而这正是 Flash 系列大显身手的地方：用 3.6 Flash 作为负责规划与审核的主管，用 3.5 Flash-Lite 作为快速完成高并发繁重工作的工作智能体。把整个团队通过一个请求发送到 `POST /v1/swarm/completions`。
+
+下面的示例是一个采用 `HierarchicalSwarm` 拓扑的研究蜂群：一个运行在 3.6 Flash 上的总监向三个 Flash-Lite 工作智能体派发任务，并综合它们的发现。
+
+```python
+swarm_config = {
+    "name": "Market Research Swarm",
+    "description": "Director-led research team producing a sourced brief",
+    "swarm_type": "HierarchicalSwarm",
+    "task": (
+        "Produce a one-page brief on the state of small, fast LLMs for "
+        "agentic workloads in 2026, covering cost, latency, and quality."
+    ),
+    "agents": [
+        {
+            "agent_name": "Research Director",
+            "description": "Supervisor that delegates, reviews, and synthesizes",
+            "system_prompt": (
+                "You are a research director. Break the task into subtopics, "
+                "delegate to your workers, check their output for gaps, and "
+                "write the final brief."
+            ),
+            "model_name": "google/gemini-3.6-flash",
+            "max_loops": 1,
+            "temperature": 0.3,
+        },
+        {
+            "agent_name": "Cost Analyst",
+            "description": "Worker that gathers pricing and token-efficiency data",
+            "system_prompt": "You analyze per-token pricing and cost per task. Report numbers with sources.",
+            "model_name": "google/gemini-3.5-flash-lite",
+            "max_loops": 1,
+            "temperature": 0.2,
+        },
+        {
+            "agent_name": "Latency Analyst",
+            "description": "Worker that gathers throughput and latency data",
+            "system_prompt": "You analyze output tokens per second and end-to-end latency. Be quantitative.",
+            "model_name": "google/gemini-3.5-flash-lite",
+            "max_loops": 1,
+            "temperature": 0.2,
+        },
+        {
+            "agent_name": "Quality Analyst",
+            "description": "Worker that gathers benchmark and quality data",
+            "system_prompt": "You compare model quality on coding and agentic benchmarks. Cite the eval.",
+            "model_name": "google/gemini-3.5-flash-lite",
+            "max_loops": 1,
+            "temperature": 0.2,
+        },
+    ],
+    "max_loops": 1,
+}
+
+response = requests.post(
+    f"{BASE_URL}/v1/swarm/completions",
+    headers=HEADERS,
+    json=swarm_config,
+)
+result = response.json()
+```
+
+同样的请求可以从任何语言发出。用 curl 表示：
+
+```bash
+curl -X POST "https://api.swarms.world/v1/swarm/completions" \
+  -H "x-api-key: $SWARMS_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d @research_swarm.json
+```
+
+## 第四步：读取响应
+
+响应按顺序包含每个智能体的产出，加上执行元数据和逐项列出的成本明细，因此每次运行都可审计、可计费：
+
+```python
+for message in result["output"]:
+    print(f"--- {message['role']} ---")
+    print(message["content"][:200])
+
+print(f"Agents: {result['number_of_agents']}")
+print(f"Execution time: {result['execution_time']}s")
+print(f"Total cost: ${result['usage']['billing_info']['total_cost']}")
+```
+
+由于 Flash-Lite 工作智能体运行成本低廉，而 3.6 Flash 能以更少的推理步骤和工具调用得出结论，像这样的混合蜂群即便你扩大工作智能体池，每个任务的总成本依然保持在较低水平。
+
+## 选择拓扑结构
+
+`HierarchicalSwarm` 只是 API 通过 `swarm_type` 提供的多种架构之一。在它们之间切换只需修改一行：
+
+| 拓扑 | `swarm_type` | 行为 |
+|---|---|---|
+| 顺序 | `SequentialWorkflow` | 流水线交接，每个智能体在前一个的基础上继续 |
+| 层级 | `HierarchicalSwarm` | 总监派发并审核 |
+| 并发 | `ConcurrentWorkflow` | 对等智能体并行处理同一任务 |
+
+由 Flash-Lite 智能体组成的 `ConcurrentWorkflow` 非常适合文档处理或智能体搜索这类扇出型任务，在这些场景中吞吐量比协调更重要。
+
+## 开始构建
+
+Gemini 3.6 Flash 与 3.5 Flash-Lite 为你提供了一个质量档位和一个吞吐档位，二者共享同一套定价体系，而 Swarms API 让你在一个蜂群中混合使用它们，无需触碰你的基础设施。获取[免费 API 密钥](https://cloud.swarms.world/api-keys)，在 [docs.swarms.ai](https://docs.swarms.ai) 阅读完整的 API 接口，今天就发布你的第一个由 Gemini 驱动的蜂群。

@@ -1,0 +1,186 @@
+---
+title: "Building Agents on Swarms with Gemini 3.6 Flash: A Developer Guide"
+description: "Google's new Gemini 3.6 Flash and 3.5 Flash-Lite models are available on the Swarms API. This step-by-step guide shows developers how to get an API key, run a single agent, and orchestrate a multi-agent swarm using the new Flash series, with full Python and curl examples."
+date: "2026-07-21"
+author: "Swarms Team"
+categories: ["Engineering"]
+readTime: "6 min read"
+featured: false
+image: "/gemini_banner_swarms.png"
+---
+
+# Building Agents on Swarms with Gemini 3.6 Flash: A Developer Guide
+
+Google just shipped its most efficient Flash models yet, and they are already available on the Swarms API. **Gemini 3.6 Flash** is the new workhorse: better coding, knowledge work, and multimodal performance while using 17% fewer output tokens than 3.5 Flash, at $1.50 per million input tokens and $7.50 per million output tokens. **Gemini 3.5 Flash-Lite** is the speed and throughput option, running at 350 output tokens per second for $0.30 per million input and $2.50 per million output.
+
+That combination, high quality at low token cost, is exactly what agentic workloads live and die by. This guide walks through calling both models from the Swarms API: a single agent first, then a multi-agent swarm that puts each model where it fits. Everything you need is documented at [docs.swarms.ai](https://docs.swarms.ai), and the machine-readable index lives at [docs.swarms.ai/llms.txt](https://docs.swarms.ai/llms.txt).
+
+## The Model Names
+
+On the Swarms API, you select a model with the `model_name` field. The new Gemini models use provider-prefixed identifiers:
+
+| Model | `model_name` | Best for |
+|---|---|---|
+| Gemini 3.6 Flash | `google/gemini-3.6-flash` | Coding, reasoning, multimodal, agent supervision |
+| Gemini 3.5 Flash-Lite | `google/gemini-3.5-flash-lite` | High-throughput workers, document processing, search |
+
+Switching a model is a one-line change to the config, so you can benchmark both against your own task without rewriting anything.
+
+## Step 1: Get Your API Key
+
+Create a key in the [Swarms Platform dashboard](https://cloud.swarms.world/api-keys) and export it as an environment variable:
+
+```bash
+export SWARMS_API_KEY="your_api_key_here"
+```
+
+All requests go to `https://api.swarms.world` and authenticate with the `x-api-key` header. Confirm connectivity with the health endpoint before you spend a token:
+
+```bash
+curl https://api.swarms.world/health
+```
+
+## Step 2: Run a Single Agent
+
+The smallest unit of work is one agent and one task, sent to `POST /v1/agent/completions`. An agent is defined entirely by its configuration: a name, a system prompt, a model, and a few execution parameters. Here we point it at `google/gemini-3.6-flash`:
+
+```python
+import os
+import requests
+
+BASE_URL = "https://api.swarms.world"
+HEADERS = {
+    "x-api-key": os.environ["SWARMS_API_KEY"],
+    "Content-Type": "application/json",
+}
+
+payload = {
+    "agent_config": {
+        "agent_name": "Code Reviewer",
+        "description": "Reviews pull requests and reports concrete issues",
+        "system_prompt": (
+            "You are a senior code reviewer. Given a diff, report "
+            "correctness bugs, security issues, and risky edits. Be "
+            "specific: cite the line and give a one-line fix."
+        ),
+        "model_name": "google/gemini-3.6-flash",
+        "max_loops": 1,
+        "temperature": 0.2,
+    },
+    "task": "Review this diff: added a raw SQL query built with f-string interpolation of a request parameter.",
+}
+
+response = requests.post(
+    f"{BASE_URL}/v1/agent/completions",
+    headers=HEADERS,
+    json=payload,
+)
+print(response.json())
+```
+
+There is no infrastructure to provision and no framework to install. The agent is a JSON object, and 3.6 Flash gives you strong coding judgment at Flash pricing. For high-volume, latency-sensitive jobs, swap `model_name` to `google/gemini-3.5-flash-lite` and keep the rest identical.
+
+## Step 3: Orchestrate a Multi-Agent Swarm
+
+Single agents handle single tasks. Real work is a pipeline of specialists, and this is where the Flash series earns its keep: use 3.6 Flash as the supervisor that plans and reviews, and 3.5 Flash-Lite as the fast workers that do the high-volume legwork. Send the whole team to `POST /v1/swarm/completions` in one request.
+
+The example below is a research swarm with a `HierarchicalSwarm` topology: a director on 3.6 Flash delegates to three Flash-Lite workers and synthesizes their findings.
+
+```python
+swarm_config = {
+    "name": "Market Research Swarm",
+    "description": "Director-led research team producing a sourced brief",
+    "swarm_type": "HierarchicalSwarm",
+    "task": (
+        "Produce a one-page brief on the state of small, fast LLMs for "
+        "agentic workloads in 2026, covering cost, latency, and quality."
+    ),
+    "agents": [
+        {
+            "agent_name": "Research Director",
+            "description": "Supervisor that delegates, reviews, and synthesizes",
+            "system_prompt": (
+                "You are a research director. Break the task into subtopics, "
+                "delegate to your workers, check their output for gaps, and "
+                "write the final brief."
+            ),
+            "model_name": "google/gemini-3.6-flash",
+            "max_loops": 1,
+            "temperature": 0.3,
+        },
+        {
+            "agent_name": "Cost Analyst",
+            "description": "Worker that gathers pricing and token-efficiency data",
+            "system_prompt": "You analyze per-token pricing and cost per task. Report numbers with sources.",
+            "model_name": "google/gemini-3.5-flash-lite",
+            "max_loops": 1,
+            "temperature": 0.2,
+        },
+        {
+            "agent_name": "Latency Analyst",
+            "description": "Worker that gathers throughput and latency data",
+            "system_prompt": "You analyze output tokens per second and end-to-end latency. Be quantitative.",
+            "model_name": "google/gemini-3.5-flash-lite",
+            "max_loops": 1,
+            "temperature": 0.2,
+        },
+        {
+            "agent_name": "Quality Analyst",
+            "description": "Worker that gathers benchmark and quality data",
+            "system_prompt": "You compare model quality on coding and agentic benchmarks. Cite the eval.",
+            "model_name": "google/gemini-3.5-flash-lite",
+            "max_loops": 1,
+            "temperature": 0.2,
+        },
+    ],
+    "max_loops": 1,
+}
+
+response = requests.post(
+    f"{BASE_URL}/v1/swarm/completions",
+    headers=HEADERS,
+    json=swarm_config,
+)
+result = response.json()
+```
+
+The same request works from any language. In curl:
+
+```bash
+curl -X POST "https://api.swarms.world/v1/swarm/completions" \
+  -H "x-api-key: $SWARMS_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d @research_swarm.json
+```
+
+## Step 4: Read the Response
+
+The response contains each agent's contribution in order, plus execution metadata and an itemized cost breakdown, so every run is auditable and billable:
+
+```python
+for message in result["output"]:
+    print(f"--- {message['role']} ---")
+    print(message["content"][:200])
+
+print(f"Agents: {result['number_of_agents']}")
+print(f"Execution time: {result['execution_time']}s")
+print(f"Total cost: ${result['usage']['billing_info']['total_cost']}")
+```
+
+Because Flash-Lite workers run cheaply and 3.6 Flash reaches conclusions in fewer reasoning steps and tool calls, the total cost per task on a mixed swarm like this stays low even as you scale the worker pool.
+
+## Choosing a Topology
+
+`HierarchicalSwarm` is one of several architectures the API exposes through `swarm_type`. Switching between them is a one-line change:
+
+| Topology | `swarm_type` | Behavior |
+|---|---|---|
+| Sequential | `SequentialWorkflow` | Pipeline handoffs, each agent builds on the last |
+| Hierarchical | `HierarchicalSwarm` | A director delegates and reviews |
+| Concurrent | `ConcurrentWorkflow` | Peer agents work the same task in parallel |
+
+A `ConcurrentWorkflow` of Flash-Lite agents is a natural fit for fan-out jobs like document processing or agentic search, where throughput matters more than coordination.
+
+## Start Building
+
+Gemini 3.6 Flash and 3.5 Flash-Lite give you a quality tier and a throughput tier that share the same pricing envelope, and the Swarms API lets you mix them in one swarm without touching your infrastructure. Get a [free API key](https://cloud.swarms.world/api-keys), read the full API surface at [docs.swarms.ai](https://docs.swarms.ai), and ship your first Gemini-powered swarm today.

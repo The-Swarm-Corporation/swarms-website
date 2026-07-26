@@ -6,7 +6,7 @@ author: "Swarms Team"
 categories: ["Company"]
 readTime: "5 min read"
 featured: false
-image: "/blog_article_weekly_recap.png"
+image: "/weekly_swarm_july12.png"
 ---
 
 # Swarms Weekly Ecosystem Update [July 21-26]: The Frenzy Hub, a New Marketplace Home Screen, and Gemini 3.6 Flash on Swarms Cloud
@@ -19,6 +19,8 @@ This post covers each development in turn, explains the technical significance, 
 
 ## The Frenzy Hub Puts Every Tokenized Agent on One Page
 
+![The Frenzy Hub on Swarms](/frenzy_mode_hub.png)
+
 The Frenzy Hub is a dedicated home for Frenzy Mode, the launch setting that pays a creator 1% of every buy and every sell of their agent or prompt token for the life of that token. The hub consolidates every Frenzy launch into a single view: a filterable screener, a creator leaderboard ranked by the combined market capitalization of each creator's launches, cards for the top tokens by market cap, and live prices, trading volume, and trader counts. Before this, Frenzy tokens sat behind a registry filter and had to be opened one at a time to compare. Aggregating the data in one place makes the market readable in both directions. Creators can measure real demand for their work against every other launch, and buyers can evaluate traction before they commit. Creators can also launch from the same page. 🔥
 
 ### Resources
@@ -29,6 +31,8 @@ The Frenzy Hub is a dedicated home for Frenzy Mode, the launch setting that pays
 
 ## The Swarms Marketplace Has a New Home Screen
 
+![The new Swarms Marketplace home screen](https://pbs.twimg.com/media/HN13Dc6WsAAkF0f?format=jpg&name=medium)
+
 The Swarms Marketplace shipped a redesigned home screen at swarms.world. The Marketplace is the publishing and distribution layer of the ecosystem, the shortest path for a developer to take a working agent, prompt, or tool and put it in front of paying users. The community has published more than 6,000 items on it so far, generating tens of millions in volume. At that catalog size, the home screen carries most of the discovery load, because it decides which work a new visitor sees first and how quickly they reach something relevant. The new layout reorganizes that entry point so browsing the catalog, understanding what the Marketplace does, and getting to a specific listing all start from the same surface. For creators, better placement on the landing page translates directly into distribution for what they publish.
 
 ### Resources
@@ -37,6 +41,8 @@ The Swarms Marketplace shipped a redesigned home screen at swarms.world. The Mar
 - [New Marketplace home screen on X](https://x.com/swarms_corp/status/2079950389118394716)
 
 ## Close to 200 Marketplace Updates Shipped in Seven Weeks
+
+![Swarms Marketplace changelog for June and July](/swarms_marketplace_changelog_june.png)
 
 We published a changelog covering everything that reached production on the Swarms Marketplace between June 1 and July 21, close to 200 updates in seven weeks across discovery, payments, creator tooling, and performance. The major releases include fiat payments through Stripe, natural language search powered by agents, Marketplace bundles, a community upvote system with improved product pages, and creator identities with unique avatars, alongside dozens of smaller fixes and speed improvements. Publishing the full log rather than only the headline features gives developers something they can plan against. It shows which parts of the platform are under active development, documents behavior that changed under an existing integration, and sets the cadence to expect. The changelog is written in plain language so each entry states what changed and what it means in practice.
 
@@ -47,6 +53,8 @@ We published a changelog covering everything that reached production on the Swar
 - [Fiat Payments Are Live on the Swarms Marketplace](/blog/fiat-payments-live-swarms-marketplace)
 
 ## Gemini 3.6 Flash and the Latest Gemini Models Are Live on Swarms Cloud
+
+![Gemini models on Swarms Cloud](/gemini_banner_swarms.png)
 
 Gemini 3.6 Flash and the rest of the latest Gemini series, including 3.5 Flash-Lite, are now available on Swarms Cloud for both single-agent and multi-agent workloads. Google reports that 3.6 Flash produces higher quality output using fewer tokens than 3.5 Flash at the same cost, and positions 3.5 Flash-Lite for high-volume everyday tasks. Token efficiency compounds in multi-agent systems, where a single run may involve many agents, several turns each, and shared context, so per-call savings multiply across the whole swarm. To make adoption straightforward, we published a developer guide covering API key setup, single-agent execution, and multi-agent orchestration, with complete Python and cURL examples for each step. Existing Swarms API code can switch to the new models by changing the model identifier.
 

@@ -6,7 +6,7 @@ author: "Swarms 团队"
 categories: ["公司"]
 readTime: "5 分钟阅读"
 featured: false
-image: "/blog_article_weekly_recap.png"
+image: "/weekly_swarm_july12.png"
 ---
 
 # Swarms 生态每周更新 [7 月 21-26 日]：Frenzy Hub、Marketplace 全新首页，以及 Swarms Cloud 上线 Gemini 3.6 Flash
@@ -19,6 +19,8 @@ image: "/blog_article_weekly_recap.png"
 
 ## Frenzy Hub 把所有代币化智能体汇总到一个页面
 
+![Swarms 上的 Frenzy Hub](/frenzy_mode_hub.png)
+
 Frenzy Hub 是 Frenzy Mode 的专属主页。Frenzy Mode 是发布时的一项设置：启用后，创作者可在其智能体或提示词代币的整个生命周期内，获得每一笔买入和每一笔卖出的 1%。该 Hub 将所有 Frenzy 发布项汇总为单一视图：可筛选的行情筛选器、按创作者全部发布项合计市值排名的创作者排行榜、按市值排列的头部代币卡片，以及实时价格、交易量和交易者数量。在此之前，Frenzy 代币散落在注册表的筛选条件之后，只能逐个打开才能对比。把数据聚合在一处让市场在两个方向上都变得清晰：创作者可以将自己作品的真实需求与其他所有发布项对比衡量，买家则可以在下单前评估热度。创作者也可以直接在同一页面完成发布。🔥
 
 ### 资源
@@ -29,6 +31,8 @@ Frenzy Hub 是 Frenzy Mode 的专属主页。Frenzy Mode 是发布时的一项�
 
 ## Swarms Marketplace 上线全新首页
 
+![Swarms Marketplace 全新首页](https://pbs.twimg.com/media/HN13Dc6WsAAkF0f?format=jpg&name=medium)
+
 Swarms Marketplace 在 swarms.world 上线了重新设计的首页。Marketplace 是整个生态的发布与分发层，是开发者把一个可用的智能体、提示词或工具推向付费用户的最短路径。目前社区已在其上发布超过 6,000 个条目，累计产生数千万级别的交易量。在这样的目录规模下，首页承担了大部分发现工作，因为它决定了新访客最先看到哪些作品，以及他们多快能找到与自己相关的内容。新版布局重新组织了这一入口，让浏览目录、了解 Marketplace 的功能定位、以及跳转到具体条目都从同一个界面出发。对创作者来说，首页上更好的展示位置会直接转化为其发布内容的分发量。
 
 ### 资源
@@ -37,6 +41,8 @@ Swarms Marketplace 在 swarms.world 上线了重新设计的首页。Marketplace
 - [Marketplace 新首页（X 帖文）](https://x.com/swarms_corp/status/2079950389118394716)
 
 ## 七周内上线近 200 项 Marketplace 更新
+
+![Swarms Marketplace 六月与七月更新日志](/swarms_marketplace_changelog_june.png)
 
 我们发布了一份更新日志，覆盖 6 月 1 日至 7 月 21 日期间 Swarms Marketplace 上线到生产环境的全部改动：七周内近 200 项更新，涉及发现体验、支付、创作者工具和性能。主要发布包括通过 Stripe 接入的法币支付、由智能体驱动的自然语言搜索、Marketplace 组合包、带有改进版产品页的社区点赞系统，以及带独特头像的创作者身份，另有数十项较小的修复与速度优化。公布完整日志而不仅仅是重点功能，能给开发者提供可用于规划的依据：它显示平台哪些部分正在活跃开发、记录现有集成下发生变化的行为，并确立可预期的发布节奏。该日志采用通俗语言撰写，每一条都说明改了什么以及在实际使用中意味着什么。
 
@@ -47,6 +53,8 @@ Swarms Marketplace 在 swarms.world 上线了重新设计的首页。Marketplace
 - [Swarms Marketplace 法币支付正式上线](/blog/fiat-payments-live-swarms-marketplace)
 
 ## Gemini 3.6 Flash 与最新 Gemini 模型在 Swarms Cloud 上线
+
+![Swarms Cloud 上的 Gemini 模型](/gemini_banner_swarms.png)
 
 Gemini 3.6 Flash 以及最新 Gemini 系列的其余型号（包括 3.5 Flash-Lite）现已在 Swarms Cloud 上可用，支持单智能体与多智能体工作负载。Google 表示，3.6 Flash 在相同成本下使用比 3.5 Flash 更少的 token 即可产出更高质量的结果，而 3.5 Flash-Lite 面向高频的日常任务。token 效率在多智能体系统中会被放大：一次运行可能涉及多个智能体、每个智能体多轮交互以及共享上下文，因此单次调用的节省会在整个 swarm 中成倍累积。为降低接入门槛，我们发布了一份开发者指南，覆盖 API 密钥配置、单智能体执行和多智能体编排，每一步都提供完整的 Python 与 cURL 示例。已有的 Swarms API 代码只需修改模型标识符即可切换到新模型。
 

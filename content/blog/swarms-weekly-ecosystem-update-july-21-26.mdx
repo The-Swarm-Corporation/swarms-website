@@ -1,0 +1,82 @@
+---
+title: "Swarms Weekly Ecosystem Update [July 21-26]: The Frenzy Hub, a New Marketplace Home Screen, and Gemini 3.6 Flash on Swarms Cloud"
+description: "This week across the Swarms ecosystem: the Frenzy Hub brings live market data for every tokenized agent into one page, the Marketplace ships a new home screen, a changelog documents close to 200 Marketplace updates in seven weeks, and Gemini 3.6 Flash arrives on Swarms Cloud with a full developer guide."
+date: "2026-07-26"
+author: "Swarms Team"
+categories: ["Company"]
+readTime: "5 min read"
+featured: false
+image: "/blog_article_weekly_recap.png"
+---
+
+# Swarms Weekly Ecosystem Update [July 21-26]: The Frenzy Hub, a New Marketplace Home Screen, and Gemini 3.6 Flash on Swarms Cloud
+
+The past week delivered work across four layers of the Swarms stack: the market for tokenized agents, Marketplace discovery, Marketplace platform engineering, and model coverage on Swarms Cloud. Each release targets a different constraint developers hit when they move from a working prototype to something other people use and pay for.
+
+Two themes connect the updates. The first is legibility. The Frenzy Hub and the new Marketplace home screen both take data that already existed and put it where creators and buyers can act on it, which matters more as the number of published agents, prompts, and tools grows. The second is production readiness. The Marketplace changelog documents close to 200 shipped changes across payments, search, and performance, and the arrival of the latest Gemini models on Swarms Cloud gives teams a cheaper option for the token-heavy inner loop of a multi-agent system.
+
+This post covers each development in turn, explains the technical significance, and links to the full announcement behind it. Links appear under each section and in a consolidated list at the end.
+
+## The Frenzy Hub Puts Every Tokenized Agent on One Page
+
+The Frenzy Hub is a dedicated home for Frenzy Mode, the launch setting that pays a creator 1% of every buy and every sell of their agent or prompt token for the life of that token. The hub consolidates every Frenzy launch into a single view: a filterable screener, a creator leaderboard ranked by the combined market capitalization of each creator's launches, cards for the top tokens by market cap, and live prices, trading volume, and trader counts. Before this, Frenzy tokens sat behind a registry filter and had to be opened one at a time to compare. Aggregating the data in one place makes the market readable in both directions. Creators can measure real demand for their work against every other launch, and buyers can evaluate traction before they commit. Creators can also launch from the same page. 🔥
+
+### Resources
+
+- [The Frenzy Hub: A Live Dashboard for Every Agent Token on Swarms](/blog/frenzy-hub-live-agent-token-dashboard)
+- [Frenzy Hub](https://swarms.world/frenzy)
+- [Frenzy Mode: Tokenized Agents](/blog/frenzy-mode-tokenized-agents)
+
+## The Swarms Marketplace Has a New Home Screen
+
+The Swarms Marketplace shipped a redesigned home screen at swarms.world. The Marketplace is the publishing and distribution layer of the ecosystem, the shortest path for a developer to take a working agent, prompt, or tool and put it in front of paying users. The community has published more than 6,000 items on it so far, generating tens of millions in volume. At that catalog size, the home screen carries most of the discovery load, because it decides which work a new visitor sees first and how quickly they reach something relevant. The new layout reorganizes that entry point so browsing the catalog, understanding what the Marketplace does, and getting to a specific listing all start from the same surface. For creators, better placement on the landing page translates directly into distribution for what they publish.
+
+### Resources
+
+- [Swarms Marketplace](https://swarms.world)
+- [New Marketplace home screen on X](https://x.com/swarms_corp/status/2079950389118394716)
+
+## Close to 200 Marketplace Updates Shipped in Seven Weeks
+
+We published a changelog covering everything that reached production on the Swarms Marketplace between June 1 and July 21, close to 200 updates in seven weeks across discovery, payments, creator tooling, and performance. The major releases include fiat payments through Stripe, natural language search powered by agents, Marketplace bundles, a community upvote system with improved product pages, and creator identities with unique avatars, alongside dozens of smaller fixes and speed improvements. Publishing the full log rather than only the headline features gives developers something they can plan against. It shows which parts of the platform are under active development, documents behavior that changed under an existing integration, and sets the cadence to expect. The changelog is written in plain language so each entry states what changed and what it means in practice.
+
+### Resources
+
+- [Swarms Marketplace Changelog June 1st - July 21: Fiat Payments, Upvotes, and More](/blog/swarms-marketplace-changelog-june-july)
+- [Changelog announcement on X](https://x.com/swarms_corp/status/2079671019409698852)
+- [Fiat Payments Are Live on the Swarms Marketplace](/blog/fiat-payments-live-swarms-marketplace)
+
+## Gemini 3.6 Flash and the Latest Gemini Models Are Live on Swarms Cloud
+
+Gemini 3.6 Flash and the rest of the latest Gemini series, including 3.5 Flash-Lite, are now available on Swarms Cloud for both single-agent and multi-agent workloads. Google reports that 3.6 Flash produces higher quality output using fewer tokens than 3.5 Flash at the same cost, and positions 3.5 Flash-Lite for high-volume everyday tasks. Token efficiency compounds in multi-agent systems, where a single run may involve many agents, several turns each, and shared context, so per-call savings multiply across the whole swarm. To make adoption straightforward, we published a developer guide covering API key setup, single-agent execution, and multi-agent orchestration, with complete Python and cURL examples for each step. Existing Swarms API code can switch to the new models by changing the model identifier.
+
+### Resources
+
+- [Building Agents on Swarms with Gemini 3.6 Flash: A Developer Guide](/blog/swarms-gemini-3-6-flash)
+- [Gemini on Swarms announcement on X](https://x.com/swarms_corp/status/2079659312100630698)
+- [Swarms API Documentation](https://docs.swarms.ai)
+- [Swarms Cloud](https://cloud.swarms.ai)
+- [Swarms Academy](https://swarms.ai/academy)
+
+## Conclusion
+
+This week's releases moved the ecosystem along two axes. The Frenzy Hub and the new Marketplace home screen improve the surfaces where creators distribute work and where buyers evaluate it, which is where growth in the catalog turns into growth in usage. The Marketplace changelog records the engineering underneath those surfaces, from card payments to agent-powered search to page performance, and gives developers a reliable record of what changed.
+
+Model coverage advanced in parallel. Adding the latest Gemini models to Swarms Cloud lowers the cost of running orchestration-heavy workloads, and the accompanying guide reduces the work of getting an agent into production on them. Together, the four updates continue the same direction: make it practical to build, deploy, distribute, and monetize production multi-agent systems on Swarms.
+
+## Links and Resources
+
+| Resource | Link |
+| --- | --- |
+| The Frenzy Hub: A Live Dashboard for Every Agent Token | [swarms.ai/blog/frenzy-hub-live-agent-token-dashboard](/blog/frenzy-hub-live-agent-token-dashboard) |
+| Frenzy Mode: Tokenized Agents | [swarms.ai/blog/frenzy-mode-tokenized-agents](/blog/frenzy-mode-tokenized-agents) |
+| Frenzy Hub | [swarms.world/frenzy](https://swarms.world/frenzy) |
+| Swarms Marketplace | [swarms.world](https://swarms.world) |
+| Marketplace Changelog June 1st - July 21 | [swarms.ai/blog/swarms-marketplace-changelog-june-july](/blog/swarms-marketplace-changelog-june-july) |
+| Fiat Payments on the Swarms Marketplace | [swarms.ai/blog/fiat-payments-live-swarms-marketplace](/blog/fiat-payments-live-swarms-marketplace) |
+| Building Agents on Swarms with Gemini 3.6 Flash | [swarms.ai/blog/swarms-gemini-3-6-flash](/blog/swarms-gemini-3-6-flash) |
+| Swarms API Documentation | [docs.swarms.ai](https://docs.swarms.ai) |
+| Swarms Cloud | [cloud.swarms.ai](https://cloud.swarms.ai) |
+| Swarms Academy | [swarms.ai/academy](https://swarms.ai/academy) |
+| GitHub | [github.com/kyegomez/swarms](https://github.com/kyegomez/swarms) |
+| Swarms on X | [x.com/swarms_corp](https://x.com/swarms_corp) |

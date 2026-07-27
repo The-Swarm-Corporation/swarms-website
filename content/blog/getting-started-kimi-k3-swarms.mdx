@@ -72,7 +72,7 @@ You just built a working Kimi K3 agent. The `Agent` class handles the prompt, th
 
 ## Step 4: Run Kimi K3 locally with Ollama
 
-Prefer to run Kimi K3 through [Ollama](https://ollama.com) instead of a hosted API? Swarms supports that too, and switching is a **one-line change** — the agent code stays exactly the same.
+Prefer to run Kimi K3 through [Ollama](https://ollama.com) instead of a hosted API? Swarms supports that too, and switching is a **one-line change**, since the agent code stays exactly the same.
 
 First pull and run the model with Ollama:
 
@@ -109,7 +109,7 @@ Run it:
 uv run local_agent.py
 ```
 
-That is the power of the `model_name` field: your agent logic, tools, and orchestration never change — you just swap the string to move between OpenRouter, Ollama, or any of the hundreds of other providers Swarms supports. Develop against a local model and ship to a hosted one without touching a line of agent code.
+That is the power of the `model_name` field: your agent logic, tools, and orchestration never change; you just swap the string to move between OpenRouter, Ollama, or any of the hundreds of other providers Swarms supports. Develop against a local model and ship to a hosted one without touching a line of agent code.
 
 ## Step 5: Build a GroupChat of Kimi agents
 
@@ -178,9 +178,9 @@ Kimi K3 gives you strong reasoning at a low price; Swarms gives you the orchestr
 
 ## Conclusion
 
-Two files and about forty lines of Python got you from an empty directory to a working multi-agent system. That is the point of this stack: Kimi K3 supplies strong reasoning at a price that makes it reasonable to run several agents at once, and Swarms supplies the orchestration so you never hand-roll message passing, speaker selection, or result collection.
+Three files and under a hundred lines of Python got you from an empty directory to a working multi-agent system. That is the point of this stack: Kimi K3 supplies strong reasoning at a price that makes it reasonable to run several agents at once, and Swarms supplies the orchestration so you never hand-roll message passing, speaker selection, or result collection.
 
-The important thing to take away is that the agent and the orchestration are separate concerns. Your four `Agent` definitions did not change between Step 3 and Step 4; only the thing wrapping them did. That separation is what lets you start with one agent, add a `GroupChat` when you need multiple viewpoints, and later swap in `SequentialWorkflow` or `HierarchicalSwarm` without rewriting the agents themselves.
+The important thing to take away is that the agent and the orchestration are separate concerns. Your four `Agent` definitions did not change between Step 3 and Step 5; only the thing wrapping them did, and moving to Ollama in Step 4 changed nothing but a model-name string. That separation is what lets you start with one agent, add a `GroupChat` when you need multiple viewpoints, and later swap in `SequentialWorkflow` or `HierarchicalSwarm` without rewriting the agents themselves.
 
 From here, the highest-leverage next steps are giving your agents tools (any Python function with a docstring becomes callable), mixing models so a cheap agent drafts and a stronger one reviews, and tuning `max_loops` and `reasoning_effort` against your own latency and cost targets. The examples repository below is the fastest way to see each of those patterns in working code.
 
@@ -194,6 +194,7 @@ From here, the highest-leverage next steps are giving your agents tools (any Pyt
 | Runnable Examples | [github.com/kyegomez/swarms/examples](https://github.com/kyegomez/swarms/tree/master/examples) |
 | Swarms on GitHub | [github.com/kyegomez/swarms](https://github.com/kyegomez/swarms) |
 | OpenRouter API Keys | [openrouter.ai/keys](https://openrouter.ai/keys) |
+| Ollama (local models) | [ollama.com](https://ollama.com) |
 | uv Package Manager | [github.com/astral-sh/uv](https://github.com/astral-sh/uv) |
 | Agent Orchestration Patterns | [Agent Orchestration Patterns](/blog/agent-orchestration-patterns) |
 | Discord Community | [discord.gg/VapjxpSyHC](https://discord.gg/VapjxpSyHC) |

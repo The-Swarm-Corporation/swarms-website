@@ -4,14 +4,14 @@ description: "面向新手的实践指南，教你在 Swarms 框架中使用月�
 date: "2026-07-27"
 author: "Swarms 团队"
 categories: ["指南", "工程"]
-readTime: "6 分钟阅读"
+readTime: "7 分钟阅读"
 featured: false
 image: "/kimi_banner.png"
 ---
 
 # 如何在 Swarms 中上手 Kimi K3：分步教程
 
-月之暗面（Moonshot AI）的 **Kimi K3** 是一款推理能力强、成本可控的模型，而 [Swarms 框架](https://github.com/kyegomez/swarms) 是把它变成可用智能体的最快方式。在本教程中，你将用 `uv` 安装 Swarms，运行单个 Kimi K3 智能体，然后把多个 Kimi 智能体接入一个 `GroupChat`，让它们围绕同一个问题展开讨论并得出结论。无需任何智能体开发经验，全程大约五分钟。
+月之暗面（Moonshot AI）的 **Kimi K3** 是一款推理能力强、成本可控的模型，而 [Swarms 框架](https://github.com/kyegomez/swarms) 是把它变成可用智能体的最快方式。在本教程中，你将用 `uv` 安装 Swarms，运行单个 Kimi K3 智能体，用 Ollama 在本地跑同一个模型，然后把多个 Kimi 智能体接入一个 `GroupChat`，让它们围绕同一个问题展开讨论并得出结论。无需任何智能体开发经验，全程大约五分钟。
 
 ## 第一步：安装 Swarms
 
@@ -70,7 +70,48 @@ uv run single_agent.py
 
 你已经构建了一个可用的 Kimi K3 智能体。`Agent` 类会替你处理提示词、模型调用、记忆和输出格式化。每个参数（`system_prompt`、`max_loops`、`reasoning_effort`）都是可调的旋钮，但默认值已经足够合理，可以直接投入使用。
 
-## 第四步：搭建一个 Kimi 智能体 GroupChat
+## 第四步：用 Ollama 在本地运行 Kimi K3
+
+比起托管 API，更想通过 [Ollama](https://ollama.com) 来运行 Kimi K3？Swarms 同样支持，而且切换只需要**改一行代码**，智能体代码完全不用动。
+
+先用 Ollama 拉取并运行模型：
+
+```bash
+ollama run kimi-k3:cloud
+```
+
+然后把 `model_name` 换成带 `ollama/` 前缀的字符串，让智能体指向它。其余部分与第三步完全一致：
+
+```python
+from swarms import Agent
+
+agent = Agent(
+    agent_name="Research-Agent",
+    agent_description="A concise research and analysis assistant",
+    system_prompt=(
+        "You are a sharp research analyst. Answer clearly, cite the key "
+        "trade-offs, and state any assumptions you make."
+    ),
+    model_name="ollama/kimi-k3:cloud",   # <- the only change from Step 3
+    max_loops=1,
+    reasoning_effort="low",
+)
+
+result = agent.run(
+    task="Explain the trade-offs between vector databases and keyword search for RAG."
+)
+print(result)
+```
+
+运行它：
+
+```bash
+uv run local_agent.py
+```
+
+这正是 `model_name` 这个字段的威力所在：你的智能体逻辑、工具和编排方式全都不用变，只要换一个字符串，就能在 OpenRouter、Ollama 以及 Swarms 支持的其他数百家服务商之间切换。你可以对着本地模型做开发，再切到托管模型上线，全程不用改动任何一行智能体代码。
+
+## 第五步：搭建一个 Kimi 智能体 GroupChat
 
 单个智能体负责回答问题，而 **GroupChat** 能让多个智能体*讨论*一个问题。每个智能体都有自己的角色设定，会倾听其他成员的发言，并自行决定何时插话。这是针对复杂问题快速获取多方视角的最简路径。
 
@@ -137,9 +178,9 @@ Kimi K3 以低廉的价格提供了强大的推理能力，Swarms 则提供了�
 
 ## 结论
 
-两个文件、约四十行 Python 代码，就把你从一个空目录带到了一个可运行的多智能体系统。这正是这套技术栈的意义所在：Kimi K3 提供强大的推理能力，且价格低到让你可以放心地同时跑多个智能体；Swarms 提供编排能力，让你不必手写消息传递、发言者选择和结果收集。
+三个文件、不到一百行 Python 代码，就把你从一个空目录带到了一个可运行的多智能体系统。这正是这套技术栈的意义所在：Kimi K3 提供强大的推理能力，且价格低到让你可以放心地同时跑多个智能体；Swarms 提供编排能力，让你不必手写消息传递、发言者选择和结果收集。
 
-这里最值得记住的一点是：智能体本身与编排方式是两件相互独立的事。你那四个 `Agent` 定义在第三步和第四步之间没有任何改动，变的只是包在外面的那一层。正是这种解耦，让你可以先从单个智能体起步，在需要多方视角时加上 `GroupChat`，之后再换成 `SequentialWorkflow` 或 `HierarchicalSwarm`，而完全不用重写智能体本身。
+这里最值得记住的一点是：智能体本身与编排方式是两件相互独立的事。你那四个 `Agent` 定义在第三步和第五步之间没有任何改动，变的只是包在外面的那一层；同样地，第四步换到 Ollama 时，改动的也只有一个模型名字符串。正是这种解耦，让你可以先从单个智能体起步，在需要多方视角时加上 `GroupChat`，之后再换成 `SequentialWorkflow` 或 `HierarchicalSwarm`，而完全不用重写智能体本身。
 
 接下来，收益最高的几个方向是：给智能体挂上工具（任何带 docstring 的 Python 函数都能被调用）；混用模型，让便宜的智能体起草、更强的智能体复审；以及围绕你自己的延迟和成本目标去调优 `max_loops` 和 `reasoning_effort`。下面的示例仓库是最快看到这些模式的可运行代码的地方。
 
@@ -153,6 +194,7 @@ Kimi K3 以低廉的价格提供了强大的推理能力，Swarms 则提供了�
 | 可运行示例 | [github.com/kyegomez/swarms/examples](https://github.com/kyegomez/swarms/tree/master/examples) |
 | Swarms GitHub 仓库 | [github.com/kyegomez/swarms](https://github.com/kyegomez/swarms) |
 | OpenRouter API 密钥 | [openrouter.ai/keys](https://openrouter.ai/keys) |
+| Ollama（本地模型） | [ollama.com](https://ollama.com) |
 | uv 包管理器 | [github.com/astral-sh/uv](https://github.com/astral-sh/uv) |
 | 智能体编排模式 | [智能体编排模式](/blog/agent-orchestration-patterns) |
 | Discord 社区 | [discord.gg/VapjxpSyHC](https://discord.gg/VapjxpSyHC) |

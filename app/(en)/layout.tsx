@@ -10,7 +10,6 @@ import { siteConfig } from "@/app/metadata"
 import { montserrat, orbitron } from "@/app/fonts"
 import "../globals.css"
 import type React from "react"
-import { ThemeProvider } from "@/components/theme-provider"
 import { Footer } from "@/components/footer"
 import { NewsletterPopupProvider } from "@/components/newsletter-popup-provider"
 import { Analytics } from "@vercel/analytics/next"
@@ -99,8 +98,11 @@ interface RootLayoutProps {
 }
 
 export default function RootLayout({ children }: RootLayoutProps) {
+  // The site is dark-only, so the `dark` class is applied statically here. This
+  // avoids the blocking theme script next-themes injects (and React's
+  // client-render script warning) with no flash of unstyled content.
   return (
-    <html lang="en" suppressHydrationWarning className="smooth-scroll">
+    <html lang="en" suppressHydrationWarning className="dark smooth-scroll" style={{ colorScheme: "dark" }}>
       <head>
         {/* Performance: help the browser establish early connections to frequently used origins */}
         <link rel="preconnect" href="https://www.swarms.ai" />
@@ -117,12 +119,10 @@ export default function RootLayout({ children }: RootLayoutProps) {
         <meta name="apple-mobile-web-app-title" content={siteConfig.name} />
       </head>
       <body className={`${montserrat.variable} ${orbitron.variable} font-sans antialiased smooth-scroll`}>
-        <ThemeProvider attribute="class" defaultTheme="dark" forcedTheme="dark">
-          <NewsletterPopupProvider>
-            {children}
-            <Footer />
-          </NewsletterPopupProvider>
-        </ThemeProvider>
+        <NewsletterPopupProvider>
+          {children}
+          <Footer />
+        </NewsletterPopupProvider>
 
         <Analytics />
 

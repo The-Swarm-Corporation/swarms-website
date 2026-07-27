@@ -1,0 +1,162 @@
+---
+title: "How to Get Started with Kimi K3 in Swarms: A Step-by-Step Tutorial"
+description: "A beginner-friendly guide to building AI agents with Moonshot's Kimi K3 model in the Swarms framework. Install with uv, run a single agent, then orchestrate a multi-agent GroupChat of Kimi agents in minutes."
+date: "2026-07-27"
+author: "Swarms Team"
+categories: ["Guides", "Engineering"]
+readTime: "6 min read"
+featured: false
+image: "/kimi_banner.png"
+---
+
+# How to Get Started with Kimi K3 in Swarms: A Step-by-Step Tutorial
+
+Moonshot AI's **Kimi K3** is a strong, cost-efficient reasoning model, and the [Swarms framework](https://github.com/kyegomez/swarms) is the fastest way to turn it into a working agent. In this tutorial you will install Swarms with `uv`, run a single Kimi K3 agent, and then wire several Kimi agents together into a `GroupChat` that discusses a problem and reaches a conclusion. No prior agent experience is required, and the whole thing takes about five minutes.
+
+## Step 1: Install Swarms
+
+Create a project and install Swarms with [`uv`](https://github.com/astral-sh/uv):
+
+```bash
+uv init kimi-swarms && cd kimi-swarms
+uv add swarms
+```
+
+That is it: `uv add swarms` resolves and installs the framework and its dependencies in seconds. If you prefer pip, `pip install swarms` works just as well.
+
+## Step 2: Set your API key
+
+Kimi K3 is served through OpenRouter, so you need an [OpenRouter API key](https://openrouter.ai/keys). Save it to a `.env` file in your project:
+
+```bash
+echo 'OPENROUTER_API_KEY="sk-or-your-key-here"' > .env
+```
+
+Swarms loads this automatically at runtime, so you never hard-code secrets.
+
+## Step 3: Run a single Kimi K3 agent
+
+Create `single_agent.py`. The model name is `openrouter/moonshotai/kimi-k3`, and that provider-prefixed string is all you need to route to Kimi:
+
+```python
+from dotenv import load_dotenv
+from swarms import Agent
+
+load_dotenv()
+
+agent = Agent(
+    agent_name="Research-Agent",
+    agent_description="A concise research and analysis assistant",
+    system_prompt=(
+        "You are a sharp research analyst. Answer clearly, cite the key "
+        "trade-offs, and state any assumptions you make."
+    ),
+    model_name="openrouter/moonshotai/kimi-k3",
+    max_loops=1,
+    reasoning_effort="low",
+)
+
+result = agent.run(
+    task="Explain the trade-offs between vector databases and keyword search for RAG."
+)
+print(result)
+```
+
+Run it:
+
+```bash
+uv run single_agent.py
+```
+
+You just built a working Kimi K3 agent. The `Agent` class handles the prompt, the model call, memory, and output formatting for you. Every parameter (`system_prompt`, `max_loops`, `reasoning_effort`) is a knob you can tune, but the defaults are sensible enough to ship as-is.
+
+## Step 4: Build a GroupChat of Kimi agents
+
+A single agent answers a question. A **GroupChat** lets several agents *discuss* one. Each agent has its own persona, listens to the others, and decides on its own whether to chime in. It is the quickest way to get multiple viewpoints on a hard problem.
+
+Create `group_chat.py`:
+
+```python
+from dotenv import load_dotenv
+from swarms import Agent
+from swarms.structs.groupchat import GroupChat
+
+load_dotenv()
+
+MODEL = "openrouter/moonshotai/kimi-k3"
+
+optimist = Agent(
+    agent_name="Optimist",
+    system_prompt="You argue for the opportunities and upside.",
+    model_name=MODEL,
+    max_loops=1,
+    persistent_memory=False,
+)
+
+skeptic = Agent(
+    agent_name="Skeptic",
+    system_prompt="You stress-test claims and surface the risks.",
+    model_name=MODEL,
+    max_loops=1,
+    persistent_memory=False,
+)
+
+realist = Agent(
+    agent_name="Realist",
+    system_prompt="You weigh both sides and push for a decision.",
+    model_name=MODEL,
+    max_loops=1,
+    persistent_memory=False,
+)
+
+chat = GroupChat(
+    name="Kimi Roundtable",
+    agents=[optimist, skeptic, realist],
+    max_loops=6,
+)
+
+result = chat.run(
+    "Should an early-stage startup build its own agents or buy a platform?"
+)
+print(result)
+```
+
+Run it:
+
+```bash
+uv run group_chat.py
+```
+
+Three Kimi K3 agents now debate the question in real time. Notice how little wiring this took: you defined three personas, dropped them into a `GroupChat`, and called `run()`. Swarms handles speaker selection, message passing, and the stopping condition, and `max_loops` caps the conversation. GroupChat even equips each agent to participate automatically, so there is no extra tooling to attach.
+
+## What you learned and where to go next
+
+In a few minutes you installed Swarms with `uv`, ran a single Kimi K3 agent, and orchestrated a multi-agent GroupChat, the two building blocks behind almost every agentic application. The pattern scales: swap `GroupChat` for `SequentialWorkflow`, `ConcurrentWorkflow`, or `HierarchicalSwarm` and your agents stay the same while the orchestration changes. From here, give your agents **tools** (any Python function with a docstring becomes callable), mix models by putting Kimi K3 alongside GPT or Claude agents in one swarm, and explore the [Swarms documentation](https://docs.swarms.ai) and [examples on GitHub](https://github.com/kyegomez/swarms/tree/master/examples).
+
+Kimi K3 gives you strong reasoning at a low price; Swarms gives you the orchestration to put it to work. Start with the single agent above, then let your Kimi agents talk to each other.
+
+## Conclusion
+
+Two files and about forty lines of Python got you from an empty directory to a working multi-agent system. That is the point of this stack: Kimi K3 supplies strong reasoning at a price that makes it reasonable to run several agents at once, and Swarms supplies the orchestration so you never hand-roll message passing, speaker selection, or result collection.
+
+The important thing to take away is that the agent and the orchestration are separate concerns. Your four `Agent` definitions did not change between Step 3 and Step 4; only the thing wrapping them did. That separation is what lets you start with one agent, add a `GroupChat` when you need multiple viewpoints, and later swap in `SequentialWorkflow` or `HierarchicalSwarm` without rewriting the agents themselves.
+
+From here, the highest-leverage next steps are giving your agents tools (any Python function with a docstring becomes callable), mixing models so a cheap agent drafts and a stronger one reviews, and tuning `max_loops` and `reasoning_effort` against your own latency and cost targets. The examples repository below is the fastest way to see each of those patterns in working code.
+
+## Links and Resources
+
+| Resource | Link |
+| --- | --- |
+| Swarms Documentation | [docs.swarms.ai](https://docs.swarms.ai) |
+| GroupChat Docs | [docs.swarms.world/architectures/group-chat](https://docs.swarms.world/architectures/group-chat) |
+| Architecture Overview | [docs.swarms.world/architectures/overview](https://docs.swarms.world/architectures/overview) |
+| Runnable Examples | [github.com/kyegomez/swarms/examples](https://github.com/kyegomez/swarms/tree/master/examples) |
+| Swarms on GitHub | [github.com/kyegomez/swarms](https://github.com/kyegomez/swarms) |
+| OpenRouter API Keys | [openrouter.ai/keys](https://openrouter.ai/keys) |
+| uv Package Manager | [github.com/astral-sh/uv](https://github.com/astral-sh/uv) |
+| Agent Orchestration Patterns | [Agent Orchestration Patterns](/blog/agent-orchestration-patterns) |
+| Discord Community | [discord.gg/VapjxpSyHC](https://discord.gg/VapjxpSyHC) |
+
+---
+
+*Have questions or feedback? Join our [Discord community](https://discord.gg/VapjxpSyHC) or check out the [documentation](https://docs.swarms.ai).*

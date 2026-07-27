@@ -1,0 +1,162 @@
+---
+title: "如何在 Swarms 中上手 Kimi K3：分步教程"
+description: "面向新手的实践指南，教你在 Swarms 框架中使用月之暗面的 Kimi K3 模型构建 AI 智能体。用 uv 安装、运行单个智能体，再在几分钟内编排一个由多个 Kimi 智能体组成的 GroupChat。"
+date: "2026-07-27"
+author: "Swarms 团队"
+categories: ["指南", "工程"]
+readTime: "6 分钟阅读"
+featured: false
+image: "/kimi_banner.png"
+---
+
+# 如何在 Swarms 中上手 Kimi K3：分步教程
+
+月之暗面（Moonshot AI）的 **Kimi K3** 是一款推理能力强、成本可控的模型，而 [Swarms 框架](https://github.com/kyegomez/swarms) 是把它变成可用智能体的最快方式。在本教程中，你将用 `uv` 安装 Swarms，运行单个 Kimi K3 智能体，然后把多个 Kimi 智能体接入一个 `GroupChat`，让它们围绕同一个问题展开讨论并得出结论。无需任何智能体开发经验，全程大约五分钟。
+
+## 第一步：安装 Swarms
+
+用 [`uv`](https://github.com/astral-sh/uv) 创建项目并安装 Swarms：
+
+```bash
+uv init kimi-swarms && cd kimi-swarms
+uv add swarms
+```
+
+就这么简单：`uv add swarms` 会在几秒内解析并安装框架及其全部依赖。如果你更习惯用 pip，执行 `pip install swarms` 同样可行。
+
+## 第二步：设置 API 密钥
+
+Kimi K3 通过 OpenRouter 提供服务，因此你需要一个 [OpenRouter API 密钥](https://openrouter.ai/keys)。把它保存到项目根目录的 `.env` 文件中：
+
+```bash
+echo 'OPENROUTER_API_KEY="sk-or-your-key-here"' > .env
+```
+
+Swarms 会在运行时自动加载，你无需把密钥硬编码进代码。
+
+## 第三步：运行单个 Kimi K3 智能体
+
+新建 `single_agent.py`。模型名称是 `openrouter/moonshotai/kimi-k3`，这个带服务商前缀的字符串就是路由到 Kimi 所需的全部配置：
+
+```python
+from dotenv import load_dotenv
+from swarms import Agent
+
+load_dotenv()
+
+agent = Agent(
+    agent_name="Research-Agent",
+    agent_description="A concise research and analysis assistant",
+    system_prompt=(
+        "You are a sharp research analyst. Answer clearly, cite the key "
+        "trade-offs, and state any assumptions you make."
+    ),
+    model_name="openrouter/moonshotai/kimi-k3",
+    max_loops=1,
+    reasoning_effort="low",
+)
+
+result = agent.run(
+    task="Explain the trade-offs between vector databases and keyword search for RAG."
+)
+print(result)
+```
+
+运行它：
+
+```bash
+uv run single_agent.py
+```
+
+你已经构建了一个可用的 Kimi K3 智能体。`Agent` 类会替你处理提示词、模型调用、记忆和输出格式化。每个参数（`system_prompt`、`max_loops`、`reasoning_effort`）都是可调的旋钮，但默认值已经足够合理，可以直接投入使用。
+
+## 第四步：搭建一个 Kimi 智能体 GroupChat
+
+单个智能体负责回答问题，而 **GroupChat** 能让多个智能体*讨论*一个问题。每个智能体都有自己的角色设定，会倾听其他成员的发言，并自行决定何时插话。这是针对复杂问题快速获取多方视角的最简路径。
+
+新建 `group_chat.py`：
+
+```python
+from dotenv import load_dotenv
+from swarms import Agent
+from swarms.structs.groupchat import GroupChat
+
+load_dotenv()
+
+MODEL = "openrouter/moonshotai/kimi-k3"
+
+optimist = Agent(
+    agent_name="Optimist",
+    system_prompt="You argue for the opportunities and upside.",
+    model_name=MODEL,
+    max_loops=1,
+    persistent_memory=False,
+)
+
+skeptic = Agent(
+    agent_name="Skeptic",
+    system_prompt="You stress-test claims and surface the risks.",
+    model_name=MODEL,
+    max_loops=1,
+    persistent_memory=False,
+)
+
+realist = Agent(
+    agent_name="Realist",
+    system_prompt="You weigh both sides and push for a decision.",
+    model_name=MODEL,
+    max_loops=1,
+    persistent_memory=False,
+)
+
+chat = GroupChat(
+    name="Kimi Roundtable",
+    agents=[optimist, skeptic, realist],
+    max_loops=6,
+)
+
+result = chat.run(
+    "Should an early-stage startup build its own agents or buy a platform?"
+)
+print(result)
+```
+
+运行它：
+
+```bash
+uv run group_chat.py
+```
+
+三个 Kimi K3 智能体现在会实时辩论这个问题。注意所需的接线有多少：你定义了三个角色，把它们放进 `GroupChat`，然后调用 `run()`。发言者选择、消息传递和停止条件都由 Swarms 处理，`max_loops` 则为对话轮数设置上限。GroupChat 还会自动为每个智能体配置好参与讨论所需的能力，无需额外挂载工具。
+
+## 你学到了什么，以及下一步
+
+短短几分钟内，你用 `uv` 安装了 Swarms，运行了单个 Kimi K3 智能体，并编排了一个多智能体 GroupChat，这两块正是几乎所有智能体应用的基础构件。这套模式可以持续扩展：把 `GroupChat` 换成 `SequentialWorkflow`、`ConcurrentWorkflow` 或 `HierarchicalSwarm`，智能体本身不用改动，改变的只是编排方式。接下来，可以给智能体挂上**工具**（任何带 docstring 的 Python 函数都能被调用），也可以混用模型，把 Kimi K3 与 GPT 或 Claude 智能体放进同一个蜂群，并进一步查阅 [Swarms 文档](https://docs.swarms.ai) 和 [GitHub 上的示例](https://github.com/kyegomez/swarms/tree/master/examples)。
+
+Kimi K3 以低廉的价格提供了强大的推理能力，Swarms 则提供了让它真正干活的编排能力。先从上面的单个智能体开始，然后让你的 Kimi 智能体彼此对话。
+
+## 结论
+
+两个文件、约四十行 Python 代码，就把你从一个空目录带到了一个可运行的多智能体系统。这正是这套技术栈的意义所在：Kimi K3 提供强大的推理能力，且价格低到让你可以放心地同时跑多个智能体；Swarms 提供编排能力，让你不必手写消息传递、发言者选择和结果收集。
+
+这里最值得记住的一点是：智能体本身与编排方式是两件相互独立的事。你那四个 `Agent` 定义在第三步和第四步之间没有任何改动，变的只是包在外面的那一层。正是这种解耦，让你可以先从单个智能体起步，在需要多方视角时加上 `GroupChat`，之后再换成 `SequentialWorkflow` 或 `HierarchicalSwarm`，而完全不用重写智能体本身。
+
+接下来，收益最高的几个方向是：给智能体挂上工具（任何带 docstring 的 Python 函数都能被调用）；混用模型，让便宜的智能体起草、更强的智能体复审；以及围绕你自己的延迟和成本目标去调优 `max_loops` 和 `reasoning_effort`。下面的示例仓库是最快看到这些模式的可运行代码的地方。
+
+## 相关链接与资源
+
+| 资源 | 链接 |
+| --- | --- |
+| Swarms 官方文档 | [docs.swarms.ai](https://docs.swarms.ai) |
+| GroupChat 文档 | [docs.swarms.world/architectures/group-chat](https://docs.swarms.world/architectures/group-chat) |
+| 架构总览 | [docs.swarms.world/architectures/overview](https://docs.swarms.world/architectures/overview) |
+| 可运行示例 | [github.com/kyegomez/swarms/examples](https://github.com/kyegomez/swarms/tree/master/examples) |
+| Swarms GitHub 仓库 | [github.com/kyegomez/swarms](https://github.com/kyegomez/swarms) |
+| OpenRouter API 密钥 | [openrouter.ai/keys](https://openrouter.ai/keys) |
+| uv 包管理器 | [github.com/astral-sh/uv](https://github.com/astral-sh/uv) |
+| 智能体编排模式 | [智能体编排模式](/blog/agent-orchestration-patterns) |
+| Discord 社区 | [discord.gg/VapjxpSyHC](https://discord.gg/VapjxpSyHC) |
+
+---
+
+*有问题或反馈？欢迎加入我们的 [Discord 社区](https://discord.gg/VapjxpSyHC)，或查阅 [官方文档](https://docs.swarms.ai)。*

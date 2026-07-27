@@ -4,14 +4,14 @@ description: "A beginner-friendly guide to building AI agents with Moonshot's Ki
 date: "2026-07-27"
 author: "Swarms Team"
 categories: ["Guides", "Engineering"]
-readTime: "6 min read"
+readTime: "7 min read"
 featured: false
 image: "/kimi_banner.png"
 ---
 
 # How to Get Started with Kimi K3 in Swarms: A Step-by-Step Tutorial
 
-Moonshot AI's **Kimi K3** is a strong, cost-efficient reasoning model, and the [Swarms framework](https://github.com/kyegomez/swarms) is the fastest way to turn it into a working agent. In this tutorial you will install Swarms with `uv`, run a single Kimi K3 agent, and then wire several Kimi agents together into a `GroupChat` that discusses a problem and reaches a conclusion. No prior agent experience is required, and the whole thing takes about five minutes.
+Moonshot AI's **Kimi K3** is a strong, cost-efficient reasoning model, and the [Swarms framework](https://github.com/kyegomez/swarms) is the fastest way to turn it into a working agent. In this tutorial you will install Swarms with `uv`, run a single Kimi K3 agent, run the same model locally with Ollama, and then wire several Kimi agents together into a `GroupChat` that discusses a problem and reaches a conclusion. No prior agent experience is required, and the whole thing takes about five minutes.
 
 ## Step 1: Install Swarms
 
@@ -70,7 +70,48 @@ uv run single_agent.py
 
 You just built a working Kimi K3 agent. The `Agent` class handles the prompt, the model call, memory, and output formatting for you. Every parameter (`system_prompt`, `max_loops`, `reasoning_effort`) is a knob you can tune, but the defaults are sensible enough to ship as-is.
 
-## Step 4: Build a GroupChat of Kimi agents
+## Step 4: Run Kimi K3 locally with Ollama
+
+Prefer to run Kimi K3 through [Ollama](https://ollama.com) instead of a hosted API? Swarms supports that too, and switching is a **one-line change** — the agent code stays exactly the same.
+
+First pull and run the model with Ollama:
+
+```bash
+ollama run kimi-k3:cloud
+```
+
+Then point your agent at it by changing `model_name` to the `ollama/` prefix. Everything else is identical to Step 3:
+
+```python
+from swarms import Agent
+
+agent = Agent(
+    agent_name="Research-Agent",
+    agent_description="A concise research and analysis assistant",
+    system_prompt=(
+        "You are a sharp research analyst. Answer clearly, cite the key "
+        "trade-offs, and state any assumptions you make."
+    ),
+    model_name="ollama/kimi-k3:cloud",   # <- the only change from Step 3
+    max_loops=1,
+    reasoning_effort="low",
+)
+
+result = agent.run(
+    task="Explain the trade-offs between vector databases and keyword search for RAG."
+)
+print(result)
+```
+
+Run it:
+
+```bash
+uv run local_agent.py
+```
+
+That is the power of the `model_name` field: your agent logic, tools, and orchestration never change — you just swap the string to move between OpenRouter, Ollama, or any of the hundreds of other providers Swarms supports. Develop against a local model and ship to a hosted one without touching a line of agent code.
+
+## Step 5: Build a GroupChat of Kimi agents
 
 A single agent answers a question. A **GroupChat** lets several agents *discuss* one. Each agent has its own persona, listens to the others, and decides on its own whether to chime in. It is the quickest way to get multiple viewpoints on a hard problem.
 

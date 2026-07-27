@@ -4,14 +4,14 @@ description: "针对有向无环图智能体流水线，对 Swarms GraphWorkflow
 date: "2026-07-27"
 author: "Swarms 团队"
 categories: ["指南", "工程"]
-readTime: "9 分钟阅读"
+readTime: "11 分钟阅读"
 featured: false
 image: "/swarms_vs_langgraph.png"
 ---
 
 # Swarms GraphWorkflow 对比 LangGraph：构建智能体图的更简洁、更快速的方式
 
-绝大多数有实际复杂度的多智能体系统本质上都是一张图：部分步骤按顺序执行，部分步骤并行展开，它们的输出最终在汇合节点收束。有两套框架把这张图显式表达了出来：**LangGraph** 与 **Swarms `GraphWorkflow`**。两者都很有实力。但当你真正坐下来用它们分别搭建同一条流水线时，工作量的差距非常明显。
+绝大多数有实际复杂度的多智能体系统本质上都是一张图：部分步骤按顺序执行，部分步骤并行展开，它们的输出最终在汇合节点收束。有两套框架把这张图显式表达了出来：**LangGraph** 与 **[Swarms `GraphWorkflow`](https://docs.swarms.ai/docs/documentation/multi-agent/graph_workflow#graphworkflow)**。两者都很有实力。但当你真正坐下来用它们分别搭建同一条流水线时，工作量的差距非常明显。
 
 本文用两套框架各实现同一个工作流：一个研究节点并行扇出到**摘要器**和**批评者**，两者再共同汇入**终稿编辑**。这种扇出/扇入的形态是智能体系统中最常见的非线性模式，也正是两套框架在易用性和性能上分道扬镳的地方。
 
@@ -151,6 +151,79 @@ LangGraph 同样可以并行执行分支，但这份并行需要你自己去挣�
 
 `GraphWorkflow` 还免费附赠两项优化：编译后的图会被**缓存**，重复运行可以跳过重新编译；当扇出宽度超出你希望同时执行的规模时，可以用 `max_parallel_nodes` 来约束资源占用。
 
+## 用 Swarms Cloud 一次 API 请求跑完整张图
+
+上面所有内容都跑在你自己的机器上。当你准备上线时，你不需要托管任何服务、不需要管理线程池，也不需要维持一个常驻进程。**Swarms Cloud 会把完全相同的这张图作为一次 API 请求执行完毕**，并在一个 JSON 响应中返回每个节点的输出，外加 token 用量和费用。
+
+你的服务器上不需要安装任何框架，也没有任何基础设施需要照看。你只要 `POST` 一份对这张图的描述（有哪些智能体、有哪些边），平台就会完成编译，在托管算力上并行运行互相独立的分支，然后把结果发回给你。下面是把同样的 research → summarize + critique → final 这张图放进一次调用：
+
+```python
+import httpx
+
+headers = {
+    "x-api-key": "YOUR_API_KEY",
+    "Content-Type": "application/json",
+}
+
+workflow = {
+    "name": "Analysis",
+    "task": "Assess the EV battery market",
+    "agents": [
+        {"agent_name": "Research",  "system_prompt": "Research the given topic thoroughly.",           "model_name": "gpt-4.1"},
+        {"agent_name": "Summarize", "system_prompt": "Summarize the research into key points.",         "model_name": "gpt-4.1"},
+        {"agent_name": "Critique",  "system_prompt": "Critique the research and flag weak claims.",      "model_name": "gpt-4.1"},
+        {"agent_name": "Final",     "system_prompt": "Write the final brief from summary and critique.", "model_name": "gpt-4.1"},
+    ],
+    "edges": [
+        {"source": "Research",  "target": "Summarize"},
+        {"source": "Research",  "target": "Critique"},
+        {"source": "Summarize", "target": "Final"},
+        {"source": "Critique",  "target": "Final"},
+    ],
+    "entry_points": ["Research"],
+    "end_points": ["Final"],
+    "auto_compile": True,
+}
+
+response = httpx.post(
+    "https://api.swarms.world/v1/graph-workflow/completions",
+    headers=headers,
+    json=workflow,
+    timeout=300.0,
+)
+
+result = response.json()
+print(result["outputs"]["Final"])
+print(f"Total tokens: {result['usage']['total_tokens']}, cost: ${result['usage']['token_cost']:.4f}")
+```
+
+一次请求，你拿回的是：
+
+```json
+{
+  "job_id": "graph-workflow-abc123xyz",
+  "status": "success",
+  "outputs": {
+    "Research": "Research findings on the EV battery market...",
+    "Summarize": "Key points...",
+    "Critique": "Weak claims flagged...",
+    "Final": "Final brief..."
+  },
+  "usage": {
+    "input_tokens": 1250,
+    "output_tokens": 3200,
+    "total_tokens": 4450,
+    "token_cost": 0.0400,
+    "cost_per_agent": 0.02
+  },
+  "timestamp": "2026-07-27T10:30:45.123456+00:00"
+}
+```
+
+这就是完整的生产部署故事：**没有服务器、没有编排代码、不用操心扩缩容**，只有同样的那张有向图，在托管基础设施上执行，按 token 计费，并把每次运行的成本一并返回给你。各个分支依然并行运行，只不过运行它们的机器不再归你所有。同一个端点既能跑本文这个四节点的图，也能跑包含数十个智能体的多层流水线，而且任何能发 HTTP 请求的语言都可以调用它。
+
+想运行上面这张图，先到 [cloud.swarms.world](https://cloud.swarms.world) 注册并获取 API 密钥，然后把它填进 `x-api-key` 请求头即可。API 上的 Graph Workflow 在 Pro、Ultra 和 Premium 套餐中可用。完整的 schema、视觉能力支持以及边的元数据，请查阅 [GraphWorkflow 完整参考文档](https://docs.swarms.ai/docs/documentation/multi-agent/graph_workflow#graphworkflow)。
+
 ## LangGraph 的复杂度在哪里物有所值
 
 公允的对比要把权衡讲清楚。当你确实需要**对共享的、持续演化的状态进行细粒度控制**时，LangGraph 的显式状态模型非常强大：带条件路由的有环图、可以在图执行中途暂停并恢复的人类介入（human-in-the-loop）中断、来自任意节点的 token 级流式输出，以及与整个 LangChain 生态的深度集成。如果你的应用本身就是一台长时间运行、带复杂分支逻辑的有状态机器，那么这份控制力值得你为它付出仪式感。
@@ -169,9 +242,10 @@ Swarms 优化的是更为常见的那种场景：**把智能体接成一张图�
 | 编译步骤 | 显式 `.compile()` | `auto_compile=True` |
 | LLM 接线 | 每个节点手写 `llm.invoke()` | 由 `Agent` 处理 |
 | 并行执行 | 支持，但需要为此设计结构 | 默认行为，按拓扑分层 |
+| 托管部署 | 自行托管 | 在 Swarms Cloud 上一次 API 请求 |
 | 本例代码行数 | 约 45 行 | 约 20 行 |
 
-Swarms `GraphWorkflow` 是通往一张正确且并行的智能体图的更短路径。你只需描述这些智能体*是什么*，以及它们之间*如何依赖*，编译、调度、并行和结果收集都交给框架处理。
+Swarms `GraphWorkflow` 是通往一张正确且并行的智能体图的更短路径。你只需描述这些智能体*是什么*，以及它们之间*如何依赖*，编译、调度、并行和结果收集都交给框架处理：既可以在本地跑，也可以在上线时变成 Swarms Cloud 上的一次 API 调用。
 
 ## 结论
 
@@ -216,7 +290,8 @@ Swarms 会替你把它们的输出合并进汇合节点。没有归约器需要�
 
 | 资源 | 链接 |
 | --- | --- |
-| Graph Workflow 文档 | [docs.swarms.world/architectures/graph-workflow](https://docs.swarms.world/architectures/graph-workflow) |
+| GraphWorkflow 参考文档 | [docs.swarms.ai/docs/documentation/multi-agent/graph_workflow](https://docs.swarms.ai/docs/documentation/multi-agent/graph_workflow#graphworkflow) |
+| Swarms Cloud（获取 API 密钥） | [cloud.swarms.world](https://cloud.swarms.world) |
 | Concurrent Workflow 文档 | [docs.swarms.world/architectures/concurrent-workflow](https://docs.swarms.world/architectures/concurrent-workflow) |
 | Sequential Workflow 文档 | [docs.swarms.world/architectures/sequential-workflow](https://docs.swarms.world/architectures/sequential-workflow) |
 | 架构总览 | [docs.swarms.world/architectures/overview](https://docs.swarms.world/architectures/overview) |

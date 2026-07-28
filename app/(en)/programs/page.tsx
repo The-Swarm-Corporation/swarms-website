@@ -565,7 +565,7 @@ export default function ProgramsPage() {
           <p className="text-center text-sm leading-loose text-muted-foreground md:text-left">
             Built by{" "}
             <a
-              href="https://swarms.ai"
+              href="https://www.swarms.ai"
               target="_blank"
               rel="noreferrer"
               className="font-medium underline underline-offset-4"

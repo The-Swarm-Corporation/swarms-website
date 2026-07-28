@@ -4,7 +4,7 @@ import { siteConfig } from "@/app/metadata"
 import { getGithubStars, formatStarsLong } from "@/lib/github-stars"
 
 const title = "Swarms Framework — The Premier Python Framework for Multi-Agent Systems"
-const url = "https://swarms.ai/framework"
+const url = "https://www.swarms.ai/framework"
 
 export async function generateMetadata(): Promise<Metadata> {
   const stars = await getGithubStars()
@@ -55,7 +55,7 @@ export async function generateMetadata(): Promise<Metadata> {
     canonical: url,
     languages: {
       en: url,
-      "zh-Hans": "https://swarms.ai/zh/framework",
+      "zh-Hans": "https://www.swarms.ai/zh/framework",
     },
   },
   openGraph: {

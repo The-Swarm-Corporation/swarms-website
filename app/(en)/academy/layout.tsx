@@ -5,7 +5,7 @@ import { siteConfig } from "@/app/metadata"
 const title = "Swarms Academy — Free Multi-Agent AI Courses"
 const description =
   "Swarms Academy courses teach the full multi-agent stack for free: a hands-on Swarms API course with live trials and quizzes, plus learning tracks for the Swarms Marketplace, the open-source Swarms framework, and more. Go from your first AI agent to production multi-agent systems."
-const url = "https://swarms.ai/academy"
+const url = "https://www.swarms.ai/academy"
 
 export const metadata: Metadata = {
   title: { absolute: title },

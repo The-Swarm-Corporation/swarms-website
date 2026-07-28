@@ -4,7 +4,7 @@ import type { Metadata } from "next"
 const title = "Swarms 框架 — 企业级 Python 多智能体框架"
 const description =
   "Swarms 是面向生产环境的企业级多智能体框架，内置 15+ 种智能体编排架构，支持 1,000+ 种大模型，并提供原生 MCP 支持与生产级可观测性。基于 Apache 2.0 协议完全开源，助力团队从原型快速迈向规模化部署。"
-const url = "https://swarms.ai/zh/framework"
+const url = "https://www.swarms.ai/zh/framework"
 
 export const metadata: Metadata = {
   title: { absolute: title },
@@ -30,8 +30,8 @@ export const metadata: Metadata = {
   alternates: {
     canonical: url,
     languages: {
-      en: "https://swarms.ai/framework",
-      "zh-Hans": "https://swarms.ai/zh/framework",
+      en: "https://www.swarms.ai/framework",
+      "zh-Hans": "https://www.swarms.ai/zh/framework",
     },
   },
   openGraph: {

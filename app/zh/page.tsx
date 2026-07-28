@@ -47,16 +47,16 @@ export const metadata: Metadata = {
     "swarms中文",
   ],
   alternates: {
-    canonical: "https://swarms.ai/zh",
+    canonical: "https://www.swarms.ai/zh",
     languages: {
-      en: "https://swarms.ai",
-      "zh-Hans": "https://swarms.ai/zh",
+      en: "https://www.swarms.ai",
+      "zh-Hans": "https://www.swarms.ai/zh",
     },
   },
   openGraph: {
     type: "website",
     locale: "zh_CN",
-    url: "https://swarms.ai/zh",
+    url: "https://www.swarms.ai/zh",
     title: "Swarms AI - 企业级多智能体框架与智能体市场",
     description:
       "构建、部署和扩展 AI 智能体的企业级平台。Python/Rust 多智能体框架、托管智能体 API 与智能体市场，一站式完成智能体编排与规模化落地。",

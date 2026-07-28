@@ -57,7 +57,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const part = getPart(slug)
   if (!part) return {}
   const title = `Part ${part.part}: ${part.title} — The Swarms API Course`
-  const url = `https://swarms.ai/academy/swarms-api/${part.slug}`
+  const url = `https://www.swarms.ai/academy/swarms-api/${part.slug}`
   return {
     title: { absolute: title },
     description: part.summary,
@@ -96,7 +96,7 @@ export default async function CoursePartPage({ params }: PageProps) {
   const prev = index > 0 ? courseParts[index - 1] : null
   const next = index < courseParts.length - 1 ? courseParts[index + 1] : null
 
-  const partUrl = `https://swarms.ai/academy/swarms-api/${part.slug}`
+  const partUrl = `https://www.swarms.ai/academy/swarms-api/${part.slug}`
   const partJsonLd = {
     "@context": "https://schema.org",
     "@type": "Course",
@@ -112,7 +112,7 @@ export default async function CoursePartPage({ params }: PageProps) {
     isPartOf: {
       "@type": "Course",
       name: "The Swarms API Course",
-      url: "https://swarms.ai/academy/swarms-api",
+      url: "https://www.swarms.ai/academy/swarms-api",
     },
     syllabusSections: part.lessons.map((lesson, i) => ({
       "@type": "Syllabus",
@@ -131,8 +131,8 @@ export default async function CoursePartPage({ params }: PageProps) {
     "@type": "BreadcrumbList",
     itemListElement: [
       { "@type": "ListItem", position: 1, name: "Home", item: siteConfig.url },
-      { "@type": "ListItem", position: 2, name: "Swarms Academy", item: "https://swarms.ai/academy" },
-      { "@type": "ListItem", position: 3, name: "The Swarms API Course", item: "https://swarms.ai/academy/swarms-api" },
+      { "@type": "ListItem", position: 2, name: "Swarms Academy", item: "https://www.swarms.ai/academy" },
+      { "@type": "ListItem", position: 3, name: "The Swarms API Course", item: "https://www.swarms.ai/academy/swarms-api" },
       { "@type": "ListItem", position: 4, name: `Part ${part.part}: ${part.title}`, item: partUrl },
     ],
   }

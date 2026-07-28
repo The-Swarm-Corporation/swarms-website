@@ -16,16 +16,16 @@ export const metadata: Metadata = {
     "swarms教程",
   ],
   alternates: {
-    canonical: "https://swarms.ai/zh/installation",
+    canonical: "https://www.swarms.ai/zh/installation",
     languages: {
-      en: "https://swarms.ai/installation",
-      "zh-Hans": "https://swarms.ai/zh/installation",
+      en: "https://www.swarms.ai/installation",
+      "zh-Hans": "https://www.swarms.ai/zh/installation",
     },
   },
   openGraph: {
     type: "website",
     locale: "zh_CN",
-    url: "https://swarms.ai/zh/installation",
+    url: "https://www.swarms.ai/zh/installation",
     title: "安装指南 - Swarms AI",
     description:
       "快速安装 Swarms 多智能体框架，支持通过 pip、uv、conda 或源码方式安装 Python 版本，并支持 Rust 版本的安装。",

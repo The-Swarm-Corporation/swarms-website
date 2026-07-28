@@ -257,7 +257,7 @@ export async function sendWelcomeEmail({ email, firstName, lastName }: WelcomeEm
                   <li><a href="https://docs.swarms.ai/getting-started/api-key-setup">API Key Setup</a> - Configure your authentication</li>
                   <li><a href="https://docs.swarms.ai/clients/python-client">Python Client</a> - Client setup and basic usage</li>
                   <li><a href="https://docs.swarms.ai/examples/client-setup">Client Setup Examples</a> - Step-by-step implementation examples</li>
-                  <li><a href="https://swarms.ai/api">API Reference</a> - Complete API documentation</li>
+                  <li><a href="https://www.swarms.ai/api">API Reference</a> - Complete API documentation</li>
                 </ul>
               </div>
 

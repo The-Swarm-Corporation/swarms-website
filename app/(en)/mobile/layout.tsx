@@ -4,7 +4,7 @@ import { siteConfig } from "@/app/metadata"
 const title = "Swarms Mobile App — Join the Waitlist"
 const description =
   "Join the waitlist for the Swarms mobile app and be among the first to build, monitor, and orchestrate multi-agent AI systems from your phone."
-const url = "https://swarms.ai/mobile"
+const url = "https://www.swarms.ai/mobile"
 
 export const viewport: Viewport = {
   width: "device-width",

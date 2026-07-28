@@ -4,7 +4,7 @@ import { siteConfig } from "@/app/metadata"
 const title = "Swarms Simulations — Large-Scale Multi-Agent Organization Simulation"
 const description =
   "Swarms is building large-scale multi-agent infrastructure to simulate organizations with thousands of coordinated agents, from hospitals to enterprises to governments."
-const url = "https://swarms.ai/simulations"
+const url = "https://www.swarms.ai/simulations"
 
 export const metadata: Metadata = {
   title: { absolute: title },

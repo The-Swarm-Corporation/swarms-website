@@ -19,16 +19,16 @@ export const metadata: Metadata = {
     "智能体云平台",
   ],
   alternates: {
-    canonical: "https://swarms.ai/zh/pricing",
+    canonical: "https://www.swarms.ai/zh/pricing",
     languages: {
-      en: "https://swarms.ai/pricing",
-      "zh-Hans": "https://swarms.ai/zh/pricing",
+      en: "https://www.swarms.ai/pricing",
+      "zh-Hans": "https://www.swarms.ai/zh/pricing",
     },
   },
   openGraph: {
     type: "website",
     locale: "zh_CN",
-    url: "https://swarms.ai/zh/pricing",
+    url: "https://www.swarms.ai/zh/pricing",
     title,
     description,
     siteName: "Swarms AI",

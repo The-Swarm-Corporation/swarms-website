@@ -20,7 +20,7 @@ const partSummaries: PartSummary[] = courseParts.map((p) => ({
 const title = "The Swarms API Course — Free Multi-Agent Course | Swarms Academy"
 const description =
   "A free four-part multi-agent course from Swarms Academy: run your first AI agent, master streaming, tools, and MCP, orchestrate multi-agent swarms with every architecture, and ship to production. 31 lessons, 12 live API trials, graded quizzes."
-const url = "https://swarms.ai/academy/swarms-api"
+const url = "https://www.swarms.ai/academy/swarms-api"
 
 export const metadata: Metadata = {
   title: { absolute: title },
@@ -130,7 +130,7 @@ const breadcrumbJsonLd = {
   "@type": "BreadcrumbList",
   itemListElement: [
     { "@type": "ListItem", position: 1, name: "Home", item: siteConfig.url },
-    { "@type": "ListItem", position: 2, name: "Swarms Academy", item: "https://swarms.ai/academy" },
+    { "@type": "ListItem", position: 2, name: "Swarms Academy", item: "https://www.swarms.ai/academy" },
     { "@type": "ListItem", position: 3, name: "The Swarms API Course", item: url },
   ],
 }

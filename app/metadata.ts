@@ -2,7 +2,11 @@ export const siteConfig = {
   name: "Swarms AI — Multi-Agent Framework & Agent Marketplace",
   description:
     "Swarms is the enterprise-grade multi-agent framework for building, deploying, and scaling AI agents in Python and Rust — with a hosted agent API and a marketplace to buy and sell agents, prompts, tools, and skills. One platform from your first agent to production swarms.",
-  url: "https://swarms.ai",
+  // Must match the host the site actually serves from. The apex (swarms.ai)
+  // permanently redirects to www, so pointing canonicals, hreflang, and sitemap
+  // URLs at the apex makes Google crawl a redirect for every page on the site
+  // and file them under "Page with redirect" instead of indexing them.
+  url: "https://www.swarms.ai",
   ogImage: "/seo_image.jpg", // Use seo_image.jpg for Open Graph and SEO
   logo: "/logo.svg", // Use logo.svg for logo and favicon
   seoBackground: "/seo_image.jpg", // Custom field for SEO background

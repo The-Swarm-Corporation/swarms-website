@@ -178,14 +178,10 @@ export default function RootLayout({ children }: RootLayoutProps) {
                     width: 1200,
                     height: 630,
                   },
-                  potentialAction: {
-                    "@type": "SearchAction",
-                    "target": {
-                      "@type": "EntryPoint",
-                      "urlTemplate": `${siteConfig.url}/?search={search_term_string}`
-                    },
-                    "query-input": "required name=search_term_string"
-                  },
+                  // No SearchAction is declared: the site has no search
+                  // endpoint, and `/?search=` just re-serves the homepage.
+                  // Advertising it made crawlers fetch endless parameterized
+                  // duplicates of the front page.
                 },
                 {
                   "@type": "SoftwareApplication",

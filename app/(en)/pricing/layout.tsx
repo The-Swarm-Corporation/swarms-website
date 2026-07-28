@@ -5,7 +5,7 @@ import { siteConfig } from "@/app/metadata"
 const title = "Pricing — Free, Pro, Premium, and Enterprise"
 const description =
   "Transparent pricing for the Swarms multi-agent platform. Free tier with no card required, Pro at $19.99/month, Premium at $100/month ($1,020/year). Usage-based token pricing across all endpoints. Enterprise and on-premise available."
-const url = "https://swarms.ai/pricing"
+const url = "https://www.swarms.ai/pricing"
 
 export const metadata: Metadata = {
   title: { absolute: title },
@@ -35,7 +35,7 @@ export const metadata: Metadata = {
     canonical: url,
     languages: {
       en: url,
-      "zh-Hans": "https://swarms.ai/zh/pricing",
+      "zh-Hans": "https://www.swarms.ai/zh/pricing",
     },
   },
   openGraph: {

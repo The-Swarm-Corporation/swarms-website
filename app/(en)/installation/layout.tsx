@@ -14,10 +14,10 @@ export const metadata: Metadata = {
     "AI framework",
   ],
   alternates: {
-    canonical: "https://swarms.ai/installation",
+    canonical: "https://www.swarms.ai/installation",
     languages: {
-      en: "https://swarms.ai/installation",
-      "zh-Hans": "https://swarms.ai/zh/installation",
+      en: "https://www.swarms.ai/installation",
+      "zh-Hans": "https://www.swarms.ai/zh/installation",
     },
   },
 }

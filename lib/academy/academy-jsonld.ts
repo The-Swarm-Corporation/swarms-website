@@ -1,7 +1,7 @@
 import { siteConfig } from "@/app/metadata"
 import { academyFaq } from "@/lib/academy/academy-faq"
 
-const url = "https://swarms.ai/academy"
+const url = "https://www.swarms.ai/academy"
 
 const collectionJsonLd = {
   "@context": "https://schema.org",
@@ -23,7 +23,7 @@ const collectionJsonLd = {
         "@type": "Course",
         position: 1,
         name: "The Swarms API Course",
-        url: "https://swarms.ai/academy/swarms-api",
+        url: "https://www.swarms.ai/academy/swarms-api",
         description:
           "Free four-part multi-agent course: run your first agent, master streaming and tools, orchestrate multi-agent swarms, and ship to production.",
         provider: { "@type": "Organization", name: "Swarms", url: siteConfig.url },

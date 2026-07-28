@@ -5,7 +5,7 @@ import { siteConfig } from "@/app/metadata"
 const title = "Products — The Complete Multi-Agent Stack"
 const description =
   "Swarms Python, Swarms API, Swarms Marketplace, Swarms RS, Swarms Chat, and Enterprise deployments. The complete suite of frameworks, APIs, marketplaces, and infrastructure for building the agent economy."
-const url = "https://swarms.ai/products"
+const url = "https://www.swarms.ai/products"
 
 export const metadata: Metadata = {
   title: { absolute: title },
@@ -106,7 +106,7 @@ const collectionJsonLd = {
         name: "Swarms API",
         applicationCategory: "DeveloperApplication",
         operatingSystem: "Cloud",
-        url: "https://swarms.ai/api",
+        url: "https://www.swarms.ai/api",
         description: "Hosted multi-agent orchestration REST API.",
       },
       {

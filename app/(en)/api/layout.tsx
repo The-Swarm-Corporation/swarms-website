@@ -4,7 +4,7 @@ import { siteConfig } from "@/app/metadata"
 const title = "Swarms API — Multi-Agent Orchestration API"
 const description =
   "Production-grade multi-agent orchestration API. 15+ swarm topologies, 1,000+ models (OpenAI, Anthropic, Gemini, Groq), 500+ agents per request, sub-millisecond agent initialization. Free tier available. Built on a Rust runtime for enterprise-grade reliability."
-const url = "https://swarms.ai/api"
+const url = "https://www.swarms.ai/api"
 
 export const metadata: Metadata = {
   title: { absolute: title },

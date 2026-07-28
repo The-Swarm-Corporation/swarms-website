@@ -4,7 +4,7 @@ import { siteConfig } from "@/app/metadata"
 const title = "Swarms Research Papers — Published Work on Multi-Agent Systems"
 const description =
   "Published research papers from The Swarm Corporation covering multi-agent orchestration protocols, dynamic memory allocation, and large-scale agentic simulation."
-const url = "https://swarms.ai/research-papers"
+const url = "https://www.swarms.ai/research-papers"
 
 export const metadata: Metadata = {
   title: { absolute: title },

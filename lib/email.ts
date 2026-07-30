@@ -301,24 +301,3 @@ export async function sendWelcomeEmail({ email, firstName, lastName }: WelcomeEm
     throw error;
   }
 }
-
-// Utility function to test audience connection
-export async function testAudienceConnection() {
-  const audienceId = process.env.RESEND_AUDIENCE_ID;
-  
-  if (!audienceId) {
-    throw new Error('RESEND_AUDIENCE_ID environment variable not set');
-  }
-
-  try {
-    // Try to list contacts to verify audience exists and API key works
-    const response = await resend.contacts.list({ 
-      audienceId: audienceId 
-    });
-    console.log('Audience connection successful:', response);
-    return { success: true, audienceId, response: response.data };
-  } catch (error) {
-    console.error('Audience connection failed:', error);
-    throw error;
-  }
-}

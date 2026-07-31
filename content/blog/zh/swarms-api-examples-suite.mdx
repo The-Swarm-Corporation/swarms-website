@@ -1,0 +1,59 @@
+---
+title: "用 Swarms API 示例套件更快地交付 AI 智能体"
+description: "我们全新的开源仓库汇集了 100 多个可直接运行的 Swarms API 示例，涵盖单智能体、协同集群、全部编排模式，以及 GPT-5、Claude、Gemini、Grok、DeepSeek 等模型的接入方式，还包括流式输出、视觉、工具调用和真实行业用例。"
+date: "2026-07-30"
+author: "Kye Gomez"
+categories: ["产品", "工程"]
+featured: false
+readTime: "4 分钟阅读"
+image: "/api_example_suite.png"
+---
+
+# 用 Swarms API 示例套件更快地交付 AI 智能体
+
+## 引言
+
+构建多智能体系统时，最难的部分往往不是想法本身，而是你花掉的那一个小时：搞清楚 API 到底需要哪些参数，层级式集群在实际运行中与并发式集群究竟有什么区别，以及流式输出是否真如你所设想的那样工作。文档能回答第一个问题，而能跑起来的代码能回答全部三个。
+
+所以我们把这些代码公开了。[Swarms API Examples](https://github.com/The-Swarm-Corporation/Swarms-API-Examples) 仓库是一个开源的示例集合，包含 100 多个可直接运行的 Swarms API 脚本，并经过分类整理，方便你找到与自己需求最接近的那一个，运行它，再改造成自己的系统。只要配置好 API 密钥，每个示例都可以按原样执行。这里没有片段，也没有草稿。
+
+## 仓库里有什么
+
+**单智能体与协同集群。** 示例从最基础的部分开始：一个智能体、一段提示词、一次响应。随后逐步进入多智能体场景，多个智能体共同处理一项任务并相互传递工作成果。如果你从未调用过这套 API，入门脚本是从零到拿到第一个响应的最快路径。
+
+**全部编排模式。** 智能体按顺序执行的顺序工作流，同时执行的并发工作流，由主管智能体向工作智能体分派任务的层级式集群，以及由你定义依赖关系、再由结构决定执行顺序的图工作流。每种模式都有独立的示例，这让它们之间的差异变得具体而非停留在理论层面。当你可以用同一个任务把四种模式都跑一遍并对比输出时，选择架构就容易多了。
+
+**前沿模型接入。** GPT-5、Claude、Gemini、Grok、DeepSeek、Groq 和 OpenRouter 都有对应示例，明确展示如何让智能体使用它们。替换智能体背后的模型通常只需要改一行代码，这些脚本会告诉你是哪一行。
+
+**真实的行业用例。** 医疗、金融、营销和软件工程方面的示例，都是围绕这些领域真实存在的问题构建的，而不是泛泛的演示。它们既可以作为起点，也可以作为参考，说明一个界定清晰的智能体系统在特定领域中应该是什么样子。
+
+**平台的完整能力面。** 面向 Python 用户的 SDK 用法，以及面向其他技术栈的原生 cURL 调用。用于接入外部工具的 MCP 示例。逐 token 输出的流式示例，面向可展示思考过程模型的推理示例，支持图像输入的视觉示例，工具调用示例，以及围绕智能体运维工作的平台工具示例。
+
+## 如何使用
+
+克隆仓库，填入你的 API 密钥，然后运行其中任意脚本。对大多数人来说，打开与自己用例最接近的示例并加以修改，会比从头到尾通读参考文档走得更快。两者都可用，而且是互补的。
+
+仓库是开源的，欢迎提交 PR。如果你用这套 API 做出了某个东西，而它作为示例本可以为你省下时间，那它多半就应该被收录进来。
+
+## 开始使用
+
+1. **注册账号：** [cloud.swarms.world](https://cloud.swarms.world)
+2. **生成 API 密钥：** [cloud.swarms.world/api-keys](https://cloud.swarms.world/api-keys)
+3. **构建并部署** 基于任意前沿模型的智能体与集群
+
+## 结语
+
+示例是从想法到可运行系统之间最短的距离。这个仓库的存在，是为了让你在多智能体项目上投入的时间真正花在你自己问题的独特之处，而不是花在重新摸索这套 API 的形状上。
+
+克隆它，跑一个示例，然后从那里开始构建。
+
+## 相关链接与资源
+
+| 资源 | 链接 |
+| --- | --- |
+| GitHub 上的 Swarms API Examples | [The-Swarm-Corporation/Swarms-API-Examples](https://github.com/The-Swarm-Corporation/Swarms-API-Examples) |
+| 注册账号 | [cloud.swarms.world](https://cloud.swarms.world) |
+| API 密钥 | [cloud.swarms.world/api-keys](https://cloud.swarms.world/api-keys) |
+| 文档 | [docs.swarms.ai](https://docs.swarms.ai) |
+| Swarms 市场 | [swarms.world](https://swarms.world) |
+| Twitter/X | [@swarms_corp](https://x.com/swarms_corp) |

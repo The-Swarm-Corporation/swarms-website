@@ -19,6 +19,49 @@ This post walks through every change. New features first, each with a runnable e
 
 ---
 
+## Getting the Update
+
+Upgrade with whichever package manager your project already uses.
+
+```bash
+# pip
+pip install -U swarms
+
+# uv
+uv pip install -U swarms
+
+# uv, in a project managed by uv
+uv add swarms --upgrade
+
+# poetry
+poetry add swarms@latest
+
+# pdm
+pdm update swarms
+
+# conda environments (swarms ships on PyPI, so pip inside the env)
+conda activate your-env && pip install -U swarms
+```
+
+Pin the exact version if you want reproducible installs:
+
+```bash
+pip install "swarms==14.0.0"
+uv pip install "swarms==14.0.0"
+```
+
+Then confirm what you actually got:
+
+```bash
+python -c "import swarms; print(swarms.__version__)"
+```
+
+Every example below runs on this version. If you are coming from a v13 release, read [Upgrade Notes](#upgrade-notes) first: telemetry is on by default, and two modules were removed.
+
+**Learn more:** [Installation](https://docs.swarms.world/installation)
+
+---
+
 ## Observability: OpenTelemetry Tracing Across Swarms
 
 Every agent run, swarm run, tool call, and LLM request now emits an OpenTelemetry span. Spans nest correctly, so a `HierarchicalSwarm` run appears as a single trace with the director's planning call and each worker's execution as children — including workers running concurrently on separate threads. This is the piece that makes multi-agent latency and cost debuggable instead of guessable.
@@ -67,6 +110,8 @@ class MySwarm:
 ```
 
 That last detail matters more than it looks. A standard `ThreadPoolExecutor` does not carry OpenTelemetry context into worker threads, so spans created inside detach from their parent. `ContextThreadPoolExecutor` is a drop-in replacement that carries it, and it is now used across every concurrent harness in the framework.
+
+**Learn more:** [Telemetry](https://docs.swarms.world/deployment/telemetry)
 
 ---
 
@@ -119,6 +164,8 @@ agent = Agent(
 )
 ```
 
+**Learn more:** [MCPManager API reference](https://docs.swarms.world/api/mcp-manager)
+
 ---
 
 ## AutoAgentBuilder: Generate the Roster, Keep the Architecture
@@ -153,6 +200,8 @@ AutoAgentBuilder(num_agents=5).run(task)   # a hard requirement; returns 5
 ```
 
 The builder validates what the model returns: entries missing any required field are dropped, duplicate names are dropped (agent memory is keyed on `agent_name`, so duplicates would corrupt each other's state), over-long rosters are truncated, and a shortfall against `num_agents` logs a warning rather than passing silently.
+
+**Learn more:** [AutoAgentBuilder API reference](https://docs.swarms.world/api/auto-agent-builder)
 
 ---
 
@@ -190,6 +239,8 @@ swarm = AuctionSwarm(
 )
 ```
 
+**Learn more:** [Multi-Agent Structures Catalog](https://docs.swarms.world/architectures/structures-catalog)
+
 ---
 
 ## Turn-Based GroupChat with Bidding and a Recency Penalty
@@ -223,6 +274,8 @@ result = chat.run("Should we adopt AI for medical diagnosis?")
 ```
 
 `auto_equip=True` attaches the required `RESPOND_TOOL` schema to each agent for you. Raise `threshold` for a more selective room, lower it for a livelier one.
+
+**Learn more:** [GroupChat API reference](https://docs.swarms.world/api/group-chat)
 
 ---
 
@@ -266,6 +319,8 @@ swarm = HierarchicalSwarm(
 )
 ```
 
+**Learn more:** [HierarchicalSwarm API reference](https://docs.swarms.world/api/hierarchical-swarm)
+
 ---
 
 ## Sandboxed Computer-Use Tools
@@ -304,6 +359,8 @@ agent = Agent(
 
 The policy classes (`ReadPolicy`, `WritePolicy`, `ShellPolicy`) raise typed errors — `PathPolicyError`, `SymlinkPolicyError`, `BinaryNotAllowedError`, `ConfirmationRequired` — so a refusal is distinguishable from a genuine failure.
 
+**Learn more:** [Give an Agent Safe Computer Access](https://docs.swarms.world/examples/integrations/computer-use)
+
 ---
 
 ## Generate Pydantic Schemas from Class Signatures
@@ -329,6 +386,8 @@ agent = Agent(**spec.model_dump())
 
 Parameters without a default become required fields; parameters with one keep it. Mutable defaults route through `default_factory` so instances do not share a list, and fields typed with non-Pydantic classes (an `Agent`, a `Callable`) are permitted by default rather than raising a schema-generation error.
 
+**Learn more:** [Schemas reference](https://docs.swarms.world/api/schemas)
+
 ---
 
 ## ConcurrentWorkflow: Explicit Failure Policy
@@ -348,6 +407,8 @@ workflow = ConcurrentWorkflow(
 results = workflow.run("List ten use cases for multi-agent AI systems.")
 ```
 
+**Learn more:** [ConcurrentWorkflow API reference](https://docs.swarms.world/api/concurrent-workflow)
+
 ---
 
 ## CSV Agents Folded Into the Agent Loader
@@ -360,6 +421,8 @@ from swarms.structs.agent_loader import AgentLoader
 loader = AgentLoader()
 agents = loader.load_agents_from_csv("agents.csv")
 ```
+
+**Learn more:** [Creating Agents](https://docs.swarms.world/agents/creating-agents)
 
 ---
 
@@ -392,6 +455,8 @@ results = wf.run(task="Assess the market for solid-state batteries.")
 
 A benchmark suite comparing `GraphWorkflow` against LangGraph on identical DAGs ships in `tests/benchmarks/graph_workflow_benchmarks/`, so the numbers are reproducible on your own hardware rather than taken on faith.
 
+**Learn more:** [GraphWorkflow API reference](https://docs.swarms.world/api/graph-workflow)
+
 ## Thread Pools Sized for I/O, Not CPU
 
 Agent calls are network-bound LLM requests, so deriving pool size from `os.cpu_count()` was the wrong signal — it under-subscribed on small machines and over-subscribed relative to what the workload needs. Every concurrent harness now sizes its pool deliberately, and `max_workers` is exposed so you can override it.
@@ -407,11 +472,15 @@ MixtureOfAgents(agents=workers, aggregator_agent=aggregator, max_workers=8)
 
 A related fix: `batched_grid_agent_execution` previously computed `int(os.cpu_count() * 0.9)`, which yields **zero workers** on a single-core machine. It now clamps to a minimum of one.
 
+**Learn more:** [Scaling Swarms](https://docs.swarms.world/deployment/scaling)
+
 ## Vision Images Fetched Once Per Process
 
 An agent re-sends the same `img` into every loop iteration and every retry, and `get_image_base64` had no caching — so a URL image was downloaded again on each pass. Remote fetches are now cached per process, bounded at 32 entries.
 
 The scope is worth stating precisely: this only applies when direct-URL passing is off, which means local models (`ollama`, `llama-cpp`, custom `base_url`) and any model litellm does not flag as vision-capable. On hosted GPT, Claude, and Gemini the URL is passed to the provider verbatim and nothing is downloaded locally at all, so there was never a repeated fetch to eliminate.
+
+**Learn more:** [Vision Agent](https://docs.swarms.world/examples/vision-agent)
 
 ---
 
@@ -437,6 +506,8 @@ The scope is worth stating precisely: this only applies when direct-URL passing 
 
 - **Concurrent workflow error handling** was simplified, and `on_error` is validated at construction rather than failing mid-run.
 
+**Learn more:** [LLMManager API reference](https://docs.swarms.world/api/llm-manager)
+
 ---
 
 # Examples and Documentation
@@ -458,6 +529,8 @@ New example suites in this release:
 
 Documentation gained an OpenRouter multi-agent tutorial, rewritten MCP reference docs for the manager API, expanded `HierarchicalSwarm` and `SwarmRouter` docstrings covering director settings and retry parameters, documented `auto_equip` on `GroupChat`, and a documented telemetry opt-out in `.env.example`.
 
+**Learn more:** [Examples Overview](https://docs.swarms.world/examples/overview)
+
 ---
 
 # Upgrade Notes
@@ -474,6 +547,8 @@ Most of Zena is additive, but four changes are worth checking before you upgrade
 
 Also note that `ConcurrentWorkflow.activate_auto_prompt_engineering()` was removed as dead code, and `swarm_models` was never a dependency — if your own code imports it, that import has always been broken.
 
+**Learn more:** [Changelog Overview](https://docs.swarms.world/changelog/overview)
+
 ---
 
 # Conclusion
@@ -489,3 +564,54 @@ pip install -U swarms
 ```
 
 Every example in this post is runnable and lives in the [examples directory](https://github.com/kyegomez/swarms/tree/master/examples). The full commit history for this release spans June 12 to July 31, 2026. If you hit something that does not work the way this post describes, [open an issue](https://github.com/kyegomez/swarms/issues) — several of the fixes above started as exactly that.
+
+---
+
+# Links and Resources
+
+## Documentation by Feature
+
+| Feature in Zena | Documentation |
+|---|---|
+| **OpenTelemetry tracing** | [Telemetry](https://docs.swarms.world/deployment/telemetry) · [Monitoring and Observability](https://docs.swarms.world/deployment/monitoring) |
+| **MCP manager and OAuth** | [MCPManager API](https://docs.swarms.world/api/mcp-manager) · [Model Context Protocol](https://docs.swarms.world/integrations/mcp) · [MCP with DataStax](https://docs.swarms.world/examples/integrations/mcp-datastax) |
+| **MCP server over HTTP** | [AOP: agents as MCP tools](https://docs.swarms.world/api/aop) · [Agent Orchestration Protocol](https://docs.swarms.world/deployment/agent-orchestration-protocol) |
+| **AutoAgentBuilder** | [API reference](https://docs.swarms.world/api/auto-agent-builder) · [Quickstart](https://docs.swarms.world/examples/auto-agent-builder/quickstart) · [Reproducible Rosters](https://docs.swarms.world/examples/auto-agent-builder/reproducible) · [Dynamic Support Triage](https://docs.swarms.world/examples/auto-agent-builder/triage) |
+| **AuctionSwarm** | [Multi-Agent Structures Catalog](https://docs.swarms.world/architectures/structures-catalog) · [SkillOrchestra](https://docs.swarms.world/api/skill-orchestra) · [AgentRouter](https://docs.swarms.world/api/agent-router) |
+| **Turn-based GroupChat** | [API reference](https://docs.swarms.world/api/group-chat) · [Architecture](https://docs.swarms.world/architectures/group-chat) · [Example](https://docs.swarms.world/examples/group-chat-example) · [Internals analysis](https://docs.swarms.world/examples/groupchat_insight) |
+| **HierarchicalSwarm recovery** | [API reference](https://docs.swarms.world/api/hierarchical-swarm) · [Architecture](https://docs.swarms.world/architectures/hierarchical-swarm) · [Example](https://docs.swarms.world/examples/hierarchical-swarm-example) · [Agent Judge](https://docs.swarms.world/agents/agent-judge) |
+| **Computer-use tools** | [Safe Computer Access](https://docs.swarms.world/examples/integrations/computer-use) · [Agent Tools](https://docs.swarms.world/agents/agent-tools) · [Tools reference](https://docs.swarms.world/api/tools) |
+| **Class to Pydantic schema** | [Schemas](https://docs.swarms.world/api/schemas) · [Structured Outputs](https://docs.swarms.world/agents/structured-outputs) · [Agent Configuration](https://docs.swarms.world/agents/agent-configuration) |
+| **ConcurrentWorkflow `on_error`** | [API reference](https://docs.swarms.world/api/concurrent-workflow) · [Architecture](https://docs.swarms.world/architectures/concurrent-workflow) · [Example](https://docs.swarms.world/examples/concurrent-workflow-example) |
+| **AgentLoader and CSV agents** | [Creating Agents](https://docs.swarms.world/agents/creating-agents) · [Agent Skills](https://docs.swarms.world/agents/agent-skills) · [CLI Configuration](https://docs.swarms.world/cli/configuration) |
+| **GraphWorkflow on rustworkx** | [API reference](https://docs.swarms.world/api/graph-workflow) · [Architecture](https://docs.swarms.world/architectures/graph-workflow) · [Workflows](https://docs.swarms.world/concepts/workflows) |
+| **Thread pool sizing** | [Scaling Swarms](https://docs.swarms.world/deployment/scaling) · [Multi-Agent Execution Utilities](https://docs.swarms.world/api/multi-agent-execution-utilities) · [MixtureOfAgents](https://docs.swarms.world/api/mixture-of-agents) |
+| **Vision image caching** | [Vision Agent](https://docs.swarms.world/examples/vision-agent) · [Ollama](https://docs.swarms.world/examples/model-providers/ollama) |
+| **`llm_base_url` and `llm_api_key`** | [LLMManager](https://docs.swarms.world/api/llm-manager) · [Model Providers](https://docs.swarms.world/integrations/model-providers) |
+| **Marketplace publish fix** | [Swarms Marketplace](https://docs.swarms.world/integrations/marketplace) · [AgentMarketplaceHandler](https://docs.swarms.world/api/agent-marketplace-handler) |
+
+## Getting Started
+
+| Resource | Link |
+|---|---|
+| Installation | [docs.swarms.world/installation](https://docs.swarms.world/installation) |
+| Quickstart | [docs.swarms.world/quickstart](https://docs.swarms.world/quickstart) |
+| Environment setup | [docs.swarms.world/environment-setup](https://docs.swarms.world/environment-setup) |
+| Introduction to Swarms | [docs.swarms.world/introduction](https://docs.swarms.world/introduction) |
+| All examples | [docs.swarms.world/examples/overview](https://docs.swarms.world/examples/overview) |
+| Architecture comparison | [docs.swarms.world/architectures/overview](https://docs.swarms.world/architectures/overview) |
+| Changelog and release cadence | [docs.swarms.world/changelog/overview](https://docs.swarms.world/changelog/overview) |
+| Docs index for LLMs | [docs.swarms.world/llms.txt](https://docs.swarms.world/llms.txt) |
+
+## Community and Source
+
+| Resource | Link |
+|---|---|
+| GitHub repository | [github.com/kyegomez/swarms](https://github.com/kyegomez/swarms) |
+| Examples directory | [github.com/kyegomez/swarms/tree/master/examples](https://github.com/kyegomez/swarms/tree/master/examples) |
+| Report an issue | [github.com/kyegomez/swarms/issues](https://github.com/kyegomez/swarms/issues) |
+| Contributing guide | [docs.swarms.world/community/contributing](https://docs.swarms.world/community/contributing) |
+| Discord | [docs.swarms.world/community/discord](https://docs.swarms.world/community/discord) |
+| Technical support | [docs.swarms.world/community/technical-support](https://docs.swarms.world/community/technical-support) |
+| FAQ | [docs.swarms.world/community/faq](https://docs.swarms.world/community/faq) |
+| Swarms ecosystem | [docs.swarms.world/community/ecosystem](https://docs.swarms.world/community/ecosystem) |

@@ -1,0 +1,491 @@
+---
+title: "Swarms v14「Zena」：OpenTelemetry 链路追踪、统一 MCP 管理器，以及 68 次提交的多智能体基础设施"
+description: "Swarms v14（代号 Zena）的完整技术解读。覆盖每个智能体与集群的分布式追踪，带 OAuth 的统一 MCP 管理器，三种全新多智能体架构，沙箱化的计算机操作工具，原生 rustworkx 图执行，以及涵盖 SSRF 与令牌存储的安全加固。自 6 月 12 日以来的每一项功能、改进和缺陷修复，均附可运行代码。"
+date: "2026-07-31"
+author: "Kye Gomez"
+categories: ["工程", "产品"]
+readTime: "24 分钟阅读"
+featured: true
+image: "/zena-release_bbanner.png"
+---
+
+# Swarms v14「Zena」
+
+Zena 涵盖了 Swarms 框架七周的工作量，即 2026 年 6 月 12 日至 7 月 31 日之间的 68 次提交。这个版本标志着框架不再只是一个用于组合智能体的库，而是成为你可以真正运维的基础设施：端到端可追踪，能通过带认证的传输层连接外部工具服务器，并针对那些只在真实生产负载下才会暴露的一类缺陷做了加固。
+
+贯穿始终的主线是**可观测性与正确性**。多智能体系统的失败方式与单智能体系统不同。一个工作智能体悄无声息地返回垃圾结果，主管却把它平均进了最终答案。一个按 CPU 核心数设定的线程池，限制住了一个完全受网络 I/O 约束的工作负载。一个参数被接受、被存储，却从未被使用，于是你的流量发往了错误的服务商，而日志里什么都看不到。Zena 修复了这三个问题，并加入了让你能发现下一个问题的追踪能力。
+
+本文逐项介绍所有变更。先讲新功能，每项都配一个可运行示例，然后是性能，接着是缺陷修复，最后是示例与文档。如果你只读一节，请读 [可观测性](#可观测性opentelemetry-链路追踪贯穿-swarms)，它是本次发布中最大的改动，也是最能改变你在生产环境中运行 Swarms 方式的一项。
+
+---
+
+## 可观测性：OpenTelemetry 链路追踪贯穿 Swarms
+
+现在每一次智能体运行、集群运行、工具调用和 LLM 请求都会发出一个 OpenTelemetry span。Span 会正确嵌套，因此一次 `HierarchicalSwarm` 运行会呈现为单条链路，其中主管的规划调用和每个工作智能体的执行都是子节点，包括那些在独立线程上并发运行的工作智能体。正是这一块让多智能体的延迟和成本从「靠猜」变成「可调试」。
+
+遥测默认开启，由单个环境变量控制。把 `SWARMS_TELEMETRY_ON` 设为 `false`、`0`、`no`、`off` 或空值即可完全关闭；关闭时，这层插桩只剩一次就绪检查和一次直接透传。
+
+```python
+import os
+
+# 完全退出：一个开关，每次调用只检查一次
+os.environ["SWARMS_TELEMETRY_ON"] = "false"
+
+from swarms import Agent, SequentialWorkflow
+
+researcher = Agent(agent_name="Researcher", model_name="gpt-5.4", max_loops=1)
+writer = Agent(agent_name="Writer", model_name="gpt-5.4", max_loops=1)
+
+# 开启遥测后，这次运行会发出一个父 span 和两个子 span，
+# 每个都带有智能体名称、模型、token 数量和耗时标签。
+workflow = SequentialWorkflow(agents=[researcher, writer], max_loops=1)
+workflow.run("Summarize the state of solid-state battery research.")
+```
+
+给你自己的编排层加插桩只需要两处调用：构造函数里的 `capture_init`，以及入口方法上的 `trace_run` 装饰器：
+
+```python
+from swarms.telemetry.otel import (
+    ContextThreadPoolExecutor,
+    capture_init,
+    trace_run,
+)
+
+
+class MySwarm:
+    def __init__(self, agents):
+        self.agents = agents
+        capture_init(self)
+
+    @trace_run("MySwarm.run")
+    def run(self, task: str):
+        # ContextThreadPoolExecutor 会把追踪上下文跨线程边界传递下去。
+        # 普通的 ThreadPoolExecutor 会丢掉它，于是即使调用方已插桩，
+        # 内部创建的子 span 也会变成孤儿。
+        with ContextThreadPoolExecutor(max_workers=8) as executor:
+            return list(executor.map(lambda a: a.run(task), self.agents))
+```
+
+最后这个细节比看上去重要。标准的 `ThreadPoolExecutor` 不会把 OpenTelemetry 上下文带进工作线程，所以在其内部创建的 span 会与父节点脱离。`ContextThreadPoolExecutor` 是一个可以直接替换的实现，它会携带上下文，并且现已用于框架中所有并发编排层。
+
+---
+
+## 带 OAuth 的统一 MCP 管理器
+
+Model Context Protocol 支持围绕单一的 `MCPManager` 做了重写，由它统一负责连接、工具发现和认证。原先的 `mcp_client_tools` 模块已移除。新管理器带来了可插拔令牌存储的 OAuth、多服务器同时连接、自定义请求头、按服务器选择传输方式，以及可配置的超时时间；同时 MCP 服务器现在提供的是可流式 HTTP 而非 stdio，因此它可以跨网络工作，而不再只能作为子进程运行。
+
+```python
+from swarms import Agent
+
+# 单个服务器
+agent = Agent(
+    agent_name="MCP-Agent",
+    model_name="gpt-5.4",
+    mcp_url="http://localhost:8000/mcp",
+    max_loops=1,
+)
+
+# 同时连接多个服务器，带认证和超时设置
+agent = Agent(
+    agent_name="Multi-MCP-Agent",
+    model_name="gpt-5.4",
+    mcp_urls=[
+        "http://localhost:8000/mcp",
+        "https://tools.internal.example.com/mcp",
+    ],
+    mcp_authorization_token="Bearer ...",
+    mcp_headers={"X-Tenant-Id": "acme"},
+    mcp_timeout=30,
+    max_loops="auto",
+)
+
+result = agent.run("Use the available tools to reconcile yesterday's ledger.")
+```
+
+对于位于 OAuth 之后的服务器，令牌会缓存在磁盘上。缓存文件以原子方式写入并带 `0600` 权限，因此在任何时刻都不会全局可读，包括从创建到 `chmod` 之间的那个时间窗口，而这正是这类实现的朴素版本会泄露的地方：
+
+```python
+from swarms.tools.mcp_manager import MCPOAuthConfig, MCPFileTokenStorage
+
+agent = Agent(
+    agent_name="OAuth-MCP-Agent",
+    model_name="gpt-5.4",
+    mcp_url="https://api.partner.example.com/mcp",
+    mcp_oauth=MCPOAuthConfig(
+        client_id="...",
+        client_secret="...",
+        storage=MCPFileTokenStorage("~/.swarms/mcp_tokens.json"),
+    ),
+)
+```
+
+---
+
+## AutoAgentBuilder：只生成团队名单，架构留给你
+
+`AutoAgentBuilder` 把一段自然语言任务描述转换成一组智能体配置。构建器智能体被强制调用唯一一个函数 `build_agents`，因此模式约束由服务商侧强制执行，也就不需要再从散文里抠 JSON。生成的每个智能体都精确带有 `Agent` 所需的四个字段：`name`、`description`、`system_prompt` 和 `model_name`。
+
+它设计完团队就停下来。与 `AutoSwarmBuilder` 不同，它不会选择架构，也不会执行任何东西，用什么来运行这份名单完全由你决定。
+
+```python
+from swarms import AutoAgentBuilder, SequentialWorkflow
+
+TASK = (
+    "Analyze why a B2B SaaS company's churn increased last quarter, "
+    "and write a short brief for the leadership team."
+)
+
+# return_dict=True 只查看名单，不构造任何对象
+for config in AutoAgentBuilder(max_agents=3, return_dict=True).run(TASK):
+    print(f"{config['name']}  [{config['model_name']}]")
+    print(f"  {config['description']}")
+
+# 去掉 return_dict，拿到的就是可用的 Agent 对象
+agents = AutoAgentBuilder(num_agents=3, agent_kwargs={"max_loops": 1}).run(TASK)
+result = SequentialWorkflow(agents=agents, max_loops=1).run(TASK)
+```
+
+有一个参数值得留意。`max_agents` 是**上限**而非目标值：构建器提示词会要求模型优先选择能覆盖任务的最小团队，所以在一个只需三种角色的问题上设 `max_agents=5`，返回的还是三个智能体。当数量是硬性要求时，请使用 `num_agents`：
+
+```python
+AutoAgentBuilder(max_agents=5).run(task)   # 上限；可能只返回 3 个
+AutoAgentBuilder(num_agents=5).run(task)   # 硬性要求；返回 5 个
+```
+
+构建器会校验模型返回的内容：缺少任一必填字段的条目会被丢弃，重名的条目会被丢弃（智能体记忆以 `agent_name` 为键，重名会互相污染状态），超长的名单会被截断，而数量不足 `num_agents` 时会记录警告，而不是静默通过。
+
+---
+
+## AuctionSwarm：让智能体竞标工作
+
+在大多数编排器中，由一个主管智能体决定哪个工作智能体接手任务，这取决于主管对每个工作智能体的判断是否准确。`AuctionSwarm` 把这件事反过来：每个智能体针对具体任务自评适配度，提交一个置信度和成本报价，得分最高的报价胜出。把 `top_k` 设为大于 1，即可把工作同时交给多个竞标者。
+
+```python
+from swarms import Agent
+from swarms.structs.auction_swarm import AuctionSwarm
+
+specialists = [
+    Agent(agent_name="SQL-Expert", model_name="gpt-5.4", max_loops=1),
+    Agent(agent_name="Python-Expert", model_name="gpt-5.4", max_loops=1),
+    Agent(agent_name="Infra-Expert", model_name="gpt-5.4", max_loops=1),
+]
+
+swarm = AuctionSwarm(
+    agents=specialists,
+    top_k=1,                          # 单一胜出者
+    scoring="confidence_per_cost",    # 默认：单位花费带来的价值
+)
+
+result = swarm.run("Optimize a slow analytical query over a 40M row table.")
+```
+
+当你希望质量权重高于成本时，可以给 `scoring` 传一个可调用对象：
+
+```python
+# 大幅奖励置信度，把成本当作轻微的平局决胜因素
+swarm = AuctionSwarm(
+    agents=specialists,
+    top_k=2,
+    scoring=lambda confidence, cost: confidence**2 / max(cost, 0.1),
+)
+```
+
+---
+
+## 带竞价与近期发言惩罚的轮流制 GroupChat
+
+`GroupChat` 围绕「单人发言轮次」做了重建。每一轮里，每个智能体通过强制的 `respond(score, message)` 工具调用私下竞价决定是否发言；出价最高且超过 `threshold` 的智能体获得发言权，且只有它的回复会被发到会话中。`recency_penalty` 会从最近 `recency_window` 轮内发过言的智能体的出价中扣分，这可以阻止某一个智能体长篇独白，让发言权持续流动。
+
+```python
+from swarms import Agent
+from swarms.structs.groupchat import GroupChat
+
+agents = [
+    Agent(agent_name="Optimist", system_prompt="You argue for the benefits.",
+          model_name="gpt-5.4", max_loops=1, persistent_memory=False),
+    Agent(agent_name="Pessimist", system_prompt="You argue for the risks.",
+          model_name="gpt-5.4", max_loops=1, persistent_memory=False),
+    Agent(agent_name="Realist", system_prompt="You seek balanced analysis.",
+          model_name="gpt-5.4", max_loops=1, persistent_memory=False),
+]
+
+chat = GroupChat(
+    agents=agents,
+    max_loops=12,           # 发言总数的硬上限
+    threshold=0.6,          # 取得发言权所需的最低出价
+    recency_penalty=0.3,    # 抑制连续发言
+    recency_window=1,
+    idle_timeout=8.0,       # 对话冷场后停止
+    auto_equip=True,        # 自动挂载竞价工具
+)
+
+result = chat.run("Should we adopt AI for medical diagnosis?")
+```
+
+`auto_equip=True` 会替你把所需的 `RESPOND_TOOL` 模式挂到每个智能体上。想要一个更挑剔的会场就调高 `threshold`，想要更热闹就调低。
+
+---
+
+## HierarchicalSwarm：工作智能体恢复、规划与评审
+
+`HierarchicalSwarm` 补齐了它在运行中途工作智能体失败时所需要的机制。失败的工作智能体最多重试 `max_agent_retries` 次；如果某个工作智能体持续不可用，主管最多可以把它的任务重新分派 `max_reassignment_attempts` 次，而不是直接丢掉这部分工作。另外，`planning_enabled` 会让主管在分派之前先产出一份计划，`agent_as_judge` 则会在结果被汇总之前对工作智能体的输出打分。
+
+```python
+from swarms import Agent, HierarchicalSwarm
+
+director = Agent(agent_name="Director", model_name="gpt-5.4", max_loops=1)
+workers = [
+    Agent(agent_name="DataWorker", model_name="gpt-5.4-mini", max_loops=1),
+    Agent(agent_name="WritingWorker", model_name="gpt-5.4-mini", max_loops=1),
+]
+
+swarm = HierarchicalSwarm(
+    director=director,
+    agents=workers,
+    max_loops=1,
+    planning_enabled=True,          # 分派前先规划
+    agent_as_judge=True,            # 对工作智能体的输出打分
+    max_agent_retries=2,            # 重试失败的工作智能体
+    max_reassignment_attempts=1,    # 之后把任务交给别人
+    parallel_execution=True,
+    max_workers=8,
+)
+
+result = swarm.run("Produce a competitive analysis of the AI chip market.")
+```
+
+主管的行为现在无需继承子类即可配置。`director_settings` 会把任意覆盖项转发给主管智能体，另外还有专门的 `director_model_name`、`director_temperature` 和 `director_top_p` 参数：
+
+```python
+swarm = HierarchicalSwarm(
+    director=director,
+    agents=workers,
+    director_model_name="claude-sonnet-4-6",
+    director_temperature=0.2,
+    director_settings={"max_tokens": 16000, "reasoning_effort": "high"},
+)
+```
+
+---
+
+## 沙箱化的计算机操作工具
+
+Zena 加入了一套经过测试的计算机操作工具集：文件读写、编辑与打补丁、目录列举、grep 和 shell 执行。每个工具都运行在一层显式的策略之后，而不是选择信任模型。路径会被规范化并与拒绝列表比对，符号链接逃逸会被拒绝，NUL 字节会被拒收，二进制程序采用白名单机制，argv 模式也可以被直接拒绝。
+
+```python
+from swarms import Agent
+from swarms.tools.computer_use import create_computer_use_tools
+
+tools = create_computer_use_tools()
+
+agent = Agent(
+    agent_name="Coding-Agent",
+    model_name="gpt-5.4",
+    tools=tools,
+    max_loops="auto",
+)
+
+agent.run("Find every TODO in the src directory and summarize what they block.")
+```
+
+当你希望暴露面比整套工具更窄时，也可以直接导入单个工具：
+
+```python
+from swarms.tools.computer_use import read_file, grep_files, list_directory
+
+# 只读智能体：没有写入、打补丁、删除或 shell 权限
+agent = Agent(
+    agent_name="Auditor",
+    model_name="gpt-5.4",
+    tools=[read_file, grep_files, list_directory],
+    max_loops="auto",
+)
+```
+
+策略类（`ReadPolicy`、`WritePolicy`、`ShellPolicy`）会抛出带类型的错误：`PathPolicyError`、`SymlinkPolicyError`、`BinaryNotAllowedError`、`ConfirmationRequired`，因此「被策略拒绝」与「真正的运行失败」是可以区分的。
+
+---
+
+## 从类签名生成 Pydantic 模式
+
+类签名本身就是一份模式：参数名、类型、哪些参数必填，以及一段描述各参数的文档字符串。`class_init_to_pydantic_model` 会把它转成一个 `BaseModel` 子类，可用于校验或结构化 LLM 输出，而不必再维护一份会与构造函数逐渐脱节的平行定义。
+
+```python
+from swarms import Agent
+from swarms.utils.class_to_pydantic import class_init_to_pydantic_model
+
+AgentSchema = class_init_to_pydantic_model(
+    Agent, include=("agent_name", "agent_description", "system_prompt", "model_name")
+)
+
+# 字段描述取自 Google 风格的 Args: 段落，
+# 所以生成的模式可以直接用于函数调用
+print(AgentSchema.model_json_schema())
+
+# 可以直接回转成一个真正的 Agent
+spec = AgentSchema(agent_name="Analyst", system_prompt="You analyze.")
+agent = Agent(**spec.model_dump())
+```
+
+没有默认值的参数会成为必填字段，有默认值的则保留默认值。可变默认值会走 `default_factory`，因此不同实例不会共享同一个列表；而以非 Pydantic 类作为类型的字段（比如一个 `Agent`、一个 `Callable`）默认被允许，而不是抛出模式生成错误。
+
+---
+
+## ConcurrentWorkflow：显式的失败策略
+
+在此之前，一个智能体抛出异常就可能中止整次 `ConcurrentWorkflow` 运行，并丢弃其他所有智能体已经完成的工作。`on_error` 参数让这一策略变得显式，并在构造时就完成校验：`"store"` 会把错误记录为该智能体的输出并让其余智能体跑完，`"raise"` 则向上传播并中止运行。
+
+```python
+from swarms import Agent, ConcurrentWorkflow
+
+workflow = ConcurrentWorkflow(
+    agents=[Agent(agent_name=f"Worker-{i}", model_name="gpt-5.4", max_loops=1)
+            for i in range(5)],
+    on_error="store",   # 单个失败不再丢掉另外四份有效结果
+    max_workers=8,      # 按网络 I/O 负载来设定，而不是按 CPU 核心数
+)
+
+results = workflow.run("List ten use cases for multi-agent AI systems.")
+```
+
+---
+
+## CSV 智能体并入 Agent Loader
+
+独立的 CSV 转智能体模块已移除；从 CSV 加载智能体现在是 `AgentLoader` 的一部分，与 Markdown 加载器并列。一次导入，一套 API，一套校验规则。
+
+```python
+from swarms.structs.agent_loader import AgentLoader
+
+loader = AgentLoader()
+agents = loader.load_agents_from_csv("agents.csv")
+```
+
+---
+
+# 性能
+
+## GraphWorkflow 改用原生 rustworkx
+
+`GraphWorkflow` 此前在 rustworkx 图之上用 Python 重新实现了一遍图算法，等于付出了 Rust 数据结构的代价却没用上它的算法。Zena 把这些重复实现换成了原生 rustworkx 调用来做拓扑排序和分层计算，把编译期与校验期的图遍历合并为一次邻接表遍历，在整次运行中共享同一个线程池而不是逐层分配，并且对只有单个节点的层直接内联执行，而不再派发给线程池。
+
+API 没有任何变化。同一张图以同样的方式运行，只是每层的开销更小，每次运行的内存分配也更少。
+
+```python
+from swarms import Agent, GraphWorkflow
+
+wf = GraphWorkflow(auto_compile=True)
+for name in ["research", "summarize", "critique", "editor"]:
+    wf.add_node(Agent(agent_name=name, model_name="gpt-5.4-mini", max_loops=1))
+
+# 先扇出，再扇入
+wf.add_edge("research", "summarize")
+wf.add_edge("research", "critique")
+wf.add_edge("summarize", "editor")
+wf.add_edge("critique", "editor")
+
+wf.set_entry_points(["research"])
+wf.set_end_points(["editor"])
+
+results = wf.run(task="Assess the market for solid-state batteries.")
+```
+
+一套在相同 DAG 上对比 `GraphWorkflow` 与 LangGraph 的基准测试套件随本版本发布，位于 `tests/benchmarks/graph_workflow_benchmarks/`，因此这些数字可以在你自己的硬件上复现，而不必凭信任接受。
+
+## 线程池按 I/O 而非 CPU 来设定
+
+智能体调用是受网络约束的 LLM 请求，所以用 `os.cpu_count()` 推导线程池大小是个错误的信号：它在小机器上订阅不足，相对于工作负载的实际需要又过度订阅。现在每个并发编排层都会有意识地设定池大小，并暴露 `max_workers` 供你覆盖。
+
+`ConcurrentWorkflow` 默认取 `len(agents)` 并以 32 为上限，因为线程池收到的任务数不会超过智能体数量，而这个上限则用于防范服务商的限流和 HTTP 连接池耗尽。`MixtureOfAgents`、`HierarchicalSwarm` 以及各类多智能体执行辅助函数都接受 `max_workers`，并在仍然适合用启发式的地方共享同一套带钳制的 CPU 启发式规则。
+
+```python
+from swarms import ConcurrentWorkflow, MixtureOfAgents
+
+ConcurrentWorkflow(agents=agents, max_workers=16)
+MixtureOfAgents(agents=workers, aggregator_agent=aggregator, max_workers=8)
+```
+
+一个相关的修复：`batched_grid_agent_execution` 此前计算的是 `int(os.cpu_count() * 0.9)`，在单核机器上会得到**零个工作线程**。现在它会钳制到最少 1。
+
+## 视觉图片每个进程只抓取一次
+
+智能体会在每次循环迭代和每次重试中重新发送同一个 `img`，而 `get_image_base64` 没有任何缓存，因此一个 URL 图片会在每一轮被重新下载一遍。现在远程抓取按进程缓存，上限为 32 条。
+
+有必要把适用范围说清楚：这只在直接 URL 透传关闭时生效，也就是本地模型（`ollama`、`llama-cpp`、自定义 `base_url`）以及任何未被 litellm 标记为具备视觉能力的模型。在托管的 GPT、Claude 和 Gemini 上，URL 会原样传给服务商，本地根本不会下载任何东西，所以那里从来就不存在需要消除的重复抓取。
+
+---
+
+# 缺陷修复
+
+- **SSRF 防护加固。** URL 防护现在会先解析主机名再做检查，并拦截此前能绕过的数字化 IP 编码形式：私有地址的十进制、八进制和十六进制写法。一套覆盖各类绕过手法的回归测试随之一起发布。
+
+- **OAuth 令牌缓存权限。** MCP 令牌缓存以原子方式写入并带 `0600` 权限。此前的做法会留下一个时间窗口，文件在权限被收紧之前是全局可读的。
+
+- **`llm_base_url` 和 `llm_api_key` 现在真的会传到服务商。** `Agent` 接受了这两个参数，也存了下来，然后在主 LLM 路径上把它们丢掉了。结果是一个本应指向自定义 OpenAI 兼容端点的智能体，会静默地调用默认服务商，请求发往错误的主机或计费到错误的账户，而日志里没有任何痕迹。修复涉及两层：管理器现在会把两者都转发给它的 `LiteLLM` 实例，`LiteLLM` 也会把 `api_key` 透传给 `litellm.completion()`。只有在设置了密钥时才转发，因此对于不使用自定义端点的用户，litellm 的环境变量回退依然有效。
+
+- **每个组件实例拥有唯一 ID。** 组件 ID 现在由单一生成器产出，同一结构的两个实例不会再撞 ID。
+
+- **移除已弃用的 `asyncio.get_event_loop()`。** 分布在 `base_structure.py`、`base_swarm.py`、`graph_workflow.py`、`social_algorithms.py` 和 `multi_agent_exec.py` 中的十二处调用点已改用 `asyncio.to_thread`。这同时修复了一个实际存在的 `TypeError`：`loop.run_in_executor()` 不接受关键字参数，因此每一个转发 `**kwargs` 的异步辅助函数（包括 `base_structure.run_async`、`base_swarm.arun`、`base_swarm.aloop` 和 `graph_workflow.arun`）在收到任何关键字参数时都会抛错。
+
+- **孤儿遥测 span。** 在运行内部和线程内部创建的 span 不会再与父链路脱离。
+
+- **MCP 服务器传输方式。** 服务器现在提供可流式 HTTP 而非 stdio。
+
+- **市场发布崩溃。** 当 `capabilities` 未设置时，发布不会再崩溃。
+
+- **示例修复。** 有十一个可运行示例导入了 `swarm_models`，而这个包并不是本项目的依赖，也不存在于 `pyproject.toml` 中，所以它们全都在导入阶段以 `ModuleNotFoundError` 失败。现在它们都直接使用 `Agent(model_name=...)`。`onboard-basic.py` 有两处问题：除了导入之外，它还传了一个 `create_agents_from_yaml` 并不接受的 `model=` 参数。`autoswarm.py` 的提示词模板同样指示模型写出那个错误的导入语句，于是由它生成的每个脚本都会在第一行就失败。
+
+- **并发工作流的错误处理**得到了简化，并且 `on_error` 会在构造时校验，而不是在运行中途才失败。
+
+---
+
+# 示例与文档
+
+示例目录树按照人们实际查找内容的方式做了重新组织。模型示例按服务商分组，LLM 定义被展开到各服务商文件夹中，README 现在带有一份服务商索引。MCP 示例被拆分为 `agents`、`servers` 和 `client`。一个 `changelog` 文件夹收录了各版本专属的示例。
+
+本次发布的新增示例套件：
+
+| 领域 | 新增内容 |
+|---|---|
+| **拍卖式集群** | 基础拍卖、自定义评分、批量拍卖，以及一份使用说明 README |
+| **GraphWorkflow** | 扇出/扇入图示例，以及 LangGraph 基准测试套件 |
+| **Kimi K3** | 智能体、群聊、Ollama 和 OpenRouter 示例 |
+| **层级式集群** | 展示重试与重新分派的工作智能体恢复示例 |
+| **AutoAgentBuilder** | 快速上手、精确数量、并发、SwarmRouter 以及名单缓存示例 |
+| **GroupChat** | 制造业回流辩论示例，以及更简单的轮流制示例 |
+| **AutoSwarmBuilder** | 只返回配置而不执行的「仅规格」示例 |
+| **模型** | GPT-5.6、MiniMax 3、Gemini 以及提示词缓存示例 |
+
+文档方面新增了一份 OpenRouter 多智能体教程，重写了面向管理器 API 的 MCP 参考文档，扩充了涵盖主管设置与重试参数的 `HierarchicalSwarm` 与 `SwarmRouter` 文档字符串，补充了 `GroupChat` 上 `auto_equip` 的说明，并在 `.env.example` 中记录了遥测的关闭方式。
+
+---
+
+# 升级须知
+
+Zena 的大部分内容都是增量式的，但有四项变更值得在升级前确认。
+
+**遥测默认开启。** 设置 `SWARMS_TELEMETRY_ON=false` 即可退出。
+
+**`mcp_client_tools` 已移除。** 从该模块导入 `get_mcp_tools_sync` 或 `aget_mcp_tools` 的代码必须迁移到 `MCPManager` API。智能体层面的参数（`mcp_url`、`mcp_urls`）保持不变。
+
+**独立的 CSV 转智能体模块已移除。** 请改用 `AgentLoader`。
+
+**`HierarchicalSwarm.max_workers` 现在在构造时解析。** 未设置时它读出来是一个具体整数而不是 `None`，且默认值从 CPU 核心数的 0.75 倍调整为 0.95 倍。内部的 `_resolve_max_workers()` 辅助函数已移除。
+
+另外请注意，`ConcurrentWorkflow.activate_auto_prompt_engineering()` 作为无用代码被删除；而 `swarm_models` 从来就不是依赖项，如果你自己的代码导入了它，那个导入一直都是坏的。
+
+---
+
+# 结语
+
+Zena 是一个关于「能跑的代码」与「能运维的代码」之间差别的版本。组合智能体本来就不难；难的一直是第二周：某个工作智能体开始间歇性失败，某个集群的延迟翻倍而你说不出是哪个智能体造成的，某个自定义端点静默地把流量路由到了错误的服务商。这里的每一项重大改动都在瞄准这道缝隙。
+
+有了 OpenTelemetry 追踪，多智能体的延迟和成本从推断变成可测量。有了 MCP 管理器，外部工具服务器成为一等公民式的、带认证的集成，而不再是一个子进程。`HierarchicalSwarm` 的工作智能体恢复和 `ConcurrentWorkflow` 的 `on_error` 策略，让单点失败只是降级一次运行，而不是摧毁它。针对 SSRF 和令牌存储的安全加固，堵上了有心构造的输入本可利用的绕过路径。而线程池和图执行方面的工作，去掉了那些本来就没为你做任何事的开销。
+
+三种新架构（`AuctionSwarm`、重建后的轮流制 `GroupChat`，以及 `AutoAgentBuilder`）都是同一个想法的变体：让智能体自己决定。谁最适合这个任务，谁应该接下来发言，以及究竟应该存在哪些智能体。这与「一个中央主管为每个工作智能体建模」是截然不同的姿态，而按我们的经验，随着团队规模变大，它的退化过程要平缓得多。
+
+```bash
+pip install -U swarms
+```
+
+本文中的每个示例都可以运行，并存放在 [examples 目录](https://github.com/kyegomez/swarms/tree/master/examples)。本次发布的完整提交历史覆盖 2026 年 6 月 12 日至 7 月 31 日。如果你遇到与本文描述不符的情况，请 [提一个 issue](https://github.com/kyegomez/swarms/issues)，上面好几个修复正是这样开始的。

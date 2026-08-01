@@ -1,6 +1,6 @@
 ---
-title: "Swarms v14「Zena」：OpenTelemetry 链路追踪、统一 MCP 管理器，以及 68 次提交的多智能体基础设施"
-description: "Swarms v14（代号 Zena）的完整技术解读。覆盖每个智能体与集群的分布式追踪，带 OAuth 的统一 MCP 管理器，三种全新多智能体架构，沙箱化的计算机操作工具，原生 rustworkx 图执行，以及涵盖 SSRF 与令牌存储的安全加固。自 6 月 12 日以来的每一项功能、改进和缺陷修复，均附可运行代码。"
+title: "Swarms v14「Zena」：AutoAgentBuilder、统一 MCP 管理器，以及更快的 GraphWorkflow"
+description: "Swarms v14（代号 Zena）的完整技术解读。AutoAgentBuilder 能把一段自然语言任务变成可用的智能体团队，统一 MCP 管理器带来 OAuth 与多服务器工具发现，GraphWorkflow 则改用原生 rustworkx 执行。此外还有三种全新多智能体架构、沙箱化的计算机操作工具、分布式链路追踪，以及涵盖 SSRF 与令牌存储的安全加固。自 6 月 12 日以来的每一项功能、改进和缺陷修复，均附可运行代码。"
 date: "2026-07-31"
 author: "Kye Gomez"
 categories: ["工程", "产品"]
@@ -564,6 +564,78 @@ pip install -U swarms
 ```
 
 本文中的每个示例都可以运行，并存放在 [examples 目录](https://github.com/kyegomez/swarms/tree/master/examples)。本次发布的完整提交历史覆盖 2026 年 6 月 12 日至 7 月 31 日。如果你遇到与本文描述不符的情况，请 [提一个 issue](https://github.com/kyegomez/swarms/issues)，上面好几个修复正是这样开始的。
+
+---
+
+# 常见问题
+
+## Swarms v14「Zena」是什么？
+
+Zena 是 Swarms 多智能体框架的第十四个大版本，涵盖 2026 年 6 月 12 日至 7 月 31 日之间的 68 次提交。核心变化包括：能从任务描述生成智能体团队的 `AutoAgentBuilder`，用于连接外部工具服务器、带 OAuth 的统一 `MCPManager`，以及基于原生 rustworkx 重建的 `GraphWorkflow`。此外还加入了 OpenTelemetry 链路追踪、两种全新多智能体架构、沙箱化的计算机操作工具，以及涵盖 SSRF 与令牌存储的安全加固。
+
+## 如何升级到 Swarms v14？
+
+执行 `pip install -U swarms`；如果你用 uv，则是 `uv pip install -U swarms`。Poetry 用户执行 `poetry add swarms@latest`，pdm 用户执行 `pdm update swarms`。然后用 `python -c "import swarms; print(swarms.__version__)"` 确认结果。各类包管理器的完整命令见 [如何升级到该版本](#如何升级到该版本)。
+
+## Swarms v14 的遥测是默认开启的吗？
+
+是的。OpenTelemetry 链路追踪默认开启。把环境变量 `SWARMS_TELEMETRY_ON` 设为 `false`、`0`、`no`、`off` 或空值即可关闭。关闭后，这层插桩只剩一次就绪检查和一次直接透传，因此不会带来可测量的开销。
+
+## AutoAgentBuilder 和 AutoSwarmBuilder 有什么区别？
+
+`AutoAgentBuilder` 设计完团队就停下来。它返回智能体配置或可用的 `Agent` 对象，架构的选择权留给你。`AutoSwarmBuilder` 则更进一步：它会自行选定架构并执行任务。如果你想控制由什么来运行这份名单，用 `AutoAgentBuilder`；如果你只想直接拿到答案而不想做这个决定，用 `AutoSwarmBuilder`。
+
+## `max_agents` 和 `num_agents` 有什么区别？
+
+`max_agents` 是上限。构建器提示词会要求模型优先选择能覆盖任务的最小团队，所以在只需三种角色的问题上设 `max_agents=5`，返回的还是三个智能体。`num_agents` 则是硬性要求：要五个就返回五个，数量不足时会记录警告，而不是静默通过。
+
+## Swarms 的 MCP 集成支持 OAuth 吗？
+
+支持。`MCPManager` 通过 `MCPOAuthConfig` 和 `MCPFileTokenStorage` 提供带可插拔令牌存储的 OAuth。令牌缓存在磁盘上，文件以原子方式写入并带 `0600` 权限，因此缓存在任何时刻都不会全局可读，包括从文件创建到权限变更之间的那个窗口。
+
+## 一个智能体可以同时连接多个 MCP 服务器吗？
+
+可以。把 `mcp_url` 换成传一个列表给 `mcp_urls` 即可。管理器会在所有服务器上完成工具发现，你还可以设置自定义请求头、授权令牌、按服务器选择传输方式以及超时时间。MCP 服务器本身现在提供的是可流式 HTTP 而非 stdio，因此它可以跨网络工作，而不再只能作为本地子进程运行。
+
+## `mcp_client_tools` 模块没有了，该用什么替代？
+
+请迁移到 `MCPManager` API。从 `mcp_client_tools` 导入 `get_mcp_tools_sync` 或 `aget_mcp_tools` 的代码在升级后会报错。智能体层面的参数保持不变，所以如果你只是在 `Agent` 上设置过 `mcp_url` 或 `mcp_urls`，代码不需要任何改动。
+
+## v14 里的 GraphWorkflow 更快了吗？
+
+更快了。`GraphWorkflow` 此前在 rustworkx 图之上用 Python 重新实现了一遍图算法，等于付出了 Rust 数据结构的代价却没用上它的算法。Zena 把这些换成了原生 rustworkx 调用来做拓扑排序和分层计算，把两次图遍历合并为一次邻接表遍历，在整次运行中共享同一个线程池而不是逐层分配，并且对单节点层直接内联执行。API 没有变化。一套在相同 DAG 上对比 `GraphWorkflow` 与 LangGraph 的可复现基准测试套件位于 `tests/benchmarks/graph_workflow_benchmarks/`。
+
+## AuctionSwarm 是什么，什么时候该用它？
+
+`AuctionSwarm` 让每个智能体针对具体任务自评适配度，提交一个置信度和成本报价，然后把工作交给得分最高的报价。当中央主管智能体对各个工作智能体的判断很可能不准或已经过时，而工作智能体本身对自己的适配度掌握更多信息时，就该用它。把 `top_k` 设为大于 1 可以把工作同时交给多个竞标者，给 `scoring` 传一个可调用对象则可以让质量的权重高于成本。
+
+## 新版 GroupChat 是如何决定谁发言的？
+
+每一轮里，每个智能体通过强制的 `respond(score, message)` 工具调用私下竞价决定是否发言。出价最高且超过 `threshold` 的智能体获得发言权，且只有它的回复会被发出。`recency_penalty` 会从最近 `recency_window` 轮内发过言的智能体的出价中扣分，从而阻止某一个智能体长篇独白。设置 `auto_equip=True` 可以自动把所需的工具模式挂到每个智能体上。
+
+## HierarchicalSwarm 中的工作智能体失败时会怎样？
+
+失败的工作智能体最多重试 `max_agent_retries` 次。如果它持续不可用，主管最多可以把它的任务重新分派给其他智能体 `max_reassignment_attempts` 次，而不是直接丢掉这部分工作。你还可以开启 `planning_enabled` 让主管在分派之前先产出计划，以及开启 `agent_as_judge` 在结果被汇总之前对工作智能体的输出打分。
+
+## 如何避免一个智能体失败就毁掉整次 ConcurrentWorkflow 运行？
+
+设置 `on_error="store"`。错误会被记录为该智能体的输出，其余智能体正常跑完，因此单个失败不会再丢掉已经完成的工作。想要相反的行为就用 `on_error="raise"`。这个值在构造时就会校验，所以拼写错误会立刻失败，而不是在运行中途才暴露。
+
+## 把计算机操作工具交给智能体安全吗？
+
+这些工具运行在一层显式的策略之后，而不是选择信任模型。路径会被规范化并与拒绝列表比对，符号链接逃逸会被拒绝，NUL 字节会被拒收，二进制程序采用白名单机制，argv 模式也可以被直接拒绝。策略类会抛出 `PathPolicyError`、`BinaryNotAllowedError` 等带类型的错误，因此策略拒绝与真正的运行失败是可以区分的。你也可以只导入单个工具，给智能体一个更窄的暴露面，比如没有 shell 权限的只读访问。
+
+## 为什么我在旧版本里设置的 `llm_base_url` 不生效？
+
+`Agent` 接受了 `llm_base_url` 和 `llm_api_key`，也存了下来，然后在主 LLM 路径上把它们丢掉了。结果是一个本应指向自定义 OpenAI 兼容端点的智能体，会静默地调用默认服务商，请求发往错误的主机或计费到错误的账户，而日志里没有任何痕迹。Zena 修复了两层：管理器会把它们转发给它的 `LiteLLM` 实例，`LiteLLM` 也会把 `api_key` 透传给 `litellm.completion()`。只有在设置了密钥时才转发，因此 litellm 的环境变量回退依然有效。
+
+## Swarms v14 有哪些破坏性变更？
+
+有四项需要确认。遥测默认开启，如果你需要关闭，请设置 `SWARMS_TELEMETRY_ON=false`。`mcp_client_tools` 模块已被移除，请改用 `MCPManager`。独立的 CSV 转智能体模块已被移除，请改用 `AgentLoader`。以及 `HierarchicalSwarm.max_workers` 现在在构造时解析，读出来是一个具体整数而不是 `None`，默认值也从 CPU 核心数的 0.75 倍调整为 0.95 倍。
+
+## 我还需要 `swarm_models` 这个包吗？
+
+不需要。`swarm_models` 从来就不是 Swarms 的依赖，也不存在于 `pyproject.toml` 中。此前有十一个示例导入了它并在导入阶段以 `ModuleNotFoundError` 失败；现在它们都直接使用 `Agent(model_name=...)`。如果你自己的代码导入了 `swarm_models`，那个导入一直都是坏的。
 
 ---
 

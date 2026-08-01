@@ -1,6 +1,6 @@
 ---
-title: "Swarms v14 'Zena': OpenTelemetry Tracing, a Unified MCP Manager, and 68 Commits of Multi-Agent Infrastructure"
-description: "A complete technical walkthrough of Swarms v14, code-named Zena. Distributed tracing across every agent and swarm, a unified MCP manager with OAuth, three new multi-agent architectures, sandboxed computer-use tools, native rustworkx graph execution, and a security pass covering SSRF and token storage. Every feature, improvement, and bug fix since June 12, with runnable code."
+title: "Swarms v14 'Zena': AutoAgentBuilder, a Unified MCP Manager, and a Faster GraphWorkflow"
+description: "A complete technical walkthrough of Swarms v14, code-named Zena. AutoAgentBuilder turns a plain-English task into a working agent roster, a unified MCP manager brings OAuth and multi-server tool discovery, and GraphWorkflow now runs on native rustworkx. Plus three new multi-agent architectures, sandboxed computer-use tools, distributed tracing, and a security pass covering SSRF and token storage. Every feature, improvement, and bug fix since June 12, with runnable code."
 date: "2026-07-31"
 author: "Kye Gomez"
 categories: ["Engineering", "Product"]
@@ -564,6 +564,78 @@ pip install -U swarms
 ```
 
 Every example in this post is runnable and lives in the [examples directory](https://github.com/kyegomez/swarms/tree/master/examples). The full commit history for this release spans June 12 to July 31, 2026. If you hit something that does not work the way this post describes, [open an issue](https://github.com/kyegomez/swarms/issues) — several of the fixes above started as exactly that.
+
+---
+
+# Frequently Asked Questions
+
+## What is Swarms v14 "Zena"?
+
+Zena is the fourteenth major release of the Swarms multi-agent framework, covering 68 commits between June 12 and July 31, 2026. The headline changes are `AutoAgentBuilder` for generating agent rosters from a task description, a unified `MCPManager` with OAuth for connecting to external tool servers, and a `GraphWorkflow` rebuilt on native rustworkx. It also adds OpenTelemetry tracing, two new multi-agent architectures, sandboxed computer-use tools, and a security pass covering SSRF and token storage.
+
+## How do I upgrade to Swarms v14?
+
+Run `pip install -U swarms`, or `uv pip install -U swarms` if you use uv. Poetry users run `poetry add swarms@latest` and pdm users run `pdm update swarms`. Confirm the result with `python -c "import swarms; print(swarms.__version__)"`. See [Getting the Update](#getting-the-update) for every package manager.
+
+## Is telemetry enabled by default in Swarms v14?
+
+Yes. OpenTelemetry tracing is on by default. Set the environment variable `SWARMS_TELEMETRY_ON` to `false`, `0`, `no`, `off`, or an empty value to disable it. When it is off, the instrumentation reduces to a single readiness check and a straight passthrough, so there is no measurable overhead.
+
+## What is the difference between AutoAgentBuilder and AutoSwarmBuilder?
+
+`AutoAgentBuilder` designs the team and stops. It returns agent configurations or live `Agent` objects, and leaves the choice of architecture to you. `AutoSwarmBuilder` goes further: it picks an architecture and executes the task. Use `AutoAgentBuilder` when you want to control what runs the roster, and `AutoSwarmBuilder` when you want an answer without making that decision.
+
+## What is the difference between `max_agents` and `num_agents`?
+
+`max_agents` is a ceiling. The builder prompt asks the model to prefer the smallest roster that covers the task, so `max_agents=5` on a three-role problem returns three agents. `num_agents` is a hard requirement: ask for five and you get five, and a shortfall logs a warning instead of passing silently.
+
+## Does the Swarms MCP integration support OAuth?
+
+Yes. `MCPManager` supports OAuth with pluggable token storage through `MCPOAuthConfig` and `MCPFileTokenStorage`. Tokens are cached on disk in a file written atomically with `0600` permissions, so the cache is never world-readable, including in the window between file creation and the permission change.
+
+## Can an agent connect to more than one MCP server?
+
+Yes. Pass a list to `mcp_urls` instead of a single `mcp_url`. The manager handles discovery across all of them, and you can set custom headers, an authorization token, per-server transport, and a timeout. The MCP server itself now serves streamable HTTP rather than stdio, so it works over a network instead of only as a local subprocess.
+
+## The `mcp_client_tools` module is gone. What do I use instead?
+
+Move to the `MCPManager` API. Code importing `get_mcp_tools_sync` or `aget_mcp_tools` from `mcp_client_tools` will break on upgrade. Agent-level parameters are unchanged, so if you only ever set `mcp_url` or `mcp_urls` on an `Agent`, nothing in your code needs to change.
+
+## Is GraphWorkflow faster in v14?
+
+Yes. `GraphWorkflow` previously reimplemented graph algorithms in Python on top of a rustworkx graph, paying for the Rust data structure without using its algorithms. Zena replaces those with native rustworkx calls for topological sorting and layer computation, collapses two graph walks into one adjacency pass, shares a single thread pool across a run instead of allocating per layer, and executes single-node layers inline. The API is unchanged. A reproducible benchmark suite comparing `GraphWorkflow` against LangGraph on identical DAGs ships in `tests/benchmarks/graph_workflow_benchmarks/`.
+
+## What is AuctionSwarm and when should I use it?
+
+`AuctionSwarm` has every agent self-assess its fitness for a specific task and submit a confidence and cost bid, then awards the work to the highest scoring bid. Use it when a central boss agent's model of each worker is likely to be wrong or to go stale, and when the workers themselves have better information about their own fitness. Set `top_k` above 1 to award the work to several bidders, and pass a callable to `scoring` to weight quality over cost.
+
+## How does the new GroupChat decide which agent speaks?
+
+Each turn, every agent privately bids on whether to speak through a forced `respond(score, message)` tool call. The highest bidder above `threshold` takes the floor, and only its reply is posted. A `recency_penalty` subtracts from the bid of any agent that spoke within the last `recency_window` turns, which prevents one agent from monologuing. Set `auto_equip=True` to attach the required tool schema to each agent automatically.
+
+## What happens when a worker fails in HierarchicalSwarm?
+
+Failed workers are retried up to `max_agent_retries` times. If a worker stays unavailable, the director may reassign its task to a different agent up to `max_reassignment_attempts` times rather than dropping the work. You can also enable `planning_enabled` to have the director produce a plan before delegating, and `agent_as_judge` to score worker output before it is synthesized.
+
+## How do I stop one failing agent from killing a whole ConcurrentWorkflow run?
+
+Set `on_error="store"`. The error is recorded as that agent's output and every other agent finishes normally, so a single failure no longer discards work that already completed. Use `on_error="raise"` for the opposite behavior. The value is validated at construction, so a typo fails immediately instead of mid-run.
+
+## Are the computer-use tools safe to give an agent?
+
+They run behind an explicit policy layer rather than trusting the model. Paths are canonicalized and checked against deny lists, symlink escapes are rejected, NUL bytes are refused, binaries are allow-listed, and argv patterns can be denied outright. The policy classes raise typed errors such as `PathPolicyError` and `BinaryNotAllowedError`, so a policy refusal is distinguishable from a genuine failure. You can also import individual tools to give an agent a narrower surface, such as read-only access with no shell.
+
+## Why did my custom `llm_base_url` not work in earlier versions?
+
+`Agent` accepted `llm_base_url` and `llm_api_key`, stored both, and then dropped them on the primary LLM path. An agent pointed at a custom OpenAI-compatible endpoint silently called the default provider instead, against the wrong host or billed to the wrong account, with nothing in the logs. Zena fixes both layers: the manager forwards them into its `LiteLLM` instance, and `LiteLLM` passes `api_key` through to `litellm.completion()`. The key is only forwarded when set, so litellm's environment-variable fallback still works.
+
+## What are the breaking changes in Swarms v14?
+
+Four things to check. Telemetry is on by default, so opt out with `SWARMS_TELEMETRY_ON=false` if you need to. The `mcp_client_tools` module is removed in favor of `MCPManager`. The standalone CSV-to-agent module is removed in favor of `AgentLoader`. And `HierarchicalSwarm.max_workers` now resolves at construction, reading back as a concrete integer rather than `None`, with the default moving from 0.75 to 0.95 of CPU count.
+
+## Do I need the `swarm_models` package?
+
+No. `swarm_models` was never a dependency of Swarms and is absent from `pyproject.toml`. Eleven examples imported it and failed at import with `ModuleNotFoundError`; all of them now use `Agent(model_name=...)` directly. If your own code imports `swarm_models`, that import has always been broken.
 
 ---
 

@@ -8,8 +8,20 @@ interface WelcomeEmailData {
   lastName?: string;
 }
 
+// The name is caller-supplied and lands inside the email HTML below, so it
+// must be escaped regardless of what the API route validated.
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 export async function sendWelcomeEmail({ email, firstName, lastName }: WelcomeEmailData) {
-  const name = firstName ? (lastName ? `${firstName} ${lastName}` : firstName) : 'there';
+  const rawName = firstName ? (lastName ? `${firstName} ${lastName}` : firstName) : 'there';
+  const name = escapeHtml(rawName);
   
   try {
     // Add contact to audience first

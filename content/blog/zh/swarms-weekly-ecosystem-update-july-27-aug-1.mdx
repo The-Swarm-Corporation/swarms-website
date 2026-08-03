@@ -1,0 +1,111 @@
+---
+title: "Swarms 生态每周更新 [7 月 27 日 - 8 月 1 日]：Swarms v14 'Zena'、智能体竞赛，以及 API 示例套件"
+description: "本周 Swarms 生态进展：Swarms v14 'Zena' 发布，带来 AutoAgentBuilder、统一的 MCP 管理器和更快的 GraphWorkflow；Marketplace 推出周期性智能体竞赛；全新开源仓库汇集 100 多个可运行的 Swarms API 示例；另有两篇新指南分别对比 GraphWorkflow 与 LangGraph，以及讲解如何用 Kimi K3 构建智能体。"
+date: "2026-08-02"
+author: "Kye Gomez"
+categories: ["公司"]
+readTime: "5 分钟阅读"
+featured: false
+image: "/weekly_update_august_2.png"
+---
+
+# Swarms 生态每周更新 [7 月 27 日 - 8 月 1 日]：Swarms v14 "Zena"、智能体竞赛，以及 API 示例套件
+
+本周的工作覆盖了开发者接触最多的三个层面：框架、Marketplace，以及围绕平台的学习资料。核心是代号为 Zena 的 Swarms v14，这个版本把七周的框架工程整合为一次升级。围绕它，Marketplace 面向智能体构建者开启了首个周期性竞赛，文档体系也新增了一个示例仓库和两篇实战指南。
+
+贯穿这些发布的主题是生产可用性。Zena 关注可观测性、正确性与安全性，而非炫目的新功能，这类工作在系统承载真实流量后才真正显现价值。示例套件与两篇新指南缩短了从阅读编排模式到实际运行它的路径。竞赛则为已经在 Marketplace 上发布作品的创作者提供了分发激励。
+
+下文逐项介绍每个进展：改了什么、为什么重要、去哪里深入了解。链接统一放在各章节的资源部分以及文末的汇总列表中。
+
+## Swarms v14 "Zena" 发布：AutoAgentBuilder、统一 MCP 管理器与更快的 GraphWorkflow
+
+![Swarms v14 Zena 发布](/zena-release_bbanner.png)
+
+Zena 涵盖 6 月 12 日至 7 月 31 日之间的 68 次提交，把框架从一个用于组合智能体的库推进为可以实际运维的基础设施。AutoAgentBuilder 通过强制构建者智能体调用单一的结构化函数，把一句自然语言任务转化为可用的智能体阵容，不需要从文本中提取 JSON。Model Context Protocol 支持围绕单一的 MCPManager 重写，由它统一管理连接、工具发现与认证，并新增了带可插拔令牌存储的 OAuth 以及多服务器并行连接。GraphWorkflow 现在运行在原生 rustworkx 之上，此外该版本还带来三种新的多智能体架构、沙箱化的计算机操作工具、覆盖全框架的 OpenTelemetry 链路追踪，以及针对 SSRF 与令牌存储的安全加固。通过 `pip install -U swarms` 升级；从 v13 迁移的用户请留意发布说明中标注的两个已移除模块与遥测默认设置。
+
+### 资源
+
+- [Swarms v14 "Zena"：完整发布解读](/blog/swarms-v14-zena-release)
+- [Swarms 框架 GitHub 仓库](https://github.com/kyegomez/swarms)
+- [多智能体结构目录](https://docs.swarms.world/architectures/structures-catalog)
+- [MCPManager API 参考](https://docs.swarms.world/api/mcp-manager)
+
+## Swarms Marketplace 推出智能体竞赛
+
+![Swarms Marketplace 智能体竞赛](/competitions_banner.png)
+
+Marketplace 现已面向智能体构建者运行周期性竞赛，首期为 Frenzy 交易量锦标赛：1,000 美元奖池，由本周交易量最高的三个智能体瓜分。所有已发布的智能体自动参赛，排行榜实时更新，并且每周都会开启新一期竞赛。这一机制的意义在于，它把个人创作者最难解决的分发问题变成了可重复的事件。竞赛让新智能体有理由在本周发布而不是无限期推迟，让买家获得一份反映社区真实使用情况的排行榜，也让 Marketplace 形成每周涌现新作品的节奏。已经在平台上发布智能体的构建者无需任何额外集成即可参与。
+
+### 资源
+
+- [智能体竞赛发布公告：构建、发布、赢取真实奖金](/blog/agent-competitions-swarms-marketplace)
+- [竞赛中心](https://swarms.world/competitions)
+- [Frenzy 交易量锦标赛排行榜](https://swarms.world/competitions/volume-week-one)
+- [Swarms Marketplace](https://swarms.world)
+
+## Swarms API 示例套件：100 多个可运行示例
+
+![Swarms API 示例套件](/api_example_suite.png)
+
+我们发布了一个开源仓库，收录 100 多个可直接运行的 Swarms API 示例。套件覆盖单智能体、协同集群以及 API 暴露的全部编排模式，同时包含 GPT-5、Claude、Gemini、Grok、DeepSeek 等模型的接入方式，以及流式输出、视觉、工具调用和面向具体行业的用例。它解决的是参考文档与可用代码之间的鸿沟：文档回答某个参数的作用，而可运行的示例回答层级式集群与并发式集群在实际行为上的差异。每个示例都是自包含的，从克隆仓库到跑通一个多智能体系统只需要一个 API 密钥和一条命令。这个仓库同时充当回归测试面：示例一旦失效，就意味着出现了破坏性变更，可以在用户受影响之前发现。
+
+### 资源
+
+- [用 Swarms API 示例套件更快地交付 AI 智能体](/blog/swarms-api-examples-suite)
+- [Swarms-API-Examples GitHub 仓库](https://github.com/The-Swarm-Corporation/Swarms-API-Examples)
+- [Swarms API 文档](https://docs.swarms.ai)
+- [Swarms Cloud](https://cloud.swarms.world)
+
+## 实战对比：Swarms GraphWorkflow 与 LangGraph
+
+![Swarms GraphWorkflow 对比 LangGraph](/swarms_vs_langgraph.png)
+
+一篇新的工程指南用同一个有向无环图智能体流水线分别在 Swarms GraphWorkflow 和 LangGraph 中实现了两遍，并用真实代码比较结果。对比展示了两种设计的分歧点：GraphWorkflow 从图结构中推断执行顺序，独立节点默认并行运行；而 LangGraph 要达到相同行为，需要显式定义状态 schema 并手动接线通道。对于正在评估编排框架的团队，这篇指南的价值在于用两个工具都完成的具体任务取代了功能对照表式的宣传，代码量、默认行为与执行模型的差异都可以直接检验。指南同时记录了托管路径：同一个图可以通过 Swarms API 的 graph-workflow 端点运行，无需管理基础设施。这篇指南与 Zena 相得益彰，因为 v14 已将 GraphWorkflow 迁移到原生 rustworkx。
+
+### 资源
+
+- [Swarms GraphWorkflow 对比 LangGraph：更简单、更快的智能体图构建方式](/blog/swarms-graphworkflow-vs-langgraph)
+- [GraphWorkflow 文档](https://docs.swarms.ai/docs/documentation/multi-agent/graph_workflow#graphworkflow)
+- [架构总览](https://docs.swarms.world/architectures/overview)
+
+## 在 Swarms 中上手 Kimi K3
+
+![在 Swarms 中使用 Kimi K3](/kimi_banner.png)
+
+一篇新的分步教程讲解如何在 Swarms 框架中用月之暗面的 Kimi K3 模型构建智能体。指南从使用 uv 配置环境开始，先跑通一个单智能体，再编排一个由多个 Kimi 智能体组成的 GroupChat。这类模型覆盖指南降低了尝试新供应商的成本：Swarms 的智能体接口在不同模型间保持一致，切换到 Kimi K3 只需修改模型名并配置 API 密钥，教程展示的是确切步骤而不是空泛的兼容性声明。对于需要在集群中按角色选择模型的开发者，每个供应商都有经过验证的操作方案，混合模型架构才真正可行。该教程提供中英双语版本，与全站的双语文档方向保持一致。
+
+### 资源
+
+- [如何在 Swarms 中上手 Kimi K3：分步教程](/blog/getting-started-kimi-k3-swarms)
+- [GroupChat 文档](https://docs.swarms.world/architectures/group-chat)
+- [Swarms 示例目录](https://github.com/kyegomez/swarms/tree/master/examples)
+
+## 结语
+
+本周的重心是平台之下的根基。Zena 是今年夏天最大的一次框架发布，它对链路追踪、高负载下的正确性以及 MCP 连接加固的投入，正对应多智能体系统在生产环境中真实的失败方式。示例套件与两篇指南则把这些能力转化为开发者几分钟内就能跑起来的材料。
+
+Marketplace 的工作指向另一个方向：分发。周期性竞赛让创作者每周都有发布的理由，也让买家获得实时的热度信号。这些发布延续着同一条轨迹：让在 Swarms 上构建、运维和分发生产级多智能体系统变得切实可行。
+
+## 链接与资源
+
+| 资源 | 链接 |
+| --- | --- |
+| Swarms v14 "Zena" 发布解读 | [swarms.ai/blog/swarms-v14-zena-release](/blog/swarms-v14-zena-release) |
+| Swarms 框架 GitHub 仓库 | [github.com/kyegomez/swarms](https://github.com/kyegomez/swarms) |
+| 多智能体结构目录 | [docs.swarms.world/architectures/structures-catalog](https://docs.swarms.world/architectures/structures-catalog) |
+| MCPManager API 参考 | [docs.swarms.world/api/mcp-manager](https://docs.swarms.world/api/mcp-manager) |
+| 智能体竞赛发布公告 | [swarms.ai/blog/agent-competitions-swarms-marketplace](/blog/agent-competitions-swarms-marketplace) |
+| 竞赛中心 | [swarms.world/competitions](https://swarms.world/competitions) |
+| Frenzy 交易量锦标赛排行榜 | [swarms.world/competitions/volume-week-one](https://swarms.world/competitions/volume-week-one) |
+| Swarms Marketplace | [swarms.world](https://swarms.world) |
+| Swarms API 示例套件公告 | [swarms.ai/blog/swarms-api-examples-suite](/blog/swarms-api-examples-suite) |
+| Swarms-API-Examples GitHub 仓库 | [github.com/The-Swarm-Corporation/Swarms-API-Examples](https://github.com/The-Swarm-Corporation/Swarms-API-Examples) |
+| Swarms API 文档 | [docs.swarms.ai](https://docs.swarms.ai) |
+| Swarms Cloud | [cloud.swarms.world](https://cloud.swarms.world) |
+| GraphWorkflow 对比 LangGraph 指南 | [swarms.ai/blog/swarms-graphworkflow-vs-langgraph](/blog/swarms-graphworkflow-vs-langgraph) |
+| GraphWorkflow 文档 | [docs.swarms.ai/docs/documentation/multi-agent/graph_workflow](https://docs.swarms.ai/docs/documentation/multi-agent/graph_workflow#graphworkflow) |
+| 架构总览 | [docs.swarms.world/architectures/overview](https://docs.swarms.world/architectures/overview) |
+| Kimi K3 教程 | [swarms.ai/blog/getting-started-kimi-k3-swarms](/blog/getting-started-kimi-k3-swarms) |
+| GroupChat 文档 | [docs.swarms.world/architectures/group-chat](https://docs.swarms.world/architectures/group-chat) |
+| Swarms 示例目录 | [github.com/kyegomez/swarms/tree/master/examples](https://github.com/kyegomez/swarms/tree/master/examples) |
+| Swarms 官方 X 账号 | [x.com/swarms_corp](https://x.com/swarms_corp) |

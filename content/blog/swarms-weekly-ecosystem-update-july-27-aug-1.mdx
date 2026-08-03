@@ -1,0 +1,111 @@
+---
+title: "Swarms Weekly Ecosystem Update [July 27 - August 1]: Swarms v14 'Zena', Agent Competitions, and the API Examples Suite"
+description: "This week across the Swarms ecosystem: Swarms v14 'Zena' ships AutoAgentBuilder, a unified MCP manager, and a faster GraphWorkflow; the Marketplace launches recurring Agent Competitions; a new open-source repository collects 100+ runnable Swarms API examples; and two new guides cover GraphWorkflow versus LangGraph and building agents with Kimi K3."
+date: "2026-08-02"
+author: "Kye Gomez"
+categories: ["Company"]
+readTime: "5 min read"
+featured: false
+image: "/weekly_update_august_2.png"
+---
+
+# Swarms Weekly Ecosystem Update [July 27 - August 1]: Swarms v14 "Zena", Agent Competitions, and the API Examples Suite
+
+This week's work spans the three layers developers touch most: the framework, the Marketplace, and the learning material around the platform. The centerpiece is Swarms v14, code-named Zena, a release that consolidates seven weeks of framework engineering into a single upgrade. Around it, the Marketplace opened its first recurring competition for agent builders, and the documentation surface grew with a new examples repository and two hands-on guides.
+
+The theme connecting the releases is production readiness. Zena focuses on observability, correctness, and security rather than headline features, the kind of work that matters once a system carries real traffic. The examples suite and the new guides shorten the path from reading about an orchestration pattern to running it. The competition adds a distribution incentive for creators who already publish on the Marketplace.
+
+Each section below covers one development: what changed, why it matters, and where to read more. Links appear under each section and in a consolidated list at the end.
+
+## Swarms v14 "Zena" Ships With AutoAgentBuilder, a Unified MCP Manager, and a Faster GraphWorkflow
+
+![Swarms v14 Zena release](/zena-release_bbanner.png)
+
+Zena covers 68 commits between June 12 and July 31 and moves the framework from a library for composing agents toward infrastructure you can operate. AutoAgentBuilder turns a plain-English task into a working agent roster by forcing a builder agent through a single schema-enforced function call, so there is no JSON to extract from prose. Model Context Protocol support was rewritten around one MCPManager that owns connections, tool discovery, and authentication, adding OAuth with pluggable token storage and multiple simultaneous servers. GraphWorkflow now runs on native rustworkx, and the release adds three new multi-agent architectures, sandboxed computer-use tools, OpenTelemetry tracing across the framework, and a security pass covering SSRF and token storage. Upgrade with `pip install -U swarms`; the release notes flag two removed modules and telemetry defaults for v13 users.
+
+### Resources
+
+- [Swarms v14 "Zena": Full Release Walkthrough](/blog/swarms-v14-zena-release)
+- [Swarms Framework on GitHub](https://github.com/kyegomez/swarms)
+- [Multi-Agent Structures Catalog](https://docs.swarms.world/architectures/structures-catalog)
+- [MCPManager API Reference](https://docs.swarms.world/api/mcp-manager)
+
+## Agent Competitions Launch on the Swarms Marketplace
+
+![Agent Competitions on the Swarms Marketplace](/competitions_banner.png)
+
+The Marketplace now runs recurring competitions for agent builders, starting with the Frenzy Volume Championship: a $1,000 prize pool split across the three agents with the most trading volume during the week. Entry is automatic for every launched agent, the leaderboard updates live, and a new competition follows every week. The mechanism matters because it converts distribution, the hardest problem for an individual creator, into a repeatable event. A competition gives new agents a reason to launch this week rather than eventually, gives buyers a ranked list of what the community is actually using, and gives the Marketplace a weekly cadence that surfaces fresh work. Builders who already publish agents need no extra integration work to participate.
+
+### Resources
+
+- [Introducing Agent Competitions: Build, Launch, and Compete for Real Prizes](/blog/agent-competitions-swarms-marketplace)
+- [Competitions Hub](https://swarms.world/competitions)
+- [Frenzy Volume Championship Leaderboard](https://swarms.world/competitions/volume-week-one)
+- [Swarms Marketplace](https://swarms.world)
+
+## The Swarms API Examples Suite Collects 100+ Runnable Examples
+
+![The Swarms API Examples Suite](/api_example_suite.png)
+
+We published an open-source repository of more than 100 runnable examples for the Swarms API. The suite covers single agents, coordinated swarms, and every orchestration pattern the API exposes, alongside model integrations for GPT-5, Claude, Gemini, Grok, DeepSeek, and others, plus streaming, vision, tool use, and industry-specific use cases. The problem it solves is the gap between reference documentation and working code: docs answer what a parameter does, while a runnable example answers how a hierarchical swarm actually behaves differently from a concurrent one. Each example is self-contained, so the path from cloning the repository to a running multi-agent system is one API key and one command. The repository also serves as a regression surface: examples that stop working signal a breaking change before users hit it.
+
+### Resources
+
+- [Ship AI Agents Faster with the Swarms API Examples Suite](/blog/swarms-api-examples-suite)
+- [Swarms-API-Examples on GitHub](https://github.com/The-Swarm-Corporation/Swarms-API-Examples)
+- [Swarms API Documentation](https://docs.swarms.ai)
+- [Swarms Cloud](https://cloud.swarms.world)
+
+## A Hands-On Comparison: Swarms GraphWorkflow vs LangGraph
+
+![Swarms GraphWorkflow vs LangGraph](/swarms_vs_langgraph.png)
+
+A new engineering guide builds the same directed-acyclic-graph agent pipeline twice, once with Swarms GraphWorkflow and once with LangGraph, and compares the results with real code. The comparison shows where the two designs diverge: GraphWorkflow infers execution order from the graph structure and runs independent nodes in parallel by default, while LangGraph requires explicit state schema definitions and manual channel wiring for the same behavior. The guide matters for teams evaluating orchestration frameworks because it replaces feature-matrix marketing with a concrete task both tools complete, so the differences in code volume, defaults, and execution model are inspectable. It also documents the hosted path: the same graph runs through the Swarms API graph-workflow endpoint without managing infrastructure. This release pairs well with Zena, since v14 moved GraphWorkflow onto native rustworkx.
+
+### Resources
+
+- [Swarms GraphWorkflow vs LangGraph: A Simpler, Faster Way to Build Agent Graphs](/blog/swarms-graphworkflow-vs-langgraph)
+- [GraphWorkflow Documentation](https://docs.swarms.ai/docs/documentation/multi-agent/graph_workflow#graphworkflow)
+- [Architectures Overview](https://docs.swarms.world/architectures/overview)
+
+## Getting Started With Kimi K3 in Swarms
+
+![Kimi K3 in Swarms](/kimi_banner.png)
+
+A new step-by-step tutorial covers building agents with Moonshot's Kimi K3 model in the Swarms framework. The guide starts from environment setup with uv, walks through a single working agent, then orchestrates a multi-agent GroupChat of Kimi agents. Model coverage guides like this one lower the cost of trying a new provider: the Swarms agent interface stays the same across models, so switching to Kimi K3 is a model-name change plus an API key, and the tutorial shows the exact steps rather than asserting compatibility. For developers selecting models per role in a swarm, having a tested recipe for each provider makes mixed-model architectures practical. The tutorial ships in English and Chinese, consistent with the bilingual documentation direction across the site.
+
+### Resources
+
+- [How to Get Started with Kimi K3 in Swarms: A Step-by-Step Tutorial](/blog/getting-started-kimi-k3-swarms)
+- [GroupChat Documentation](https://docs.swarms.world/architectures/group-chat)
+- [Swarms Examples Directory](https://github.com/kyegomez/swarms/tree/master/examples)
+
+## Conclusion
+
+This week concentrated on the substance under the platform. Zena is the largest framework release of the summer, and its emphasis on tracing, correctness under load, and hardened MCP connectivity reflects where multi-agent systems actually fail in production. The examples suite and the two guides turn that capability into material a developer can run in minutes.
+
+The Marketplace work points the other direction, toward distribution. Recurring competitions give creators a weekly reason to launch and buyers a live signal of traction. Together the releases continue the same trajectory: make it practical to build, operate, and distribute production multi-agent systems on Swarms.
+
+## Links and Resources
+
+| Resource | Link |
+| --- | --- |
+| Swarms v14 "Zena" Release Walkthrough | [swarms.ai/blog/swarms-v14-zena-release](/blog/swarms-v14-zena-release) |
+| Swarms Framework on GitHub | [github.com/kyegomez/swarms](https://github.com/kyegomez/swarms) |
+| Multi-Agent Structures Catalog | [docs.swarms.world/architectures/structures-catalog](https://docs.swarms.world/architectures/structures-catalog) |
+| MCPManager API Reference | [docs.swarms.world/api/mcp-manager](https://docs.swarms.world/api/mcp-manager) |
+| Introducing Agent Competitions | [swarms.ai/blog/agent-competitions-swarms-marketplace](/blog/agent-competitions-swarms-marketplace) |
+| Competitions Hub | [swarms.world/competitions](https://swarms.world/competitions) |
+| Frenzy Volume Championship Leaderboard | [swarms.world/competitions/volume-week-one](https://swarms.world/competitions/volume-week-one) |
+| Swarms Marketplace | [swarms.world](https://swarms.world) |
+| Swarms API Examples Suite Announcement | [swarms.ai/blog/swarms-api-examples-suite](/blog/swarms-api-examples-suite) |
+| Swarms-API-Examples on GitHub | [github.com/The-Swarm-Corporation/Swarms-API-Examples](https://github.com/The-Swarm-Corporation/Swarms-API-Examples) |
+| Swarms API Documentation | [docs.swarms.ai](https://docs.swarms.ai) |
+| Swarms Cloud | [cloud.swarms.world](https://cloud.swarms.world) |
+| GraphWorkflow vs LangGraph Guide | [swarms.ai/blog/swarms-graphworkflow-vs-langgraph](/blog/swarms-graphworkflow-vs-langgraph) |
+| GraphWorkflow Documentation | [docs.swarms.ai/docs/documentation/multi-agent/graph_workflow](https://docs.swarms.ai/docs/documentation/multi-agent/graph_workflow#graphworkflow) |
+| Architectures Overview | [docs.swarms.world/architectures/overview](https://docs.swarms.world/architectures/overview) |
+| Kimi K3 Tutorial | [swarms.ai/blog/getting-started-kimi-k3-swarms](/blog/getting-started-kimi-k3-swarms) |
+| GroupChat Documentation | [docs.swarms.world/architectures/group-chat](https://docs.swarms.world/architectures/group-chat) |
+| Swarms Examples Directory | [github.com/kyegomez/swarms/tree/master/examples](https://github.com/kyegomez/swarms/tree/master/examples) |
+| Swarms on X | [x.com/swarms_corp](https://x.com/swarms_corp) |

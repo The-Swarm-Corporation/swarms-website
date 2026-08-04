@@ -1,0 +1,114 @@
+---
+title: "Swarms Cloud Changelog: July 14 to August 3"
+description: "A week by week, day by day log of everything that shipped on Swarms Cloud over the last three weeks: live swarm architecture pages fetched straight from the API, a public pricing page, a session persistence fix, a security hardening pass with a published disclosure policy, saved flows in the Workflow Builder, a rebuilt Token Usage date range, and a footer connection check."
+date: "2026-08-03"
+author: "Swarms Team"
+categories: ["Product"]
+readTime: "10 min read"
+featured: true
+image: "/swarms_cloud_updates_early_augustr.png"
+---
+
+# Swarms Cloud Changelog: July 14 to August 3
+
+This picks up exactly where the [last changelog](/blog/swarms-cloud-changelog) left off. Same format: what shipped, week by week and day by day, in the order it actually landed, with what each change means for you rather than what it meant internally.
+
+Three weeks is a shorter window than the last log covered, and the shape of the work is different. The previous two months were mostly about adding surfaces: new pages, new filters, new exports. This stretch is mostly about making what already exists correct and trustworthy: sessions that survive, swarm metadata that matches the API instead of drifting from it, a security pass with a published disclosure policy, and a pricing page anyone can read without an account.
+
+Two notes before the log, both carried over from last time. First, this lists only what is live in production today. Several changes shipped and were rolled back inside this window, and they are left out because they never reached you in a usable state: two attempts at a calendar control on Token Usage on July 15, a first pass at swarm architecture pages on July 24, and a dashboard performance change on August 2 that made first paint slower rather than faster and was reverted the same day. Where a rolled back attempt was later replaced by something that did land, the version you can actually use is what appears below. Second, the Workflow Builder has its own [deep dive post](/blog/workflow-builder-swarms-cloud), so its entry here is deliberately short.
+
+## Week of July 13
+
+**July 14**
+
+- The Agents table was reorganized around what you actually scan for. Total completions came out, a row index went in, and the description column was repositioned directly after the name so the two things that identify an agent sit side by side. Sorting was tightened at the same time, with `updated_at` removed as an option since it duplicated what created-at already told you.
+- The API Keys page is now paginated. If you have accumulated more than a screenful of keys, they no longer render as one long list.
+- The create-agent calls to action on the Agents page now point at the [Workbench](https://cloud.swarms.world/workbench) rather than the dashboard root, so the button takes you to the thing you pressed it for.
+
+**July 15**
+
+- Token Usage was rebuilt around an explicit start and end date rather than stepping through fixed week and month periods. You pick the exact window you want, and that window is passed through to the API, so the chart, the buckets, and the totals all describe the same range instead of the chart showing one period while the totals summarize another. Day buckets are generated from the range you chose, which means a three day range renders three columns instead of a padded week.
+
+**July 16**
+
+- Fixed a first-run error for brand new accounts. The credits endpoint returns a 404 when an account has no credits record yet, which is normal for an account created seconds ago, but the platform was surfacing it as a failure. A missing record is now treated as a zero balance, so a new account renders a clean empty state instead of an error, and the credits hook stops turning one missing record into a repeating stream of console errors every thirty seconds.
+
+**July 17**
+
+- Added continuous integration. Every push and pull request now runs the type checker, the linter, and the test suite before anything can merge. This is invisible from the outside, which is the point: it is the mechanism that keeps the rest of this list from regressing.
+
+**July 19**
+
+- A copy pass across the primary pages, removing em dashes from user facing text for a consistent voice.
+
+## Week of July 20
+
+**July 20**
+
+- **Saved Flows landed in the [Workflow Builder](https://cloud.swarms.world/workflow-builder).** You can now name and save a graph you have built, see your saved flows listed, load one back into the canvas, and delete the ones you no longer need. Before this, a workflow existed only as long as the tab did. Saved flows persist in your browser, so they survive a reload but do not yet sync across devices.
+
+**July 21**
+
+- A follow up copy cleanup pass, finishing the em dash removal started on the 19th.
+
+## Week of July 27
+
+**July 27**
+
+This was a security day. Four related changes shipped together.
+
+- **Fixed a cross site scripting hole in rendered execution output.** Agent output is rendered as markdown, and code blocks were being inserted into the page without escaping. A model that returned HTML inside a fenced code block could get that HTML executed in your browser. Code blocks are now escaped, and the escaping was widened to cover quote characters as well as angle brackets.
+- **Markdown links are now scheme validated.** Only `http`, `https`, `mailto`, and relative links render as clickable links. Anything else, including `javascript:` URLs, renders as plain text instead. Since agent output is frequently untrusted text from a model, both of these matter more here than on a typical content page.
+- **Stripe customer matching now requires a confirmed email.** Matching a billing account on an unconfirmed email address meant an unverified address could be used to associate with a Stripe customer. Both the billing history and billing sync routes now require `email_confirmed_at` before matching, and the error message says so plainly.
+- **Published a security policy and a full audit.** [SECURITY.md](https://github.com/The-Swarm-Corporation/swarms-cloud-platform/blob/main/SECURITY.md) documents how to report a vulnerability and what to expect after you do. A companion audit document records the findings from a review of the entire codebase, including the two issues fixed above. Dependabot was also enabled on a weekly schedule, so dependency updates arrive as reviewable pull requests rather than accumulating silently.
+
+**July 30**
+
+- **Fixed the bug that was signing you out between visits.** Supabase rotates a refresh token every time it is used and retires the previous one. A single page load fans out to several API routes at once, and each was independently trying to redeem the same refresh token. One would win; the rest would get "already used", and the session would be cleared. That is why sessions did not survive a return visit even though the cookie itself was valid for months. Token refresh is now handled in one place, and a session-clearing edge case on the login redirect was fixed alongside it.
+- **The [pricing page](https://cloud.swarms.world/pricing) is now public.** It no longer requires an account, so you can see what the platform costs before signing up. It also now lists the subscription tiers, Pro at $19.99 and Premium at $99.99 per month, rendered from the same plan catalog that billing charges against, so the advertised price cannot drift from the charged one. The token cost calculator that was already there is unchanged and sits below the tiers.
+- **Signing out no longer signs you out everywhere.** Sign out was using a global scope, which revoked every session on the account, so signing out on a laptop also ended the session on your phone. It is now scoped to the device you are actually using, which is what the menu item always claimed it did.
+
+**August 1**
+
+- Swarm architecture metadata is now rendered from the live `/v1/swarms/available` endpoint rather than a hand maintained local catalog. A six hundred line local file that had to be updated by hand every time the API changed is gone. In practice this means the architectures listed in the app are the architectures the API actually supports, always. The same change dropped `AutoSwarmBuilder` from the swarm type list, since it is not a valid `swarm_type` and selecting it produced a request the API would reject.
+
+**August 2**
+
+- **Added a connection check and a regions view to the footer.** The connection control verifies that your device can actually reach Swarms Cloud and reports the round trip time. When the check passes it deliberately does not show an error; it tells you your connection is fine and points you at the service status page, because that is the only useful next step when your own network is healthy. It distinguishes three cases: your device is offline, your device is online but cannot reach us, which usually means a VPN, proxy, or firewall, and everything is working. Next to it, a regions drop-up lists the four regions Swarms Cloud runs in: US West, US East, EU West, and Southeast Asia.
+
+## Week of August 3
+
+**August 3**
+
+- **Swarm architecture detail pages went live.** Every architecture now has its own page at `/swarms/<type>`, built from the live API rather than a static list, covering what the architecture does and when to reach for it. Combined with the August 1 change, the catalog page and the detail pages now read from one source of truth that updates itself when the API does.
+- The footer connection check now runs automatically when the page loads instead of waiting for a click, so the footer always reflects your real connection state. It runs once per page load rather than on every navigation, and if you drop offline and come back, it re-verifies on its own instead of sitting in a stale state.
+
+## Conclusion
+
+The theme across these three weeks is correctness over surface area. Very little here is a new place to click. The session fix removed a bug that quietly logged people out between visits, which is the kind of problem that erodes trust in everything else on the platform. The security day closed two real holes and published the policy that says how to report the next one. Moving swarm metadata to the live API removed an entire category of drift, where the app claimed to support something the backend did not. The credits fix removed an error that every single new account hit within seconds of signing up.
+
+The rollbacks are worth naming rather than hiding. Three separate pieces of work shipped and came back out during this window, including a dashboard performance change that reduced total server work but made the page feel slower, because it made every card wait for the slowest request instead of letting each appear as it was ready. Shipping it, measuring it, and reverting it the same day is the process working, not failing. Two of the three have since landed in a form that holds up, and the third is still in review.
+
+If you want the deeper walkthroughs behind the larger systems mentioned here, read [Inside the Swarms Cloud Workflow Builder](/blog/workflow-builder-swarms-cloud) for building multi agent graphs visually, or [All-New Swarms Cloud Updates](/blog/all-new-swarms-cloud-updates) for the Token Usage dashboard and the model catalog.
+
+## Links and Resources
+
+| Resource | Link |
+| --- | --- |
+| Swarms Cloud | [cloud.swarms.world](https://cloud.swarms.world) |
+| Pricing (no account needed) | [cloud.swarms.world/pricing](https://cloud.swarms.world/pricing) |
+| Swarm Architectures | [cloud.swarms.world/swarms](https://cloud.swarms.world/swarms) |
+| Workflow Builder | [cloud.swarms.world/workflow-builder](https://cloud.swarms.world/workflow-builder) |
+| Agents Page | [cloud.swarms.world/agents](https://cloud.swarms.world/agents) |
+| Workbench | [cloud.swarms.world/workbench](https://cloud.swarms.world/workbench) |
+| Token Usage | [cloud.swarms.world/token-usage](https://cloud.swarms.world/token-usage) |
+| API Keys | [cloud.swarms.world/api-keys](https://cloud.swarms.world/api-keys) |
+| Previous Changelog | [Two Months of Platform Updates](/blog/swarms-cloud-changelog) |
+| Security Policy | [SECURITY.md](https://github.com/The-Swarm-Corporation/swarms-cloud-platform/blob/main/SECURITY.md) |
+| Service Status | [status.swarms.ai](https://status.swarms.ai) |
+| Documentation | [docs.swarms.ai](https://docs.swarms.ai) |
+| Discord Community | [discord.gg/VapjxpSyHC](https://discord.gg/VapjxpSyHC) |
+
+---
+
+*Have questions or feedback? Join our [Discord community](https://discord.gg/VapjxpSyHC) or check out the [documentation](https://docs.swarms.ai).*

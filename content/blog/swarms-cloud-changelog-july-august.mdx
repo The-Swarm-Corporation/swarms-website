@@ -1,6 +1,6 @@
 ---
 title: "Swarms Cloud Changelog: July 14 to August 3"
-description: "A week by week, day by day log of everything that shipped on Swarms Cloud over the last three weeks: live swarm architecture pages fetched straight from the API, a public pricing page, a session persistence fix, a security hardening pass with a published disclosure policy, saved flows in the Workflow Builder, a rebuilt Token Usage date range, and a footer connection check."
+description: "A week by week, day by day log of everything that shipped on Swarms Cloud over the last three weeks: live swarm architecture pages fetched straight from the API, a public pricing page, a session persistence fix, a security hardening pass, saved flows in the Workflow Builder, a rebuilt Token Usage date range, and a footer connection check."
 date: "2026-08-03"
 author: "Swarms Team"
 categories: ["Product"]
@@ -13,7 +13,7 @@ image: "/swarms_cloud_updates_early_augustr.png"
 
 This picks up exactly where the [last changelog](/blog/swarms-cloud-changelog) left off. Same format: what shipped, week by week and day by day, in the order it actually landed, with what each change means for you rather than what it meant internally.
 
-Three weeks is a shorter window than the last log covered, and the shape of the work is different. The previous two months were mostly about adding surfaces: new pages, new filters, new exports. This stretch is mostly about making what already exists correct and trustworthy: sessions that survive, swarm metadata that matches the API instead of drifting from it, a security pass with a published disclosure policy, and a pricing page anyone can read without an account.
+Three weeks is a shorter window than the last log covered, and the shape of the work is different. The previous two months were mostly about adding surfaces: new pages, new filters, new exports. This stretch is mostly about making what already exists correct and trustworthy: sessions that survive, swarm metadata that matches the API instead of drifting from it, a security hardening pass, and a pricing page anyone can read without an account.
 
 Two notes before the log, both carried over from last time. First, this lists only what is live in production today. Several changes shipped and were rolled back inside this window, and they are left out because they never reached you in a usable state: two attempts at a calendar control on Token Usage on July 15, a first pass at swarm architecture pages on July 24, and a dashboard performance change on August 2 that made first paint slower rather than faster and was reverted the same day. Where a rolled back attempt was later replaced by something that did land, the version you can actually use is what appears below. Second, the Workflow Builder has its own [deep dive post](/blog/workflow-builder-swarms-cloud), so its entry here is deliberately short.
 
@@ -55,13 +55,10 @@ Two notes before the log, both carried over from last time. First, this lists on
 
 **July 27**
 
-This was a security day. Four related changes shipped together.
+This was a security day. Two related changes shipped together.
 
 - **Fixed a cross site scripting hole in rendered execution output.** Agent output is rendered as markdown, and code blocks were being inserted into the page without escaping. A model that returned HTML inside a fenced code block could get that HTML executed in your browser. Code blocks are now escaped, and the escaping was widened to cover quote characters as well as angle brackets.
 - **Markdown links are now scheme validated.** Only `http`, `https`, `mailto`, and relative links render as clickable links. Anything else, including `javascript:` URLs, renders as plain text instead. Since agent output is frequently untrusted text from a model, both of these matter more here than on a typical content page.
-- **Stripe customer matching now requires a confirmed email.** Matching a billing account on an unconfirmed email address meant an unverified address could be used to associate with a Stripe customer. Both the billing history and billing sync routes now require `email_confirmed_at` before matching, and the error message says so plainly.
-- **Published a security policy and a full audit.** [SECURITY.md](https://github.com/The-Swarm-Corporation/swarms-cloud-platform/blob/main/SECURITY.md) documents how to report a vulnerability and what to expect after you do. A companion audit document records the findings from a review of the entire codebase, including the two issues fixed above. Dependabot was also enabled on a weekly schedule, so dependency updates arrive as reviewable pull requests rather than accumulating silently.
-
 **July 30**
 
 - **Fixed the bug that was signing you out between visits.** Supabase rotates a refresh token every time it is used and retires the previous one. A single page load fans out to several API routes at once, and each was independently trying to redeem the same refresh token. One would win; the rest would get "already used", and the session would be cleared. That is why sessions did not survive a return visit even though the cookie itself was valid for months. Token refresh is now handled in one place, and a session-clearing edge case on the login redirect was fixed alongside it.
@@ -85,7 +82,7 @@ This was a security day. Four related changes shipped together.
 
 ## Conclusion
 
-The theme across these three weeks is correctness over surface area. Very little here is a new place to click. The session fix removed a bug that quietly logged people out between visits, which is the kind of problem that erodes trust in everything else on the platform. The security day closed two real holes and published the policy that says how to report the next one. Moving swarm metadata to the live API removed an entire category of drift, where the app claimed to support something the backend did not. The credits fix removed an error that every single new account hit within seconds of signing up.
+The theme across these three weeks is correctness over surface area. Very little here is a new place to click. The session fix removed a bug that quietly logged people out between visits, which is the kind of problem that erodes trust in everything else on the platform. The security day closed two real holes in how agent output is rendered. Moving swarm metadata to the live API removed an entire category of drift, where the app claimed to support something the backend did not. The credits fix removed an error that every single new account hit within seconds of signing up.
 
 The rollbacks are worth naming rather than hiding. Three separate pieces of work shipped and came back out during this window, including a dashboard performance change that reduced total server work but made the page feel slower, because it made every card wait for the slowest request instead of letting each appear as it was ready. Shipping it, measuring it, and reverting it the same day is the process working, not failing. Two of the three have since landed in a form that holds up, and the third is still in review.
 

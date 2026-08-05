@@ -9,7 +9,7 @@ import { BlogMarkdown } from "@/components/blog/blog-markdown"
 import { ShareButtons } from "@/components/blog/share-buttons"
 import { CopyPageButton } from "@/components/blog/copy-page-button"
 import { LanguageToggle } from "@/components/language-toggle"
-import { formatPostMarkdown, getAllPosts, getPostBySlug } from "@/lib/blog"
+import { formatPostMarkdown, getAllPostMeta, getAllPosts, getPostBySlug } from "@/lib/blog"
 import { siteConfig } from "@/app/metadata"
 
 interface ZhBlogPostPageProps {
@@ -28,7 +28,7 @@ export default async function ZhBlogPostPage({ params }: ZhBlogPostPageProps) {
     notFound()
   }
 
-  const relatedPosts = getAllPosts("zh")
+  const relatedPosts = getAllPostMeta("zh")
     .filter((p) => p.slug !== post.slug)
     .slice(0, 3)
 

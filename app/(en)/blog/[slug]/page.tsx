@@ -9,7 +9,7 @@ import { BlogMarkdown } from "@/components/blog/blog-markdown"
 import { ShareButtons } from "@/components/blog/share-buttons"
 import { CopyPageButton } from "@/components/blog/copy-page-button"
 import { LanguageToggle } from "@/components/language-toggle"
-import { formatPostMarkdown, getAllPosts, getPostBySlug, hasZhTranslation } from "@/lib/blog"
+import { formatPostMarkdown, getAllPostMeta, getPostBySlug, hasZhTranslation } from "@/lib/blog"
 import { siteConfig } from "@/app/metadata"
 
 interface BlogPostPageProps {
@@ -24,7 +24,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
     notFound()
   }
 
-  const relatedPosts = getAllPosts()
+  const relatedPosts = getAllPostMeta()
     .filter((p) => p.slug !== post.slug)
     .slice(0, 3)
 

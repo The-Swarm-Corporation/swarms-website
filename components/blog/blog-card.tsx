@@ -1,9 +1,9 @@
 import Link from "next/link"
 import { format, parseISO } from "date-fns"
-import type { BlogLocale, BlogPost } from "@/lib/blog"
+import type { BlogLocale, BlogPostMeta } from "@/lib/blog"
 import { BlogCover } from "./blog-cover"
 
-export function BlogCard({ post, locale = "en" }: { post: BlogPost; locale?: BlogLocale }) {
+export function BlogCard({ post, locale = "en" }: { post: BlogPostMeta; locale?: BlogLocale }) {
   // Without cover art the title becomes the cover itself, so skip the
   // heading below to avoid showing it twice.
   const titleInCover = !post.image

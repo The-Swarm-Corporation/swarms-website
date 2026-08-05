@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react"
 import { motion } from "framer-motion"
 import { Search, X } from "lucide-react"
-import type { BlogLocale, BlogPost } from "@/lib/blog"
+import type { BlogLocale, BlogPostMeta } from "@/lib/blog"
 import { cn } from "@/lib/utils"
 import { BlogCard } from "./blog-card"
 
@@ -44,7 +44,7 @@ export function BlogIndexClient({
   categories,
   locale = "en",
 }: {
-  posts: BlogPost[]
+  posts: BlogPostMeta[]
   categories: string[]
   locale?: BlogLocale
 }) {

@@ -22,6 +22,8 @@ export function BlogFeatured({ post, locale = "en" }: { post: BlogPost; locale?:
         image={post.image}
         alt={post.title}
         className="aspect-[4/5] w-full sm:aspect-[16/9] lg:aspect-[2.2/1]"
+        sizes="(max-width: 1280px) 100vw, 1280px"
+        priority
       />
       <div
         aria-hidden="true"

@@ -121,6 +121,8 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                 image={post.image}
                 alt={post.title}
                 className="aspect-[16/9] w-full rounded-2xl"
+                sizes="(max-width: 1152px) 100vw, 1152px"
+                priority
               />
             </div>
           )}

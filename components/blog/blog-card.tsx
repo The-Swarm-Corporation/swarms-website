@@ -19,6 +19,7 @@ export function BlogCard({ post, locale = "en" }: { post: BlogPost; locale?: Blo
           alt={post.title}
           title={titleInCover ? post.title : undefined}
           fit="contain"
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
           className={
             titleInCover
               ? "aspect-[4/3] w-full transition-transform duration-500 ease-out group-hover:scale-[1.03]"

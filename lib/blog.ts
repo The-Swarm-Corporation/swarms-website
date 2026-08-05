@@ -19,6 +19,14 @@ export interface BlogPost {
   image?: string
 }
 
+/**
+ * A post's frontmatter without its markdown body. Listing surfaces (the /blog
+ * grids, related-post cards) must use this instead of BlogPost: passing full
+ * BlogPost objects into a client component serializes the entire blog corpus
+ * into the page payload.
+ */
+export type BlogPostMeta = Omit<BlogPost, 'content' | 'excerpt'>
+
 const postsDirectory = path.join(process.cwd(), 'content/blog')
 
 // Chinese translations live in content/blog/zh/<same-slug>.mdx
@@ -64,6 +72,10 @@ export function getAllPosts(locale: BlogLocale = 'en'): BlogPost[] {
       return -1
     }
   })
+}
+
+export function getAllPostMeta(locale: BlogLocale = 'en'): BlogPostMeta[] {
+  return getAllPosts(locale).map(({ content, excerpt, ...meta }) => meta)
 }
 
 export function getPostBySlug(slug: string, locale: BlogLocale = 'en'): BlogPost | null {

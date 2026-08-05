@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { format, parseISO } from "date-fns"
 import { ArrowRight } from "lucide-react"
-import type { BlogLocale, BlogPost } from "@/lib/blog"
+import type { BlogLocale, BlogPostMeta } from "@/lib/blog"
 import { BlogCover } from "./blog-cover"
 
 const LABELS = {
@@ -9,7 +9,7 @@ const LABELS = {
   zh: { latest: "最新", read: "阅读文章", dateFormat: "yyyy年M月d日" },
 }
 
-export function BlogFeatured({ post, locale = "en" }: { post: BlogPost; locale?: BlogLocale }) {
+export function BlogFeatured({ post, locale = "en" }: { post: BlogPostMeta; locale?: BlogLocale }) {
   const t = LABELS[locale]
 
   return (

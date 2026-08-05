@@ -3,7 +3,7 @@ import { Navigation } from "@/components/navigation"
 import { BlogFeatured } from "@/components/blog/blog-featured"
 import { BlogIndexClient } from "@/components/blog/blog-index-client"
 import { LanguageToggle } from "@/components/language-toggle"
-import { getAllPosts, getAllCategories } from "@/lib/blog"
+import { getAllPostMeta, getAllCategories } from "@/lib/blog"
 import { siteConfig, zhSiteConfig } from "@/app/metadata"
 
 export const metadata: Metadata = {
@@ -39,7 +39,7 @@ export const metadata: Metadata = {
 }
 
 export default function ZhBlogPage() {
-  const posts = getAllPosts("zh")
+  const posts = getAllPostMeta("zh")
   const categories = getAllCategories("zh")
   // Hero shows the newest post flagged featured in frontmatter; falls back to
   // the newest post overall if none is flagged.

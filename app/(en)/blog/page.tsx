@@ -2,10 +2,10 @@ import { Navigation } from "@/components/navigation"
 import { BlogFeatured } from "@/components/blog/blog-featured"
 import { BlogIndexClient } from "@/components/blog/blog-index-client"
 import { LanguageToggle } from "@/components/language-toggle"
-import { getAllPosts, getAllCategories } from "@/lib/blog"
+import { getAllPostMeta, getAllCategories } from "@/lib/blog"
 
 export default function BlogPage() {
-  const posts = getAllPosts()
+  const posts = getAllPostMeta()
   const categories = getAllCategories()
   // Hero shows the newest post flagged featured in frontmatter; falls back to
   // the newest post overall if none is flagged.

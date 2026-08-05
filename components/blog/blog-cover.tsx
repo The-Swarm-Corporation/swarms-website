@@ -23,12 +23,14 @@ export function BlogCover({
   alt,
   title,
   className,
+  fit = "cover",
 }: {
   slug: string
   image?: string
   alt?: string
   title?: string
   className?: string
+  fit?: "cover" | "contain"
 }) {
   if (image) {
     return (
@@ -36,7 +38,14 @@ export function BlogCover({
         {/* Cover art may be a local /public path or an arbitrary remote URL, so a
             plain <img> is used instead of next/image to avoid a remotePatterns allowlist. */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={image} alt={alt ?? ""} className="absolute inset-0 h-full w-full object-cover" />
+        <img
+          src={image}
+          alt={alt ?? ""}
+          className={cn(
+            "absolute inset-0 h-full w-full",
+            fit === "contain" ? "object-contain" : "object-cover",
+          )}
+        />
       </div>
     )
   }

@@ -18,7 +18,12 @@ export function BlogCard({ post, locale = "en" }: { post: BlogPost; locale?: Blo
           image={post.image}
           alt={post.title}
           title={titleInCover ? post.title : undefined}
-          className="aspect-[4/3] w-full transition-transform duration-500 ease-out group-hover:scale-[1.03]"
+          fit="contain"
+          className={
+            titleInCover
+              ? "aspect-[4/3] w-full transition-transform duration-500 ease-out group-hover:scale-[1.03]"
+              : "aspect-video w-full transition-transform duration-500 ease-out group-hover:scale-[1.03]"
+          }
         />
       </div>
       <div className="mt-4 flex items-center gap-2 text-xs font-medium uppercase tracking-[0.15em] text-white/40">

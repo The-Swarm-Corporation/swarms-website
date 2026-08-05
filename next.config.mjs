@@ -20,6 +20,10 @@ const nextConfig = {
   turbopack: {
     root: import.meta.dirname,
   },
+  images: {
+    // A few older posts use cover art hosted on Twitter instead of /public.
+    remotePatterns: [{ protocol: "https", hostname: "pbs.twimg.com" }],
+  },
   typescript: {
     ignoreBuildErrors: true,
   },

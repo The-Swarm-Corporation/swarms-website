@@ -1,3 +1,4 @@
+import Image from "next/image"
 import { cn } from "@/lib/utils"
 
 const GLOW_POSITIONS = [
@@ -24,6 +25,8 @@ export function BlogCover({
   title,
   className,
   fit = "cover",
+  sizes = "100vw",
+  priority = false,
 }: {
   slug: string
   image?: string
@@ -31,20 +34,19 @@ export function BlogCover({
   title?: string
   className?: string
   fit?: "cover" | "contain"
+  sizes?: string
+  priority?: boolean
 }) {
   if (image) {
     return (
       <div className={cn("relative overflow-hidden bg-black border border-white/10", className)}>
-        {/* Cover art may be a local /public path or an arbitrary remote URL, so a
-            plain <img> is used instead of next/image to avoid a remotePatterns allowlist. */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+        <Image
           src={image}
           alt={alt ?? ""}
-          className={cn(
-            "absolute inset-0 h-full w-full",
-            fit === "contain" ? "object-contain" : "object-cover",
-          )}
+          fill
+          sizes={sizes}
+          priority={priority}
+          className={fit === "contain" ? "object-contain" : "object-cover"}
         />
       </div>
     )

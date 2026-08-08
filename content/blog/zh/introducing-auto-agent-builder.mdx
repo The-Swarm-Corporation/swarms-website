@@ -1,0 +1,117 @@
+---
+title: "Auto Agent Builder 正式上线:一句话生成完整的智能体团队"
+description: "Auto Agent Builder 可以把一行任务描述变成一整套可以直接运行的智能体配置,每个智能体都有自己的名称、系统提示词和模型。本文介绍它的工作原理、页面和 API 的使用方法,以及如何把生成的团队直接投入生产。"
+date: "2026-08-08"
+author: "Kye Gomez"
+categories: ["Product"]
+readTime: "7 min read"
+featured: false
+image: "/auto_agent_builder_banner.png"
+---
+
+# Auto Agent Builder 正式上线:一句话生成完整的智能体团队
+
+每个多智能体系统都从同一张白纸开始。在任何任务运行之前,总要有人先决定这项工作需要多少个智能体,每个智能体负责什么,各自应该使用哪个模型,每条系统提示词应该怎么写。这些设计工作是上手过程中最慢的一环,也是大多数团队最容易犯错的地方:团队规模过大,提示词互相重叠,职责划分模糊。
+
+Auto Agent Builder 现已在 [cloud.swarms.world/auto-agent-builder](https://cloud.swarms.world/auto-agent-builder) 上线,它让这张白纸从此消失。你只需要用一句话描述任务,一个专门的构建智能体会为你设计整个团队,并返回完整的、可以直接提交的智能体配置:名称、描述、系统提示词、模型和生成参数。你审阅这份团队清单,复制它,就可以在平台上的任何地方运行。
+
+## 它到底做什么
+
+Auto Agent Builder 由 Swarms API 上一个新端点提供支持:`POST /v1/auto-agent-builder/completions`。一个构建智能体读取你的任务,并设计出它认为能够覆盖该任务的最小团队。响应中包含以 AgentSpec 条目列表形式呈现的完整团队清单,这与平台上其他地方使用的是同一套 schema,因此输出可以直接接入各个多智能体端点,无需任何转换步骤。
+
+有两个特性值得明确说明:
+
+- **该端点绝不会执行生成的智能体。**构建器只负责设计团队,设计完成即停止。在你决定运行之前,什么都不会执行,这意味着你可以在下游消耗任何一个 token 之前,检查和编辑每一条提示词。
+- **你只需为一次智能体调用付费。**响应中的 usage 区块报告的是这一次构建器调用的 token 数量和费用,而不是它所设计的团队的费用。设计一个五人团队的成本和设计一个两人团队大致相同。
+
+## 生成的智能体长什么样
+
+返回的团队清单中,每个条目都是一份完整的配置。每个智能体的核心是四个字段:`agent_name`、`description`、`system_prompt` 和 `model_name`。构建器会针对该智能体在团队中承担的具体职责来撰写系统提示词,因此研究类智能体会得到关于信息来源和引用的指令,而综合类智能体会得到关于结构和文风的指令。
+
+在核心四项之外,每个智能体还带有完整的生成参数:temperature、max tokens、max loops、role、推理设置,以及构建器选择设置的其他任何参数。在页面上,这些参数以 Parameters 网格的形式展示在每个智能体下方,没有任何隐藏内容。在 API 响应中,它们就是普通的 AgentSpec 字段。
+
+## 控制团队清单
+
+构建器接受一小组控制参数,除任务本身外全部可选:
+
+| 字段 | 作用 |
+| --- | --- |
+| `task` | 生成的团队应当能够处理的任务。唯一的必填字段。 |
+| `max_agents` | 团队规模的上限,取值 1 到 100,默认为 5。这是上限而不是目标:构建器倾向于用能覆盖任务的最小团队。 |
+| `num_agents` | 精确的团队规模。设置后会覆盖 `max_agents` 以及"越少越好"的默认行为。 |
+| `model_name` | 构建器自身使用的模型。生成的各个智能体使用什么模型由构建器自行决定。 |
+| `system_prompt` | 给构建器的自定义指令,例如要求每条生成的提示词都必须包含引用规范。 |
+| `name`、`description` | 本次运行的可选标签。 |
+
+`max_agents` 和 `num_agents` 的区别在实践中很重要。保持默认上限不变,构建器常常会为你以为需要五个智能体的任务返回两三个智能体。当你需要固定的团队形态时再设置 `num_agents`,例如为一个预先定义好的工作流拓扑填充节点。
+
+## 页面
+
+[cloud.swarms.world/auto-agent-builder](https://cloud.swarms.world/auto-agent-builder) 页面是一个与 Playground 风格一致的双栏工作区。左侧是任务输入框、带有"至多"和"精确"两种模式的团队规模控件,以及一个构建器模型字段,可以接受平台上的任意模型 ID,并提供常用选项作为建议。高级区域包含运行名称、运行描述和自定义构建器指令。
+
+右侧是实时请求预览,展示本次运行将发送的确切请求体,随你的输入实时更新,并支持一键导出为 cURL、Python、TypeScript 或 Go。运行完成后,结果面板会展示团队清单,并用统计卡片显示智能体数量、token 用量、总费用和构建器费用,随后是每个智能体一张可展开的卡片,包含完整的系统提示词和参数。
+
+把团队清单导出只需一次点击,方向任选:
+
+- **Copy agents** 只复制 agents 数组,可以直接粘贴进任何多智能体请求体。
+- **Copy JSON** 复制包含 usage 和任务元数据在内的完整响应。
+- **单个智能体复制**获取某一个智能体的配置。
+- **CSV 下载**把整份团队清单导出为电子表格,每个智能体一行,每个字段一列,包含完整的系统提示词。
+
+## API
+
+同样的能力也可以通过 Agent Completions API 直接使用:
+
+```bash
+curl -X POST "https://api.swarms.world/v1/auto-agent-builder/completions" \
+  -H "x-api-key: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "task": "Research the EV battery market and produce an investment memo",
+    "max_agents": 3
+  }'
+```
+
+响应中包含 `job_id`、`agents` 列表、一个记录输入 token、输出 token、总费用和构建器调用费用的 `usage` 区块,以及时间戳。对于上面这个任务,典型的返回团队是一个市场研究智能体、一个财务分析智能体和一个备忘录撰写智能体,每一个都配有为其职责量身撰写的系统提示词。
+
+## 从团队清单到运行中的 Swarm
+
+`agents` 列表的设计目标就是可以原封不动地提交。把响应中的数组取出来,放进 `/v1/swarm/completions` 并选择任意 `swarm_type`,或者放进批量网格工作流端点,或者平台上任何其他多智能体架构。一个完整的流程如下:
+
+1. 把你的任务提交到 `/v1/auto-agent-builder/completions`。
+2. 审阅生成的团队清单,修改任何你想收紧的提示词。
+3. 把 agents 数组连同同一个任务提交到 `/v1/swarm/completions`,并选择一种 swarm 类型,例如 `SequentialWorkflow` 或 `HierarchicalSwarm`。
+
+第一次调用设计团队,第二次调用运行团队。因为设计步骤是独立的,你可以在多次运行中复用一份好的团队清单,把它提交到版本控制,或者单独微调某几条提示词而无需重新生成整个团队。
+
+## 适用场景
+
+我们预计以下几种模式会很常见:
+
+- **冷启动。**你知道任务是什么,但不知道团队该怎么搭。生成一份团队清单,跑一次,然后从一个可用的基线开始迭代,而不是从一张白纸开始。
+- **规模化起草提示词。**即使你打算亲手撰写最终的提示词,生成的团队清单也是一份很好的初稿,涵盖了分工方式和每个智能体的指令。
+- **填充拓扑结构。**把 `num_agents` 设置为你已经在 [Workflow Builder](https://cloud.swarms.world/workflow-builder) 中画好的工作流所需的数量,然后把生成的配置用作它的节点。
+- **探索。**针对同一个任务请求不同规模的团队清单,对比构建器如何划分职责。CSV 导出让并排审阅变得很容易。
+
+## 可用性
+
+Auto Agent Builder 是 Swarms Cloud 的高级功能。如果你还没有账户,请先在 [cloud.swarms.world 免费注册](https://cloud.swarms.world/signup),然后在[设置页面](https://cloud.swarms.world/settings)升级套餐,即可解锁构建器以及其他全部高级工具。每次运行都通过与平台其余部分相同的 [token 用量面板](https://cloud.swarms.world/token-usage)计量,因此构建器调用与其他任何 completion 一样可见、可审计。
+
+如果你正在评估这个平台,流程很简单:注册,在[设置](https://cloud.swarms.world/settings)中升级,打开 [Auto Agent Builder](https://cloud.swarms.world/auto-agent-builder),输入一个任务。从一个想法到一个可运行、可审阅的智能体团队,现在只隔着一句话的距离。
+
+## 链接与资源
+
+| 资源 | 链接 |
+| --- | --- |
+| Auto Agent Builder | [cloud.swarms.world/auto-agent-builder](https://cloud.swarms.world/auto-agent-builder) |
+| 注册 | [cloud.swarms.world/signup](https://cloud.swarms.world/signup) |
+| 升级到高级版 | [cloud.swarms.world/settings](https://cloud.swarms.world/settings) |
+| Playground | [cloud.swarms.world/playground](https://cloud.swarms.world/playground) |
+| Workflow Builder | [cloud.swarms.world/workflow-builder](https://cloud.swarms.world/workflow-builder) |
+| 用量页面 | [cloud.swarms.world/token-usage](https://cloud.swarms.world/token-usage) |
+| 文档 | [docs.swarms.ai](https://docs.swarms.ai) |
+| Discord 社区 | [discord.gg/VapjxpSyHC](https://discord.gg/VapjxpSyHC) |
+
+---
+
+*有问题或反馈?欢迎加入我们的 [Discord 社区](https://discord.gg/VapjxpSyHC),或查阅[文档](https://docs.swarms.ai)。*

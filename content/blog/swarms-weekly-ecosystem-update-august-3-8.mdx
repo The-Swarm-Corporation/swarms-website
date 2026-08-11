@@ -1,0 +1,95 @@
+---
+title: "Swarms Weekly Ecosystem Update [August 3 - August 8]: The Auto Agent Builder, the MCP Portal, and a Two-Month Cloud Changelog"
+description: "This week across the Swarms ecosystem: the Auto Agent Builder generates a complete agent team from a single task description, the MCP Portal opens a discovery and publishing surface for Model Context Protocol servers, a changelog documents seven weeks of Swarms Cloud reliability work, the Marketplace adds direct address routing, and the first Marketplace competition closes as the next one opens."
+date: "2026-08-11"
+author: "Kye Gomez"
+categories: ["Company"]
+readTime: "5 min read"
+featured: false
+image: "/ecosystem_weekly_update_april3.png"
+---
+
+# Swarms Weekly Ecosystem Update [August 3 - August 8]: The Auto Agent Builder, the MCP Portal, and a Two-Month Cloud Changelog
+
+This week moved work across three layers of the platform at once: the tooling developers use to author multi-agent systems, the infrastructure those systems run on, and the Marketplace where they get distributed. The Auto Agent Builder reached general availability on Swarms Cloud, the MCP Portal opened as a dedicated surface for Model Context Protocol servers, and a consolidated changelog documented seven weeks of Cloud platform engineering.
+
+The connecting theme is reducing the distance between an idea and a running system. Authoring a multi-agent system has historically meant writing each agent by hand, selecting models per role, and wiring tool access one integration at a time. Two of this week's releases attack that cost directly: one generates the agent roster from a task description, and the other turns tool access into a browsable catalog rather than a bespoke integration effort.
+
+The remaining updates cover platform durability and distribution. The Cloud changelog is largely reliability work, including session persistence fixes and connection diagnostics, the kind of engineering that becomes visible only when it is missing. On the Marketplace, address-based routing shortened the path to any agent page, the first recurring competition concluded with published results and completed payouts, and a second competition opened around gated agent access.
+
+## The Auto Agent Builder Generates a Complete Agent Team From One Task
+
+![Auto Agent Builder](/auto_agent_builder_banner.png)
+
+The Auto Agent Builder is now live on Swarms Cloud. You describe a task in plain language, and the builder returns a ready-to-run roster of agents with specialized roles, system prompts, model selections, and parameters already set. Responsibilities are divided across the generated agents automatically, and you can either fix an exact team size or let the builder determine the smallest team that covers the task. Every agent stays editable before you run anything, so the output is a starting point rather than a black box. Generated agents export as JSON, CSV, cURL, Python, TypeScript, or Go, and move directly into Swarms workflows. The feature is available through both the Cloud interface and the API, which matters because the same roster can be generated interactively during design and then reproduced programmatically in a deployment pipeline. Access requires Swarms Pro at $19.99 per month.
+
+- [Introducing the Auto Agent Builder: Generate a Complete Agent Team From a Single Task](/blog/introducing-auto-agent-builder)
+
+## The MCP Portal Opens Discovery and Publishing for MCP Servers
+
+![MCP Portal](/mcp_portal_banner.png)
+
+The MCP Portal is live on the Swarms Marketplace as a dedicated surface for finding, connecting, and publishing Model Context Protocol servers. Developers can browse community-built servers covering web search, scraping, coding, repository research, speech, and general API access, then connect any of them to an MCP-compatible agent. Publishing runs the same path in reverse: you list a server you already operate, make it discoverable in the Portal, and offer it under free or paid access with revenue on each use. The technical significance is standardization. MCP is becoming the common interface between agents and external tools, so a catalog indexed by that protocol turns tool integration into a lookup rather than a custom connector per service. This week's featured servers include a Firecrawl MCP agent for web search, crawling, and scraping.
+
+- [Introducing the MCP Portal: Discover, Publish, and Monetize MCP Servers on the Swarms Marketplace](/blog/mcp-portal-swarms-marketplace)
+
+## The Swarms Cloud Changelog Covers Seven Weeks of Platform Work
+
+![Swarms Cloud Changelog](/swarms_cloud_updates_early_augustr.png)
+
+A consolidated changelog published this week documents Swarms Cloud updates from July 14 to August 3 across reliability, security, developer experience, and usability. Every swarm architecture now has a dedicated page with implementation details and use cases, which shortens the evaluation step before committing to an orchestration pattern. Saved Flows in the Workflow Builder let you persist, reload, and manage visual workflows instead of rebuilding them per session. The Token Usage dashboard accepts custom date ranges and reports more accurately, and session persistence fixes address unexpected logouts. A footer diagnostics panel reports latency checks and multi-region status, so developers can distinguish a platform problem from one in their own code. The Agents page, API key management, Workbench navigation, and new-user onboarding all received revisions.
+
+- [Swarms Cloud Changelog: July 14 to August 3](/blog/swarms-cloud-changelog-july-august)
+
+## The Marketplace Adds Direct Address Routing to Agent Pages
+
+The Marketplace now resolves any agent's address appended directly to the root URL, so `swarms.world/<address>` loads that agent's page without a search step or a navigation path. This is a small routing change with a disproportionate effect on how agents circulate. Sharing an agent no longer requires copying a long canonical URL out of the interface, and any surface that already carries an address becomes a working link into the Marketplace. For developers, it also makes agent pages addressable from scripts and documentation using an identifier already held in application state, which removes a lookup step when generating references programmatically. The change is live now and applies to every agent page on the Marketplace.
+
+- [Direct address routing announcement on X](https://x.com/swarms_corp/status/2084795785711878312)
+
+## The First Marketplace Competition Closed With Published Results
+
+![Competition results](/competitions_banner.png)
+
+The first recurring Marketplace competition concluded on August 5 after one week, recording more than 23 agent launches and over $250,000 in volume. Results were published with the three winning agents ranked by volume, and reward payouts to each winning creator completed on August 6 with transaction references posted publicly. Publishing both the ranking and the settlement records matters more than the prize amounts. A competition mechanism only functions as a distribution channel if creators trust that it resolves, and a first cycle that closes on schedule with verifiable payouts establishes that baseline. The competition also produced a ranked signal of which newly published agents attracted real usage, which is information the Marketplace did not surface before recurring competitions existed.
+
+- [The First Frenzy Competition Results, and the Vaulted Tokenized Agents Competition](/blog/frenzy-competition-results-vault-mode-competition)
+
+## The Next Competition Centers on Gated Agent Access
+
+![Vaulted agents competition](/vault_mode_competition.png)
+
+The second Marketplace competition opened immediately and runs for two weeks with a $2,000 prize pool split across the top three entries at $1,000, $700, and $300. Entries launch with Vault Mode enabled, a feature that restricts agent access to holders of that agent's token. The relevant shift for builders is that the competition is organized around an access control model rather than launch volume alone. Vault Mode gives a published agent a native gating layer, so a creator who has built something people actually use can meter access to it without operating separate authentication and billing infrastructure. Entry requires signing up, launching an agent with Vault Mode enabled, and appearing on the competition leaderboard.
+
+- [The Vaulted Tokenized Agents Competition Is Live](/blog/vaulted-tokenized-agents-competition)
+
+## Conclusion
+
+This week reduced setup cost at both ends of the development path. The Auto Agent Builder removes the manual work of specifying an agent roster, and the MCP Portal removes the per-service integration work of giving those agents real capabilities. Both produce artifacts developers can inspect and edit, so the automation replaces boilerplate rather than control. The Cloud changelog covers the less visible half of that story, where session persistence, usage reporting accuracy, and connection diagnostics determine if a platform can be relied on for production traffic.
+
+On the Marketplace, the first competition cycle completed end to end with published results and settled payouts, and the second opened around gated access rather than launch activity alone. Combined with address-based routing, the direction is consistent: make agents easier to generate, easier to equip with tools, easier to reach, and easier to distribute.
+
+## Links and Resources
+
+| Resource | Link |
+| --- | --- |
+| Introducing the Auto Agent Builder | [swarms.ai/blog/introducing-auto-agent-builder](/blog/introducing-auto-agent-builder) |
+| Auto Agent Builder on Swarms Cloud | [cloud.swarms.world/auto-agent-builder](https://cloud.swarms.world/auto-agent-builder) |
+| Introducing the MCP Portal | [swarms.ai/blog/mcp-portal-swarms-marketplace](/blog/mcp-portal-swarms-marketplace) |
+| MCP Portal | [swarms.world/mcp](https://swarms.world/mcp) |
+| Publish an MCP Server | [swarms.world/launch](https://swarms.world/launch) |
+| Swarms Registry | [swarms.world/platform/registry](https://swarms.world/platform/registry?type=agents&industry=mcp) |
+| Swarms Cloud Changelog: July 14 to August 3 | [swarms.ai/blog/swarms-cloud-changelog-july-august](/blog/swarms-cloud-changelog-july-august) |
+| Swarms Cloud | [cloud.swarms.world](https://cloud.swarms.world) |
+| Swarms API Documentation | [docs.swarms.ai](https://docs.swarms.ai) |
+| Swarms Pricing | [swarms.world/pricing](https://swarms.world/pricing) |
+| Direct address routing announcement | [x.com/swarms_corp](https://x.com/swarms_corp/status/2084795785711878312) |
+| Swarms Marketplace | [swarms.world](https://swarms.world) |
+| First Competition Results and Next Competition | [swarms.ai/blog/frenzy-competition-results-vault-mode-competition](/blog/frenzy-competition-results-vault-mode-competition) |
+| Competitions Hub | [swarms.world/competitions](https://swarms.world/competitions) |
+| First Competition Leaderboard | [swarms.world/competitions/volume-week-one](https://swarms.world/competitions/volume-week-one) |
+| The Vaulted Tokenized Agents Competition | [swarms.ai/blog/vaulted-tokenized-agents-competition](/blog/vaulted-tokenized-agents-competition) |
+| Vault Mode Guide | [swarms.ai/blog/vault-mode-tokenized-agents](/blog/vault-mode-tokenized-agents) |
+| Vaulted Tokenized Agents Leaderboard | [swarms.world/competitions/vaulted-tokenized-agents](https://swarms.world/competitions/vaulted-tokenized-agents) |
+| Swarms Framework on GitHub | [github.com/kyegomez/swarms](https://github.com/kyegomez/swarms) |
+| Swarms on X | [x.com/swarms_corp](https://x.com/swarms_corp) |

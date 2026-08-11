@@ -1,0 +1,95 @@
+---
+title: "Swarms 生态每周更新 [8 月 3 日 - 8 月 8 日]：Auto Agent Builder、MCP 门户，以及两个月的 Cloud 变更日志"
+description: "本周 Swarms 生态进展：Auto Agent Builder 可从一句任务描述生成完整的智能体团队；MCP 门户开放，用于发现与发布 Model Context Protocol 服务器；一份变更日志记录了七周的 Swarms Cloud 平台工程；Marketplace 新增地址直达路由；首届 Marketplace 竞赛收官，下一届同步开启。"
+date: "2026-08-11"
+author: "Kye Gomez"
+categories: ["公司"]
+readTime: "5 分钟阅读"
+featured: false
+image: "/ecosystem_weekly_update_april3.png"
+---
+
+# Swarms 生态每周更新 [8 月 3 日 - 8 月 8 日]：Auto Agent Builder、MCP 门户，以及两个月的 Cloud 变更日志
+
+本周的工作同时推进了平台的三个层面：开发者用来编写多智能体系统的工具、这些系统运行其上的基础设施，以及负责分发它们的 Marketplace。Auto Agent Builder 在 Swarms Cloud 正式上线，MCP 门户作为 Model Context Protocol 服务器的专属入口开放，一份汇总的变更日志则记录了七周的 Cloud 平台工程。
+
+贯穿这些发布的主题，是缩短从想法到可运行系统之间的距离。过去编写一套多智能体系统，意味着逐个手写智能体、按角色挑选模型，并一个接一个地接入工具。本周有两项发布直接针对这项成本：一项从任务描述生成智能体阵容，另一项把工具接入从定制集成工作变成可浏览的目录。
+
+其余更新聚焦平台的稳定性与分发。Cloud 变更日志的主体是可靠性工作，包括会话持久化修复与连接诊断，这类工程往往只有在缺失时才被注意到。在 Marketplace 一侧，基于地址的路由缩短了访问任意智能体页面的路径，首届周期性竞赛公布结果并完成发放，第二届竞赛则围绕受控的智能体访问权限展开。
+
+## Auto Agent Builder：一句任务描述生成完整智能体团队
+
+![Auto Agent Builder](/auto_agent_builder_banner.png)
+
+Auto Agent Builder 现已在 Swarms Cloud 上线。你用自然语言描述任务，构建器会返回一套可直接运行的智能体阵容，其中的角色分工、系统提示词、模型选择与参数均已配置完成。职责会自动分配到各个智能体上，你既可以指定确切的团队规模，也可以让构建器自行判断覆盖该任务所需的最小团队。运行之前，每个智能体都保持可编辑状态，因此输出是一个起点，而不是黑箱。生成的智能体可导出为 JSON、CSV、cURL、Python、TypeScript 或 Go，并能直接进入 Swarms 工作流。该功能同时通过 Cloud 界面与 API 提供，这一点很关键：同一套阵容可以在设计阶段交互式生成，再在部署流水线中以编程方式复现。使用该功能需要 Swarms Pro，每月 19.99 美元。
+
+- [Auto Agent Builder 介绍：从一句任务描述生成完整智能体团队](/blog/introducing-auto-agent-builder)
+
+## MCP 门户：MCP 服务器的发现与发布入口
+
+![MCP 门户](/mcp_portal_banner.png)
+
+MCP 门户已在 Swarms Marketplace 上线，作为查找、连接与发布 Model Context Protocol 服务器的专属入口。开发者可以浏览社区构建的服务器，覆盖网页搜索、抓取、编程、仓库调研、语音与通用 API 访问等场景，并将其中任意一个连接到兼容 MCP 的智能体。发布流程则是同一条路径的反向操作：把你已经在运行的服务器上架，使其在门户中可被发现，并以免费或付费方式提供访问，每次调用均可获得收入。其技术意义在于标准化。MCP 正在成为智能体与外部工具之间的通用接口，因此一个按该协议索引的目录，能把工具集成从"为每个服务写一个连接器"变成一次查找。本周的精选服务器包括用于网页搜索、爬取与抓取的 Firecrawl MCP 智能体。
+
+- [MCP 门户介绍：在 Swarms Marketplace 发现、发布并变现 MCP 服务器](/blog/mcp-portal-swarms-marketplace)
+
+## Swarms Cloud 变更日志：七周平台工作汇总
+
+![Swarms Cloud 变更日志](/swarms_cloud_updates_early_augustr.png)
+
+本周发布的汇总变更日志记录了 7 月 14 日至 8 月 3 日期间 Swarms Cloud 在可靠性、安全性、开发者体验与易用性方面的更新。现在每种 swarm 架构都有独立页面，附带实现细节与使用场景，从而缩短了选定某一编排模式前的评估环节。Workflow Builder 中的 Saved Flows 让你可以保存、重新载入并管理可视化工作流，无需每次重建。Token Usage 面板支持自定义时间范围，统计也更准确；会话持久化方面的修复解决了意外登出的问题。页脚新增的诊断面板会报告延迟检测与多区域状态，便于开发者区分平台问题与自身代码的问题。Agents 页面、API 密钥管理、Workbench 导航与新用户引导也都做了改版。
+
+- [Swarms Cloud 变更日志：7 月 14 日至 8 月 3 日](/blog/swarms-cloud-changelog-july-august)
+
+## Marketplace 新增智能体页面地址直达路由
+
+现在，把智能体的地址直接附加在根 URL 之后即可解析，`swarms.world/<地址>` 会直接打开该智能体的页面，无需搜索或逐级导航。这是一处小的路由改动，却显著影响智能体的流通方式。分享一个智能体不再需要从界面里复制冗长的规范 URL，任何已经带有地址的位置都会成为通向 Marketplace 的有效链接。对开发者而言，这也让智能体页面可以在脚本与文档中直接寻址，使用的正是应用状态里已有的标识符，在以编程方式生成引用时省去一次查询。该改动现已生效，适用于 Marketplace 上的每一个智能体页面。
+
+- [X 上的地址直达路由公告](https://x.com/swarms_corp/status/2084795785711878312)
+
+## 首届 Marketplace 竞赛收官并公布结果
+
+![竞赛结果](/competitions_banner.png)
+
+首届周期性 Marketplace 竞赛于 8 月 5 日结束，为期一周，期间录得 23 个以上的智能体发布与超过 25 万美元的交易量。结果已公布，三个获胜智能体按交易量排名，奖励于 8 月 6 日发放完毕，并公开了对应的交易凭证。同时公布排名与结算记录，其意义大于奖金金额本身。竞赛机制要真正成为分发渠道，前提是创作者相信它会如期结算；首个周期按时收官并留下可核验的发放记录，正是建立这一基线的方式。竞赛还产出了一份排序信号，显示哪些新发布的智能体获得了真实使用，而这类信息在周期性竞赛出现之前，Marketplace 并未呈现。
+
+- [首届 Frenzy 竞赛结果与 Vaulted Tokenized Agents 竞赛](/blog/frenzy-competition-results-vault-mode-competition)
+
+## 下一届竞赛聚焦受控的智能体访问
+
+![Vaulted 智能体竞赛](/vault_mode_competition.png)
+
+第二届 Marketplace 竞赛紧接着开启，为期两周，设有 2000 美元奖池，前三名分别为 1000 美元、700 美元与 300 美元。参赛作品需在发布时启用 Vault Mode，该功能会将智能体的访问权限限定为持有该智能体代币的用户。对构建者而言，关键变化在于这届竞赛围绕访问控制模型组织，而不再只看发布量。Vault Mode 为已发布的智能体提供了原生的访问控制层，因此，如果创作者确实做出了有人愿意使用的产品，就能对访问进行计量，而无需另行搭建认证与计费设施。参赛流程为注册、发布启用 Vault Mode 的智能体，随后进入竞赛排行榜。
+
+- [Vaulted Tokenized Agents 竞赛现已开启](/blog/vaulted-tokenized-agents-competition)
+
+## 结语
+
+本周在开发路径的两端都降低了准备成本。Auto Agent Builder 省去了手工设定智能体阵容的工作，MCP 门户则省去了为这些智能体接入真实能力时逐个服务的集成工作。两者的产出都是开发者可以查看并编辑的产物，因此这种自动化取代的是样板代码，而不是控制权。Cloud 变更日志覆盖了这个故事中不那么显眼的另一半：会话持久化、用量统计的准确性与连接诊断，共同决定了一个平台能否承载生产流量。
+
+在 Marketplace 一侧，首个竞赛周期完成了从公布结果到发放奖励的完整闭环，第二届则围绕受控访问而非单纯的发布活跃度展开。结合地址直达路由，方向是一致的：让智能体更容易生成、更容易装配工具、更容易抵达，也更容易分发。
+
+## 链接与资源
+
+| 资源 | 链接 |
+| --- | --- |
+| Auto Agent Builder 介绍 | [swarms.ai/blog/introducing-auto-agent-builder](/blog/introducing-auto-agent-builder) |
+| Swarms Cloud 上的 Auto Agent Builder | [cloud.swarms.world/auto-agent-builder](https://cloud.swarms.world/auto-agent-builder) |
+| MCP 门户介绍 | [swarms.ai/blog/mcp-portal-swarms-marketplace](/blog/mcp-portal-swarms-marketplace) |
+| MCP 门户 | [swarms.world/mcp](https://swarms.world/mcp) |
+| 发布 MCP 服务器 | [swarms.world/launch](https://swarms.world/launch) |
+| Swarms 注册表 | [swarms.world/platform/registry](https://swarms.world/platform/registry?type=agents&industry=mcp) |
+| Swarms Cloud 变更日志：7 月 14 日至 8 月 3 日 | [swarms.ai/blog/swarms-cloud-changelog-july-august](/blog/swarms-cloud-changelog-july-august) |
+| Swarms Cloud | [cloud.swarms.world](https://cloud.swarms.world) |
+| Swarms API 文档 | [docs.swarms.ai](https://docs.swarms.ai) |
+| Swarms 定价 | [swarms.world/pricing](https://swarms.world/pricing) |
+| 地址直达路由公告 | [x.com/swarms_corp](https://x.com/swarms_corp/status/2084795785711878312) |
+| Swarms Marketplace | [swarms.world](https://swarms.world) |
+| 首届竞赛结果与下一届竞赛 | [swarms.ai/blog/frenzy-competition-results-vault-mode-competition](/blog/frenzy-competition-results-vault-mode-competition) |
+| 竞赛中心 | [swarms.world/competitions](https://swarms.world/competitions) |
+| 首届竞赛排行榜 | [swarms.world/competitions/volume-week-one](https://swarms.world/competitions/volume-week-one) |
+| Vaulted Tokenized Agents 竞赛 | [swarms.ai/blog/vaulted-tokenized-agents-competition](/blog/vaulted-tokenized-agents-competition) |
+| Vault Mode 指南 | [swarms.ai/blog/vault-mode-tokenized-agents](/blog/vault-mode-tokenized-agents) |
+| Vaulted Tokenized Agents 排行榜 | [swarms.world/competitions/vaulted-tokenized-agents](https://swarms.world/competitions/vaulted-tokenized-agents) |
+| GitHub 上的 Swarms 框架 | [github.com/kyegomez/swarms](https://github.com/kyegomez/swarms) |
+| X 上的 Swarms | [x.com/swarms_corp](https://x.com/swarms_corp) |

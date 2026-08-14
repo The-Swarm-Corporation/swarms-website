@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import { Navigation } from "@/components/navigation"
+import { HomeNewsletter } from "@/components/home-newsletter"
 import { BlogFeatured } from "@/components/blog/blog-featured"
 import { BlogIndexClient } from "@/components/blog/blog-index-client"
 import { LanguageToggle } from "@/components/language-toggle"
@@ -74,6 +75,10 @@ export default function ZhBlogPage() {
 
           <div className="mx-auto max-w-7xl pb-20 pt-14 sm:pb-28 sm:pt-20">
             <BlogIndexClient posts={posts} categories={categories} locale="zh" />
+
+            <div className="mt-16 sm:mt-20">
+              <HomeNewsletter locale="zh" variant="card" />
+            </div>
           </div>
         </div>
       </main>

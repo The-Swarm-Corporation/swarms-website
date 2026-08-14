@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { Navigation } from "@/components/navigation"
 import { HomeNewsletter } from "@/components/home-newsletter"
+import { getAllPostMeta } from "@/lib/blog"
 import {
   ArrowRight,
   ArrowUpRight,
@@ -142,6 +143,8 @@ const features = [
 ]
 
 export default function ZhHomePage() {
+  const recentPosts = getAllPostMeta("zh").slice(0, 3)
+
   return (
     <div className="min-h-screen bg-black">
       <Navigation />
@@ -351,7 +354,7 @@ export default function ZhHomePage() {
           </div>
         </section>
 
-        <HomeNewsletter locale="zh" />
+        <HomeNewsletter locale="zh" posts={recentPosts} />
       </main>
     </div>
   )

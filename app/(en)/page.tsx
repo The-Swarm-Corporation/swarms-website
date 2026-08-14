@@ -1,6 +1,3 @@
-"use client"
-
-import dynamic from "next/dynamic"
 import { Navigation } from "@/components/navigation"
 import { HomeHero } from "@/components/home-hero"
 import { HomeMission } from "@/components/home-mission"
@@ -8,22 +5,17 @@ import { HomeEnterpriseInfrastructure } from "@/components/home-enterprise-infra
 import { HomeFeatures } from "@/components/home-features"
 import { HomeNewsletter } from "@/components/home-newsletter"
 import { ProductsCallToAction } from "@/components/products-call-to-action"
-
-// Dynamically load heavier, below-the-fold sections to reduce initial JS
-const HomeProducts = dynamic(() => import("@/components/home-products").then(m => m.HomeProducts), {
-  ssr: false,
-})
-const HomeCookbook = dynamic(() => import("@/components/home-cookbook").then(m => m.HomeCookbook), {
-  ssr: false,
-})
-const HomeCommunity = dynamic(() => import("@/components/home-community").then(m => m.HomeCommunity), {
-  ssr: false,
-})
-const HomeHiring = dynamic(() => import("@/components/home-hiring").then(m => m.HomeHiring), {
-  ssr: false,
-})
+import {
+  HomeProducts,
+  HomeCookbook,
+  HomeCommunity,
+  HomeHiring,
+} from "@/components/home-lazy-sections"
+import { getAllPostMeta } from "@/lib/blog"
 
 export default function Home() {
+  const recentPosts = getAllPostMeta().slice(0, 3)
+
   return (
     <div className="min-h-screen bg-black smooth-scroll">
       <Navigation />
@@ -35,10 +27,10 @@ export default function Home() {
         <HomeProducts />
         <HomeEnterpriseInfrastructure />
         <HomeCookbook />
-        <HomeNewsletter />
-        <ProductsCallToAction />
+        <HomeNewsletter posts={recentPosts} />
         <HomeHiring />
         <HomeCommunity />
+        <ProductsCallToAction />
       </main>
     </div>
   )

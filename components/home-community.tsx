@@ -3,7 +3,7 @@
 import React from "react"
 import { motion } from "framer-motion"
 import { ArrowUpRight, Twitter, Users } from "lucide-react"
-import { SiDiscord as Discord } from "react-icons/si"
+import { SiDiscord as Discord, SiYoutube as Youtube } from "react-icons/si"
 
 const ease: [number, number, number, number] = [0.22, 1, 0.36, 1]
 
@@ -25,6 +25,12 @@ const socialLinks = [
     name: "X Community",
     handle: "Swarms Community",
     href: "https://x.com/i/communities/1875452887414804745",
+  },
+  {
+    icon: Youtube,
+    name: "YouTube",
+    handle: "Watch tutorials",
+    href: "https://www.youtube.com/@kyegomez3242",
   },
 ]
 
@@ -53,7 +59,7 @@ export function HomeCommunity() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 gap-px overflow-hidden rounded-lg border border-white/[0.08] bg-white/[0.08] sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-px overflow-hidden rounded-lg border border-white/[0.08] bg-white/[0.08] sm:grid-cols-2 lg:grid-cols-4">
             {socialLinks.map((item) => {
               const Icon = item.icon as React.ComponentType<{ className?: string }>
               return (

@@ -58,7 +58,7 @@ export default function AgentHQWaitlistPage() {
       <section className="relative flex min-h-[100dvh] items-center overflow-hidden bg-black">
         {/* Full-viewport game background */}
         <Image
-          src="/agenthq_game_green.png"
+          src="/agenthq_game_map.png"
           alt=""
           fill
           className="object-cover"

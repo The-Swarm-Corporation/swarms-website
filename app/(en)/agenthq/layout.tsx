@@ -34,9 +34,9 @@ export const metadata: Metadata = {
     siteName: siteConfig.name,
     images: [
       {
-        url: "/agent_hq_bg_white.png",
-        width: 1280,
-        height: 720,
+        url: "/agenthq_game_green.png",
+        width: 2944,
+        height: 1554,
         alt: title,
         type: "image/png",
       },
@@ -50,9 +50,9 @@ export const metadata: Metadata = {
     site: "@swarms_corp",
     images: [
       {
-        url: "/agent_hq_bg_white.png",
-        width: 1280,
-        height: 720,
+        url: "/agenthq_game_green.png",
+        width: 2944,
+        height: 1554,
         alt: title,
       },
     ],

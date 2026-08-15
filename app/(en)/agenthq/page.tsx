@@ -58,7 +58,7 @@ export default function AgentHQWaitlistPage() {
       <section className="relative flex min-h-[100dvh] items-center overflow-hidden bg-black">
         {/* Full-viewport game background */}
         <Image
-          src="/agent_hq_background.png"
+          src="/agenthq_game_map.png"
           alt=""
           fill
           className="object-cover"
@@ -66,14 +66,14 @@ export default function AgentHQWaitlistPage() {
           priority
           aria-hidden
         />
-        {/* Dark overlay so the text stays readable */}
+        {/* Dark veil so the text stays readable */}
         <div
           aria-hidden="true"
-          className="absolute inset-0 bg-black/35"
+          className="absolute inset-0 bg-black/50"
         />
         <div
           aria-hidden="true"
-          className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/15 to-black/40"
+          className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/25 to-black/45"
         />
 
         <div
@@ -84,22 +84,6 @@ export default function AgentHQWaitlistPage() {
           }}
         >
           <div className="mx-auto flex max-w-3xl flex-col items-center py-24 text-center sm:py-28">
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, ease }}
-              className="mb-6 flex h-14 w-14 items-center justify-center rounded-lg border border-white/[0.12] bg-black/60 backdrop-blur-sm sm:mb-8 sm:h-16 sm:w-16"
-            >
-              <Image
-                src="/logo.svg"
-                alt="Swarms Logo"
-                width={40}
-                height={40}
-                className="h-8 w-8 object-contain sm:h-9 sm:w-9"
-                priority
-              />
-            </motion.div>
-
             <p className="mb-5 font-mono text-[11px] font-medium uppercase tracking-[0.2em] text-white/60">
               Build. Manage. Research. Win.
             </p>
@@ -115,7 +99,7 @@ export default function AgentHQWaitlistPage() {
             </motion.h1>
 
             <motion.p
-              className="mt-6 max-w-xl text-base font-normal leading-relaxed text-white/75 [text-shadow:0_1px_12px_rgba(0,0,0,0.6)] sm:mt-8 sm:text-lg"
+              className="mt-6 max-w-xl text-base font-normal leading-relaxed text-white/80 [text-shadow:0_1px_12px_rgba(0,0,0,0.6)] sm:mt-8 sm:text-lg"
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, delay: 0.12, ease }}

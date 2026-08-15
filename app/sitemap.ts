@@ -33,6 +33,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/research-papers", priority: 0.7, changeFrequency: "weekly" },
     { path: "/simulations", priority: 0.7, changeFrequency: "weekly" },
     { path: "/mobile", priority: 0.7, changeFrequency: "weekly" },
+    { path: "/agenthq", priority: 0.7, changeFrequency: "weekly" },
     { path: "/programs", priority: 0.6, changeFrequency: "monthly" },
     { path: "/programs/startups", priority: 0.6, changeFrequency: "monthly" },
     { path: "/hiring", priority: 0.6, changeFrequency: "weekly" },

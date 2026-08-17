@@ -33,6 +33,18 @@ export interface Position {
   youMayBeAFitIf: string[]
 }
 
+// The open-source repos developer candidates are expected to contribute to.
+export const SWARMS_GITHUB_URL = 'https://github.com/kyegomez/swarms'
+export const SWARMS_RS_GITHUB_URL = 'https://github.com/The-Swarm-Corporation/swarms-rs'
+
+// What we're looking for in every developer candidate. Shown on the hiring
+// page and on each Engineering role's detail page.
+export const developerCriteria = [
+  '3 PRs or 3 new issues on the swarms GitHub',
+  'Over 1,000 open source commits on open source projects',
+  'Has worked on agent projects before',
+]
+
 export const positions: Position[] = [
   {
     slug: 'agent-engineer',
@@ -43,8 +55,8 @@ export const positions: Position[] = [
     location: 'San Francisco / Palo Alto / New York',
     priority: 'Critical',
     description: 'Build and optimize autonomous agents, implement advanced coordination protocols, and scale multi-agent systems.',
-    requirements: ['Strong Python/TypeScript', 'Distributed systems', 'ML/AI experience', '3+ merged PRs to the swarms framework'],
-    aboutRole: 'As an Agent Engineer at Swarms, you will design, build, and optimize autonomous agents that collaborate to solve complex problems. You will work on cutting-edge multi-agent systems, implementing advanced coordination protocols and scaling our infrastructure to power the agent economy. Note: all developer roles require at least 3 merged pull requests to the open-source swarms framework before applying.',
+    requirements: ['Strong Python/TypeScript', 'Distributed systems', 'ML/AI experience', '3 PRs or 3 new issues on the swarms GitHub'],
+    aboutRole: 'As an Agent Engineer at Swarms, you will design, build, and optimize autonomous agents that collaborate to solve complex problems. You will work on cutting-edge multi-agent systems, implementing advanced coordination protocols and scaling our infrastructure to power the agent economy. Note: all developer roles require 3 PRs or 3 new issues on the swarms GitHub before applying.',
     whatYoullDo: [
       'Design and implement autonomous agent architectures and coordination protocols',
       'Build scalable multi-agent systems that can simulate entire industries',
@@ -58,7 +70,7 @@ export const positions: Position[] = [
       'You have experience with ML/AI frameworks and agent orchestration tools',
       'You are passionate about building infrastructure for the agent economy',
       'You have a track record of shipping complex systems at scale',
-      'You have contributed at least 3 merged pull requests to the open-source swarms framework (github.com/kyegomez/swarms)'
+      'You have contributed 3 PRs or opened 3 new issues on the swarms GitHub (github.com/kyegomez/swarms)'
     ]
   },
   {
@@ -70,8 +82,8 @@ export const positions: Position[] = [
     location: 'San Francisco / Palo Alto / New York',
     priority: 'Critical',
     description: 'Build beautiful, intuitive interfaces for agent dashboards and monitoring systems.',
-    requirements: ['React/Next.js', 'TypeScript', 'UI/UX experience', '3+ merged PRs to the swarms framework'],
-    aboutRole: 'As a Front-end Engineer at Swarms, you will build the interfaces that allow users to interact with, monitor, and manage autonomous agent systems. You will create intuitive dashboards and monitoring tools that make complex agent workflows accessible and actionable. Note: all developer roles require at least 3 merged pull requests to the open-source swarms framework before applying.',
+    requirements: ['React/Next.js', 'TypeScript', 'UI/UX experience', '3 PRs or 3 new issues on the swarms GitHub'],
+    aboutRole: 'As a Front-end Engineer at Swarms, you will build the interfaces that allow users to interact with, monitor, and manage autonomous agent systems. You will create intuitive dashboards and monitoring tools that make complex agent workflows accessible and actionable. Note: all developer roles require 3 PRs or 3 new issues on the swarms GitHub before applying.',
     whatYoullDo: [
       'Build responsive, performant web interfaces for agent management dashboards',
       'Design and implement real-time monitoring and visualization systems',
@@ -85,7 +97,7 @@ export const positions: Position[] = [
       'You have experience with real-time data visualization or dashboards',
       'You are passionate about making complex systems accessible',
       'You have a portfolio of polished, production web applications',
-      'You have contributed at least 3 merged pull requests to the open-source swarms framework (github.com/kyegomez/swarms)'
+      'You have contributed 3 PRs or opened 3 new issues on the swarms GitHub (github.com/kyegomez/swarms)'
     ]
   },
   {
@@ -149,8 +161,8 @@ export const positions: Position[] = [
     location: 'San Francisco / Palo Alto / New York',
     priority: 'Critical',
     description: 'Drive user acquisition and engagement through data-driven growth strategies and technical implementation.',
-    requirements: ['Growth marketing experience', 'Full-stack development', 'Data analysis', '3+ merged PRs to the swarms framework'],
-    aboutRole: 'As a Growth Engineer at Swarms, you will drive user acquisition and engagement through data-driven growth strategies. You will combine engineering expertise with growth marketing to scale our reach in the agent economy. Note: all developer roles require at least 3 merged pull requests to the open-source swarms framework before applying.',
+    requirements: ['Growth marketing experience', 'Full-stack development', 'Data analysis', '3 PRs or 3 new issues on the swarms GitHub'],
+    aboutRole: 'As a Growth Engineer at Swarms, you will drive user acquisition and engagement through data-driven growth strategies. You will combine engineering expertise with growth marketing to scale our reach in the agent economy. Note: all developer roles require 3 PRs or 3 new issues on the swarms GitHub before applying.',
     whatYoullDo: [
       'Design and implement growth experiments across acquisition, activation, and retention',
       'Build and optimize landing pages, signup flows, and onboarding experiences',
@@ -164,7 +176,7 @@ export const positions: Position[] = [
       'You have strong analytical skills and experience with growth metrics',
       'You are creative and data-driven in problem-solving',
       'You are passionate about AI and the agent economy',
-      'You have contributed at least 3 merged pull requests to the open-source swarms framework (github.com/kyegomez/swarms)'
+      'You have contributed 3 PRs or opened 3 new issues on the swarms GitHub (github.com/kyegomez/swarms)'
     ]
   },
   {
@@ -202,8 +214,8 @@ export const positions: Position[] = [
     location: 'San Francisco / Palo Alto / New York',
     priority: 'Critical',
     description: 'Lead the Swarms marketplace end to end: own the product, lead the engineering team, and recruit the talent to scale it.',
-    requirements: ['Built and scaled marketplaces', 'Engineering leadership', 'Recruiting experience', '3+ merged PRs to the swarms framework'],
-    aboutRole: 'As Head of Marketplace at Swarms, you will own the marketplace where agents, tools, and swarms are published, discovered, and monetized. We are looking for an experienced individual who has built and scaled marketplaces before. You will lead the marketplace engineering team, set the technical and product direction, and recruit the people needed to make the Swarms marketplace the default destination of the agent economy. Note: all developer roles require at least 3 merged pull requests to the open-source swarms framework before applying.',
+    requirements: ['Built and scaled marketplaces', 'Engineering leadership', 'Recruiting experience', '3 PRs or 3 new issues on the swarms GitHub'],
+    aboutRole: 'As Head of Marketplace at Swarms, you will own the marketplace where agents, tools, and swarms are published, discovered, and monetized. We are looking for an experienced individual who has built and scaled marketplaces before. You will lead the marketplace engineering team, set the technical and product direction, and recruit the people needed to make the Swarms marketplace the default destination of the agent economy. Note: all developer roles require 3 PRs or 3 new issues on the swarms GitHub before applying.',
     whatYoullDo: [
       'Own the marketplace end to end, from product strategy to production systems',
       'Lead and manage the marketplace engineering team',
@@ -217,7 +229,7 @@ export const positions: Position[] = [
       'You have owned recruiting for a team and know how to attract strong engineers',
       'You understand marketplace dynamics: supply, demand, liquidity, and take rates',
       'You are passionate about building the commercial layer of the agent economy',
-      'You have contributed at least 3 merged pull requests to the open-source swarms framework (github.com/kyegomez/swarms)'
+      'You have contributed 3 PRs or opened 3 new issues on the swarms GitHub (github.com/kyegomez/swarms)'
     ]
   },
   {
@@ -229,8 +241,8 @@ export const positions: Position[] = [
     location: 'San Francisco / Palo Alto / New York',
     priority: 'Critical',
     description: 'Own Swarms Cloud, the hosted platform for deploying and orchestrating agents and swarms at scale.',
-    requirements: ['Cloud platform leadership', 'Distributed systems', 'Team building', '3+ merged PRs to the swarms framework'],
-    aboutRole: 'As Head of Swarms Cloud, you will own our hosted platform for deploying, orchestrating, and monitoring agents and swarms at scale. You will set the product and technical direction for Swarms Cloud, lead the team that builds it, and ensure the platform delivers the reliability, performance, and developer experience that autonomous corporations will run on. Note: all developer roles require at least 3 merged pull requests to the open-source swarms framework before applying.',
+    requirements: ['Cloud platform leadership', 'Distributed systems', 'Team building', '3 PRs or 3 new issues on the swarms GitHub'],
+    aboutRole: 'As Head of Swarms Cloud, you will own our hosted platform for deploying, orchestrating, and monitoring agents and swarms at scale. You will set the product and technical direction for Swarms Cloud, lead the team that builds it, and ensure the platform delivers the reliability, performance, and developer experience that autonomous corporations will run on. Note: all developer roles require 3 PRs or 3 new issues on the swarms GitHub before applying.',
     whatYoullDo: [
       'Own the product and technical direction of Swarms Cloud',
       'Lead the engineering team building the platform, and recruit to grow it',
@@ -244,7 +256,7 @@ export const positions: Position[] = [
       'You have led engineering teams and shipped platforms developers depend on',
       'You care about developer experience as much as system design',
       'You want to build the infrastructure that autonomous corporations run on',
-      'You have contributed at least 3 merged pull requests to the open-source swarms framework (github.com/kyegomez/swarms)'
+      'You have contributed 3 PRs or opened 3 new issues on the swarms GitHub (github.com/kyegomez/swarms)'
     ]
   },
   {
@@ -386,8 +398,8 @@ export const positions: Position[] = [
     location: 'San Francisco / Palo Alto / New York',
     priority: 'High',
     description: 'Develop high-performance, memory-safe infrastructure for agent communication and coordination systems.',
-    requirements: ['Expert Rust skills', 'Systems programming', 'Performance optimization', '3+ merged PRs to the swarms framework'],
-    aboutRole: 'As a Rust Engineer at Swarms, you will develop high-performance, memory-safe infrastructure for agent communication and coordination systems. You will build the foundational systems that power our multi-agent platform. Note: all developer roles require at least 3 merged pull requests to the open-source swarms framework before applying.',
+    requirements: ['Expert Rust skills', 'Systems programming', 'Performance optimization', '3 PRs or 3 new issues on the swarms GitHub'],
+    aboutRole: 'As a Rust Engineer at Swarms, you will develop high-performance, memory-safe infrastructure for agent communication and coordination systems. You will build the foundational systems that power our multi-agent platform. Note: all developer roles require 3 PRs or 3 new issues on the swarms GitHub before applying.',
     whatYoullDo: [
       'Design and implement core infrastructure components in Rust',
       'Build high-performance agent communication and coordination systems',
@@ -401,7 +413,7 @@ export const positions: Position[] = [
       'You understand memory management, concurrency, and distributed systems',
       'You are passionate about building robust, scalable infrastructure',
       'You have a track record of shipping high-performance production code',
-      'You have contributed at least 3 merged pull requests to the open-source swarms framework (github.com/kyegomez/swarms)'
+      'You have contributed 3 PRs or opened 3 new issues on the swarms GitHub (github.com/kyegomez/swarms)'
     ]
   },
   {
@@ -413,8 +425,8 @@ export const positions: Position[] = [
     location: 'San Francisco / Palo Alto / New York',
     priority: 'Critical',
     description: 'Lead the swarms-rs framework and manage the Rust team building high-performance multi-agent infrastructure.',
-    requirements: ['Expert Rust skills', 'Team leadership', 'Open-source maintainership', '3+ merged PRs to the swarms framework'],
-    aboutRole: 'As Rust Team Lead at Swarms, you will lead the development of swarms-rs (github.com/The-Swarm-Corporation/swarms-rs), our high-performance multi-agent framework written in Rust, and manage the Rust team behind it. You will set the technical direction of the framework, own its roadmap and releases, and grow a team of world-class Rust engineers building the fastest agent runtime in the ecosystem. Note: all developer roles require at least 3 merged pull requests to the open-source swarms framework before applying.',
+    requirements: ['Expert Rust skills', 'Team leadership', 'Open-source maintainership', '3 PRs or 3 new issues on the swarms GitHub'],
+    aboutRole: 'As Rust Team Lead at Swarms, you will lead the development of swarms-rs (github.com/The-Swarm-Corporation/swarms-rs), our high-performance multi-agent framework written in Rust, and manage the Rust team behind it. You will set the technical direction of the framework, own its roadmap and releases, and grow a team of world-class Rust engineers building the fastest agent runtime in the ecosystem. Note: all developer roles require 3 PRs or 3 new issues on the swarms GitHub before applying.',
     whatYoullDo: [
       'Lead the design, development, and releases of the swarms-rs framework',
       'Manage and mentor the Rust team, and recruit engineers to grow it',
@@ -428,7 +440,7 @@ export const positions: Position[] = [
       'You have maintained or contributed heavily to open-source projects',
       'You understand multi-agent systems, concurrency, and high-performance runtimes',
       'You want to own a framework end to end and build the team around it',
-      'You have contributed at least 3 merged pull requests to the open-source swarms framework (github.com/kyegomez/swarms)'
+      'You have contributed 3 PRs or opened 3 new issues on the swarms GitHub (github.com/kyegomez/swarms)'
     ]
   },
   {
@@ -440,8 +452,8 @@ export const positions: Position[] = [
     location: 'San Francisco / Palo Alto / New York',
     priority: 'Critical',
     description: 'Lead the development of DevReal platform - our revolutionary agent development and deployment infrastructure.',
-    requirements: ['Full-stack expertise', 'Platform architecture', 'Team leadership', '3+ merged PRs to the swarms framework'],
-    aboutRole: 'As DevRel Lead at Swarms, you will lead the development of DevReal platform - our revolutionary agent development and deployment infrastructure. You will build tools and systems that make it easy for developers to create and deploy multi-agent applications. Note: all developer roles require at least 3 merged pull requests to the open-source swarms framework before applying.',
+    requirements: ['Full-stack expertise', 'Platform architecture', 'Team leadership', '3 PRs or 3 new issues on the swarms GitHub'],
+    aboutRole: 'As DevRel Lead at Swarms, you will lead the development of DevReal platform - our revolutionary agent development and deployment infrastructure. You will build tools and systems that make it easy for developers to create and deploy multi-agent applications. Note: all developer roles require 3 PRs or 3 new issues on the swarms GitHub before applying.',
     whatYoullDo: [
       'Lead development of the DevReal platform for agent development and deployment',
       'Design and implement scalable platform architecture',
@@ -455,7 +467,7 @@ export const positions: Position[] = [
       'You have strong architectural skills and can design scalable systems',
       'You have led and mentored engineering teams',
       'You are passionate about developer experience and tooling',
-      'You have contributed at least 3 merged pull requests to the open-source swarms framework (github.com/kyegomez/swarms)'
+      'You have contributed 3 PRs or opened 3 new issues on the swarms GitHub (github.com/kyegomez/swarms)'
     ]
   },
   {
@@ -467,8 +479,8 @@ export const positions: Position[] = [
     location: 'San Francisco / Palo Alto / New York',
     priority: 'High',
     description: 'Build and scale computational infrastructure powering multi-agent research and deployment.',
-    requirements: ['Cloud infrastructure', 'Distributed systems', 'DevOps experience', '3+ merged PRs to the swarms framework'],
-    aboutRole: 'As an Infrastructure Engineer at Swarms, you will build and scale computational infrastructure powering multi-agent research and deployment. You will ensure our systems can handle the demands of running millions of agents. Note: all developer roles require at least 3 merged pull requests to the open-source swarms framework before applying.',
+    requirements: ['Cloud infrastructure', 'Distributed systems', 'DevOps experience', '3 PRs or 3 new issues on the swarms GitHub'],
+    aboutRole: 'As an Infrastructure Engineer at Swarms, you will build and scale computational infrastructure powering multi-agent research and deployment. You will ensure our systems can handle the demands of running millions of agents. Note: all developer roles require 3 PRs or 3 new issues on the swarms GitHub before applying.',
     whatYoullDo: [
       'Design and maintain cloud infrastructure for agent computation',
       'Build and scale distributed systems for agent coordination',
@@ -482,7 +494,7 @@ export const positions: Position[] = [
       'You have experience with distributed systems and container orchestration',
       'You are passionate about reliability and operational excellence',
       'You can balance between building new systems and maintaining existing ones',
-      'You have contributed at least 3 merged pull requests to the open-source swarms framework (github.com/kyegomez/swarms)'
+      'You have contributed 3 PRs or opened 3 new issues on the swarms GitHub (github.com/kyegomez/swarms)'
     ]
   },
   {

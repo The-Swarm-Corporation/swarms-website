@@ -1,5 +1,13 @@
 import { Navigation } from "@/components/navigation"
-import { positions, getPositionBySlug, getApplyMethod, APPLICATION_EMAIL } from "@/lib/positions"
+import {
+  positions,
+  getPositionBySlug,
+  getApplyMethod,
+  developerCriteria,
+  APPLICATION_EMAIL,
+  SWARMS_GITHUB_URL,
+  SWARMS_RS_GITHUB_URL,
+} from "@/lib/positions"
 import { notFound } from "next/navigation"
 import Link from "next/link"
 import {
@@ -8,7 +16,8 @@ import {
   MapPin,
   Clock,
   Briefcase,
-  CheckCircle
+  CheckCircle,
+  Github
 } from 'lucide-react'
 import type { Metadata } from 'next'
 
@@ -182,6 +191,56 @@ export default async function PositionPage({ params }: PageProps) {
                 ))}
               </ul>
             </div>
+
+            {/* Who we're looking for (developer roles only) */}
+            {position.department === 'Engineering' && (
+              <div>
+                <p className="text-sm font-medium tracking-[0.2em] uppercase text-neutral-500 mb-4">
+                  Developer Positions
+                </p>
+                <h2 className="text-3xl sm:text-4xl font-semibold mb-6 bg-gradient-to-b from-white to-neutral-400 bg-clip-text text-transparent tracking-tight">
+                  Who we&apos;re looking for
+                </h2>
+                <p className="text-lg text-neutral-300 leading-relaxed font-light mb-6">
+                  Every developer role at Swarms starts with your open source
+                  work. Before you apply, we look for:
+                </p>
+                <ul className="space-y-4">
+                  {developerCriteria.map((criterion) => (
+                    <li key={criterion} className="flex items-start gap-4">
+                      <div className="p-1 bg-white/5 border border-white/10 rounded-lg mt-1 flex-shrink-0">
+                        <CheckCircle className="w-4 h-4 text-neutral-300" />
+                      </div>
+                      <span className="text-lg text-neutral-300 leading-relaxed font-light">
+                        {criterion}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+                <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                  <a
+                    href={SWARMS_GITHUB_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group inline-flex items-center justify-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-medium text-black transition-colors hover:bg-neutral-200"
+                  >
+                    <Github className="w-4 h-4" />
+                    Swarms on GitHub
+                    <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
+                  </a>
+                  <a
+                    href={SWARMS_RS_GITHUB_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group inline-flex items-center justify-center gap-2 rounded-full border border-white/[0.14] bg-[#0a0a0a] px-6 py-3 text-sm font-medium text-white transition-colors hover:border-white/30 hover:bg-white/[0.06]"
+                  >
+                    <Github className="w-4 h-4" />
+                    swarms-rs on GitHub
+                    <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
+                  </a>
+                </div>
+              </div>
+            )}
           </div>
         </section>
 

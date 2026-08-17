@@ -12,9 +12,19 @@ import {
   Briefcase,
   Clock,
   Search,
-  X
+  X,
+  Github,
+  CheckCircle
 } from 'lucide-react'
-import { positions, departments, GOOGLE_FORM_URL, type Department } from '@/lib/positions'
+import {
+  positions,
+  departments,
+  developerCriteria,
+  GOOGLE_FORM_URL,
+  SWARMS_GITHUB_URL,
+  SWARMS_RS_GITHUB_URL,
+  type Department
+} from '@/lib/positions'
 
 const ease: [number, number, number, number] = [0.22, 1, 0.36, 1]
 
@@ -131,6 +141,67 @@ const HiringClientPage = () => {
                 the agent economy and have a track record of shipping
                 complex systems, we want to hear from you.
               </p>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Who We're Looking For (developer positions) */}
+      <section className="border-b border-white/[0.08] bg-black">
+        <div className="container px-4 py-16 sm:px-6 sm:py-24 lg:px-8 lg:py-32">
+          <motion.div
+            className="mx-auto max-w-3xl text-center"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.7, ease }}
+          >
+            <p className="mb-5 font-mono text-[11px] font-medium uppercase tracking-[0.2em] text-white/40">
+              Developer Positions
+            </p>
+            <h2 className="text-3xl font-semibold leading-[1.1] tracking-tighter text-white sm:text-4xl md:text-5xl">
+              Who we&apos;re looking for
+            </h2>
+            <p className="mt-8 text-base font-normal leading-relaxed text-white/50 sm:text-lg">
+              Every developer role at Swarms starts with your open source
+              work. Before you apply, we look for:
+            </p>
+
+            <ul className="mx-auto mt-8 flex max-w-xl flex-col gap-3 text-left">
+              {developerCriteria.map((criterion) => (
+                <li
+                  key={criterion}
+                  className="flex items-start gap-4 rounded-lg border border-white/[0.08] bg-[#0a0a0a] p-5"
+                >
+                  <CheckCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-white/50" strokeWidth={1.5} />
+                  <span className="text-base font-normal leading-relaxed text-white/70">
+                    {criterion}
+                  </span>
+                </li>
+              ))}
+            </ul>
+
+            <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
+              <a
+                href={SWARMS_GITHUB_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-medium text-black transition-colors hover:bg-neutral-200"
+              >
+                <Github className="h-4 w-4" />
+                Swarms on GitHub
+                <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+              </a>
+              <a
+                href={SWARMS_RS_GITHUB_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group inline-flex items-center gap-2 rounded-full border border-white/[0.14] bg-[#0a0a0a] px-6 py-3 text-sm font-medium text-white transition-colors hover:border-white/30 hover:bg-white/[0.06]"
+              >
+                <Github className="h-4 w-4" />
+                swarms-rs on GitHub
+                <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+              </a>
             </div>
           </motion.div>
         </div>

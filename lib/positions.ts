@@ -40,11 +40,11 @@ export const positions: Position[] = [
     icon: Brain,
     department: 'Engineering',
     type: 'Full-time',
-    location: 'Palo Alto, CA',
+    location: 'San Francisco / Palo Alto / New York',
     priority: 'Critical',
     description: 'Build and optimize autonomous agents, implement advanced coordination protocols, and scale multi-agent systems.',
-    requirements: ['Strong Python/TypeScript', 'Distributed systems', 'ML/AI experience'],
-    aboutRole: 'As an Agent Engineer at Swarms, you will design, build, and optimize autonomous agents that collaborate to solve complex problems. You will work on cutting-edge multi-agent systems, implementing advanced coordination protocols and scaling our infrastructure to power the agent economy.',
+    requirements: ['Strong Python/TypeScript', 'Distributed systems', 'ML/AI experience', '3+ merged PRs to the swarms framework'],
+    aboutRole: 'As an Agent Engineer at Swarms, you will design, build, and optimize autonomous agents that collaborate to solve complex problems. You will work on cutting-edge multi-agent systems, implementing advanced coordination protocols and scaling our infrastructure to power the agent economy. Note: all developer roles require at least 3 merged pull requests to the open-source swarms framework before applying.',
     whatYoullDo: [
       'Design and implement autonomous agent architectures and coordination protocols',
       'Build scalable multi-agent systems that can simulate entire industries',
@@ -57,7 +57,8 @@ export const positions: Position[] = [
       'You have strong Python/TypeScript skills and experience with async programming',
       'You have experience with ML/AI frameworks and agent orchestration tools',
       'You are passionate about building infrastructure for the agent economy',
-      'You have a track record of shipping complex systems at scale'
+      'You have a track record of shipping complex systems at scale',
+      'You have contributed at least 3 merged pull requests to the open-source swarms framework (github.com/kyegomez/swarms)'
     ]
   },
   {
@@ -66,11 +67,11 @@ export const positions: Position[] = [
     icon: Code,
     department: 'Engineering',
     type: 'Full-time',
-    location: 'Palo Alto, CA',
+    location: 'San Francisco / Palo Alto / New York',
     priority: 'Critical',
     description: 'Build beautiful, intuitive interfaces for agent dashboards and monitoring systems.',
-    requirements: ['React/Next.js', 'TypeScript', 'UI/UX experience'],
-    aboutRole: 'As a Front-end Engineer at Swarms, you will build the interfaces that allow users to interact with, monitor, and manage autonomous agent systems. You will create intuitive dashboards and monitoring tools that make complex agent workflows accessible and actionable.',
+    requirements: ['React/Next.js', 'TypeScript', 'UI/UX experience', '3+ merged PRs to the swarms framework'],
+    aboutRole: 'As a Front-end Engineer at Swarms, you will build the interfaces that allow users to interact with, monitor, and manage autonomous agent systems. You will create intuitive dashboards and monitoring tools that make complex agent workflows accessible and actionable. Note: all developer roles require at least 3 merged pull requests to the open-source swarms framework before applying.',
     whatYoullDo: [
       'Build responsive, performant web interfaces for agent management dashboards',
       'Design and implement real-time monitoring and visualization systems',
@@ -83,7 +84,8 @@ export const positions: Position[] = [
       'You have strong UI/UX sensibilities and experience with design systems',
       'You have experience with real-time data visualization or dashboards',
       'You are passionate about making complex systems accessible',
-      'You have a portfolio of polished, production web applications'
+      'You have a portfolio of polished, production web applications',
+      'You have contributed at least 3 merged pull requests to the open-source swarms framework (github.com/kyegomez/swarms)'
     ]
   },
   {
@@ -92,7 +94,7 @@ export const positions: Position[] = [
     icon: Target,
     department: 'Finance',
     type: 'Full-time',
-    location: 'Palo Alto, CA',
+    location: 'San Francisco / Palo Alto / New York',
     priority: 'High',
     description: 'Manage financial operations, budgeting, and strategic planning for a fast-growing AI company.',
     requirements: ['Financial modeling', 'Strategic planning', 'Tech industry experience'],
@@ -118,7 +120,7 @@ export const positions: Position[] = [
     icon: GraduationCap,
     department: 'Internship',
     type: 'Internship',
-    location: 'Bay Area',
+    location: 'San Francisco / Palo Alto / New York',
     priority: 'Medium',
     description: 'Support accounting operations and learn financial systems at a cutting-edge AI company.',
     requirements: ['Accounting background', 'Attention to detail', 'Eagerness to learn'],
@@ -144,11 +146,11 @@ export const positions: Position[] = [
     icon: TrendingUp,
     department: 'Engineering',
     type: 'Full-time',
-    location: 'Palo Alto, CA',
+    location: 'San Francisco / Palo Alto / New York',
     priority: 'Critical',
     description: 'Drive user acquisition and engagement through data-driven growth strategies and technical implementation.',
-    requirements: ['Growth marketing experience', 'Full-stack development', 'Data analysis'],
-    aboutRole: 'As a Growth Engineer at Swarms, you will drive user acquisition and engagement through data-driven growth strategies. You will combine engineering expertise with growth marketing to scale our reach in the agent economy.',
+    requirements: ['Growth marketing experience', 'Full-stack development', 'Data analysis', '3+ merged PRs to the swarms framework'],
+    aboutRole: 'As a Growth Engineer at Swarms, you will drive user acquisition and engagement through data-driven growth strategies. You will combine engineering expertise with growth marketing to scale our reach in the agent economy. Note: all developer roles require at least 3 merged pull requests to the open-source swarms framework before applying.',
     whatYoullDo: [
       'Design and implement growth experiments across acquisition, activation, and retention',
       'Build and optimize landing pages, signup flows, and onboarding experiences',
@@ -161,7 +163,8 @@ export const positions: Position[] = [
       'You have experience with A/B testing and experimentation frameworks',
       'You have strong analytical skills and experience with growth metrics',
       'You are creative and data-driven in problem-solving',
-      'You are passionate about AI and the agent economy'
+      'You are passionate about AI and the agent economy',
+      'You have contributed at least 3 merged pull requests to the open-source swarms framework (github.com/kyegomez/swarms)'
     ]
   },
   {
@@ -170,7 +173,7 @@ export const positions: Position[] = [
     icon: Megaphone,
     department: 'Marketing',
     type: 'Full-time',
-    location: 'Palo Alto, CA',
+    location: 'San Francisco / Palo Alto / New York',
     priority: 'Critical',
     description: 'Lead growth marketing initiatives to establish Swarms as the premier AI agent platform globally.',
     requirements: ['Growth marketing', 'AI/tech industry', 'Brand building'],
@@ -196,11 +199,11 @@ export const positions: Position[] = [
     icon: Store,
     department: 'Engineering',
     type: 'Full-time',
-    location: 'Palo Alto, CA',
+    location: 'San Francisco / Palo Alto / New York',
     priority: 'Critical',
     description: 'Lead the Swarms marketplace end to end: own the product, lead the engineering team, and recruit the talent to scale it.',
-    requirements: ['Built and scaled marketplaces', 'Engineering leadership', 'Recruiting experience'],
-    aboutRole: 'As Head of Marketplace at Swarms, you will own the marketplace where agents, tools, and swarms are published, discovered, and monetized. We are looking for an experienced individual who has built and scaled marketplaces before. You will lead the marketplace engineering team, set the technical and product direction, and recruit the people needed to make the Swarms marketplace the default destination of the agent economy.',
+    requirements: ['Built and scaled marketplaces', 'Engineering leadership', 'Recruiting experience', '3+ merged PRs to the swarms framework'],
+    aboutRole: 'As Head of Marketplace at Swarms, you will own the marketplace where agents, tools, and swarms are published, discovered, and monetized. We are looking for an experienced individual who has built and scaled marketplaces before. You will lead the marketplace engineering team, set the technical and product direction, and recruit the people needed to make the Swarms marketplace the default destination of the agent economy. Note: all developer roles require at least 3 merged pull requests to the open-source swarms framework before applying.',
     whatYoullDo: [
       'Own the marketplace end to end, from product strategy to production systems',
       'Lead and manage the marketplace engineering team',
@@ -213,7 +216,8 @@ export const positions: Position[] = [
       'You have 5+ years of experience leading engineering teams',
       'You have owned recruiting for a team and know how to attract strong engineers',
       'You understand marketplace dynamics: supply, demand, liquidity, and take rates',
-      'You are passionate about building the commercial layer of the agent economy'
+      'You are passionate about building the commercial layer of the agent economy',
+      'You have contributed at least 3 merged pull requests to the open-source swarms framework (github.com/kyegomez/swarms)'
     ]
   },
   {
@@ -222,11 +226,11 @@ export const positions: Position[] = [
     icon: Cloud,
     department: 'Engineering',
     type: 'Full-time',
-    location: 'Palo Alto, CA',
+    location: 'San Francisco / Palo Alto / New York',
     priority: 'Critical',
     description: 'Own Swarms Cloud, the hosted platform for deploying and orchestrating agents and swarms at scale.',
-    requirements: ['Cloud platform leadership', 'Distributed systems', 'Team building'],
-    aboutRole: 'As Head of Swarms Cloud, you will own our hosted platform for deploying, orchestrating, and monitoring agents and swarms at scale. You will set the product and technical direction for Swarms Cloud, lead the team that builds it, and ensure the platform delivers the reliability, performance, and developer experience that autonomous corporations will run on.',
+    requirements: ['Cloud platform leadership', 'Distributed systems', 'Team building', '3+ merged PRs to the swarms framework'],
+    aboutRole: 'As Head of Swarms Cloud, you will own our hosted platform for deploying, orchestrating, and monitoring agents and swarms at scale. You will set the product and technical direction for Swarms Cloud, lead the team that builds it, and ensure the platform delivers the reliability, performance, and developer experience that autonomous corporations will run on. Note: all developer roles require at least 3 merged pull requests to the open-source swarms framework before applying.',
     whatYoullDo: [
       'Own the product and technical direction of Swarms Cloud',
       'Lead the engineering team building the platform, and recruit to grow it',
@@ -239,7 +243,8 @@ export const positions: Position[] = [
       'You have deep knowledge of distributed systems and production operations',
       'You have led engineering teams and shipped platforms developers depend on',
       'You care about developer experience as much as system design',
-      'You want to build the infrastructure that autonomous corporations run on'
+      'You want to build the infrastructure that autonomous corporations run on',
+      'You have contributed at least 3 merged pull requests to the open-source swarms framework (github.com/kyegomez/swarms)'
     ]
   },
   {
@@ -248,7 +253,7 @@ export const positions: Position[] = [
     icon: Microscope,
     department: 'Research',
     type: 'Full-time',
-    location: 'Palo Alto, CA',
+    location: 'San Francisco / Palo Alto / New York',
     priority: 'Critical',
     description: 'Lead the Swarms research organization: set the multi-agent research agenda, recruit researchers, and publish at top conferences.',
     requirements: ['Cited multi-agent research', 'Research leadership', 'Publication record'],
@@ -274,7 +279,7 @@ export const positions: Position[] = [
     icon: Handshake,
     department: 'Business Development',
     type: 'Full-time',
-    location: 'Palo Alto, CA',
+    location: 'San Francisco / Palo Alto / New York',
     priority: 'Critical',
     description: 'Own business development for the Swarms marketplace — reaching out to new and existing users to drive adoption, retention, and revenue.',
     requirements: ['Business development', 'Sales / partnerships', 'AI/tech industry'],
@@ -300,7 +305,7 @@ export const positions: Position[] = [
     icon: Rocket,
     department: 'Executive',
     type: 'Full-time',
-    location: 'Palo Alto, CA',
+    location: 'San Francisco / Palo Alto / New York',
     priority: 'Critical',
     description: 'Lead marketing strategy to establish Swarms as the premier AI agent platform globally.',
     requirements: ['Marketing leadership', 'AI/tech industry', 'Brand building'],
@@ -326,7 +331,7 @@ export const positions: Position[] = [
     icon: Users,
     department: 'Executive',
     type: 'Full-time',
-    location: 'Palo Alto, CA',
+    location: 'San Francisco / Palo Alto / New York',
     priority: 'Critical',
     description: 'Oversee operations and help scale Swarms to power the agent economy worldwide.',
     requirements: ['Operations leadership', 'Scaling startups', 'AI/tech vision'],
@@ -352,7 +357,7 @@ export const positions: Position[] = [
     icon: Search,
     department: 'Research',
     type: 'Full-time',
-    location: 'Palo Alto, CA',
+    location: 'San Francisco / Palo Alto / New York',
     priority: 'Critical',
     description: 'Lead groundbreaking research in autonomous agent development and multi-agent coordination systems.',
     requirements: ['PhD in CS/AI/ML', 'Published research', 'Multi-agent systems experience'],
@@ -378,11 +383,11 @@ export const positions: Position[] = [
     icon: Terminal,
     department: 'Engineering',
     type: 'Full-time',
-    location: 'Palo Alto, CA',
+    location: 'San Francisco / Palo Alto / New York',
     priority: 'High',
     description: 'Develop high-performance, memory-safe infrastructure for agent communication and coordination systems.',
-    requirements: ['Expert Rust skills', 'Systems programming', 'Performance optimization'],
-    aboutRole: 'As a Rust Engineer at Swarms, you will develop high-performance, memory-safe infrastructure for agent communication and coordination systems. You will build the foundational systems that power our multi-agent platform.',
+    requirements: ['Expert Rust skills', 'Systems programming', 'Performance optimization', '3+ merged PRs to the swarms framework'],
+    aboutRole: 'As a Rust Engineer at Swarms, you will develop high-performance, memory-safe infrastructure for agent communication and coordination systems. You will build the foundational systems that power our multi-agent platform. Note: all developer roles require at least 3 merged pull requests to the open-source swarms framework before applying.',
     whatYoullDo: [
       'Design and implement core infrastructure components in Rust',
       'Build high-performance agent communication and coordination systems',
@@ -395,7 +400,35 @@ export const positions: Position[] = [
       'You have experience with systems programming and performance optimization',
       'You understand memory management, concurrency, and distributed systems',
       'You are passionate about building robust, scalable infrastructure',
-      'You have a track record of shipping high-performance production code'
+      'You have a track record of shipping high-performance production code',
+      'You have contributed at least 3 merged pull requests to the open-source swarms framework (github.com/kyegomez/swarms)'
+    ]
+  },
+  {
+    slug: 'rust-team-lead',
+    title: 'Rust Team Lead',
+    icon: Terminal,
+    department: 'Engineering',
+    type: 'Full-time',
+    location: 'San Francisco / Palo Alto / New York',
+    priority: 'Critical',
+    description: 'Lead the swarms-rs framework and manage the Rust team building high-performance multi-agent infrastructure.',
+    requirements: ['Expert Rust skills', 'Team leadership', 'Open-source maintainership', '3+ merged PRs to the swarms framework'],
+    aboutRole: 'As Rust Team Lead at Swarms, you will lead the development of swarms-rs (github.com/The-Swarm-Corporation/swarms-rs), our high-performance multi-agent framework written in Rust, and manage the Rust team behind it. You will set the technical direction of the framework, own its roadmap and releases, and grow a team of world-class Rust engineers building the fastest agent runtime in the ecosystem. Note: all developer roles require at least 3 merged pull requests to the open-source swarms framework before applying.',
+    whatYoullDo: [
+      'Lead the design, development, and releases of the swarms-rs framework',
+      'Manage and mentor the Rust team, and recruit engineers to grow it',
+      'Set the technical direction and roadmap for Rust across the Swarms ecosystem',
+      'Review contributions and maintain the quality bar for the open-source codebase',
+      'Collaborate with the Python framework, Cloud, and research teams to keep swarms-rs at feature parity and beyond'
+    ],
+    youMayBeAFitIf: [
+      'You have expert-level Rust skills and have shipped production Rust systems',
+      'You have led or managed an engineering team, or mentored engineers as a senior contributor',
+      'You have maintained or contributed heavily to open-source projects',
+      'You understand multi-agent systems, concurrency, and high-performance runtimes',
+      'You want to own a framework end to end and build the team around it',
+      'You have contributed at least 3 merged pull requests to the open-source swarms framework (github.com/kyegomez/swarms)'
     ]
   },
   {
@@ -404,11 +437,11 @@ export const positions: Position[] = [
     icon: BookUser,
     department: 'Engineering',
     type: 'Full-time',
-    location: 'Palo Alto, CA',
+    location: 'San Francisco / Palo Alto / New York',
     priority: 'Critical',
     description: 'Lead the development of DevReal platform - our revolutionary agent development and deployment infrastructure.',
-    requirements: ['Full-stack expertise', 'Platform architecture', 'Team leadership'],
-    aboutRole: 'As DevRel Lead at Swarms, you will lead the development of DevReal platform - our revolutionary agent development and deployment infrastructure. You will build tools and systems that make it easy for developers to create and deploy multi-agent applications.',
+    requirements: ['Full-stack expertise', 'Platform architecture', 'Team leadership', '3+ merged PRs to the swarms framework'],
+    aboutRole: 'As DevRel Lead at Swarms, you will lead the development of DevReal platform - our revolutionary agent development and deployment infrastructure. You will build tools and systems that make it easy for developers to create and deploy multi-agent applications. Note: all developer roles require at least 3 merged pull requests to the open-source swarms framework before applying.',
     whatYoullDo: [
       'Lead development of the DevReal platform for agent development and deployment',
       'Design and implement scalable platform architecture',
@@ -421,7 +454,8 @@ export const positions: Position[] = [
       'You have experience building developer platforms or tools',
       'You have strong architectural skills and can design scalable systems',
       'You have led and mentored engineering teams',
-      'You are passionate about developer experience and tooling'
+      'You are passionate about developer experience and tooling',
+      'You have contributed at least 3 merged pull requests to the open-source swarms framework (github.com/kyegomez/swarms)'
     ]
   },
   {
@@ -430,11 +464,11 @@ export const positions: Position[] = [
     icon: Server,
     department: 'Engineering',
     type: 'Full-time',
-    location: 'Palo Alto, CA',
+    location: 'San Francisco / Palo Alto / New York',
     priority: 'High',
     description: 'Build and scale computational infrastructure powering multi-agent research and deployment.',
-    requirements: ['Cloud infrastructure', 'Distributed systems', 'DevOps experience'],
-    aboutRole: 'As an Infrastructure Engineer at Swarms, you will build and scale computational infrastructure powering multi-agent research and deployment. You will ensure our systems can handle the demands of running millions of agents.',
+    requirements: ['Cloud infrastructure', 'Distributed systems', 'DevOps experience', '3+ merged PRs to the swarms framework'],
+    aboutRole: 'As an Infrastructure Engineer at Swarms, you will build and scale computational infrastructure powering multi-agent research and deployment. You will ensure our systems can handle the demands of running millions of agents. Note: all developer roles require at least 3 merged pull requests to the open-source swarms framework before applying.',
     whatYoullDo: [
       'Design and maintain cloud infrastructure for agent computation',
       'Build and scale distributed systems for agent coordination',
@@ -447,7 +481,8 @@ export const positions: Position[] = [
       'You have strong experience with cloud platforms (AWS, GCP, Azure)',
       'You have experience with distributed systems and container orchestration',
       'You are passionate about reliability and operational excellence',
-      'You can balance between building new systems and maintaining existing ones'
+      'You can balance between building new systems and maintaining existing ones',
+      'You have contributed at least 3 merged pull requests to the open-source swarms framework (github.com/kyegomez/swarms)'
     ]
   },
   {
@@ -456,7 +491,7 @@ export const positions: Position[] = [
     icon: GraduationCap,
     department: 'Internship',
     type: 'Internship',
-    location: 'Bay Area',
+    location: 'San Francisco / Palo Alto / New York',
     priority: 'Medium',
     description: 'Exceptional students working on ambitious multi-agent research with senior mentorship.',
     requirements: ['Strong academic record', 'Programming skills', 'Research interest'],

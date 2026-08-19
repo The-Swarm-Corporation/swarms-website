@@ -135,16 +135,6 @@ The paper also confronts the most natural objection head-on: does the appending 
 
 ![Reducer ablation: LangGraph steady-run cost under the appending list reducer and a constant-time counter reducer, against GraphWorkflow](/graphworkflow_paper_reducer_ablation.png)
 
-## What the Paper Does Not Claim
-
-The paper is unusually direct about its own limits, and that candor is worth passing along.
-
-The evaluation measures orchestration overhead on static DAGs of no-op nodes. It does not measure end-to-end agent quality, token throughput, or behavior under real LLM latency, where a 500 ms node renders both frameworks' per-node overhead invisible in any single execution. The two systems are not feature-equivalent: part of LangGraph's measured overhead purchases conditional edges, cycles with runtime termination conditions, mid-graph interrupts for human approval, and pluggable persistence, none of which GraphWorkflow currently offers. Workloads that need dynamic control flow inside the graph remain LangGraph territory, and the paper says so plainly. The measured gaps are the price of generality imposed on workloads that do not use it.
-
-The scheduler is thread-based and in-process, which is the right ceiling for I/O-bound agent calls on current CPython (the interpreter lock is released during network waits) but caps CPU-bound work and offers no horizontal scale-out. The benchmark tops out at 200 nodes, covers only the synchronous path, and comes from one machine and Python version, with provenance recorded precisely so other environments can be added.
-
-The future-work section follows directly from the compile-once design: distributed execution by partitioning the picklable layered plan across processes, resource-class annotations for heterogeneous scheduling, compile-time optimizations like fusing linear chains and batching sibling calls, compiling guard nodes into alternative sub-plans to close part of the expressiveness gap, and pushing the suite to thousands of nodes.
-
 ## Reproduce Every Number Yourself
 
 The paper ships as a reproducible artifact. The full harness, raw samples, analysis scripts, and figures are published in the [GraphWorkflow-Paper repository](https://github.com/The-Swarm-Corporation/GraphWorkflow-Paper/tree/main/benchmarks), and every number in the text is emitted as a LaTeX macro by the same analysis script that consumes the result JSON, so the paper cannot silently drift from the data.

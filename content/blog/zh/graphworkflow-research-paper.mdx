@@ -1,0 +1,217 @@
+---
+title: "GraphWorkflow：我们的新研究论文，编译一次的执行引擎让智能体图最高比 LangGraph 快 62.5 倍"
+description: "Swarms 研究团队发布了一篇关于 GraphWorkflow 的完整系统论文，它是 Swarms 框架内置的图执行引擎。在覆盖五种拓扑、10 到 200 个节点的开放基准测试中，GraphWorkflow 执行已编译智能体图的几何平均加速比为 LangGraph 的 7.0 倍，在深链上最高达 62.5 倍；编译速度快 21.6 到 31.3 倍；冷启动的构建、编译、执行全路径快 7.9 倍。本文带你通读这篇论文：成本分类体系、编译一次的架构、编程模型对比、附论文图表的完整基准结果，以及如何亲自复现每一个数字。"
+date: "2026-08-19"
+author: "Kye Gomez"
+categories: ["研究"]
+readTime: "14 分钟阅读"
+featured: false
+image: "/graphworkflow_paper_hero.png"
+---
+
+# GraphWorkflow：我们的新研究论文，编译一次的执行引擎让智能体图最高比 LangGraph 快 62.5 倍
+
+Swarms 研究团队发布了一篇新论文：**[《GraphWorkflow: A Low-Overhead Compile-Once Graph Execution Engine for Multi-Agent Systems》](https://github.com/The-Swarm-Corporation/GraphWorkflow-Paper/blob/main/main.pdf)**，作者为 Kye Gomez、Adi Chaudhary、Ayaan Gazali、Steve-Dusty 和 Wyatt Stanke。这篇论文对 GraphWorkflow（开源 [Swarms 框架](https://github.com/kyegomez/swarms)内置的图编排引擎）做了完整的系统级论述：带证明的形式化执行模型、智能体编排的成本模型、引擎设计的详尽阐述，以及一套与 LangGraph 1.0.4 正面对比的开放基准测试。
+
+核心数字：在 15 种拓扑与规模组合中，GraphWorkflow 执行已编译图的**几何平均加速比为 7.0 倍**，在 **200 节点的链式图上达到 62.5 倍**；编译图**快 21.6 到 31.3 倍**；冷启动的构建、编译、执行全路径**快 7.9 倍**。论文中的每个数字都是 9 次采样的中位数并附 95% 置信区间，完整的测试框架、原始数据和分析流水线[随论文一并发布](https://github.com/The-Swarm-Corporation/GraphWorkflow-Paper/tree/main/benchmarks)，任何人都可以复现结果。
+
+本文带你通读这篇论文：编排开销为什么值得关注、引擎如何工作、基准测试测的是什么，以及这些结果声称了什么、没有声称什么。
+
+## 编排开销为什么成了一个系统问题
+
+多智能体系统已经收敛到同一种结构抽象：有向无环图（DAG），节点是智能体调用，边把中间输出向前传递。依赖关系是显式的，独立的工作可以并行执行，程序结构可以独立于执行代码被验证、可视化和持久化。
+
+由于单个智能体步骤的模型延迟在 0.5 到 5 秒之间，编排框架一直把自身开销当作可以忽略的误差。论文的出发点是：这个假设在三种场景下不成立：
+
+- **短生命周期进程的冷启动。** Serverless 部署在每次冷启动时都要付出完整的构建、编译、执行成本，而冷启动延迟是首要的运维指标。
+- **高频重复执行。** 每个请求都执行一次已编译工作流的服务，会把每次运行的开销支付上百万次。每请求 18 毫秒的编排税占一秒预算的 1.8%，而且在扇出下不断放大。
+- **大规模图。** 当宽度或深度达到数百个节点时，在十个节点时看不见的逐节点、逐层成本会主导整次运行。
+
+为了让这些可以被测量，论文定义了四个生命周期阶段的成本分类：**构建**（在内存中搭建图）、**编译**（从构建到首次执行之间的全部预处理）、**首次运行**（冷路径：构建加编译加一次执行）、**稳态运行**（执行一个已准备好的图，即长期服务每个请求的边际成本）。两端都报告才能让对比在不同部署形态下保持诚实：一次性脚本关心冷路径，长期服务和评估扫描关心稳态。
+
+论文也解释了相邻基础设施为什么填不上这个空缺。Airflow、Prefect 这类工作流管理器通过数据库支撑的控制平面调度任务，每任务延迟数百毫秒；Dask、Ray 这类数据流系统把每任务开销降到约 100 微秒到 1 毫秒，但都假设有一个运行中的调度器或集群，并且在进程边界序列化参数；NetworkX 这类图库提供算法但没有执行语义。GraphWorkflow 瞄准的正是三者的组合：库级延迟、数据流语义、图库算法，全部封装在一个进程内对象里。
+
+## 核心思想：编译一次，扫描多次
+
+LangGraph 是目前使用最广的智能体图编排器，它在 Pregel 风格的超步循环上执行图，带有基于通道的状态、reducer 函数，以及每一步都会咨询的检查点钩子。这套机制换来了真实的能力：环、条件边、持久化执行。但无论工作流是否使用这些能力，每次运行的每个节点都要为其付费。在一条 200 节点、节点为空操作的顺序链上，即使关闭检查点，LangGraph 每次执行仍要花费 18.15 毫秒的纯编排开销，约合每个超步 90 微秒。
+
+GraphWorkflow 采取了相反的立场：智能体工作流的常见情形是一个被执行一次或多次的静态 DAG，而静态 DAG 可以只准备一次，然后用几乎为零的每次运行机制来执行。
+
+![GraphWorkflow 架构：构建阶段修改声明式状态和后端图，compile 将两者提炼为缓存的产物，运行引擎只接触冻结的执行计划](/graphworkflow_paper_architecture.png)
+
+引擎把图的生命周期分为显式的编译阶段和极简的执行阶段。编译完成了运行循环原本要反复做的全部工作：
+
+- **从节点度数推断入口和出口**，用户永远不需要接线 START 和 END 边。
+- **用 Kahn 算法计算拓扑分代**，在 rustworkx 后端下直接在 Rust 原生执行。分代是最大并行度的标准分层：第零层恰好是可以立即执行的节点集合，之后每一层恰好是前面各层完成后可以执行的节点集合。
+- **对边列表做单次遍历，物化前驱和后继映射**，而不是逐节点调用后端。
+- **基于这些映射做结构验证**：线性时间的无环检测，加上双向的可达性检查（多源广度优先遍历），保证每个节点都能从某个入口到达、也能到达某个出口。
+- **冻结逐层的执行计划**，每个节点都已解析为（节点 id、智能体对象、节点类型、显示名称）的元组。运行循环不查节点表字典、不做属性解析、除一次标签比较外没有任何类型分派。
+
+论文证明了整条流水线对 N 个节点、M 条边的图在 O(N + M) 的时间与空间内完成，并证明分层波前调度尊重依赖顺序：每个节点只在其全部前驱完成后开始，且无需加锁，因为输出映射是只追加的，层间屏障对所有跨层访问排序。
+
+执行则刻意保持简单：对预计算列表的双重循环。每一层作为一个波前派发到单个线程池上，线程池惰性创建、按最宽层定容、整次运行共享。只含一个节点的层完全绕过线程池，在调用线程上内联执行，因为提交给工作线程会给一个调度器反正要阻塞等待的调用平添队列交接、上下文切换和 future 等待。
+
+![菱形图的波前调度：单节点层在调用者线程上内联执行，线程池在第一个并行层出现时创建一次，输出随 future 完成即时记录](/graphworkflow_paper_wavefront.png)
+
+这条内联快路径的影响出乎意料地大。在链式拓扑上它彻底消灭了线程池，这就是为什么 GraphWorkflow 在链上的开销约为每节点 1.5 微秒，比自身的线程派发成本（约 10 微秒）低一个数量级，比 LangGraph 的每超步成本低两个数量级。
+
+一切都有缓存和显式失效。任何修改（加节点、加边、改入口）都会清除编译产物，过期的计划永远不可能被执行，而重复运行和多轮迭代只支付一次编译。
+
+![图的生命周期：编译产物在多次运行与多轮循环间缓存，任何结构性修改都会让工作流回到未编译状态](/graphworkflow_paper_lifecycle.png)
+
+第二个架构决策让引擎不绑定任何一个图库。所有结构操作都经过一个小型后端接口，有两个实现：一个基于 NetworkX，一个基于 Rust 实现的 rustworkx，后者把分代计算和可达性下沉到原生代码。由于冻结的计划让运行时与后端无关，后端只影响构建和编译成本，这一论断随后被基准测试直接验证。
+
+## 编程模型：两个框架各自要求你做什么
+
+性能论证有一个可用性的对应面，论文用同一个菱形工作流的并排实现把它讲得很具体：一个分析师扇出到一个写作者和一个研究员，编辑合并两者的输出。
+
+![同一个菱形工作流在 GraphWorkflow 和 LangGraph 中的并排实现](/graphworkflow_paper_code_comparison.png)
+
+在 GraphWorkflow 中，智能体就是节点，边就是数据流。引擎从前驱的输出组装每个节点的提示词，结果以节点标识为键的字典返回。在 LangGraph 中，同一个工作流需要一个带类型的状态 schema、扇入处的 reducer 注解（省略会在并发写入时报错）、把每个智能体适配到状态接口的包装函数、显式的 START 和 END 接线、显式的 compile 调用，以及任何深度超过 25 个超步的图都需要的 recursion_limit 覆盖。
+
+论文用一张表总结了双方的义务，这里给出紧凑版：
+
+| 义务 | GraphWorkflow | LangGraph |
+| --- | --- | --- |
+| 节点定义 | 智能体对象本身 | 作用于类型化状态的函数 |
+| 共享状态 schema | 无 | 必须定义 TypedDict |
+| 扇入合并策略 | 自动（前驱映射） | 必须写 reducer 注解 |
+| 入口 / 出口 | 从度数推断 | 显式 START / END 边 |
+| 编译 | 首次运行隐式完成 | 显式 compile() |
+| 深图（超过 25 层） | 无需配置 | 上调 recursion_limit |
+| 结果形态 | 以节点为键的字典 | 由 reducer 合并的共享通道 |
+
+论文在这里对适用范围非常谨慎：需要条件边或环的工作流在 GraphWorkflow 中根本无法表达，在那些场景下 LangGraph 的义务换来的是能力而不是繁文缛节。这个对比只覆盖静态 DAG 这一常见情形，在这种情形下那些义务是纯粹的开销。
+
+## 基准测试：五种拓扑、空操作智能体、全部开源
+
+评估建立在一套开放测试框架上。每个节点都是空操作函数，因此每一微秒的测量值从构造上就是框架开销；数据中不存在任何 LLM 延迟。每个配置先跑两次被丢弃的预热，再取 9 次计时采样；采样之间强制垃圾回收、计时区域内禁用垃圾回收。中位数是标题统计量，均值、标准差、置信区间和全部原始样本都保留在发布的 JSON 中。
+
+五种拓扑、每种 10、50、200 个节点，用来分离论文开销模型中的系数（该模型把稳态运行成本分解为逐节点项、逐层项和固定项）：
+
+![五种基准拓扑：链式、宽扇出、菱形、分层、二叉树](/graphworkflow_paper_topologies.png)
+
+- **链式（chain）**深度最大（深度等于节点数）：超步式运行时的判别性用例。
+- **宽扇出（wide）**是一个根节点扇出到其余全部节点（深度 2）：隔离逐节点派发成本。
+- **菱形（diamond）**是扇出后扇入（深度 3）：智能体实践中最常见的 map-reduce 形态。
+- **分层（layered）**堆叠每层四个节点的全连接级：深度与宽度并存，边数最密。
+- **树（tree）**是二叉树：对数深度加几何增长的宽度。
+
+公平性控制有详细记录。两个框架逐节点、逐边执行完全相同的拓扑，各用自己的原生构建 API。LangGraph 的递归上限被上调以保证深图能跑完。扇入处的 reducer 选择做了双向测试：标题配置使用与 GraphWorkflow 固有保留信息对等的追加列表 reducer，另有一轮使用常数时间计数器 reducer 的完整消融扫描证明结论不依赖这个选择。两个系统都未配置检查点。
+
+## 结果
+
+**编译把两种架构区分开来。** 两个系统都有显式的编译步骤，但构建的东西不同：GraphWorkflow 跑的是线性时间流水线（分代、一次邻接遍历、可达性验证、计划冻结），LangGraph 组装的是 Pregel 运行时（通道、写入项、分支机制）。在 200 个节点时，GraphWorkflow 在 NetworkX 后端用 0.44 毫秒、在 rustworkx 后端用 0.26 毫秒编译完链式图，LangGraph 需要 12.57 毫秒：几何平均差距 21.6 到 31.3 倍，在 200 规模上达到 60.7 倍。
+
+![五种拓扑下编译成本随图规模的变化，双对数坐标](/graphworkflow_paper_compile_cost.png)
+
+**冷路径把差距叠加起来。** 首次运行成本的几何平均加速比为 7.9 倍（NetworkX）和 8.7 倍（rustworkx），随规模增长到 200 节点链上的 29.3 倍。在整个测试中最重的单元（200 节点分层拓扑）上，总计为 4.40 毫秒对 44.4 毫秒。对于笔记本里的交互式构建和请求级的工作流组装，这是用户能直接感受到的阶段。
+
+**稳态执行是这个设计每个请求都在兑现的地方。** 论文给出三个观察：
+
+![已编译图的稳态执行随规模的变化：GraphWorkflow 两个后端重合，与 LangGraph 的差距随深度加大](/graphworkflow_paper_steady_state.png)
+
+第一，GraphWorkflow 的两个后端在每个单元格中都统计不可区分，这正是冻结执行计划的设计后果：编译之后没有任何后端代码执行。论文把这一点当作对自身架构论断的可证伪检验，数据通过了检验。
+
+第二，与 LangGraph 的差距随拓扑变化的方向与架构分析的预测完全一致。浅图上比值在 2.7 到 4 倍；深度增长后超步循环开始叠加：200 节点链上 GraphWorkflow 用 0.29 毫秒执行完，LangGraph 需要 18.15 毫秒，相差 62.5 倍。
+
+![全网格的稳态加速比：浅的宽扇出图在 2.7 到 4 倍，200 节点链在 62 倍](/graphworkflow_paper_speedup_heatmap.png)
+
+第三，绝对数字框定了这件事在哪里重要。200 节点时 GraphWorkflow 每次运行的开销为 0.3 到 3 毫秒，LangGraph 为 17 到 25 毫秒。对于动辄数秒的智能体调用，单次小规模工作流里两者都看不见。差异体现在请求频率、评估扫描和冷启动敏感的部署上：把 200 节点链执行 1,000 次，累计编排开销约为 GraphWorkflow 的 0.3 秒对 LangGraph 的 18.2 秒。
+
+## 归因：解释每一个被测出的差距
+
+这篇论文的一个鲜明特点是不止于报告加速比，而是把每个差距归因到具体机制，把拓扑套件当作一组探针来用。
+
+链式图（每层都是单节点）把 GraphWorkflow 的内联路径定价在约每节点 1.5 微秒，基本上就是拼一段短提示词加两次字典写入的成本。宽扇出图（199 个节点经共享线程池派发）把线程派发定价在约每节点 10.5 微秒，恰好量化了单节点快路径省下的部分。同样的探针给 LangGraph 的定价是：链上每超步 90.7 微秒，宽图上每节点 122.5 微秒。一个单系数的逐节点模型能以 0.97 的拟合优度拟合 LangGraph 的整个网格（约每节点 107 微秒），这与通道读取、任务准备、写入应用和 reducer 调用主导开销的判断一致。GraphWorkflow 无法用单系数模型拟合，因为其内联与线程两条路径相差 7 倍，这正是快路径存在的可测量签名。
+
+![稳态成本除以层数、对层数作图：LangGraph 的每超步成本是平的，GraphWorkflow 的每层成本随深度下降，因为深图走内联路径](/graphworkflow_paper_per_layer_cost.png)
+
+200 节点的堆叠分解图展示了每个系统的毫秒都花在了哪里：编译主导 LangGraph 的准备成本，执行主导其经常性成本。
+
+![200 节点时毫秒的去向：构建、编译加一次稳态运行的堆叠图，涵盖两个 GraphWorkflow 后端与 LangGraph](/graphworkflow_paper_cost_breakdown.png)
+
+论文也正面回应了最自然的质疑：追加列表 reducer 是否因为跨超步累积状态而抬高了 LangGraph 的数字？用常数时间计数器 reducer 做的完整消融扫描给出了否定回答。两种 reducer 配置的几何平均比值为 1.05 倍，大多数单元格的变化小于 12%；即使处处按计数器配置给 LangGraph 计分，200 节点链仍是 16.8 毫秒对 0.29 毫秒，相差 58 倍。开销来自编排本身，而不是状态累积。
+
+![Reducer 消融：LangGraph 在追加列表 reducer 与常数时间计数器 reducer 下的稳态成本，与 GraphWorkflow 对比](/graphworkflow_paper_reducer_ablation.png)
+
+## 论文没有声称什么
+
+这篇论文对自身局限的直白程度并不多见，这份坦诚值得转述。
+
+评估测量的是静态 DAG 上空操作节点的编排开销。它不测量端到端的智能体质量、token 吞吐量，也不测量真实 LLM 延迟下的行为（一个 500 毫秒的节点会让两个框架的逐节点开销在任何单次执行中都不可见）。两个系统的功能并不对等：LangGraph 被测出的开销中有一部分换来了条件边、带运行时终止条件的环、图中断人工审批、可插拔的持久化，这些 GraphWorkflow 目前都不提供。需要图内动态控制流的工作负载仍然属于 LangGraph，论文明说了这一点。被测出的差距，是通用性强加给不使用它的工作负载的代价。
+
+调度器基于线程、运行在进程内。对 I/O 密集的智能体调用来说，这在当前 CPython 上是正确的上限（网络等待期间解释器锁会释放），但它限制了 CPU 密集的工作，也不提供横向扩展。基准测试最大到 200 个节点，只覆盖同步路径，且来自单一机器和 Python 版本；来源信息被精确记录，方便其他环境补充。
+
+未来方向直接顺着编译一次的设计展开：把可序列化的分层计划切分到多进程或多机的分布式执行、面向异构调度的资源类别注解、融合线性链与合批同层调用等编译期优化、把守卫节点编译成备选子计划以缩小表达力差距，以及把测试推进到数千节点规模。
+
+## 亲自复现每一个数字
+
+论文以可复现制品的形式发布。完整的测试框架、原始样本、分析脚本和图表都发布在 [GraphWorkflow-Paper 仓库](https://github.com/The-Swarm-Corporation/GraphWorkflow-Paper/tree/main/benchmarks)中，正文中的每个数字都由消费结果 JSON 的同一个分析脚本以 LaTeX 宏的形式生成，论文不可能悄悄偏离数据。
+
+```bash
+# 获取论文、基准测试与分析流水线
+git clone https://github.com/The-Swarm-Corporation/GraphWorkflow-Paper
+cd GraphWorkflow-Paper
+
+# 1. 运行完整基准测试套件
+python3 benchmarks/graph_workflow_bench.py
+
+# 2. Reducer 消融（LangGraph 扇入状态使用 O(1) 计数器 reducer）
+python3 benchmarks/graph_workflow_bench.py --lg-reducer counter
+
+# 3. 从结果 JSON 重新生成图表
+python3 benchmarks/plot_results.py
+```
+
+GraphWorkflow 本身约 4,000 行 Python，位于 `swarms/structs/graph_workflow.py`，除 NetworkX 外没有强制依赖；rustworkx 和 Graphviz 为可选项，在导入时自动检测。使用起来是这样的：
+
+```python
+from swarms import Agent, GraphWorkflow
+
+analyst = Agent(agent_name="Analyst", model_name="gpt-5.4")
+writer = Agent(agent_name="Writer", model_name="gpt-5.4")
+researcher = Agent(agent_name="Researcher", model_name="gpt-5.4")
+editor = Agent(agent_name="Editor", model_name="gpt-5.4")
+
+wf = GraphWorkflow()
+for a in (analyst, writer, researcher, editor):
+    wf.add_node(a)
+
+wf.add_edge(analyst, writer)
+wf.add_edge(analyst, researcher)
+wf.add_edge(writer, editor)
+wf.add_edge(researcher, editor)
+
+results = wf.run("Produce a market report.")
+```
+
+没有状态 schema，没有 reducer，没有显式的入口出口接线，没有递归配置。引擎推断边界、首次运行时编译、按智能体名称返回结果。
+
+## 在云端使用 GraphWorkflow：写代码或不写代码都可以
+
+你不必在本地运行这个引擎。GraphWorkflow 在 Swarms Cloud 上以两种形式提供。
+
+偏好可视化画布的构建者可以使用 [Workflow Builder](https://cloud.swarms.world/workflow-builder)：它是 GraphWorkflow 的无代码版本，把智能体摆成节点、在它们之间连线，直接在浏览器中运行整个图，保存的流程可以跨会话持久化、重新加载和管理。
+
+编程使用则通过 Swarms Cloud API，文档见 [Swarms 文档的 GraphWorkflow 章节](https://docs.swarms.ai/docs/documentation/multi-agent/graph_workflow#graphworkflow)。论文中描述的同一个编译一次引擎在托管基础设施上运行你的图，并且可以扩展到数百个智能体的工作流，而这正是论文证明编排开销最要紧的规模区间。
+
+## 结语
+
+智能体工作流的执行频率足够高、冷启动足够频繁、扇出足够大，编排开销已经从舍入误差变成了一个系统问题。论文的答案是把一个老思想用得干净利落：把静态 DAG 允许的一切分析移进一个显式、缓存、失效安全的编译步骤，让运行循环只剩下一件事：用单个共享线程池扫描一份冻结的计划，顺序段走内联路径。
+
+在具体数字之外，这套成本分类体系和发布的测试框架意在比数字活得更久：它们让智能体基础设施社区能够按场景（冷路径对稳态、深度对宽度）而不是按轶事来比较编排器。如果你在构建多智能体系统，这篇论文值得一读，这套基准值得在你自己的硬件上跑一遍。
+
+## 链接与资源
+
+| 资源 | 链接 |
+| --- | --- |
+| 论文全文（PDF） | [github.com/The-Swarm-Corporation/GraphWorkflow-Paper](https://github.com/The-Swarm-Corporation/GraphWorkflow-Paper/blob/main/main.pdf) |
+| 基准测试套件与原始数据 | [GraphWorkflow-Paper/benchmarks](https://github.com/The-Swarm-Corporation/GraphWorkflow-Paper/tree/main/benchmarks) |
+| Swarms 框架（GitHub） | [github.com/kyegomez/swarms](https://github.com/kyegomez/swarms) |
+| Workflow Builder（无代码 GraphWorkflow） | [cloud.swarms.world/workflow-builder](https://cloud.swarms.world/workflow-builder) |
+| GraphWorkflow 云端文档 | [docs.swarms.ai](https://docs.swarms.ai/docs/documentation/multi-agent/graph_workflow#graphworkflow) |
+| GraphWorkflow 框架文档 | [docs.swarms.world](https://docs.swarms.world/en/latest/swarms/structs/graph_workflow/) |
+| Swarms Cloud | [cloud.swarms.world](https://cloud.swarms.world) |
+| Swarms Marketplace | [swarms.world](https://swarms.world) |
+| Swarms 的 X 账号 | [x.com/swarms_corp](https://x.com/swarms_corp) |

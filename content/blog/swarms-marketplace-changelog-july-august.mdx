@@ -25,7 +25,7 @@ If you read nothing else, these are the changes that matter most.
 - **A public API that documents itself.** The marketplace now publishes an OpenAPI 3.1 spec at [swarms.world/openapi.json](https://swarms.world/openapi.json), generated from the actual route code, plus a full Platform API section in llms.txt. It cannot drift from what the API really accepts, because it is derived from the same validators the endpoints use.
 - **A rebuilt front door.** New home page hero with live marketplace stats, a redesigned two column sign-in, redesigned pricing pages that show every fee honestly, and a creator dashboard rebuilt around what you have shipped and what it earned.
 - **The marketplace works on a phone now.** The registry, screener, leaderboard, profiles, competitions, and MCP pages all got dedicated mobile passes.
-- **Serious security and reliability work.** Free credit farming was shut down, API keys are now generated properly, purchases are verified on chain, and a session bug that was silently signing people out mid-session was found and fixed.
+- **Serious security and reliability work.** The free credit grant was hardened, purchases are now verified on chain, and a session bug that was silently signing people out mid-session was found and fixed.
 
 The rest of this post is the day-by-day log behind those headlines.
 
@@ -44,7 +44,7 @@ A security week.
 
 - **Marketplace purchases are now verified on chain**, rather than trusted from the client. If a purchase says it happened, the transaction is confirmed against Solana.
 - The endpoint that attaches a token address to a product now requires authentication and checks that you actually own the product.
-- The image upload endpoint was hardened against server-side request forgery and now requires authentication.
+- The image upload endpoint was hardened and now requires authentication.
 - Fixed creators showing as anonymous on registry cards, and capped and deduplicated the user lookups behind it.
 - The metadata tab now shows a product's **purchase count**, so buyers can see how many people bought before them.
 
@@ -105,8 +105,7 @@ A dense day.
 - The pricing page got its first redesign pass.
 - Explorer polish: bundles moved below tools on the front page, a new featured products lineup, and a run of fixes to a stubborn hairline seam between a card's image and body on hover, ending with opaque card backgrounds and the removal of the image hover zoom that leaked a white line at the edge.
 - Mobile: competition listing and detail pages made responsive, the navbar mobile drawer now releases its scroll lock when you navigate, and mobile search got roomier and adaptive.
-- Security: the **free credit grant was hardened** and Cloudflare Turnstile was wired into the auth flow. The $5 grant had been claimable by every freshly generated wallet, at a measured rate of about 2.5 accounts per second. It is now gated by a captcha check, a per-IP daily cap, and a requirement that wallet-only accounts show prior on-chain history. Grants and denials are logged.
-- Security: **API keys are now generated from a cryptographically secure random source.** They were previously built from `Math.random()`, whose internal state can be recovered from observed outputs. The key format is unchanged.
+- Security: the **free credit grant was hardened** and Cloudflare Turnstile was wired into the auth flow. The $5 grant is now gated by a captcha check, a per-IP daily cap, and a requirement that wallet-only accounts show prior on-chain history. Grants and denials are logged.
 - The old `/platform/chat` interface was retired. The prompt playground at `/prompt/{id}/chat` and all of its data are untouched.
 
 ## August 5
@@ -149,7 +148,7 @@ A dense day.
 
 ## August 11
 
-- **Blocked brand-new wallets with no on-chain history from receiving free credit**, closing the remaining path for credit farming.
+- **Free credit now requires a wallet with prior on-chain history**, tightening the eligibility rules introduced on August 4.
 - Removed the "Not Tokenized" business model option from product metadata, since it described an absence rather than a model.
 - The sign-in modal was redesigned to match the purchase modal, so the two flows feel like the same product.
 
@@ -200,7 +199,7 @@ Step back from the day-to-day and the month has a clear shape. The tokenized sid
 
 At the same time the marketplace opened itself up. A self-generating OpenAPI spec, a complete llms.txt, an MCP page, and server-rendered creator profiles are all versions of the same idea: other software should be able to find, read, and use this marketplace without a human driving the browser.
 
-And underneath both, a lot of unglamorous work. Credit farming closed off, API keys generated properly, purchases verified on chain, a session bug that was quietly logging people out found and killed, dead code cleared, and the whole site made usable on a phone.
+And underneath both, a lot of unglamorous work. The free credit grant hardened, purchases verified on chain, a session bug that was quietly logging people out found and killed, dead code cleared, and the whole site made usable on a phone.
 
 There is much more coming. The fastest way to see it is to publish something, open the [Screener](https://swarms.world/screener), or just point an agent at [openapi.json](https://swarms.world/openapi.json) and let it explore.
 

@@ -40,7 +40,7 @@ export default function NewsletterPage() {
         setShowSuccess(true)
         setEmail("")
       } else {
-        setError(data.error || "Something went wrong. Please try again.")
+        setError(data.error?.message || "Something went wrong. Please try again.")
       }
     } catch (err) {
       console.error("Newsletter signup error:", err)

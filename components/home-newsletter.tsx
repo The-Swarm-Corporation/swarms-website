@@ -90,7 +90,7 @@ export function HomeNewsletter({
         localStorage.setItem(POPUP_SEEN_KEY, "true")
         setIsSubscribed(true)
       } else {
-        setError(data.error || t.genericError)
+        setError(data.error?.message || t.genericError)
       }
     } catch {
       setError(t.networkError)

@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
+import { apiError } from "@/lib/api-error"
 import { sendWelcomeEmail } from "@/lib/email"
 import { rateLimit } from "@/lib/rate-limit"
 
@@ -33,32 +34,29 @@ function validName(value: unknown): value is string | undefined {
 export async function POST(request: NextRequest) {
   try {
     if (!rateLimit(clientIp(request), RATE_LIMIT, RATE_WINDOW_MS)) {
-      return NextResponse.json(
-        { error: "Too many requests. Please try again later." },
-        { status: 429 },
-      )
+      return apiError(429, "rate_limited", "Too many requests. Please try again later.", "Wait ten minutes before retrying; the limit is 5 attempts per 10 minutes per IP.")
     }
 
     let body: unknown
     try {
       body = await request.json()
     } catch {
-      return NextResponse.json({ error: "Invalid request body" }, { status: 400 })
+      return apiError(400, "invalid_body", "Invalid request body", "Send a JSON object: { \"email\": \"you@example.com\" }.")
     }
 
     const { email, firstName, lastName } = (body ?? {}) as Record<string, unknown>
 
     if (!email || typeof email !== "string") {
-      return NextResponse.json({ error: "Email is required" }, { status: 400 })
+      return apiError(400, "email_required", "Email is required", "Include an \"email\" string field in the JSON body.")
     }
 
     const normalizedEmail = email.trim()
     if (normalizedEmail.length > MAX_EMAIL_LENGTH || !EMAIL_REGEX.test(normalizedEmail)) {
-      return NextResponse.json({ error: "Invalid email format" }, { status: 400 })
+      return apiError(400, "invalid_email", "Invalid email format", "Provide a valid address like you@example.com (max 254 chars).")
     }
 
     if (!validName(firstName) || !validName(lastName)) {
-      return NextResponse.json({ error: "Invalid name" }, { status: 400 })
+      return apiError(400, "invalid_name", "Invalid name", "Names are optional strings up to 100 chars without markup.")
     }
 
     console.log("Newsletter signup:", { email: normalizedEmail })
@@ -87,9 +85,6 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Newsletter signup error:", error)
 
-    return NextResponse.json(
-      { error: "Failed to subscribe. Please try again." },
-      { status: 500 },
-    )
+    return apiError(500, "internal_error", "Failed to subscribe. Please try again.", "Retry shortly; if it persists, email kye@swarms.world.")
   }
 }

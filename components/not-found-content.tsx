@@ -20,23 +20,34 @@ const zhDestinations = [
   { href: "/", label: "English site", detail: "The full English site" },
 ]
 
+// Agents recovering from a dead URL need machine-readable indexes, not just
+// navigation: the sitemap lists every live route, llms.txt is the AI entry
+// point, and the docs index covers the API surface.
+const machineIndexes = [
+  { href: "/sitemap.xml", label: "sitemap.xml" },
+  { href: "https://docs.swarms.ai/llms.txt", label: "llms.txt" },
+  { href: "https://docs.swarms.ai", label: "docs.swarms.ai" },
+]
+
 const copy = {
   en: {
     eyebrow: "Error 404",
     heading: "This page does not exist",
     body: "The URL may be mistyped, or the page may have been moved or retired. Everything below is live.",
     destinations: enDestinations,
+    machineNote: "Looking for a full index? Every live route is listed in",
   },
   zh: {
     eyebrow: "错误 404",
     heading: "页面不存在",
     body: "该网址可能有误，或页面已迁移或下线。以下链接均可正常访问。",
     destinations: zhDestinations,
+    machineNote: "需要完整索引？所有在线路由都列在",
   },
 }
 
 export function NotFoundContent({ locale = "en" }: { locale?: "en" | "zh" }) {
-  const { eyebrow, heading, body, destinations } = copy[locale]
+  const { eyebrow, heading, body, destinations, machineNote } = copy[locale]
 
   return (
     <main className="min-h-[70vh] bg-black px-4 pb-24 pt-40 text-white">
@@ -58,6 +69,21 @@ export function NotFoundContent({ locale = "en" }: { locale?: "en" | "zh" }) {
             </li>
           ))}
         </ul>
+
+        <p className="mt-8 text-sm text-neutral-500">
+          {machineNote}{" "}
+          {machineIndexes.map((index, i) => (
+            <span key={index.href}>
+              <a
+                href={index.href}
+                className="text-neutral-400 underline underline-offset-4 transition-colors hover:text-white"
+              >
+                {index.label}
+              </a>
+              {i < machineIndexes.length - 1 ? " · " : ""}
+            </span>
+          ))}
+        </p>
       </div>
     </main>
   )

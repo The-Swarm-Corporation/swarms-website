@@ -36,7 +36,7 @@ export default function MobileWaitlistPage() {
         setShowSuccess(true)
         setEmail("")
       } else {
-        setError(data.error || "Something went wrong. Please try again.")
+        setError(data.error?.message || "Something went wrong. Please try again.")
       }
     } catch (err) {
       console.error("Mobile waitlist signup error:", err)

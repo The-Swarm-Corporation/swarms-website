@@ -55,7 +55,7 @@ export function NewsletterPopup({ isOpen, onClose }: NewsletterPopupProps) {
           setLastName("")
         }, 3000)
       } else {
-        setError(data.error || "Something went wrong")
+        setError(data.error?.message || "Something went wrong")
         console.error("Subscription failed:", data)
       }
     } catch (err) {

@@ -1,0 +1,248 @@
+---
+title: "Swarms Marketplace Changelog July 21st - August 21st: Competitions, the Screener, MCP Servers, and a Public API"
+description: "A day by day log of everything that shipped on the Swarms Marketplace over the last month: on-chain agent competitions with real prize pools, the tokenized agent Screener, a dedicated MCP Servers page, a self-updating public API spec, a rebuilt home page and sign-in, a full mobile pass, and a serious security hardening effort, each written in plain language so you know what changed and what it means for you."
+date: "2026-08-21"
+author: "Kye Gomez"
+categories: ["Product"]
+readTime: "17 min read"
+featured: true
+image: "/swarms_marketplace_changelog_augu12.png"
+---
+
+# Swarms Marketplace Changelog: July 21 to August 21
+
+The [previous changelog](https://swarms.ai/blog) closed on July 21 with card payments, bundles, and upvotes freshly live. The month since has been about a different kind of work: making the tokenized side of the marketplace legible, opening the platform up to other agents through a real API surface, rebuilding the pages you land on first, and hardening the parts of the system that were quietly exposed.
+
+Over 200 changes shipped. This post is the full record, written in plain language so you know exactly what changed and what it means for you, whether you publish agents, trade tokenized ones, build against the API, or just browse.
+
+## Overview
+
+If you read nothing else, these are the changes that matter most.
+
+- **Agent competitions with real prize pools.** Two competitions ran this month, $1,000 and then $2,000 in SOL, ranked by actual on-chain trading volume reconstructed from raw transactions rather than a rolling 24 hour number that punishes early traders.
+- **The Screener and the Frenzy page.** Every tokenized product now lives on two dedicated pages with live market data, trending rows, a near real-time launch feed, and filters, so you can watch the token side of the marketplace as it moves.
+- **MCP Servers page.** Every MCP tagged agent, prompt, and tool now has a home at [swarms.world/mcp](https://swarms.world/mcp), browsable without an account.
+- **A public API that documents itself.** The marketplace now publishes an OpenAPI 3.1 spec at [swarms.world/openapi.json](https://swarms.world/openapi.json), generated from the actual route code, plus a full Platform API section in llms.txt. It cannot drift from what the API really accepts, because it is derived from the same validators the endpoints use.
+- **A rebuilt front door.** New home page hero with live marketplace stats, a redesigned two column sign-in, redesigned pricing pages that show every fee honestly, and a creator dashboard rebuilt around what you have shipped and what it earned.
+- **The marketplace works on a phone now.** The registry, screener, leaderboard, profiles, competitions, and MCP pages all got dedicated mobile passes.
+- **Serious security and reliability work.** Free credit farming was shut down, API keys are now generated properly, purchases are verified on chain, and a session bug that was silently signing people out mid-session was found and fixed.
+
+The rest of this post is the day-by-day log behind those headlines.
+
+Two notes before the log. First, it only covers work that is live today. Several things shipped and were rolled back during this window, and those are left out since they never really reached you. Second, the internal plumbing (dead code removal, dependency cleanups, lint sweeps, test suites) is summarized rather than listed line by line, because it matters to us and not to you.
+
+## July 21
+
+- The marketplace home page got a **new hero**: a two column layout with the headline and marketplace copy on the left, and an auto-advancing featured product card on the right. Below it, a publish call to action and three live stat cards showing Total Products, Total Volume, and Total Creators.
+- Bundles are now counted in those totals, so the product count reflects everything that is actually purchasable.
+- Fixed a real discovery bug: the registry redirect was validating categories against a stale list, so newly added categories like MCP, Skill, and Developer silently dropped their filter. Clicking those category pills now works.
+- Vault mode functionality was restored after a regression.
+
+## July 22 to 23
+
+A security week.
+
+- **Marketplace purchases are now verified on chain**, rather than trusted from the client. If a purchase says it happened, the transaction is confirmed against Solana.
+- The endpoint that attaches a token address to a product now requires authentication and checks that you actually own the product.
+- The image upload endpoint was hardened against server-side request forgery and now requires authentication.
+- Fixed creators showing as anonymous on registry cards, and capped and deduplicated the user lookups behind it.
+- The metadata tab now shows a product's **purchase count**, so buyers can see how many people bought before them.
+
+## July 24
+
+- **Frenzy Mode got its own page** at [swarms.world/frenzy](https://swarms.world/frenzy). It explains what frenzy agent tokens are and lists every one that has launched, with numbers that actually move: prices re-quote every 15 seconds, values that changed since the last poll turn green or red, and card sparklines are anchored to the real price 24 hours ago rather than drawn from nothing. Tokens with no 24 hour data draw no line at all instead of a fake one.
+- The page includes a creator leaderboard, a top tokens scroller, a filterable and paginated screener, a launch panel that deep links into the publish flow with your settings prefilled, and a how-it-works explainer.
+- It is readable logged out, responsive on phones and tablets, and the bonding curve wording was corrected to name Meteora.
+- The home page and hero banner were sped up.
+
+## July 27
+
+- The **sign-in experience was redesigned** into a two column layout: sign-in providers on the left (X, email, Google, GitHub, and Phantom), a brand panel on the right. Every existing sign-in path still works exactly as it did, including referral codes, the free credit grant after a Phantom sign-in, and the redirect back to where you were.
+- Prompt pages gained a **Chat button** in the sidebar, so running a prompt is one click from reading it.
+- The publish form now labels which fields are optional and which are required, and agent code is no longer a required field.
+- Comments are now paginated instead of loading in one long wall.
+- Fixed a crash where the explorer's local cache threw during server rendering.
+
+## July 28
+
+**Agent competitions launched.** This is the largest addition of the month.
+
+- New pages at [swarms.world/competitions](https://swarms.world/competitions) and a detail page per competition. The first ran from July 28 to August 5 with a $1,000 prize pool paid in SOL, split $500, $350, and $150. Every agent and prompt launched in Frenzy Mode inside the window was entered automatically and ranked by the volume it traded.
+- The interesting part is how the ranking works. Volume is reconstructed from **raw on-chain transactions** rather than read from a rolling 24 hour figure, so trading hard on day one counts exactly as much as trading on the last day. The leaderboard pages enhanced transactions per token and pairs opposing balance changes to identify each buy and sell. This was verified against a live entrant and matched an independent figure to within half a percent.
+- The publish flow got a batch of improvements: auto-select for category dropdowns, a live preview of your listing next to the pricing section, a cleaner black and white palette with a simplified published animation, and the ability to switch between Paid and Tokenized without error messages fighting you.
+- Fixed image uploads during tokenization, and failures are now logged instead of silently swallowed.
+- Footer borders were aligned and given neutral colors.
+
+## July 29
+
+- A **competition announcement banner** now sits above the home page hero. It reads from the competition data rather than carrying hardcoded copy, so it always points at whatever is running, picks up the next competition with no code change, shows a countdown for ones that have not started, and removes itself entirely when the last one closes instead of advertising a dead link.
+- Navbar button spacing was fixed, and a stray dropdown section was removed from the top of the sign-in page.
+
+## July 30 to 31
+
+- The sign-in brand panel gained real marketplace artwork and copy, the wordmark moved above the heading with a subtitle, and image quality was improved.
+- The sign-in form column was scaled up with larger type, buttons, and inputs.
+- Blog links across the platform were redirected to the right destination.
+- The competition leaderboard moved from Helius to Jupiter for its 24 hour volume figures.
+
+## August 2
+
+- The competition leaderboard was **re-ranked on volume traded since the competition opened**, using Dune's full trade history rather than a rolling 24 hour window. The old metric was simply wrong for a week-long competition: a token that traded hard on day one but was quiet by Friday ranked below one that woke up that morning. Tokens too new to appear in the history fall back to their 24 hour figure individually, so no entrant is shown a zero they have not earned.
+
+## August 3
+
+- The **creator dashboard was rebuilt** around what a creator actually wants to know. The old vanity metrics (Active Agents, Tasks Automated, Time Saved) were replaced with three real ones: Products Published with a per-type breakdown including bundles, Revenue Generated summing your net earnings after platform fees across both card and crypto sales, and Sales.
+- The dashboard also gained an Account and Settings section linking to Account, API Keys, Transactions, Organization, and Referrals, which were previously buried. The Developers block and the upsell nested inside it were removed, and the palette went monochrome.
+- **Contract address URLs now work.** Paste `swarms.world/<contract-address>` and you are redirected to that token's real product page, whether it is an agent, prompt, or tool.
+- The sign-in right panel now scales properly to screen size.
+
+## August 4
+
+A dense day.
+
+- **The MCP Servers page launched** at [swarms.world/mcp](https://swarms.world/mcp): a hero with a live server count, a featured row of the four newest MCP category agents, and an infinite-scroll catalog of every MCP tagged agent, prompt, and tool. There is a plain-language explainer of what MCP is and a publish call to action. It is browsable logged out and has its own sidebar entry.
+- The **Vaulted Tokenized Agents Competition** opened: two weeks, $2,000 in SOL split $1,000, $700, and $300, for the three Vault Mode launches with the highest on-chain trading volume. Competition pages now auto-generate their own social cards from the competition data, so every future competition gets an on-brand preview image with no design work.
+- The pricing page got its first redesign pass.
+- Explorer polish: bundles moved below tools on the front page, a new featured products lineup, and a run of fixes to a stubborn hairline seam between a card's image and body on hover, ending with opaque card backgrounds and the removal of the image hover zoom that leaked a white line at the edge.
+- Mobile: competition listing and detail pages made responsive, the navbar mobile drawer now releases its scroll lock when you navigate, and mobile search got roomier and adaptive.
+- Security: the **free credit grant was hardened** and Cloudflare Turnstile was wired into the auth flow. The $5 grant had been claimable by every freshly generated wallet, at a measured rate of about 2.5 accounts per second. It is now gated by a captcha check, a per-IP daily cap, and a requirement that wallet-only accounts show prior on-chain history. Grants and denials are logged.
+- Security: **API keys are now generated from a cryptographically secure random source.** They were previously built from `Math.random()`, whose internal state can be recovered from observed outputs. The key format is unchanged.
+- The old `/platform/chat` interface was retired. The prompt playground at `/prompt/{id}/chat` and all of its data are untouched.
+
+## August 5
+
+- The **pricing pages were rebuilt properly**, and this one is worth reading if you sell here. `/pricing` now carries a fee ledger listing every charge with explicit "You get" and "Swarms takes" columns, three earn-model cards (direct sales, tokenization, and Frenzy Mode) with proportional fee-split meters, and the API plan tiers that an old CSS override had been hiding entirely. The commission figure is imported from the same constant checkout enforces, so the page physically cannot drift from what you are actually charged.
+- Fixed Pro rendering as `$NaN` on the lifetime tab.
+- `/tokenization-pricing` was redesigned to match, which surfaced a real error: the mint cost was listed as "$0.04" when it is in fact 0.04 SOL. The page now also shows the Frenzy tier and the real bonding curve targets.
+- Fixed the publish form's auto-select choosing the wrong option.
+- The bookmark card was redesigned.
+- Sitemaps and robots.txt were refreshed.
+- Housekeeping: 11 dead dependencies removed and 39 unreachable source files deleted.
+
+## August 6
+
+- **Image performance day.** Remote images now route through a host-aware wrapper that serves them optimized where possible and gracefully unoptimized where not, instead of shipping full-size originals. The Yuki chat page's character image, an 838 KB PNG loaded three times per page, now comes down at roughly 1.5 KB.
+- Images stored on the platform are re-encoded to webp at their original dimensions, so they get smaller without getting blurry.
+- The registry page was made more interactive for mobile users.
+- The favicon now appears on the sign-in page.
+
+## August 7
+
+- **Fixed users being signed out mid-session.** This was a good bug. The session middleware refreshed your login token, received a rotated replacement, and then dropped it due to a stale reference, so your browser kept spending an already-used token. The auth system correctly reads reused tokens as theft and revokes the entire session, which meant people were signed out with no error and no explanation. Both that and a compounding bug that discarded correct session responses are fixed.
+- The MCP page was made responsive for mobile.
+- The dashboard gained an **MCP Servers tile**, which had been advertised in the section subtitle with no way to reach it.
+- Guarded a treasury environment variable so a missing value can no longer crash the account page.
+
+## August 8
+
+- The launch page was decluttered: Use Cases, Links, and GitHub import collapsed into dropdowns, along with the Agents versus Prompts notice.
+- The **add credits flow was simplified into a single amount step**. The amount interface had been written four separate times, once per payment method, and had drifted apart. Now there is one amount field that presets write into, switching payment method no longer wipes what you typed, and selecting a crypto rail no longer force-opens your wallet.
+- **The public publish API was aligned with the live database.** This fixed a genuine breakage: the API declared links as an array of strings while the database only accepts name and URL pairs, so every publish that included links failed with a database error. Both shapes are now accepted and bare URLs are normalized. Categories are normalized so registry filters actually match them, and the payment method field is honored.
+- A contract test suite was added covering the API-key write endpoints, designed so every test fails validation before touching the database and stays safe to run against production.
+- Natural language registry search switched to a stronger model, Kimi K3.
+
+## August 10
+
+- Marketplace stats now count up rather than snapping into place.
+- Bundles gained **live previews**, so you can see what is inside before you buy.
+- The registry table view was made responsive for mobile.
+
+## August 11
+
+- **Blocked brand-new wallets with no on-chain history from receiving free credit**, closing the remaining path for credit farming.
+- Removed the "Not Tokenized" business model option from product metadata, since it described an absence rather than a model.
+- The sign-in modal was redesigned to match the purchase modal, so the two flows feel like the same product.
+
+## August 12
+
+**The Screener launched** at [swarms.world/screener](https://swarms.world/screener), putting every tokenized product on one live page.
+
+- Trending row, mode filter tabs, infinite scroll, and a latest launches section ordered newest first.
+- The launch feed is near real-time: a rolling window with frequent polling, back-fill for anything missed, a real ticker column, and a manual refresh button. New launches pop in as they happen.
+- Video covers now render on screener and competition cards instead of falling back to a still.
+
+## August 13
+
+- The **user profile page and the leaderboard** were both redesigned to fit mobile.
+- Fixed new launches vanishing from the screener on page refresh.
+- API: claimable creator fees can now be queried by contract address, and the response includes the USDC equivalent.
+
+## August 14
+
+- **The marketplace now publishes an OpenAPI spec** at [swarms.world/openapi.json](https://swarms.world/openapi.json). It is an OpenAPI 3.1 document generated at build time by scanning the actual route files, so the URLs, methods, and authentication requirements come from the source rather than from a document someone has to remember to update. All request schemas were consolidated into one place, and the spec derives its request bodies from the same validators the endpoints run, which means changing a validator updates the published spec in the same edit. Point an agent at it, generate a client from it, or diff it to track changes.
+- **llms.txt gained a full Platform API section** cataloging all 26 endpoints by purpose, with authentication explained, and `/llm.txt` now serves the same document for anyone who guesses the singular. A test guards against the two drifting apart, and against the spec listing an endpoint that llms.txt does not.
+- Reviewers now get a confirmation email for the product they reviewed.
+- The screener was designed to fit mobile, and an extra scrollbar was removed.
+
+## August 15
+
+- Tokenized products gained a **Buy on GMGN** button, one of Solana's largest trading platforms. The Photon button was removed.
+- **Fixed contract address search in the navbar.** Pasting a fresh launch's contract address used to send you to Solscan for up to 10 hours, because the resolver read from a cached dataset that did not include new launches, and downloaded roughly 8 MB client-side to find one row. It now queries directly: instant, current, and about 1 KB. Tokenized tools resolve correctly too, which they never did before.
+
+## August 16
+
+- Yuki, the marketplace assistant, is now available on the newer pages.
+- A repo-wide cleanup removed every unused import.
+
+## August 18
+
+- **Public bios.** You can now write a bio in account settings, up to 500 characters, and it appears on your public profile under your name.
+- **Creator profiles were overhauled for search.** Previously, crawlers visiting any of the 589 profile URLs got a loading spinner and the same generic title, because the page rendered entirely in the browser. Profiles are now server rendered: the full header and product grid arrive as real HTML, each profile has its own title, description, and structured data, unknown usernames return a proper 404 instead of an empty page, product cards carry real links crawlers can follow, and sitemap entries carry the date of the creator's most recent publication. If you publish here, this is the work that makes your profile findable from outside the marketplace.
+- The profile header was decluttered, with the redundant stats strip removed since the tab bar already carries the counts.
+
+## August 20
+
+- **Drag and drop prompt import.** Drop a `.md`, `.mdx`, or `.txt` file onto the launch form, including Anthropic `SKILL.md` files, and it fills in the prompt body along with the name, description, and tags read from the file's frontmatter. It only fills fields you have not already typed into, warns before overwriting a prompt you have started, and swallows stray file drops near the form so a near miss cannot navigate away and wipe your work.
+
+## Conclusion
+
+Step back from the day-to-day and the month has a clear shape. The tokenized side of the marketplace got the infrastructure it was missing: two competitions with prize pools ranked on volume that is actually measured rather than approximated, a Frenzy page and a Screener that show the market moving in real time, and contract addresses that resolve to products anywhere you paste them.
+
+At the same time the marketplace opened itself up. A self-generating OpenAPI spec, a complete llms.txt, an MCP page, and server-rendered creator profiles are all versions of the same idea: other software should be able to find, read, and use this marketplace without a human driving the browser.
+
+And underneath both, a lot of unglamorous work. Credit farming closed off, API keys generated properly, purchases verified on chain, a session bug that was quietly logging people out found and killed, dead code cleared, and the whole site made usable on a phone.
+
+There is much more coming. The fastest way to see it is to publish something, open the [Screener](https://swarms.world/screener), or just point an agent at [openapi.json](https://swarms.world/openapi.json) and let it explore.
+
+## Frequently Asked Questions
+
+**What are the agent competitions, and how do I enter?**
+Competitions run at [swarms.world/competitions](https://swarms.world/competitions) with prize pools paid in SOL. Entry is automatic: launch a qualifying product inside the competition window and you are on the leaderboard. The first competition took every Frenzy Mode launch in the window; the second took Vault Mode launches only. Ranking is by real on-chain trading volume accumulated since the competition opened, not by a rolling 24 hour figure.
+
+**What is the Screener?**
+[swarms.world/screener](https://swarms.world/screener) lists every tokenized product on the marketplace on one page, with trending, filters by mode, infinite scroll, and a near real-time feed of new launches as they happen. The [Frenzy page](https://swarms.world/frenzy) is the companion view focused on frenzy agent tokens, with live prices, sparklines, and a creator leaderboard.
+
+**How do I use the marketplace API from an agent?**
+Start with [swarms.world/openapi.json](https://swarms.world/openapi.json), a machine-readable OpenAPI 3.1 description of every endpoint, generated from the route code itself so it cannot fall out of date. [swarms.world/llms.txt](https://swarms.world/llms.txt) is the human and agent readable index of the same surface, with all 26 endpoints cataloged by purpose. Read endpoints are public; publishing and account endpoints need an API key from [your API keys page](https://swarms.world/platform/api-keys).
+
+**What is the MCP Servers page?**
+[swarms.world/mcp](https://swarms.world/mcp) collects every MCP tagged agent, prompt, and tool on the marketplace in one browsable catalog, with a plain-language explanation of what Model Context Protocol is and how these listings fit into it. No account needed.
+
+**Why was I getting signed out randomly, and is it fixed?**
+Yes, fixed on August 7. A bug in the session middleware meant your login token was refreshed but the rotated replacement was never delivered to your browser. Your next request looked like a reused token, which the auth system correctly treats as theft, so it revoked the session. There was no error message, which is why it felt random.
+
+**Can I still buy with a credit card?**
+Yes. Card payments through Stripe went live on July 15 and are unchanged. The August pricing redesign now shows every fee on both rails explicitly, with a ledger of what you get and what the platform takes.
+
+**Did anything get removed or rolled back?**
+Several things shipped and were reverted during this window, including an image resizing change, an optional SWARMS quote mint for token launches, and a sign-in redirect behavior. This log only lists what is live today, so those are intentionally left out. The `/platform/chat` interface was retired on August 4; the prompt playground and all chat data were kept.
+
+## Links and Resources
+
+| Resource | Link |
+| --- | --- |
+| Swarms Marketplace | [swarms.world](https://swarms.world) |
+| Tokenized Agent Screener | [swarms.world/screener](https://swarms.world/screener) |
+| Frenzy Mode | [swarms.world/frenzy](https://swarms.world/frenzy) |
+| Competitions | [swarms.world/competitions](https://swarms.world/competitions) |
+| MCP Servers | [swarms.world/mcp](https://swarms.world/mcp) |
+| Agent Registry | [swarms.world/platform/registry](https://swarms.world/platform/registry) |
+| Publish a product | [swarms.world/launch](https://swarms.world/launch) |
+| Pricing and fees | [swarms.world/pricing](https://swarms.world/pricing) |
+| OpenAPI specification | [swarms.world/openapi.json](https://swarms.world/openapi.json) |
+| llms.txt | [swarms.world/llms.txt](https://swarms.world/llms.txt) |
+| Leaderboard | [swarms.world/platform/leaderboard](https://swarms.world/platform/leaderboard) |
+| Yuki assistant | [swarms.world/yuki/chat](https://swarms.world/yuki/chat) |
+| Previous changelog, June 1 to July 21 | [swarms.ai/blog](https://swarms.ai/blog) |
+| Documentation | [docs.swarms.ai](https://docs.swarms.ai) |
+| Support | [swarms.world/support](https://swarms.world/support) |

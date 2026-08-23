@@ -287,7 +287,7 @@ export async function generateCertificatePDF(
   y += 20;
 
   // This certificate is proudly awarded to
-  setFont(doc, "Montserrat", "bold", 12);
+  setFont(doc, "Montserrat", "normal", 12);
   setTextColor(doc, GRAY_300);
   doc.text("This certificate is proudly awarded to", centerX, y, {
     align: "center",
@@ -302,7 +302,7 @@ export async function generateCertificatePDF(
   y += 17;
 
   // for successfully completing the
-  setFont(doc, "Montserrat", "bold", 12);
+  setFont(doc, "Montserrat", "normal", 12);
   setTextColor(doc, GRAY_300);
   doc.text("for successfully completing the", centerX, y, { align: "center" });
   y += 17;
@@ -317,16 +317,16 @@ export async function generateCertificatePDF(
   // Completion Date — inline label + value, monospace
   const label = "Completion Date: ";
   const value = formatDate(certificate.completionDate);
-  setFont(doc, "Montserrat", "bold", 11);
+  setFont(doc, "Montserrat", "normal", 11);
   const labelWidth = doc.getTextWidth(label);
-  setFont(doc, "Montserrat", "bold", 11);
+  setFont(doc, "Montserrat", "normal", 11);
   const valueWidth = doc.getTextWidth(value);
   const lineStartX = centerX - (labelWidth + valueWidth) / 2;
 
-  setFont(doc, "Montserrat", "bold", 11);
+  setFont(doc, "Montserrat", "normal", 11);
   setTextColor(doc, GRAY_500);
   doc.text(label, lineStartX, y, { align: "left" });
-  setFont(doc, "Montserrat", "bold", 11);
+  setFont(doc, "Montserrat", "normal", 11);
   setTextColor(doc, WHITE);
   doc.text(value, lineStartX + labelWidth, y, { align: "left" });
 

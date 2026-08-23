@@ -214,16 +214,16 @@ export async function generateCertificatePDF(
   let y = 46;
 
   // SWARMS ACADEMY
-  setFont(doc, "Montserrat", "bold", 8);
+  setFont(doc, "Montserrat", "bold", 11);
   setTextColor(doc, NEON_RED);
   doc.text("S W A R M S   A C A D E M Y", centerX, y, { align: "center" });
-  y += 13;
+  y += 16;
 
   // Certificate of Completion
-  setFont(doc, "Montserrat", "bold", 23);
+  setFont(doc, "Montserrat", "bold", 30);
   setTextColor(doc, WHITE);
   doc.text("Certificate of Completion", centerX, y, { align: "center" });
-  y += 22;
+  y += 26;
 
   // Logo flanked by glowing lines with small diamond nodes at the ends
   const logoSize = 16;
@@ -279,49 +279,49 @@ export async function generateCertificatePDF(
     logoSize,
   );
 
-  y += 20;
+  y += 22;
 
   // This certificate is proudly awarded to
-  setFont(doc, "Montserrat", "bold", 12);
+  setFont(doc, "Montserrat", "bold", 16);
   setTextColor(doc, GRAY_300);
   doc.text("This certificate is proudly awarded to", centerX, y, {
     align: "center",
   });
-  y += 18;
+  y += 22;
 
   // Recipient name — bold monospace, auto-sized to always stay on one line
   const displayName = certificate.recipientName?.trim() || "Your Name";
-  fitSingleLine(doc, displayName, textMaxWidth, "Montserrat", "bold", 28, 16);
+  fitSingleLine(doc, displayName, textMaxWidth, "Montserrat", "bold", 36, 20);
   setTextColor(doc, WHITE);
   doc.text(displayName, centerX, y, { align: "center" });
-  y += 17;
+  y += 22;
 
   // for successfully completing the
-  setFont(doc, "Montserrat", "bold", 12);
+  setFont(doc, "Montserrat", "bold", 16);
   setTextColor(doc, GRAY_300);
   doc.text("for successfully completing the", centerX, y, { align: "center" });
-  y += 17;
+  y += 22;
 
   // Course title — bold, auto-sized to stay on one line
   const courseTitle = certificate.courseTitle?.trim() || "";
-  fitSingleLine(doc, courseTitle, textMaxWidth, "Montserrat", "bold", 20, 14);
+  fitSingleLine(doc, courseTitle, textMaxWidth, "Montserrat", "bold", 28, 18);
   setTextColor(doc, WHITE);
   doc.text(courseTitle, centerX, y, { align: "center" });
-  y += 26;
+  y += 32;
 
   // Completion Date — inline label + value, monospace
   const label = "Completion Date: ";
   const value = formatDate(certificate.completionDate);
-  setFont(doc, "Montserrat", "bold", 11);
+  setFont(doc, "Montserrat", "bold", 14);
   const labelWidth = doc.getTextWidth(label);
-  setFont(doc, "Montserrat", "bold", 11);
+  setFont(doc, "Montserrat", "bold", 14);
   const valueWidth = doc.getTextWidth(value);
   const lineStartX = centerX - (labelWidth + valueWidth) / 2;
 
-  setFont(doc, "Montserrat", "bold", 11);
+  setFont(doc, "Montserrat", "bold", 14);
   setTextColor(doc, GRAY_500);
   doc.text(label, lineStartX, y, { align: "left" });
-  setFont(doc, "Montserrat", "bold", 11);
+  setFont(doc, "Montserrat", "bold", 14);
   setTextColor(doc, WHITE);
   doc.text(value, lineStartX + labelWidth, y, { align: "left" });
 

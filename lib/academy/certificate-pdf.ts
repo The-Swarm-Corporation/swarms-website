@@ -167,6 +167,8 @@ export function generateCertificatePDF(certificate: CertificateData): Blob {
   const borderW = CONTENT_WIDTH
   const borderH = PAGE_HEIGHT - 2 * MARGIN
   
+  const centerX = PAGE_WIDTH / 2
+
   drawCornerBrackets(doc, borderX, borderY, borderW, borderH, NEON_RED, 16, 2)
   
   // Inner subtle border
@@ -179,7 +181,6 @@ export function generateCertificatePDF(certificate: CertificateData): Blob {
   doc.addImage(SWARMS_LOGO_SVG, "SVG", centerX - logoSize / 2, MARGIN + 10, logoSize, logoSize)
 
   let y = MARGIN + 20 + logoSize + 6
-  const centerX = PAGE_WIDTH / 2
 
   // SWARMS ACADEMY - small, tracked, neon red
   setFont(doc, "normal", 9)

@@ -19,6 +19,8 @@ const BLACK = [0, 0, 0] as const
 const NEON_RED = [255, 45, 85] as const
 const DARK_RED = [139, 0, 30] as const
 
+const SWARMS_LOGO_SVG = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTgwIiBoZWlnaHQ9IjE4MCIgdmlld0JveD0iMCAwIDE4MCAxODAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxwYXRoIGQ9Ik05MCAyLjVDMTM4LjMyNSAyLjUgMTc3LjUgNDEuNjc1MSAxNzcuNSA5MEMxNzcuNSAxMzguMzI1IDEzOC4zMjUgMTc3LjUgOTAgMTc3LjVDNDEuNjc1MSAxNzcuNSAyLjUgMTM4LjMyNSAyLjUgOTBDMi41IDQxLjY3NTEgNDEuNjc1MSAyLjUgOTAgMi41WiIgc3Ryb2tlPSIjRUUwNzEyIiBzdHJva2Utd2lkdGg9IjUiLz4KPHBhdGggZD0iTTc4LjEwNTQgMjcuMzg4N0w5MC4wNzM4IDQ4LjIzMUw3OC4xMDU0IDY5LjA3MzRINTQuMTY4NUw0Mi4yIDQ4LjIzMUw1NC4xNjg1IDI3LjM4ODdMNzguMTA1NCAyNy4zODg3WiIgZmlsbD0iI0Y1MDcwQyIvPgo8cGF0aCBkPSJNNzguMTA1NCAxMTEuMzY3TDkwLjA3MzggMTMyLjIwOUw3OC4xMDU0IDE1My4wNTJINTQuMTY4NUw0Mi4yIDEzMi4yMDlMNTQuMTY4NSAxMTEuMzY3SDc4LjEwNTRaIiBmaWxsPSIjRjUwNzBDIi8+CjxwYXRoIGQ9Ik01NC4xNjY0IDY5LjQwMTZMNjYuMTM0OSA5MC4yNDM5TDU0LjE2NjQgMTExLjA4NkgzMC4yMjk2TDE4LjI2MTEgOTAuMjQzOUwzMC4yMjk2IDY5LjQwMTZINTQuMTY2NFoiIGZpbGw9IiNGNTA3MEMiLz4KPHBhdGggZD0iTTEyNi4xNjggMjcuMzg4N0wxMzguMTM3IDQ4LjIzMUwxMjYuMTY4IDY5LjA3MzRIMTAyLjIzMkw5MC4yNjMxIDQ4LjIzMUwxMDIuMjMyIDI3LjM4ODdMMTI2LjE2OCAyNy4zODg3WiIgZmlsbD0iI0Y1MDcwQyIvPgo8cGF0aCBkPSJNMTI2LjE2OCAxMTEuMzY3TDEzOC4xMzcgMTMyLjIwOUwxMjYuMTY4IDE1My4wNTJIMTAyLjIzMkw5MC4yNjMxIDEzMi4yMDlMMTAyLjIzMiAxMTEuMzY3SDEyNi4xNjhaIiBmaWxsPSIjRjUwNzBDIi8+CjxwYXRoIGQ9Ik0xMDIuMjMgNjkuNDAxNkwxMTQuMTk4IDkwLjI0MzlMMTAyLjIzIDExMS4wODZINzguMjkyN0w2Ni4zMjQyIDkwLjI0MzlMNzguMjkyNyA2OS40MDE2SDEwMi4yM1oiIGZpbGw9IiNGNTA3MEMiLz4KPHBhdGggZD0iTTE1MC4yOTMgNjkuNDAxNkwxNjIuMjYxIDkwLjI0MzlMMTUwLjI5MyAxMTEuMDg2SDEyNi4zNTZMMTE0LjM4NyA5MC4yNDM5TDEyNi4zNTYgNjkuNDAxNkgxNTAuMjkzWiIgZmlsbD0iI0Y1MDcwQyIvPgo8L3N2Zz4K"
+
 function setFont(doc: jsPDF, style: "normal" | "bold" = "normal", size: number) {
   doc.setFont("helvetica", style)
   doc.setFontSize(size)
@@ -172,7 +174,11 @@ export function generateCertificatePDF(certificate: CertificateData): Blob {
   doc.setLineWidth(0.5)
   doc.roundedRect(borderX + 3, borderY + 3, borderW - 6, borderH - 6, 3, 3, "D")
 
-  let y = MARGIN + 20
+  // Swarms logo - top center
+  const logoSize = 18
+  doc.addImage(SWARMS_LOGO_SVG, "SVG", centerX - logoSize / 2, MARGIN + 10, logoSize, logoSize)
+
+  let y = MARGIN + 20 + logoSize + 6
   const centerX = PAGE_WIDTH / 2
 
   // SWARMS ACADEMY - small, tracked, neon red

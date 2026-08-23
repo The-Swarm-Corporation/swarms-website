@@ -14,9 +14,9 @@ export function CourseCertificate({ certificate }: { certificate: CertificateDat
     : "—"
 
   return (
-    <article className="academy-certificate border border-red-500/20 bg-black p-8 sm:p-12 md:p-16 print:border-red-500 print:border-2 print:rounded-none print:shadow-none" role="article" aria-labelledby="certificate-title">
-      <div className="relative h-full min-h-[calc(100vh-4rem)] flex flex-col print:min-h-auto print:flex-col">
-        <header className="flex flex-col items-center text-center pb-8 border-b border-red-500/20 print:pb-6">
+    <article className="academy-certificate border border-red-500/20 bg-black rounded-2xl p-8 sm:p-12 md:p-16 shadow-xl" role="article" aria-labelledby="certificate-title">
+      <div className="relative h-full min-h-[calc(100vh-4rem)] flex flex-col">
+        <header className="flex flex-col items-center text-center pb-8 border-b border-red-500/20">
           <div className="flex items-center justify-center gap-3 mb-4">
             <div className="w-12 h-12 rounded-lg flex items-center justify-center bg-red-500/10 border border-red-500/30">
               <Image
@@ -39,7 +39,7 @@ export function CourseCertificate({ certificate }: { certificate: CertificateDat
             Certificate of Completion
           </h1>
           <div className="mt-6 flex items-center justify-center gap-6">
-            <div className="h-[1px] w-24 bg-gradient-to-r from-transparent via-red-500/50 to-transparent print:bg-red-500/30" aria-hidden="true" />
+            <div className="h-[1px] w-24 bg-gradient-to-r from-transparent via-red-500/50 to-transparent" aria-hidden="true" />
             <div className="relative">
               <div className="w-10 h-10 rounded-full flex items-center justify-center border border-red-500/30 bg-red-500/10">
                 <Image
@@ -52,11 +52,11 @@ export function CourseCertificate({ certificate }: { certificate: CertificateDat
                 />
               </div>
             </div>
-            <div className="h-[1px] w-24 bg-gradient-to-r from-transparent via-red-500/50 to-transparent print:bg-red-500/30" aria-hidden="true" />
+            <div className="h-[1px] w-24 bg-gradient-to-r from-transparent via-red-500/50 to-transparent" aria-hidden="true" />
           </div>
         </header>
 
-        <main className="flex-1 flex flex-col items-center justify-center text-center py-10 print:py-6">
+        <main className="flex-1 flex flex-col items-center justify-center text-center py-10">
           <p className="text-base font-normal leading-relaxed text-white/50 sm:text-lg mb-6 max-w-2xl">
             This certificate is proudly awarded to
           </p>
@@ -66,9 +66,9 @@ export function CourseCertificate({ certificate }: { certificate: CertificateDat
               {displayName}
             </p>
             <div className="mt-4 flex items-center justify-center gap-4">
-              <div className="h-[1px] w-16 bg-gradient-to-r from-transparent via-red-500/50 to-transparent print:bg-red-500/30" aria-hidden="true" />
+              <div className="h-[1px] w-16 bg-gradient-to-r from-transparent via-red-500/50 to-transparent" aria-hidden="true" />
               <span className="font-mono text-[10px] uppercase tracking-[0.3em] text-red-400/60">Recipient</span>
-              <div className="h-[1px] w-16 bg-gradient-to-r from-transparent via-red-500/50 to-transparent print:bg-red-500/30" aria-hidden="true" />
+              <div className="h-[1px] w-16 bg-gradient-to-r from-transparent via-red-500/50 to-transparent" aria-hidden="true" />
             </div>
           </div>
 
@@ -98,7 +98,7 @@ export function CourseCertificate({ certificate }: { certificate: CertificateDat
           </div>
         </main>
 
-        <footer className="pt-8 border-t border-red-500/20 print:pt-6">
+        <footer className="pt-8 border-t border-red-500/20">
           <div className="grid grid-cols-2 gap-8 sm:grid-cols-4 max-w-3xl mx-auto">
             <div className="sm:col-span-2">
               <div className="relative h-20">
@@ -130,39 +130,6 @@ export function CourseCertificate({ certificate }: { certificate: CertificateDat
           </div>
         </footer>
       </div>
-
-      <style jsx global>{`
-        @media print {
-          .academy-certificate {
-            border: 1px solid #ef4444 !important;
-            border-radius: 0 !important;
-            box-shadow: none !important;
-            padding: 2rem !important;
-            max-width: none !important;
-            page-break-inside: avoid;
-            background: #000 !important;
-            min-height: auto !important;
-          }
-          @page {
-            margin: 0.5in;
-            size: landscape;
-            background: #000;
-          }
-          html, body {
-            background: #000 !important;
-            color: #fff !important;
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-          }
-          .academy-certificate * {
-            color: #fff !important;
-          }
-          .academy-certificate img {
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-          }
-        }
-      `}</style>
     </article>
   )
 }

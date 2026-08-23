@@ -2,15 +2,17 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Download, Printer } from "lucide-react"
+import { Download, FileText } from "lucide-react"
 import { CourseCertificate } from "@/components/academy/course-certificate"
 import { useAcademyProgress, getCertificateData } from "@/lib/academy/progress"
+import { downloadCertificatePDF } from "@/lib/academy/certificate-pdf"
 
 export default function CertificatePage() {
   const router = useRouter()
   const progress = useAcademyProgress()
   const [certificate, setCertificate] = useState<ReturnType<typeof getCertificateData> | null>(null)
   const [loading, setLoading] = useState(true)
+  const [downloading, setDownloading] = useState(false)
 
   useEffect(() => {
     const cert = getCertificateData(progress)
@@ -21,6 +23,16 @@ export default function CertificatePage() {
     }
     setLoading(false)
   }, [progress, router])
+
+  const handleDownload = () => {
+    if (!certificate) return
+    setDownloading(true)
+    try {
+      downloadCertificatePDF(certificate)
+    } finally {
+      setTimeout(() => setDownloading(false), 500)
+    }
+  }
 
   if (loading) {
     return (
@@ -41,26 +53,16 @@ export default function CertificatePage() {
   return (
     <div className="min-h-screen w-full bg-black text-white px-4 py-12">
       <div className="w-full max-w-4xl mx-auto">
-        <div className="mb-6 flex justify-end gap-3 print:hidden">
+        <div className="mb-6 flex justify-end gap-3">
           <button
             type="button"
-            onClick={() => window.print()}
-            className="inline-flex items-center gap-2 rounded-full border border-red-500/30 bg-black/50 px-5 py-2.5 text-sm font-medium text-red-400 transition-colors hover:border-red-400 hover:text-red-300 hover:bg-red-500/10 backdrop-blur-sm"
-            aria-label="Print certificate"
+            onClick={handleDownload}
+            disabled={downloading}
+            className="inline-flex items-center gap-2 rounded-full border border-red-500/30 bg-black/50 px-5 py-2.5 text-sm font-medium text-red-400 transition-colors hover:border-red-400 hover:text-red-300 hover:bg-red-500/10 backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            aria-label="Download certificate PDF"
           >
-            <Printer className="h-4 w-4" strokeWidth={1.5} />
-            Print
-          </button>
-          <button
-            type="button"
-            onClick={async () => {
-              await window.print()
-            }}
-            className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-black/50 px-5 py-2.5 text-sm font-medium text-white/80 transition-colors hover:border-white/30 hover:text-white hover:bg-white/10 backdrop-blur-sm"
-            aria-label="Save as PDF"
-          >
-            <Download className="h-4 w-4" strokeWidth={1.5} />
-            Save as PDF
+            <FileText className="h-4 w-4" strokeWidth={1.5} />
+            {downloading ? "Generating..." : "Download Certificate PDF"}
           </button>
         </div>
 

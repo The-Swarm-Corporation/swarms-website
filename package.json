@@ -30,6 +30,7 @@
     "date-fns": "^4.1.0",
     "framer-motion": "latest",
     "gray-matter": "^4.0.3",
+    "jspdf": "^4.2.1",
     "lucide-react": "^0.454.0",
     "mermaid": "^11.16.0",
     "motion": "^12.23.26",

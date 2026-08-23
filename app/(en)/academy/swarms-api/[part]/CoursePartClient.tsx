@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { ArrowLeft, ArrowRight, CheckCircle2 } from "lucide-react"
+import { ArrowLeft, ArrowRight, CheckCircle2, GraduationCap } from "lucide-react"
 
 import { Navigation } from "@/components/navigation"
 import { CourseBlocks } from "@/components/academy/course-blocks"
@@ -10,7 +10,6 @@ import { PartQuiz } from "@/components/academy/part-quiz"
 import { LessonComplete } from "@/components/academy/lesson-complete"
 import { PartProgress, PartToc } from "@/components/academy/part-progress"
 import { CourseCompleteDetector } from "@/components/academy/course-complete-detector"
-import { CertificateModal } from "@/components/academy/certificate-modal"
 import { siteConfig } from "@/app/metadata"
 import { courseParts } from "@/lib/academy/swarms-api-course"
 import { useAcademyProgress, getCertificateData, isCourseComplete } from "@/lib/academy/progress"
@@ -35,14 +34,6 @@ export function CoursePartClient({ part, slug }: CoursePartClientProps) {
   const index = courseParts.findIndex((p) => p.slug === part.slug)
   const prev = index > 0 ? courseParts[index - 1] : null
   const next = index < courseParts.length - 1 ? courseParts[index + 1] : null
-
-  const [certModalOpen, setCertModalOpen] = useState(false)
-
-  useEffect(() => {
-    const handler = () => setCertModalOpen(true)
-    window.addEventListener("open-certificate-modal", handler)
-    return () => window.removeEventListener("open-certificate-modal", handler)
-  }, [])
 
   const progress = useAcademyProgress()
   const certificate = getCertificateData(progress)
@@ -260,11 +251,15 @@ export function CoursePartClient({ part, slug }: CoursePartClientProps) {
       </main>
       <CourseCompleteDetector partSlug={slug} />
       {certificate && (
-        <CertificateModal
-          open={certModalOpen}
-          onOpenChange={setCertModalOpen}
-          certificate={certificate}
-        />
+        <div className="fixed bottom-6 right-6 z-50 animate-slide-up">
+          <Link
+            href="/academy/certificate"
+            className="inline-flex items-center gap-2 rounded-full bg-red-500 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-red-600 shadow-lg"
+          >
+            <GraduationCap className="h-5 w-5" />
+            View Certificate
+          </Link>
+        </div>
       )}
     </div>
   )

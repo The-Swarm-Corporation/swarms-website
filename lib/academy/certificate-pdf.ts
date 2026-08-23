@@ -22,25 +22,6 @@ function setTextColor(doc: jsPDF, color: readonly [number, number, number]) {
   doc.setTextColor(...color)
 }
 
-function drawText(
-  doc: jsPDF,
-  text: string,
-  x: number,
-  y: number,
-  options: {
-    align?: "left" | "center" | "right"
-    maxWidth?: number
-    style?: "normal" | "bold"
-    size?: number
-    color?: readonly [number, number, number]
-  } = {}
-) {
-  const { align = "left", maxWidth, style = "normal", size = 12, color = BLACK } = options
-  setFont(doc, style, size)
-  setTextColor(doc, color)
-  doc.text(text, x, y, { align, maxWidth })
-}
-
 function drawLine(
   doc: jsPDF,
   x1: number,
@@ -95,64 +76,56 @@ export function generateCertificatePDF(certificate: CertificateData): Blob {
   doc.setFillColor(0, 0, 0)
   doc.rect(0, 0, PAGE_WIDTH, PAGE_HEIGHT, "F")
 
-  let y = MARGIN
+  let y = MARGIN + 10
 
   doc.setDrawColor(...RED)
   doc.setLineWidth(1.5)
   doc.roundedRect(MARGIN, MARGIN, CONTENT_WIDTH, PAGE_HEIGHT - 2 * MARGIN, 4, 4, "D")
 
-  y += 16
-
   const centerX = PAGE_WIDTH / 2
-
-  setFont(doc, "normal", 9)
-  setTextColor(doc, GRAY_500)
-  doc.text("SWARMS ACADEMY", centerX, y, { align: "center", characterSpacing: 1.2 })
-  y += 6
 
   setFont(doc, "bold", 28)
   setTextColor(doc, WHITE)
   doc.text("CERTIFICATE OF COMPLETION", centerX, y, { align: "center" })
   y += 14
 
-  drawGradientLine(doc, centerX - 40, y, centerX + 40)
-  y += 14
+  setFont(doc, "normal", 11)
+  setTextColor(doc, GRAY_400)
+  doc.text("SWARMS ACADEMY", centerX, y, { align: "center", characterSpacing: 1.5 })
+  y += 18
+
+  drawGradientLine(doc, centerX - 50, y, centerX + 50)
+  y += 18
 
   setFont(doc, "normal", 14)
   setTextColor(doc, GRAY_400)
   doc.text("Presented to", centerX, y, { align: "center" })
-  y += 16
+  y += 18
 
   const displayName = certificate.recipientName?.trim() || "Your Name"
-  setFont(doc, "bold", 32)
+  setFont(doc, "bold", 36)
   setTextColor(doc, WHITE)
   const nameLines = doc.splitTextToSize(displayName, CONTENT_WIDTH - 20)
-  const nameHeight = nameLines.length * 12
   doc.text(nameLines, centerX, y, { align: "center" })
-  y += nameHeight + 10
+  y += nameLines.length * 14 + 14
 
   drawLine(doc, centerX - 60, y, centerX + 60, y, RED, 1)
-  y += 10
-
-  setFont(doc, "normal", 9)
-  setTextColor(doc, RED)
-  doc.text("RECIPIENT", centerX, y, { align: "center", characterSpacing: 1 })
   y += 16
 
   setFont(doc, "normal", 14)
   setTextColor(doc, GRAY_400)
   doc.text("For successfully completing", centerX, y, { align: "center" })
-  y += 14
+  y += 16
 
-  setFont(doc, "bold", 22)
+  setFont(doc, "bold", 24)
   setTextColor(doc, WHITE)
   const courseTitleLines = doc.splitTextToSize(certificate.courseTitle, CONTENT_WIDTH - 20)
   doc.text(courseTitleLines, centerX, y, { align: "center" })
-  y += courseTitleLines.length * 11 + 18
+  y += courseTitleLines.length * 12 + 24
 
   const metadataY = y
-  const colWidth = CONTENT_WIDTH / 3
-  const startX = MARGIN + 10
+  const colWidth = CONTENT_WIDTH / 2
+  const startX = MARGIN + 20
 
   setFont(doc, "normal", 8)
   setTextColor(doc, GRAY_500)
@@ -162,17 +135,12 @@ export function generateCertificatePDF(certificate: CertificateData): Blob {
   setTextColor(doc, WHITE)
   doc.text(formatDate(certificate.completionDate), startX, metadataY + 6, { align: "left" })
 
-  doc.text("CERTIFICATE ID", startX + colWidth, metadataY, { align: "center" })
+  doc.text("CERTIFICATE ID", startX + colWidth, metadataY, { align: "right" })
   setFont(doc, "bold", 9)
   setTextColor(doc, WHITE)
-  doc.text(certificate.certificateId, startX + colWidth, metadataY + 6, { align: "center" })
+  doc.text(certificate.certificateId, startX + colWidth, metadataY + 6, { align: "right" })
 
-  doc.text("FINAL RANK", startX + 2 * colWidth, metadataY, { align: "right" })
-  setFont(doc, "bold", 11)
-  setTextColor(doc, RED)
-  doc.text(certificate.finalRank, startX + 2 * colWidth, metadataY + 6, { align: "right" })
-
-  y = metadataY + 22
+  y = metadataY + 30
 
   drawLine(doc, MARGIN + 20, y, PAGE_WIDTH - MARGIN - 20, y, GRAY_600, 0.3)
   y += 12
@@ -198,21 +166,9 @@ export function generateCertificatePDF(certificate: CertificateData): Blob {
   drawLine(doc, MARGIN + 20, y, PAGE_WIDTH - MARGIN - 20, y, GRAY_600, 0.3)
   y += 8
 
-  setFont(doc, "normal", 7)
-  setTextColor(doc, GRAY_600)
-  doc.text(
-    `Verify this certificate at swarms.ai/verify/${certificate.certificateId}`,
-    centerX,
-    y,
-    { align: "center", characterSpacing: 0.3 }
-  )
-  y += 5
-  doc.text(
-    `Swarms Academy · ${certificate.courseTitle} · ${certificate.certificateId}`,
-    centerX,
-    y,
-    { align: "center", characterSpacing: 0.3 }
-  )
+  setFont(doc, "normal", 10)
+  setTextColor(doc, GRAY_400)
+  doc.text("Swarms Team", centerX, y, { align: "center" })
 
   return doc.output("blob")
 }

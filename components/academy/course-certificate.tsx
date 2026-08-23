@@ -15,7 +15,7 @@ export function CourseCertificate({ certificate }: { certificate: CertificateDat
 
   return (
     <article className="academy-certificate border border-red-500/20 bg-black rounded-2xl p-8 sm:p-12 md:p-16 shadow-xl" role="article" aria-labelledby="certificate-title">
-      <div className="relative h-full min-h-[calc(100vh-4rem)] flex flex-col">
+      <div className="relative flex flex-col">
         <header className="flex flex-col items-center text-center pb-8 border-b border-red-500/20">
           <div className="flex items-center justify-center gap-3 mb-4">
             <div className="w-12 h-12 rounded-lg flex items-center justify-center bg-red-500/10 border border-red-500/30">
@@ -82,7 +82,7 @@ export function CourseCertificate({ certificate }: { certificate: CertificateDat
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-6 text-sm text-white/40 font-mono">
             <div className="flex items-center gap-2">
-              <span className="text-white/30">Issued:</span>
+              <span className="text-white/30">Completion Date:</span>
               <span className="text-white/70">{formattedDate}</span>
             </div>
             <div className="h-4 w-[1px] bg-white/10 sm:hidden" aria-hidden="true" />
@@ -122,10 +122,7 @@ export function CourseCertificate({ certificate }: { certificate: CertificateDat
 
           <div className="mt-10 pt-6 border-t border-white/10 text-center">
             <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-white/30">
-              Verify this certificate at swarms.ai/verify/{certificate.certificateId}
-            </p>
-            <p className="mt-2 font-mono text-[9px] uppercase tracking-[0.2em] text-white/20">
-              Swarms Academy · {certificate.courseTitle} · {certificate.certificateId}
+              Swarms Team
             </p>
           </div>
         </footer>

@@ -78,8 +78,8 @@ function drawFuturisticGrid(doc: jsPDF) {
   }
 }
 
-function drawCornerBrackets(doc: jsPDF, x: number, y: number, w: number, h: number, color: readonly [number, number, number] | readonly [number, number, number, number], size = 12, width = 1.5) {
-  doc.setDrawColor(...color)
+function drawCornerBrackets(doc: jsPDF, x: number, y: number, w: number, h: number, color: number[], size = 12, width = 1.5) {
+  doc.setDrawColor(color[0], color[1], color[2])
   doc.setLineWidth(width)
   // Top-left
   doc.line(x, y, x + size, y)

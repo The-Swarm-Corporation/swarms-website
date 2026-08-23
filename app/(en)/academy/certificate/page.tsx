@@ -49,11 +49,11 @@ export default function CertificatePage() {
     setSavingName(false)
   }
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     if (!certificate) return
     setDownloading(true)
     try {
-      downloadCertificatePDF(certificate)
+      await downloadCertificatePDF(certificate)
     } finally {
       setTimeout(() => setDownloading(false), 500)
     }

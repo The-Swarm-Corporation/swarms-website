@@ -1,5 +1,6 @@
 import { jsPDF } from "jspdf"
 import { CertificateData } from "./progress"
+import { Canvg } from "canvg"
 
 const PAGE_WIDTH = 297
 const PAGE_HEIGHT = 210
@@ -78,7 +79,7 @@ function drawFuturisticGrid(doc: jsPDF) {
   }
 }
 
-function drawCornerBrackets(doc: jsPDF, x: number, y: number, w: number, h: number, color: number[], size = 12, width = 1.5) {
+function drawCornerBrackets(doc: jsPDF, x: number, y: number, w: number, h: number, color: readonly number[], size = 12, width = 1.5) {
   doc.setDrawColor(color[0], color[1], color[2])
   doc.setLineWidth(width)
   // Top-left
@@ -144,7 +145,7 @@ function formatDate(dateStr: string | null): string {
   })
 }
 
-export function generateCertificatePDF(certificate: CertificateData): Blob {
+export async function generateCertificatePDF(certificate: CertificateData): Promise<Blob> {
   const doc = new jsPDF({
     orientation: "landscape",
     unit: "mm",
@@ -178,7 +179,17 @@ export function generateCertificatePDF(certificate: CertificateData): Blob {
 
   // Swarms logo - top center
   const logoSize = 18
-  doc.addImage(SWARMS_LOGO_SVG, "SVG", centerX - logoSize / 2, MARGIN + 10, logoSize, logoSize)
+  // Convert SVG to PNG via canvg
+  const logoSvg = SWARMS_LOGO_SVG.replace("data:image/svg+xml;base64,", "")
+  const logoSvgDecoded = atob(logoSvg)
+  const canvas = document.createElement("canvas")
+  canvas.width = logoSize * 4
+  canvas.height = logoSize * 4
+  const ctx = canvas.getContext("2d")!
+  const v = await Canvg.from(ctx, logoSvgDecoded, { ignoreDimensions: true, scaleWidth: canvas.width, scaleHeight: canvas.height })
+  await v.render()
+  const logoPng = canvas.toDataURL("image/png")
+  doc.addImage(logoPng, "PNG", centerX - logoSize / 2, MARGIN + 10, logoSize, logoSize)
 
   let y = MARGIN + 20 + logoSize + 6
 
@@ -280,8 +291,8 @@ export function generateCertificatePDF(certificate: CertificateData): Blob {
   return doc.output("blob")
 }
 
-export function downloadCertificatePDF(certificate: CertificateData): void {
-  const blob = generateCertificatePDF(certificate)
+export async function downloadCertificatePDF(certificate: CertificateData): Promise<void> {
+  const blob = await generateCertificatePDF(certificate)
   const url = URL.createObjectURL(blob)
   const link = document.createElement("a")
   link.href = url

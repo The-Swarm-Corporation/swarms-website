@@ -178,13 +178,13 @@ export function generateCertificatePDF(certificate: CertificateData): Blob {
   // SWARMS ACADEMY - small, tracked, neon red
   setFont(doc, "normal", 9)
   setTextColor(doc, NEON_RED)
-  doc.text("SWARMS ACADEMY", centerX, y, { align: "center", characterSpacing: 4 })
+  doc.text("SWARMS ACADEMY", centerX, y, { align: "center" })
   y += 14
 
   // CERTIFICATE OF COMPLETION - large, bold, white
   setFont(doc, "bold", 32)
   setTextColor(doc, WHITE)
-  doc.text("CERTIFICATE OF COMPLETION", centerX, y, { align: "center", characterSpacing: 1 })
+  doc.text("CERTIFICATE OF COMPLETION", centerX, y, { align: "center" })
   y += 18
 
   // Glowing divider
@@ -204,7 +204,7 @@ export function generateCertificatePDF(certificate: CertificateData): Blob {
   const nameLines = doc.splitTextToSize(displayName, CONTENT_WIDTH - 30)
   // Draw name with slight letter spacing for impact
   nameLines.forEach((line: string, i: number) => {
-    doc.text(line, centerX, y + i * 18, { align: "center", characterSpacing: 0.5 })
+    doc.text(line, centerX, y + i * 18, { align: "center" })
   })
   y += nameLines.length * 18 + 16
 
@@ -223,7 +223,7 @@ export function generateCertificatePDF(certificate: CertificateData): Blob {
   setTextColor(doc, WHITE)
   const courseTitleLines = doc.splitTextToSize(certificate.courseTitle, CONTENT_WIDTH - 30)
   courseTitleLines.forEach((line: string, i: number) => {
-    doc.text(line, centerX, y + i * 14, { align: "center", characterSpacing: 0.3 })
+    doc.text(line, centerX, y + i * 14, { align: "center" })
   })
   y += courseTitleLines.length * 14 + 28
 
@@ -238,8 +238,8 @@ export function generateCertificatePDF(certificate: CertificateData): Blob {
   // Labels - small, tracked, dim
   setFont(doc, "normal", 7.5)
   setTextColor(doc, GRAY_500)
-  doc.text("COMPLETION DATE", startX, y, { align: "left", characterSpacing: 1.2 })
-  doc.text("CERTIFICATE ID", startX + colWidth, y, { align: "right", characterSpacing: 1.2 })
+  doc.text("COMPLETION DATE", startX, y, { align: "left" })
+  doc.text("CERTIFICATE ID", startX + colWidth, y, { align: "right" })
   y += 10
 
   // Values - clean, white
@@ -253,7 +253,7 @@ export function generateCertificatePDF(certificate: CertificateData): Blob {
   // Rank badge - small, neon red, right-aligned
   setFont(doc, "normal", 7.5)
   setTextColor(doc, GRAY_500)
-  doc.text("FINAL RANK", startX, y, { align: "left", characterSpacing: 1.2 })
+  doc.text("FINAL RANK", startX, y, { align: "left" })
   setFont(doc, "bold", 11)
   setTextColor(doc, NEON_RED)
   doc.text(certificate.finalRank, startX, y + 9, { align: "left" })
@@ -261,7 +261,7 @@ export function generateCertificatePDF(certificate: CertificateData): Blob {
   // Swarms logo mark - bottom center
   setFont(doc, "normal", 8)
   setTextColor(doc, GRAY_500)
-  doc.text("SWARMS TEAM", centerX, PAGE_HEIGHT - MARGIN - 14, { align: "center", characterSpacing: 2 })
+  doc.text("SWARMS TEAM", centerX, PAGE_HEIGHT - MARGIN - 14, { align: "center" })
 
   // Futuristic corner marks on the inner content area
   const innerX = MARGIN + 15

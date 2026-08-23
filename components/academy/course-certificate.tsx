@@ -22,88 +22,11 @@ export function CourseCertificate({ certificate }: { certificate: CertificateDat
         backgroundColor: "#040408",
         color: "#ffffff",
         fontFamily: "Montserrat, sans-serif",
-        position: "relative",
+        border: "1px solid rgba(239, 68, 68, 0.2)",
+        borderRadius: "16px",
       }}
     >
-      {/* Scanlines background */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          backgroundImage: `repeating-linear-gradient(
-            0deg,
-            rgba(239, 68, 68, 0.05) 0px,
-            rgba(239, 68, 68, 0.05) 1px,
-            transparent 1px,
-            transparent 2px
-          )`,
-          pointerEvents: "none",
-        }}
-      />
-
-      {/* Grid pattern */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          backgroundImage: `
-            linear-gradient(to right, rgba(239, 68, 68, 0.09) 1px, transparent 1px),
-            linear-gradient(to bottom, rgba(239, 68, 68, 0.09) 1px, transparent 1px)
-          `,
-          backgroundSize: "14px 14px",
-          pointerEvents: "none",
-        }}
-      />
-
-      {/* Outer border with corner brackets */}
       <div className="relative" style={{ margin: "24px" }}>
-        {/* Corner brackets */}
-        <div
-          className="absolute inset-0"
-          style={{
-            border: "2px solid #ef4444",
-            borderRadius: "16px",
-            pointerEvents: "none",
-          }}
-        >
-          <div
-            className="absolute inset-0"
-            style={{
-              border: "0.5px solid rgba(239, 68, 68, 0.6)",
-              borderRadius: "12px",
-              pointerEvents: "none",
-            }}
-          />
-        </div>
-
-        {/* Edge ticks */}
-        <div className="absolute inset-0 pointer-events-none" style={{ margin: "24px" }}>
-          <div
-            className="absolute inset-0"
-            style={{
-              border: "0.3px solid rgba(239, 68, 68, 0.3)",
-              pointerEvents: "none",
-            }}
-          />
-        </div>
-
-        {/* Corner brackets outer */}
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            margin: "24px",
-            border: "1.4px solid #ef4444",
-            borderRadius: "16px",
-          }}
-        >
-          <div
-            className="absolute inset-0"
-            style={{
-              border: "0.5px solid rgba(239, 68, 68, 0.6)",
-              borderRadius: "12px",
-              pointerEvents: "none",
-            }}
-          />
-        </div>
-
         <div
           className="relative h-full flex flex-col"
           style={{
@@ -139,64 +62,15 @@ export function CourseCertificate({ certificate }: { certificate: CertificateDat
               Certificate of Completion
             </h1>
             <div style={{ marginTop: "22pt" }}>
-              {/* Logo flanked by glowing lines */}
-              <div className="flex items-center justify-center gap-4">
-                <div
-                  className="w-24 h-px"
-                  style={{
-                    background: "linear-gradient(90deg, transparent, rgba(239, 68, 68, 0.5), transparent)",
-                  }}
-                />
-                <div className="relative">
-                  <div
-                    className="w-16 h-16 rounded-full flex items-center justify-center border"
-                    style={{
-                      borderColor: "rgba(239, 68, 68, 0.3)",
-                      backgroundColor: "rgba(239, 68, 68, 0.1)",
-                    }}
-                  >
-                    <Image
-                      src="/logo.svg"
-                      alt=""
-                      width={32}
-                      height={32}
-                      className="text-red-400"
-                      aria-hidden="true"
-                    />
-                  </div>
-                </div>
-                <div
-                  className="w-24 h-px"
-                  style={{
-                    background: "linear-gradient(90deg, transparent, rgba(239, 68, 68, 0.5), transparent)",
-                  }}
-                />
-              </div>
+              <Image
+                src="/logo.svg"
+                alt=""
+                width={32}
+                height={32}
+                className="text-red-400"
+                aria-hidden="true"
+              />
             </div>
-
-            {/* Diamond nodes at ends of glow lines */}
-            <div
-              className="absolute"
-              style={{
-                bottom: "calc(100% - 20pt)",
-                left: "calc(50% - 68pt)",
-                width: "8pt",
-                height: "8pt",
-                backgroundColor: "#ef4444",
-                borderRadius: "2pt",
-              }}
-            />
-            <div
-              className="absolute"
-              style={{
-                bottom: "calc(100% - 20pt)",
-                right: "calc(50% - 68pt)",
-                width: "8pt",
-                height: "8pt",
-                backgroundColor: "#ef4444",
-                borderRadius: "2pt",
-              }}
-            />
           </header>
 
           <main className="flex-1 flex flex-col items-center justify-center text-center py-10">

@@ -1,0 +1,242 @@
+---
+title: "Swarms MCP 服务器正式上线：一个端点，二十三个工具，无需本地安装"
+description: "Swarms Cloud 现已推出专属的 MCP 页面 cloud.swarms.world/mcp，对应托管的 Model Context Protocol 服务器 mcp.swarms.world/mcp。把任意 MCP 客户端指向这一个 URL，即可获得智能体、集群、批量执行与账户遥测等可调用工具。页面提供实时端点状态、Python 与 TypeScript 连接代码、集群执行示例以及客户端教程。"
+date: "2026-08-24"
+author: "Swarms Team"
+categories: ["产品"]
+readTime: "9 分钟阅读"
+featured: false
+image: "/mcp_page.png"
+---
+
+# Swarms MCP 服务器正式上线：一个端点，二十三个工具，无需本地安装
+
+Swarms API 现已通过 Model Context Protocol 在一个托管端点上开放，并在 Swarms Cloud 中拥有了自己的页面。全新的 **MCP** 页面已上线，地址是 [cloud.swarms.world/mcp](https://cloud.swarms.world/mcp)，服务器本身的地址为：
+
+```
+https://mcp.swarms.world/mcp
+```
+
+把任意兼容 MCP 的客户端指向这个 URL，它就获得了智能体、多智能体集群、批量执行、工作流编排和账户遥测等一系列可调用工具。无需安装任何软件包，无需维护本地进程，也不需要为每台工作站单独配置。
+
+## 先厘清一个容易混淆的概念
+
+Swarms 现在有两个名字里带 MCP 的东西，它们承担的职责完全不同。搞清楚这个区别，能帮你的团队省下一个困惑的下午。
+
+Swarms Marketplace 上的 [MCP Portal](https://swarms.world/mcp) 是一个**目录**。你在那里发现、发布并变现社区构建的 MCP 服务器，把自己的智能体接入网页抓取、搜索、文档检索等第三方工具。
+
+而本文宣布的 **Swarms MCP 服务器**方向正好相反。它不是别人工具的目录，而是 Swarms 平台本身以 MCP 服务器的形式对外开放，让你的智能体和 MCP 客户端能够调用 Swarms。前者是你的智能体触达外部工具生态的方式，后者是外部生态触达 Swarms 的方式。
+
+## 托管式 MCP 服务器改变了什么
+
+今天流通的大多数 MCP 服务器都是本地的。你安装一个包，客户端把它作为子进程通过 stdio 启动，整套东西跑在一台机器上。对于在笔记本上做实验的单个开发者来说，这种模式没有问题。但在组织规模上，它会变成负担，任何在团队内推广过开发工具的人都会觉得这些理由很熟悉。
+
+**本地服务器需要分发。**每台工作站都要安装这个包，版本要兼容，运行时要可用。团队内部的版本漂移会带来无法复现的 bug 报告。
+
+**本地服务器把凭证放在了终端上。**五十台笔记本的配置文件里各存一份 API 密钥，就等于五十份脱离你掌控的密钥副本，而轮换一次密钥意味着五十次协调变更。
+
+**本地服务器撑不到生产环境。**在编辑器里跑通的智能体，如果不重新打包那层让它工作的工具，就无法部署到容器、CI runner 或无服务器函数中。
+
+远程服务器同时解决了这三个问题。端点就是一个 URL，分发只需复制粘贴。认证就是一个请求头，凭证可以沿用你已有的任何密钥管理方案。在编辑器里生效的那个 URL，放进容器、定时任务或生产服务中同样生效，无需改动。升级发生在服务端，这意味着 Swarms API 新增的能力会同时对所有已连接的客户端可用，既不需要更新客户端，也不需要跨团队协调。
+
+## 二十三个工具，即刻可用
+
+连接后调用 `list_tools`，服务器会返回覆盖 Swarms API 面的二十三个工具，可以分为五组。
+
+**执行类。**运行单个智能体、运行多智能体集群、运行对话补全、运行推理智能体、运行图工作流，或者把任务交给 Auto Agent Builder，让它替你设计团队。
+
+**批量类。**把一组任务分发给多个智能体、批量运行集群补全，或执行批处理网格工作流。MCP 在这里不再只是便利，而成为基础设施：一个能够分发一百个任务并收集结果的智能体，做的是任何聊天界面都做不到的工作。
+
+**发现类。**列出可用模型、列出可用的集群架构、列出推理智能体类型、列出可用工具、列出你保存的智能体，以及查询你的账户可以访问哪些高级端点。能够枚举自身能力的智能体，可以据此调整行为，而不必把假设写死在代码里。
+
+**账户与可观测性类。**读取速率限制、额度余额、用量成本、指标摘要和执行日志。这一组尤其值得平台团队关注，因为它意味着智能体可以对自身的消耗进行推理。一个长时间运行的流程可以在分发昂贵批处理任务前检查剩余额度，或者在决定并发度前读取自己的速率限制余量。
+
+**健康检查类。**服务健康状态与根路径，用于就绪探测。
+
+工具名称来自服务器而非文档，因此 `list_tools` 始终是关于你的密钥能触达哪些能力的权威答案。页面上每一段连接示例都以这个调用开头，原因正在于此。
+
+## 如实呈现的实时状态
+
+MCP 页面为该端点提供了状态面板，这里值得解释一下它到底测量了什么，因为"运行正常"这个词在产品里经常被用得很随意。
+
+这个状态不是 ping。对主机的 ping 只能证明某个端口上有东西在监听，这个结论比多数状态指示器暗示的要弱得多。取而代之的是，Swarms Cloud 从服务端向该端点发送一次真实的 MCP `initialize` 握手，并汇报结果。如果协议有响应，端点就是运行正常的。如果返回服务器错误，那就是故障。如果端点可达但拒绝未认证的探测，仍然记为运行正常，因为服务器拒绝匿名请求是正确行为，而不是失败。
+
+面板展示三个数字：当前状态、以毫秒计的握手延迟，以及观测到的可用率。在可用率这个数字上，我们刻意保持精确。它反映的是 Swarms Cloud 实际执行过的检查，并标注了样本数量与时间窗口，同时明确说明它不构成服务等级协议。权威的事故历史记录位于 [status.swarms.ai](https://status.swarms.ai)，页面上有直达链接。我们宁愿给你一个站得住脚的数字，也不愿给一个看起来更漂亮的数字。
+
+## 用 Python 连接
+
+服务器使用 streamable HTTP，并通过与 REST API 相同的 `x-api-key` 请求头认证。安装 MCP SDK 后，建立会话只需几行代码：
+
+```python
+# pip install mcp
+import asyncio
+import os
+
+from mcp import ClientSession
+from mcp.client.streamable_http import streamablehttp_client
+
+SWARMS_MCP_URL = "https://mcp.swarms.world/mcp"
+
+
+async def main() -> None:
+    async with streamablehttp_client(
+        SWARMS_MCP_URL,
+        headers={"x-api-key": os.environ["SWARMS_API_KEY"]},
+    ) as (read, write, _):
+        async with ClientSession(read, write) as session:
+            await session.initialize()
+
+            # 服务器暴露的每个工具，以及它的输入 schema。
+            tools = await session.list_tools()
+            for tool in tools.tools:
+                print(tool.name)
+
+
+asyncio.run(main())
+```
+
+## 用 TypeScript 连接
+
+同样的会话，用官方 SDK 在 TypeScript 中实现：
+
+```typescript
+// npm install @modelcontextprotocol/sdk
+import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
+
+const SWARMS_MCP_URL = 'https://mcp.swarms.world/mcp';
+
+const transport = new StreamableHTTPClientTransport(new URL(SWARMS_MCP_URL), {
+  requestInit: {
+    headers: { 'x-api-key': process.env.SWARMS_API_KEY! },
+  },
+});
+
+const client = new Client({ name: 'swarms-demo', version: '1.0.0' });
+await client.connect(transport);
+
+// 服务器暴露的每个工具，以及它的输入 schema。
+const { tools } = await client.listTools();
+console.log(tools.map((tool) => tool.name));
+```
+
+## 连接 Claude Desktop、Cursor 及其他客户端
+
+对于通过配置文件而非代码来配置的客户端，需要填的只有一个 URL 和一个请求头。没有命令，没有参数，也没有需要安装的二进制文件：
+
+```json
+{
+  "mcpServers": {
+    "swarms": {
+      "url": "https://mcp.swarms.world/mcp",
+      "headers": {
+        "x-api-key": "YOUR_SWARMS_API_KEY"
+      }
+    }
+  }
+}
+```
+
+重启客户端，Swarms 的工具就会与它已有的工具并排出现。你的助手现在可以直接在对话中运行研究集群、分发批处理任务或查询额度余额。
+
+## 通过 MCP 运行一个集群
+
+连接只是准备工作，下面才是收益所在。这个示例运行一个 `ConcurrentWorkflow`，它让两位分析师并行处理同一个任务，并把输出一起返回：
+
+```python
+result = await session.call_tool(
+    "run_swarm_v1_swarm_completions_post",
+    {
+        "name": "Market Research Swarm",
+        "description": "Three analysts research the same task in parallel",
+        "swarm_type": "ConcurrentWorkflow",
+        "task": "Analyze the impact of AI agents on modern healthcare",
+        "agents": [
+            {
+                "agent_name": "Market Analyst",
+                "system_prompt": "You analyze market trends and opportunities.",
+                "model_name": "gpt-5.4",
+                "max_loops": 1,
+            },
+            {
+                "agent_name": "Risk Analyst",
+                "system_prompt": "You identify risks and regulatory constraints.",
+                "model_name": "claude-haiku-4-5",
+                "max_loops": 1,
+            },
+        ],
+        "max_loops": 1,
+    },
+)
+```
+
+同样的调用在 TypeScript 中：
+
+```typescript
+const result = await client.callTool({
+  name: 'run_swarm_v1_swarm_completions_post',
+  arguments: {
+    name: 'Market Research Swarm',
+    swarm_type: 'ConcurrentWorkflow',
+    task: 'Analyze the impact of AI agents on modern healthcare',
+    agents: [
+      {
+        agent_name: 'Market Analyst',
+        system_prompt: 'You analyze market trends and opportunities.',
+        model_name: 'gpt-5.4',
+        max_loops: 1,
+      },
+      {
+        agent_name: 'Risk Analyst',
+        system_prompt: 'You identify risks and regulatory constraints.',
+        model_name: 'claude-haiku-4-5',
+        max_loops: 1,
+      },
+    ],
+    max_loops: 1,
+  },
+});
+```
+
+注意这三十行代码里发生了什么。一次工具调用定义了一支团队，为每位成员分配了角色与模型，并发调度了它们，并返回合并后的输出。不同的智能体运行在不同的模型上，模型是按角色选择的，而不是按应用统一指定的。发起调用的客户端不需要管理并发、重试或模型路由。这就是调用一个模型与编排一套系统之间的区别。
+
+MCP 页面同时展示了针对 REST 端点的等价请求，方便那些希望在中间不加协议层的团队使用同样的集群。
+
+## 三种语言的教程
+
+页面链接了三个完整示例，把上面的概念推进到可运行的程序：
+
+- **[用 MCP 构建智能体 CLI](https://docs.swarms.ai/docs/examples/examples/mcp-agent-typescript)**，TypeScript 实现，把服务器接入一个命令行工具，让你在终端里运行智能体。
+- **[用 MCP 构建多智能体研究工具](https://docs.swarms.ai/docs/examples/examples/mcp-swarm-rust)**，Rust 实现，从原生客户端驱动一个研究集群。
+- **[用 MCP 运行批处理流水线](https://docs.swarms.ai/docs/examples/examples/mcp-batch-pipeline-python)**，Python 实现，把一批任务分发给多个智能体，并在一条流水线里收集全部结果。
+
+三种语言是有意为之，而非巧合。协议才是契约，实现语言由你自己决定。
+
+完整参考文档位于 [docs.swarms.ai](https://docs.swarms.ai/docs/documentation/clients/swarms-api-mcp)。对于更习惯直接阅读文档的智能体，整份索引以纯文本形式提供在 [docs.swarms.ai/llms.txt](https://docs.swarms.ai/llms.txt)。
+
+## 给平台团队的说明
+
+有几个特性值得向正在为组织评估这套方案的人特别指出。
+
+**认证用的就是你已有的密钥。**MCP 服务器使用与 REST API 相同的 `x-api-key` 凭证，在同一处签发和吊销。不需要另外配置一套身份体系，也没有第二套权限需要对账。
+
+**消耗情况可以在协议内部观测。**由于速率限制、额度余额、用量成本和指标本身就是工具，要以编程方式监控支出，并不需要额外接入一个仪表盘。你可以直接把智能体构建成遵守预算的样子，而不是事后才去了解预算。
+
+**能力变更不需要客户端发版。**Swarms API 的新功能通过同一个端点触达所有已连接的客户端。你的 MCP 客户端与平台之间不存在版本矩阵。
+
+**模型选择仍然按智能体粒度进行。**集群中的每个智能体各自指定模型，因此成本与能力可以逐个角色调优，而不是在应用层面一刀切。昂贵的推理用在值得的地方，其余地方交给快速且便宜的模型。
+
+## 用五美元免费额度开始构建
+
+新注册的 Swarms Cloud 账户可获得**五美元免费额度**，注册时自动发放，无需绑定支付方式。这笔额度足以连接客户端、运行真实的集群，并针对你自己的业务负载而非演示用例来评估平台。
+
+上手大约需要两分钟：
+
+1. **[在 cloud.swarms.world/signup 创建免费账户](https://cloud.swarms.world/signup)**，领取你的五美元额度。
+2. 在 API keys 页面生成一个 API 密钥，并导出为 `SWARMS_API_KEY`。
+3. 打开 [cloud.swarms.world/mcp](https://cloud.swarms.world/mcp)，复制端点，把连接代码粘贴进你的客户端。
+4. 调用 `list_tools`，然后运行你的第一个集群。
+
+协议是标准的，端点是托管的，工具就是完整的 Swarms 平台。连接一次，你使用的每一个 MCP 客户端都获得了一个多智能体运行时。
+
+[**立即注册，用五美元免费额度开始构建。**](https://cloud.swarms.world/signup)

@@ -1,189 +1,111 @@
 "use client"
 
-import Image from "next/image"
 import { CertificateData } from "@/lib/academy/progress"
 
 export function CourseCertificate({ certificate }: { certificate: CertificateData }) {
   const displayName = certificate.recipientName?.trim() || "Your Name"
   const formattedDate = certificate.completionDate
     ? new Date(certificate.completionDate).toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      })
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    })
     : "—"
 
   return (
     <article
-      className="relative w-full max-w-4xl mx-auto bg-[#040408] text-white"
+      className="academy-certificate relative w-full overflow-hidden rounded-2xl bg-black p-10 sm:p-14 md:p-16 shadow-xl"
       role="article"
       aria-labelledby="certificate-title"
       style={{
-        backgroundColor: "#040408",
-        color: "#ffffff",
-        fontFamily: "Montserrat, sans-serif",
-        border: "1px solid rgba(239, 68, 68, 0.2)",
-        borderRadius: "16px",
+        backgroundImage:
+          "linear-gradient(rgba(239,68,68,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(239,68,68,0.07) 1px, transparent 1px)",
+        backgroundSize: "28px 28px",
       }}
     >
-      <div className="relative" style={{ margin: "24px" }}>
-        <div
-          className="relative h-full flex flex-col"
-          style={{
-            minHeight: "calc(100vh - 4rem)",
-            padding: "48px",
-          }}
-        >
-          <header className="flex flex-col items-center text-center pb-8 border-b" style={{ borderColor: "rgba(239, 68, 68, 0.2)" }}>
-            {/* SWARMS ACADEMY */}
-            <p
-              className="font-mono uppercase tracking-widest"
-              style={{
-                fontSize: "9pt",
-                fontWeight: "700",
-                color: "#ef4444",
-                letterSpacing: "0.4em",
-              }}
-            >
-              S W A R M S   A C A D E M Y
-            </p>
+      {/* Inner hairline frame */}
+      <div
+        className="pointer-events-none absolute inset-6 sm:inset-8 rounded-xl border border-red-500/25"
+        aria-hidden="true"
+      />
 
-            {/* Certificate of Completion */}
-            <h1
-              id="certificate-title"
-              className="font-bold"
-              style={{
-                fontSize: "26pt",
-                fontWeight: "700",
-                color: "#ffffff",
-                marginTop: "22pt",
-              }}
-            >
-              Certificate of Completion
-            </h1>
-            <div style={{ marginTop: "22pt" }}>
-              <Image
-                src="/logo.svg"
-                alt=""
-                width={32}
-                height={32}
-                className="text-red-400"
-                aria-hidden="true"
-              />
+      {/* Corner brackets */}
+      <span
+        className="pointer-events-none absolute left-4 top-4 h-10 w-10 border-l-2 border-t-2 border-red-500 sm:left-6 sm:top-6"
+        aria-hidden="true"
+      />
+      <span
+        className="pointer-events-none absolute right-4 top-4 h-10 w-10 border-r-2 border-t-2 border-red-500 sm:right-6 sm:top-6"
+        aria-hidden="true"
+      />
+      <span
+        className="pointer-events-none absolute bottom-4 left-4 h-10 w-10 border-b-2 border-l-2 border-red-500 sm:bottom-6 sm:left-6"
+        aria-hidden="true"
+      />
+      <span
+        className="pointer-events-none absolute bottom-4 right-4 h-10 w-10 border-b-2 border-r-2 border-red-500 sm:bottom-6 sm:right-6"
+        aria-hidden="true"
+      />
+
+      <div className="relative flex flex-col">
+        <header className="flex flex-col items-center text-center">
+          <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.35em] text-red-500">
+            Swarms Academy
+          </p>
+
+          <h1
+            id="certificate-title"
+            className="mt-3 text-3xl sm:text-4xl font-bold tracking-tight text-white"
+          >
+            Certificate of Completion
+          </h1>
+
+          <div className="mt-8 flex items-center justify-center gap-6">
+            <div
+              className="h-[1px] w-24 sm:w-40 bg-gradient-to-r from-transparent via-red-500/60 to-red-500/60"
+              aria-hidden="true"
+            />
+            <div className="relative flex h-11 w-11 items-center justify-center rounded-full border border-red-500 bg-black">
+              {/* hexagon dot cluster */}
+              <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true">
+                <circle cx="11" cy="4.5" r="2.6" fill="#ef4444" />
+                <circle cx="5.5" cy="8" r="2.6" fill="#ef4444" />
+                <circle cx="16.5" cy="8" r="2.6" fill="#ef4444" />
+                <circle cx="5.5" cy="14" r="2.6" fill="#ef4444" />
+                <circle cx="16.5" cy="14" r="2.6" fill="#ef4444" />
+                <circle cx="11" cy="17.5" r="2.6" fill="#ef4444" />
+                <circle cx="11" cy="11" r="2.6" fill="#ef4444" />
+              </svg>
             </div>
-          </header>
+            <div
+              className="h-[1px] w-24 sm:w-40 bg-gradient-to-l from-transparent via-red-500/60 to-red-500/60"
+              aria-hidden="true"
+            />
+          </div>
+        </header>
 
-          <main className="flex-1 flex flex-col items-center justify-center text-center py-10">
-            {/* This certificate is proudly awarded to */}
-            <p
-              className="max-w-2xl"
-              style={{
-                fontSize: "12pt",
-                fontWeight: "400",
-                lineHeight: "1.6",
-                color: "rgba(209, 213, 219, 1)",
-                marginBottom: "18pt",
-              }}
-            >
-              This certificate is proudly awarded to
-            </p>
+        <main className="flex-1 flex flex-col items-center justify-center text-center py-10">
+          <p className="text-sm sm:text-base font-semibold text-white/50 mb-5">
+            This certificate is proudly awarded to
+          </p>
 
-            {/* Recipient name - FOCAL POINT */}
-            <div className="mb-8">
-              <p
-                className="font-mono font-bold tracking-tight leading-tight break-words px-4"
-                style={{
-                  fontSize: "28pt",
-                  fontWeight: "700",
-                  color: "#ffffff",
-                  lineHeight: "1.1",
-                  marginBottom: "17pt",
-                }}
-              >
-                {displayName}
-              </p>
-              {/* Accent line under name */}
-              <div className="flex items-center justify-center gap-4">
-                <div
-                  className="w-16 h-px"
-                  style={{
-                    background: "linear-gradient(90deg, transparent, rgba(239, 68, 68, 0.5), transparent)",
-                  }}
-                />
-                <span
-                  className="font-mono uppercase tracking-wider"
-                  style={{
-                    fontSize: "10pt",
-                    color: "rgba(239, 68, 68, 0.6)",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.3em",
-                  }}
-                >
-                  Recipient
-                </span>
-                <div
-                  className="w-16 h-px"
-                  style={{
-                    background: "linear-gradient(90deg, transparent, rgba(239, 68, 68, 0.5), transparent)",
-                  }}
-                />
-              </div>
-            </div>
+          <p className="mb-8 px-4 text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-white break-words">
+            {displayName}
+          </p>
 
-            {/* for successfully completing the */}
-            <p
-              className="max-w-2xl"
-              style={{
-                fontSize: "12pt",
-                fontWeight: "400",
-                lineHeight: "1.6",
-                color: "rgba(209, 213, 219, 1)",
-                marginBottom: "17pt",
-              }}
-            >
-              for successfully completing the
-            </p>
+          <p className="text-sm sm:text-base font-semibold text-white/50 mb-3">
+            for successfully completing the
+          </p>
 
-            {/* Course title */}
-            <p
-              className="font-serif max-w-3xl"
-              style={{
-                fontSize: "20pt",
-                fontWeight: "600",
-                color: "#ffffff",
-                lineHeight: "1.2",
-                marginBottom: "26pt",
-              }}
-            >
-              {certificate.courseTitle}
-            </p>
+          <p className="mb-10 max-w-3xl text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-white leading-snug">
+            {certificate.courseTitle}
+          </p>
 
-            {/* Completion Date */}
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-6 text-sm" style={{ fontFamily: "Montserrat, monospace" }}>
-              <div className="flex items-center gap-2">
-                <span style={{ color: "rgba(107, 114, 128, 1)" }}>Completion Date:</span>
-                <span style={{ color: "#ffffff" }}>
-                  {formattedDate}
-                </span>
-              </div>
-            </div>
-          </main>
-
-          <footer className="pt-8">
-            <div className="mt-10 pt-6 border-t text-center" style={{ borderColor: "rgba(255, 255, 255, 0.1)" }}>
-              <p
-                className="font-mono uppercase tracking-widest"
-                style={{
-                  fontSize: "8pt",
-                  color: "rgba(156, 163, 175, 1)",
-                  letterSpacing: "0.2em",
-                }}
-              >
-                Swarms Team
-              </p>
-            </div>
-          </footer>
-        </div>
+          <p className="font-mono text-sm text-white/40">
+            <span>Completion Date: </span>
+            <span className="font-semibold text-white">{formattedDate}</span>
+          </p>
+        </main>
       </div>
     </article>
   )

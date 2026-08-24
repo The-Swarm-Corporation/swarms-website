@@ -70,7 +70,7 @@ export function CourseCompleteModal({ open, onOpenChange, onViewCertificate }: C
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-4 border-t border-b border-white/10">
+        {/* <div className="space-y-4 py-4 border-t border-b border-white/10">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="rounded-lg border border-white/10 bg-white/[0.02] p-4 text-center">
               <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-white/40">Final Rank</p>
@@ -81,7 +81,7 @@ export function CourseCompleteModal({ open, onOpenChange, onViewCertificate }: C
               <p className="mt-1 text-2xl font-semibold text-white">4 / 4</p>
             </div>
           </div>
-        </div>
+        </div> */}
 
         <DialogFooter className="flex-col sm:flex-row gap-3 pt-4">
           <Button

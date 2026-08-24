@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Download, FileText, Check } from "lucide-react"
+import { Download, FileText, Check, ArrowLeft } from "lucide-react"
 import { CourseCertificate } from "@/components/academy/course-certificate"
 import { useAcademyProgress, getCertificateData, setProfileName, getProfile } from "@/lib/academy/progress"
 import { downloadCertificatePDF } from "@/lib/academy/certificate-pdf"
@@ -154,7 +154,16 @@ export default function CertificatePage() {
   return (
     <div className="min-h-screen w-full bg-black text-white px-4 py-12">
       <div className="w-full max-w-4xl mx-auto">
-        <div className="mb-6 flex justify-end gap-3">
+        <div className="mb-6 flex items-center justify-between gap-3">
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-black/50 px-5 py-2.5 text-sm font-medium text-white/80 transition-colors hover:border-white/30 hover:text-white hover:bg-white/10 backdrop-blur-sm"
+            aria-label="Go back"
+          >
+            <ArrowLeft className="h-4 w-4" strokeWidth={1.5} />
+            Back
+          </button>
           <button
             type="button"
             onClick={handleDownload}

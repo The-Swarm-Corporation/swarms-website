@@ -1,0 +1,122 @@
+---
+title: "The USDC Launch Championship: Price Your Agent in Dollars"
+description: "The new Swarms Launchpad competition is live. Launch an agent or prompt with USDC as the quote currency between August 26 and September 2 UTC and compete for a share of a $1,000 USDC prize pool, ranked by total trading volume."
+date: "2026-08-26"
+author: "Swarms Team"
+categories: ["Competitions"]
+readTime: "9 min read"
+featured: false
+image: "/usdc_competition.png"
+---
+
+# The USDC Launch Championship: Price Your Agent in Dollars
+
+The next Swarms Launchpad competition is live now.
+
+For the next seven days, every agent and prompt launched with USDC as the quote currency is entered automatically and ranked by the volume it trades. The three highest-volume launches when the countdown reaches zero split a $1,000 prize pool, paid in USDC.
+
+The window opened at 01:00 UTC on Wednesday 26 August and closes at 01:00 UTC on Wednesday 2 September. That is exactly one hundred and sixty-eight hours. There is no application, no form, and no waiting list. Launch with USDC during the window and you are on the board.
+
+## The prize pool
+
+The pool is $1,000, split across the top three positions by total trading volume:
+
+- First place: $500 USDC
+- Second place: $350 USDC
+- Third place: $150 USDC
+
+Prizes are paid in USDC to the creator wallet attached to the winning launch, which is the same developer wallet address the launch already lives under. There is no claim process and nothing to fill in. If you win, the USDC arrives where your project already is.
+
+## What a quote currency actually is
+
+Every token launched on the Swarms Launchpad trades against a bonding curve, and every bonding curve is denominated in something. That something is the quote currency. Until now, that meant SOL. This competition is about the alternative.
+
+When your curve is quoted in SOL, every price on it is a SOL price. Your token might be worth 0.0004 SOL, and your market cap might be 120 SOL. Those numbers are stable in SOL terms and completely unstable in dollar terms, because SOL itself moves. A quiet day where nobody trades your token at all can still show your market cap up fifteen percent or down twelve percent, purely because of what SOL did while you were asleep.
+
+When your curve is quoted in USDC, every price on it is a dollar price. Your token is worth some number of dollars, and your market cap is some number of dollars, and those numbers only move when somebody actually buys or sells your token. The denominator stops moving. What is left is a clean signal about your project and nothing else.
+
+This is not a cosmetic difference. It changes what your chart means.
+
+## Why this matters for creators
+
+There are three practical consequences, and they compound.
+
+**Your market cap measures your project, not the market.** A SOL-quoted launch inherits the volatility of the entire Solana ecosystem. If you launch on a strong day and SOL retraces twenty percent over the following week, your dollar market cap falls twenty percent even if demand for your agent grew. Holders see red. You spend your time explaining macro conditions instead of shipping. A USDC-quoted launch removes that noise entirely. When the number goes up, it went up because someone wanted your agent.
+
+**Buyers see a price they already understand.** Most people do not think in SOL. They think in dollars. A prospective holder looking at a SOL-quoted token has to do two conversions in their head: what is this in dollars, and what will it be in dollars if SOL moves. A dollar-denominated token removes that friction at exactly the moment you are trying to convert interest into a purchase. For an agent aimed at businesses rather than traders, this matters even more, because the buyer is evaluating a tool against a budget, and budgets are in dollars.
+
+**The fees you earn come back as dollars.** Trading fees on a bonding curve accrue in the quote asset. On a SOL-quoted pool, you earn SOL, and the value of what you earned keeps moving after you earn it. On a USDC-quoted pool, you earn USDC. A hundred dollars of fees earned on Monday is still a hundred dollars on Friday. For a creator who wants to treat agent revenue as actual revenue, rather than as a position that has to be watched and managed, this is the difference between income and exposure.
+
+Put together, a USDC launch is the option for creators who want their token to behave like a product with a price rather than a bet with a beta.
+
+## How ranking works
+
+Ranking is by total trading volume across the competition window: every buy and every sell, summed in USD.
+
+The important detail is how that number is produced. Volume is reconstructed from raw on-chain transactions across the whole window, not read from a rolling twenty-four hour figure. This has a real consequence for strategy. On a rolling twenty-four hour metric, volume you generate early evaporates from the number as the window slides forward, which pushes everyone toward a frantic finish and punishes anyone who built momentum early. That is not how this works. Volume traded in the first hour of the competition counts exactly as much as volume traded in the final hour. Nothing decays.
+
+The leaderboard refreshes continuously while the competition is open. Positions move as the market moves, and you can watch yours on the competition page at any point during the week. The board on screen when the countdown reaches zero is the board that decides the prizes.
+
+## Eligibility, and how it is checked
+
+Only launches with a USDC-quoted curve, created inside the competition window, are eligible. SOL-denominated launches do not place, however much volume they trade. A launch created before the window opened does not place either, however well it performs during the week.
+
+Eligibility is verified against the pool configuration on chain, not against what a listing claims about itself. When a token launches, the bonding curve configuration written on chain records which asset the curve is denominated in, and that record is what the leaderboard reads. A launch that says USDC but was configured in SOL will not qualify, and a launch that was correctly configured in USDC will qualify whether or not anything in its listing metadata says so. The chain is the authority, which means eligibility is not something that can be claimed, only something that can be true.
+
+This matters for a competition with money attached. Ranking by a number that anyone could assert about themselves would be an invitation to assert it. Ranking by a number written into a pool configuration at launch time is not.
+
+## How to enter
+
+Four steps, and the whole thing takes a few minutes.
+
+**Step 1. Launch an agent or prompt.** Go to [swarms.world/launch](https://swarms.world/launch) and publish your project during the competition window. If you have never launched before, the flow walks you through naming, describing, and pricing it.
+
+**Step 2. Select USDC as the quote currency.** This is the step that puts you on the board. When you tokenize, choose USDC rather than SOL as the quote currency for the curve. Everything downstream follows from this one selection: your dollar-denominated price, your dollar-denominated market cap, and your fees arriving as USDC.
+
+**Step 3. Drive volume during the window.** Share it, trade it, get people holding it. Every buy and every sell counts toward your total, from the moment you launch until the moment the window closes.
+
+**Step 4. Track your position.** The live leaderboard is at [swarms.world/competitions/usdc-launch-championship](https://swarms.world/competitions/usdc-launch-championship). It updates continuously, so you can see exactly where you stand and how far ahead the position above you is.
+
+Entry is automatic. There is nothing to submit once you have launched with USDC selected.
+
+## The rules
+
+The full rules are on the competition page, but the ones worth stating plainly here:
+
+- Eligible entrants are agents and prompts launched with USDC selected as the quote currency between 01:00 Wednesday 26 August and 01:00 Wednesday 2 September UTC. Anything launched outside that window does not count.
+- Entry is automatic. Choose USDC as the quote currency when you tokenize and you are on the board.
+- SOL-denominated launches are not eligible, regardless of volume.
+- Eligibility is confirmed against the on-chain pool configuration rather than listing metadata.
+- Ranking is by total volume traded since launch, summed in USD across the window.
+- Volume is reconstructed from raw on-chain transactions, so early trading counts as much as late trading.
+- Wash trading, self-dealing, and volume generated by looping the same wallets are grounds for disqualification.
+- Prizes are paid in USDC at the listed value, to the wallet connected to the winning creator account.
+- The final leaderboard is the one on screen when the countdown reaches zero.
+
+On that second-to-last point: the intention of this competition is to reward projects that attract real interest. Volume manufactured by cycling the same funds between wallets you control is not real interest, it is a number being typed into a leaderboard by hand, and it will be treated accordingly.
+
+## Why we are running this one
+
+Each competition we run is aimed at a specific thing we want to see more of in the ecosystem.
+
+The first Frenzy Competition was about proving that agent launches could generate genuine on-chain activity, and it did, with more than twenty-three launches and over $250,000 in trading volume in a single week. The Vaulted Tokenized Agents Competition that followed was about utility, pushing creators to gate agent access behind token ownership so that holding a token meant something concrete rather than something promised.
+
+This one is about denomination, and about who a tokenized agent is for.
+
+A SOL-quoted token is a good fit for a crypto-native audience that already thinks in SOL and is comfortable holding it. But a large share of the people who would benefit most from an AI agent are not crypto-native. They are developers, operators, and businesses who want the agent, understand dollars, and have no interest in taking a position on a layer-one token as a side effect of buying a tool. A dollar-denominated curve is how you build for that audience without asking them to learn a second unit of account first.
+
+We want to find out what gets built when the price tag is in dollars. That is the whole experiment.
+
+## Start now
+
+The window is open and the clock is running. Seven days, $1,000 in USDC, and a leaderboard that updates as you go.
+
+Launch an agent or prompt, select USDC as the quote currency, and start climbing.
+
+## Links and resources
+
+- The competition: [swarms.world/competitions/usdc-launch-championship](https://swarms.world/competitions/usdc-launch-championship)
+- Launch an agent or prompt: [swarms.world/launch](https://swarms.world/launch)
+- All competitions: [swarms.world/competitions](https://swarms.world/competitions)
+- Swarms Marketplace: [swarms.world](https://swarms.world)
+- Sign up: [swarms.world/signin](https://swarms.world/signin)

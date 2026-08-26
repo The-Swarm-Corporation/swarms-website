@@ -1,0 +1,94 @@
+---
+title: "Swarms Weekly Ecosystem Update [August 17 - August 24]: The Swarms MCP Server, MCP Scribe, and Encrypted Skills Storage"
+description: "This week across the Swarms ecosystem: the hosted Swarms MCP server went live with 23 tools behind a single endpoint, the MCP Portal shipped on Swarms Cloud with live status and connection diagnostics, MCP Scribe turned OpenAPI specifications into production MCP servers, Swarms Cloud added encrypted prompt and skills storage with native SKILL.md support, and the Marketplace changelog covered more than 200 improvements shipped between July 21 and August 21."
+date: "2026-08-25"
+author: "Kye Gomez"
+categories: ["Company"]
+readTime: "6 min read"
+featured: false
+---
+
+# Swarms Weekly Ecosystem Update [August 17 - August 24]: The Swarms MCP Server, MCP Scribe, and Encrypted Skills Storage
+
+This week concentrated on the protocol layer of the Swarms platform. The Model Context Protocol has become the standard interface between AI clients and external systems, and the work shipped over the past seven days moves Swarms onto that interface in both directions: the platform itself is now callable as an MCP server, and any team with an OpenAPI specification can generate one of their own.
+
+The reasoning behind this is straightforward. Most MCP servers in circulation are local processes, installed per workstation and supervised by the client that spawns them. That model does not survive contact with organizational scale, where distribution, credential handling, and the transition from an editor to a production runtime all become operational problems. A hosted endpoint removes all three, and a generator that produces those endpoints from existing specifications removes the work of writing them.
+
+The rest of the week filled in the developer platform and the Marketplace. Swarms Cloud added encrypted storage for prompts and skills, treating prompt engineering as versioned infrastructure rather than disposable text. The Marketplace published a changelog covering more than 200 improvements shipped over the previous month, including a public API and a dedicated catalog for MCP servers.
+
+## The Swarms MCP Server Is Live
+
+The Swarms platform is now available over the Model Context Protocol at a single hosted endpoint. Point any MCP-compatible client at `mcp.swarms.world/mcp`, authenticate with the same `x-api-key` header used by the REST API, and call `list_tools` to discover 23 tools spanning agent execution, multi-agent swarms, batch processing, workflow orchestration, model discovery, account telemetry, and service health. The transport is streamable HTTP, so there is no package to install and no local process to supervise. Two properties matter for platform teams. Credentials stay in existing secret management rather than sitting in configuration files across every workstation, and capability changes reach every connected client through the same URL, which eliminates the version matrix between clients and the platform.
+
+**Resources**
+
+- [Learn more](/blog/mcp-server-live-swarms-cloud)
+
+## The MCP Portal Ships on Swarms Cloud
+
+![Swarms Cloud MCP page](/mcp_cloud_portal.png)
+
+Swarms Cloud now has a dedicated MCP page that serves as the entry point for the hosted server. It carries the endpoint URL, live operational status, connection diagnostics, authentication setup, and connection examples for Python, TypeScript, and file-configured clients. The status panel is worth noting for how it is measured. Rather than pinging the host, Swarms Cloud sends a real MCP `initialize` handshake from the server side and reports the protocol response, along with handshake latency and observed uptime labeled with its sample count and window. The portal also links directly to the MCP tutorials, the full client reference, the documentation index, and API key management, which makes it a single starting point for connecting agents, swarms, and batch workflows.
+
+**Resources**
+
+- [Learn more](https://cloud.swarms.world/mcp)
+
+## MCP Scribe Converts OpenAPI Specifications Into MCP Servers
+
+<img src="/mcp_scribe.png" alt="MCP Scribe" style="display:block;max-width:420px;margin-left:auto;margin-right:auto" />
+
+MCP Scribe is a deterministic translation layer from OpenAPI to MCP, released this week as an open source package. It parses OpenAPI 3.1, 3.0, and Swagger 2.0 from URLs, files, or stdin, resolves the schemas, and generates model-callable tools using JSON Schema 2020-12, with no handwritten glue code. Authentication covers API keys, bearer tokens, Basic Auth, OAuth2 client credentials, and custom headers, and credentials are stripped from tool schemas and injected at request time rather than exposed to the model. Resilience is built in through exponential backoff, circuit breakers, rate limiting, concurrency caps, and request budgets. Both stdio and streamable HTTP transports are supported, alongside CLI tooling for inspection, dry runs, generation, installation, and deployment. Teams with existing API surfaces can bring them into agentic workflows without rebuilding the infrastructure underneath.
+
+**Resources**
+
+- [Learn more](https://github.com/The-Swarm-Corporation/mcp-scribe)
+
+## Swarms Cloud Adds Encrypted Prompt and Skills Storage
+
+![Swarms Cloud skills library](/swarms_cloud_skills_library.png)
+
+Swarms Cloud now includes a private, encrypted library for storing and managing prompts and skills. Write entries directly in the interface, or drag and drop existing Markdown, text, and JSON files onto the page, including Anthropic-format `SKILL.md` files, which the library supports natively. Search runs across names, descriptions, tags, and prompt content, and every skill gets a dedicated page with editing and one-click copy. The design treats prompt engineering as infrastructure. A prompt refined once becomes a reusable asset across agents, workflows, batch jobs, and multi-agent systems, versioned over time and kept private rather than rewritten per project. The feature is available on Free, Pro, and Premium accounts at no additional cost.
+
+**Resources**
+
+- [Learn more](/blog/private-skills-encrypted-storage-swarms-cloud)
+
+## The Marketplace Changelog Covers More Than 200 Improvements
+
+![Swarms Marketplace Changelog](/swarms_marketplace_changelog_augu12.png)
+
+The Swarms Marketplace published a changelog covering July 21 through August 21, with more than 200 improvements, fixes, and features across discovery, developer infrastructure, mobile, and security. The developer-facing additions are the most consequential. The Marketplace now publishes a public OpenAPI 3.1 specification generated directly from its API, along with full platform documentation covering 26 endpoints in `llms.txt` format for agent consumption. A dedicated MCP Servers page gives the catalog a discovery surface for community-published MCP agents, prompts, and tools. Weekly competitions and the Screener round out the release on the product side. More than 6,000 agents, prompts, and tools have now been published to the Marketplace by the community.
+
+**Resources**
+
+- [Learn more](/blog/swarms-marketplace-changelog-july-august)
+
+## Conclusion
+
+The through line this week is standardization. Three of the five releases concern the Model Context Protocol, and together they close a loop: the Swarms runtime is now reachable from any MCP client, the Marketplace has a catalog for community MCP servers, and MCP Scribe lets any team generate a compliant server from a specification they already maintain. The protocol becomes the contract, which means the implementation language and the client are choices developers make rather than constraints the platform imposes.
+
+The remaining work reinforces the same direction. Encrypted skills storage gives prompt engineering a durable home instead of leaving it scattered across repositories, and the Marketplace changelog moved its API from an internal surface to a documented public one. Both reduce the amount of infrastructure a team has to build before it can start running production agents.
+
+## Links and Resources
+
+| Resource | Link |
+| --- | --- |
+| The Swarms MCP Server Is Live | [swarms.ai/blog/mcp-server-live-swarms-cloud](/blog/mcp-server-live-swarms-cloud) |
+| MCP Portal on Swarms Cloud | [cloud.swarms.world/mcp](https://cloud.swarms.world/mcp) |
+| MCP endpoint | [mcp.swarms.world/mcp](https://mcp.swarms.world/mcp) |
+| Swarms MCP client reference | [docs.swarms.ai/docs/documentation/clients/swarms-api-mcp](https://docs.swarms.ai/docs/documentation/clients/swarms-api-mcp) |
+| MCP TypeScript tutorial | [docs.swarms.ai/docs/examples/examples/mcp-agent-typescript](https://docs.swarms.ai/docs/examples/examples/mcp-agent-typescript) |
+| MCP Python batch pipeline tutorial | [docs.swarms.ai/docs/examples/examples/mcp-batch-pipeline-python](https://docs.swarms.ai/docs/examples/examples/mcp-batch-pipeline-python) |
+| MCP Scribe on GitHub | [github.com/The-Swarm-Corporation/mcp-scribe](https://github.com/The-Swarm-Corporation/mcp-scribe) |
+| MCP Scribe skill reference | [github.com/The-Swarm-Corporation/mcp-scribe/blob/main/MCP_SCRIBE_SKILL.md](https://github.com/The-Swarm-Corporation/mcp-scribe/blob/main/MCP_SCRIBE_SKILL.md) |
+| Secure Prompt and Skills Storage | [swarms.ai/blog/private-skills-encrypted-storage-swarms-cloud](/blog/private-skills-encrypted-storage-swarms-cloud) |
+| Skills library on Swarms Cloud | [cloud.swarms.world/skills](https://cloud.swarms.world/skills) |
+| Swarms Marketplace Changelog | [swarms.ai/blog/swarms-marketplace-changelog-july-august](/blog/swarms-marketplace-changelog-july-august) |
+| Swarms Marketplace | [swarms.world](https://swarms.world) |
+| Swarms Cloud | [cloud.swarms.world](https://cloud.swarms.world) |
+| API keys | [cloud.swarms.world/api-keys](https://cloud.swarms.world/api-keys) |
+| Pricing | [cloud.swarms.world/pricing](https://cloud.swarms.world/pricing) |
+| Swarms Academy | [swarms.ai/academy](/academy) |
+| Swarms Framework on GitHub | [github.com/kyegomez/swarms](https://github.com/kyegomez/swarms) |
+| Swarms on X | [x.com/swarms_corp](https://x.com/swarms_corp) |

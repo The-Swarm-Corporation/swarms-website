@@ -1,0 +1,94 @@
+---
+title: "Swarms 生态每周更新 [8 月 17 日 - 8 月 24 日]：Swarms MCP 服务器、MCP Scribe 与加密技能存储"
+description: "本周 Swarms 生态进展：托管的 Swarms MCP 服务器正式上线，单个端点提供 23 个工具；MCP Portal 在 Swarms Cloud 上线，带实时状态与连接诊断；MCP Scribe 将 OpenAPI 规范转换为生产级 MCP 服务器；Swarms Cloud 新增加密的提示词与技能存储，原生支持 SKILL.md；Marketplace 更新日志覆盖 7 月 21 日至 8 月 21 日之间交付的 200 多项改进。"
+date: "2026-08-25"
+author: "Kye Gomez"
+categories: ["公司"]
+readTime: "6 分钟阅读"
+featured: false
+---
+
+# Swarms 生态每周更新 [8 月 17 日 - 8 月 24 日]：Swarms MCP 服务器、MCP Scribe 与加密技能存储
+
+本周的工作集中在 Swarms 平台的协议层。Model Context Protocol 已经成为 AI 客户端与外部系统之间的标准接口，过去七天交付的成果让 Swarms 在两个方向上都接入了这一接口：平台本身现在可以作为 MCP 服务器被调用，而任何拥有 OpenAPI 规范的团队都可以生成属于自己的 MCP 服务器。
+
+背后的理由很直接。目前流通的大多数 MCP 服务器都是本地进程，需要逐台工作站安装，并由启动它们的客户端负责管理。这种模式在组织规模上站不住脚：分发、凭证处理，以及从编辑器迁移到生产运行时的过程，都会变成运维问题。托管端点消除了这三个问题，而一个能够从既有规范生成这些端点的工具，则消除了编写它们的工作量。
+
+本周余下的进展补齐了开发者平台与 Marketplace。Swarms Cloud 新增了提示词与技能的加密存储，把提示词工程当作带版本的基础设施来对待，而不是一次性的文本。Marketplace 发布了更新日志，覆盖过去一个月交付的 200 多项改进，其中包括一个公开 API 和一个专门的 MCP 服务器目录。
+
+## Swarms MCP 服务器正式上线
+
+Swarms 平台现在通过 Model Context Protocol 在一个托管端点上开放。把任意兼容 MCP 的客户端指向 `mcp.swarms.world/mcp`，使用与 REST API 相同的 `x-api-key` 请求头认证，再调用 `list_tools`，即可发现覆盖智能体执行、多智能体集群、批量处理、工作流编排、模型发现、账户遥测与服务健康的 23 个工具。传输层使用 streamable HTTP，因此无需安装任何软件包，也无需维护本地进程。对平台团队来说，有两个特性尤为重要：凭证保留在既有的密钥管理体系中，而不是散落在每台工作站的配置文件里；能力变更通过同一个 URL 触达所有已连接的客户端，从而消除了客户端与平台之间的版本矩阵。
+
+**相关资源**
+
+- [了解更多](/zh/blog/mcp-server-live-swarms-cloud)
+
+## MCP Portal 在 Swarms Cloud 上线
+
+![Swarms Cloud MCP 页面](/mcp_cloud_portal.png)
+
+Swarms Cloud 现在有了专属的 MCP 页面，作为托管服务器的入口。页面提供端点 URL、实时运行状态、连接诊断、认证配置，以及面向 Python、TypeScript 和配置文件式客户端的连接示例。状态面板的测量方式值得说明：它不是对主机做 ping，而是由 Swarms Cloud 从服务端发送一次真实的 MCP `initialize` 握手，并汇报协议响应，同时给出握手延迟和标注了样本数量与时间窗口的观测可用率。该页面还直接链接到 MCP 教程、完整客户端参考、文档索引和 API 密钥管理，使其成为把智能体、集群与批处理工作流接入 MCP 的统一起点。
+
+**相关资源**
+
+- [了解更多](https://cloud.swarms.world/mcp)
+
+## MCP Scribe 将 OpenAPI 规范转换为 MCP 服务器
+
+<img src="/mcp_scribe.png" alt="MCP Scribe" style="display:block;max-width:420px;margin-left:auto;margin-right:auto" />
+
+MCP Scribe 是一个从 OpenAPI 到 MCP 的确定性翻译层，本周以开源软件包的形式发布。它可以从 URL、文件或 stdin 解析 OpenAPI 3.1、3.0 与 Swagger 2.0，解析其中的 schema，并使用 JSON Schema 2020-12 生成模型可调用的工具，无需手写任何胶水代码。认证方面支持 API 密钥、bearer token、Basic Auth、OAuth2 客户端凭证和自定义请求头，凭证会从工具 schema 中剥离，在请求时注入，而不会暴露给模型。弹性能力内置于默认行为中：指数退避、熔断器、速率限制、并发上限与请求预算。传输层同时支持 stdio 与 streamable HTTP，并配有用于检查、试运行、生成、安装和部署的 CLI 工具。已有 API 的团队可以直接把它们带入智能体工作流，而不必重建底层基础设施。
+
+**相关资源**
+
+- [了解更多](https://github.com/The-Swarm-Corporation/mcp-scribe)
+
+## Swarms Cloud 新增加密的提示词与技能存储
+
+![Swarms Cloud 技能库](/swarms_cloud_skills_library.png)
+
+Swarms Cloud 现在包含一个私有的加密库，用于存储和管理提示词与技能。你可以在界面中直接编写条目，也可以把已有的 Markdown、文本和 JSON 文件拖放到页面上，其中包括该库原生支持的 Anthropic 格式 `SKILL.md` 文件。搜索覆盖名称、描述、标签与提示词正文，每个技能都有专属页面，支持编辑与一键复制。这一设计把提示词工程视为基础设施：一条打磨过的提示词会成为可复用的资产，可跨智能体、工作流、批处理任务和多智能体系统使用，随时间迭代版本并保持私有，而不必在每个项目里重写一遍。该功能对 Free、Pro 与 Premium 账户开放，不额外收费。
+
+**相关资源**
+
+- [了解更多](/zh/blog/private-skills-encrypted-storage-swarms-cloud)
+
+## Marketplace 更新日志覆盖 200 多项改进
+
+![Swarms Marketplace 更新日志](/swarms_marketplace_changelog_augu12.png)
+
+Swarms Marketplace 发布了覆盖 7 月 21 日至 8 月 21 日的更新日志，包含 200 多项改进、修复与新功能，涉及发现、开发者基础设施、移动端与安全。其中面向开发者的部分影响最大。Marketplace 现在发布由其 API 直接生成的公开 OpenAPI 3.1 规范，以及以 `llms.txt` 格式提供、覆盖 26 个端点的完整平台文档，便于智能体直接读取。专门的 MCP Servers 页面为社区发布的 MCP 智能体、提示词与工具提供了发现入口。产品侧的每周竞赛与 Screener 也在这次发布中一并交付。社区目前已在 Marketplace 上发布超过 6,000 个智能体、提示词与工具。
+
+**相关资源**
+
+- [了解更多](/zh/blog/swarms-marketplace-changelog-july-august)
+
+## 总结
+
+本周贯穿始终的主线是标准化。五项发布中有三项与 Model Context Protocol 相关，它们共同闭合了一个循环：Swarms 运行时现在可以被任意 MCP 客户端触达，Marketplace 为社区 MCP 服务器提供了目录，而 MCP Scribe 让任何团队都能从自己已经维护的规范生成一个合规的服务器。协议成为契约，这意味着实现语言与客户端是开发者自己的选择，而不是平台施加的约束。
+
+其余的工作强化了同一个方向。加密技能存储为提示词工程提供了持久的归处，不再让它散落在各个代码仓库中；Marketplace 更新日志则把它的 API 从内部接口变成了有文档支撑的公开接口。两者都减少了团队在跑通生产级智能体之前需要自行搭建的基础设施。
+
+## 链接与资源
+
+| 资源 | 链接 |
+| --- | --- |
+| Swarms MCP 服务器正式上线 | [swarms.ai/zh/blog/mcp-server-live-swarms-cloud](/zh/blog/mcp-server-live-swarms-cloud) |
+| Swarms Cloud 上的 MCP Portal | [cloud.swarms.world/mcp](https://cloud.swarms.world/mcp) |
+| MCP 端点 | [mcp.swarms.world/mcp](https://mcp.swarms.world/mcp) |
+| Swarms MCP 客户端参考文档 | [docs.swarms.ai/docs/documentation/clients/swarms-api-mcp](https://docs.swarms.ai/docs/documentation/clients/swarms-api-mcp) |
+| MCP TypeScript 教程 | [docs.swarms.ai/docs/examples/examples/mcp-agent-typescript](https://docs.swarms.ai/docs/examples/examples/mcp-agent-typescript) |
+| MCP Python 批处理流水线教程 | [docs.swarms.ai/docs/examples/examples/mcp-batch-pipeline-python](https://docs.swarms.ai/docs/examples/examples/mcp-batch-pipeline-python) |
+| MCP Scribe GitHub 仓库 | [github.com/The-Swarm-Corporation/mcp-scribe](https://github.com/The-Swarm-Corporation/mcp-scribe) |
+| MCP Scribe skill 参考 | [github.com/The-Swarm-Corporation/mcp-scribe/blob/main/MCP_SCRIBE_SKILL.md](https://github.com/The-Swarm-Corporation/mcp-scribe/blob/main/MCP_SCRIBE_SKILL.md) |
+| 安全的提示词与技能存储 | [swarms.ai/zh/blog/private-skills-encrypted-storage-swarms-cloud](/zh/blog/private-skills-encrypted-storage-swarms-cloud) |
+| Swarms Cloud 技能库 | [cloud.swarms.world/skills](https://cloud.swarms.world/skills) |
+| Swarms Marketplace 更新日志 | [swarms.ai/zh/blog/swarms-marketplace-changelog-july-august](/zh/blog/swarms-marketplace-changelog-july-august) |
+| Swarms Marketplace | [swarms.world](https://swarms.world) |
+| Swarms Cloud | [cloud.swarms.world](https://cloud.swarms.world) |
+| API 密钥 | [cloud.swarms.world/api-keys](https://cloud.swarms.world/api-keys) |
+| 定价 | [cloud.swarms.world/pricing](https://cloud.swarms.world/pricing) |
+| Swarms Academy | [swarms.ai/academy](/academy) |
+| Swarms 框架 GitHub 仓库 | [github.com/kyegomez/swarms](https://github.com/kyegomez/swarms) |
+| Swarms 官方 X | [x.com/swarms_corp](https://x.com/swarms_corp) |

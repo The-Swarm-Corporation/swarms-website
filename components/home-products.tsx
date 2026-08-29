@@ -10,7 +10,21 @@ import Link from "next/link"
 
 const ease: [number, number, number, number] = [0.22, 1, 0.36, 1]
 
-const swarmsStack = [
+type Product = {
+  title: string
+  github?: string
+  subtitle: string
+  file?: string
+  description: string
+  link: string
+  ctaLabel?: string
+  docsLink: string
+  docsLabel?: string
+  code?: string
+  image?: string
+}
+
+const swarmsStack: Product[] = [
   {
     title: "Swarms Python",
     github: "kyegomez/swarms",
@@ -107,6 +121,17 @@ async fn main() -> Result<()> {
     docsLink: "https://swarms.world",
     image: "/marketplace_banner.png",
   },
+  {
+    title: "AgentHQ",
+    subtitle: "Agent Office",
+    description:
+      "AgentHQ makes agent orchestration fun, simple, and reliable. Hire real Claude and Codex agents, give them desks in a pixel art office, and watch every tool call stream live. Now in pre-beta, join the waitlist for early access.",
+    link: "/agenthq",
+    ctaLabel: "Join the Waitlist",
+    docsLink: "/blog/introducing-agenthq",
+    docsLabel: "Read the Announcement",
+    image: "/agent_hq_banner.png",
+  },
 ]
 
 export function HomeProducts() {
@@ -154,11 +179,12 @@ function ProductRow({
   index,
   starCount,
 }: {
-  product: (typeof swarmsStack)[0]
+  product: Product
   index: number
   starCount?: number
 }) {
   const isEven = index % 2 === 0
+  const isInternalDocs = product.docsLink.startsWith("/")
 
   return (
     <motion.div
@@ -199,46 +225,69 @@ function ProductRow({
           >
             {product.link.startsWith("/") ? (
               <Link href={product.link}>
-                Get Started
+                {product.ctaLabel ?? "Get Started"}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             ) : (
               <a href={product.link} target="_blank" rel="noopener noreferrer">
-                Get Started
+                {product.ctaLabel ?? "Get Started"}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </a>
             )}
           </Button>
-          <a
-            href={product.docsLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group inline-flex h-10 items-center gap-1.5 px-2 text-sm font-medium text-white/60 transition-colors hover:text-white"
-          >
-            Documentation
-            <ArrowUpRight className="h-4 w-4 text-white/40 transition-colors group-hover:text-white" />
-          </a>
+          {isInternalDocs ? (
+            <Link
+              href={product.docsLink}
+              className="group inline-flex h-10 items-center gap-1.5 px-2 text-sm font-medium text-white/60 transition-colors hover:text-white"
+            >
+              {product.docsLabel ?? "Documentation"}
+              <ArrowUpRight className="h-4 w-4 text-white/40 transition-colors group-hover:text-white" />
+            </Link>
+          ) : (
+            <a
+              href={product.docsLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group inline-flex h-10 items-center gap-1.5 px-2 text-sm font-medium text-white/60 transition-colors hover:text-white"
+            >
+              {product.docsLabel ?? "Documentation"}
+              <ArrowUpRight className="h-4 w-4 text-white/40 transition-colors group-hover:text-white" />
+            </a>
+          )}
         </div>
       </div>
 
       {/* Code / image panel */}
       <div className={`w-full min-w-0 ${isEven ? "lg:order-2" : "lg:order-1"}`}>
         {product.image ? (
-          <a
-            href={product.link}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block overflow-hidden rounded-lg border border-white/[0.08] transition-colors hover:border-white/20"
-          >
-            <Image
-              src={product.image}
-              alt={`${product.title} — ${product.subtitle}`}
-              width={800}
-              height={600}
-              className="h-auto w-full object-cover"
-              loading="lazy"
-            />
-          </a>
+          (() => {
+            const panel = (
+              <Image
+                src={product.image}
+                alt={`${product.title} — ${product.subtitle}`}
+                width={800}
+                height={600}
+                className="h-auto w-full object-cover"
+                loading="lazy"
+              />
+            )
+            const panelClass =
+              "block overflow-hidden rounded-lg border border-white/[0.08] transition-colors hover:border-white/20"
+            return product.link.startsWith("/") ? (
+              <Link href={product.link} className={panelClass}>
+                {panel}
+              </Link>
+            ) : (
+              <a
+                href={product.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={panelClass}
+              >
+                {panel}
+              </a>
+            )
+          })()
         ) : (
           <div className="overflow-hidden rounded-lg border border-white/[0.08] bg-[#0a0a0a]">
             <div className="flex items-center gap-1.5 border-b border-white/[0.08] px-4 py-3">

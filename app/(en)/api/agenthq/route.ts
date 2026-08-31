@@ -64,17 +64,13 @@ export async function POST(request: NextRequest) {
                 <td align="center">
                   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;">
 
-                    <tr>
-                      <td align="center" style="padding-bottom:24px;">
-                        <div style="font-size:20px; font-weight:600; letter-spacing:-0.4px; color:#0071e3;">swarms</div>
-                      </td>
-                    </tr>
 
                     <tr>
                       <td style="background:#ffffff; border-radius:22px; padding:40px 36px; box-shadow:0 2px 12px rgba(0,0,0,0.06);">
+                        <img src="https://www.swarms.ai/agent_hq_banner.png" alt="AgentHQ" width="488" style="display:block; width:100%; max-width:488px; height:auto; border-radius:16px; margin:0 0 28px 0;">
                         <h1 style="margin:0 0 12px 0; font-size:30px; line-height:1.2; font-weight:700; letter-spacing:-0.8px; color:#1d1d1f;">You're on the AgentHQ waitlist</h1>
                         <p style="margin:0 0 18px 0; font-size:16px; line-height:1.6; color:#424245;">Thanks for joining. AgentHQ makes multi-agent orchestration fun, simple, and enjoyable: hire Claude and Codex agents, assign tasks in plain language, and watch them work in real time in an interactive office.</p>
-                        <p style="margin:0; font-size:16px; line-height:1.6; color:#424245;">You can start playing right now.</p>
+                        <p style="margin:0; font-size:16px; line-height:1.6; color:#424245;">It's free right now, and you can start playing today.</p>
 
                         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:28px 0 0 0;">
                           <tr>
@@ -104,7 +100,10 @@ export async function POST(request: NextRequest) {
                         </table>
 
                         <p style="margin:18px 0 0 0; text-align:center; font-size:15px; line-height:1.5;">
-                          <a href="https://www.swarms.ai/blog/introducing-agenthq" style="color:#0071e3; text-decoration:none; font-weight:500;">Read the AgentHQ announcement &rsaquo;</a>
+                          <a href="https://game.swarms.world/learn-more" style="color:#0071e3; text-decoration:none; font-weight:500;">Learn more about AgentHQ &rsaquo;</a>
+                        </p>
+                        <p style="margin:10px 0 0 0; text-align:center; font-size:15px; line-height:1.5;">
+                          <a href="https://www.swarms.ai/blog/introducing-agenthq" style="color:#0071e3; text-decoration:none; font-weight:500;">Read the announcement blog post &rsaquo;</a>
                         </p>
                       </td>
                     </tr>

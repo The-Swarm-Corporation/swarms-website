@@ -18,11 +18,15 @@ featured: false
 
 ## AgentHQ 进入预测试阶段
 
+![AgentHQ](/agent_hq_banner.png)
+
 AgentHQ 是 Swarms 的新产品，它把多智能体编排呈现为一间交互式办公室，而不是一串日志。开发者可以雇佣 Claude 与 Codex 智能体，为它们安排工位，用自然语言下达任务，并实时观察它们协作、委派与交付结果的全过程。其设计目标是在运行过程中而非事后实现可观测性。在常规配置下，卡住的智能体、重复的任务或意外的工具调用往往只有在事后翻阅日志时才会暴露。AgentHQ 让智能体状态、当前任务与智能体之间的通信持续可见，从而缩短了编排出错到开发者察觉之间的时间。该产品目前处于预测试阶段，通过等候名单逐步开放访问，同时团队仍在加固运行时。
 
 **了解更多:** [swarms.ai/zh/blog/introducing-agenthq](/zh/blog/introducing-agenthq)
 
 ## Swarms v15 Akira 发布预告
+
+![Swarms 框架](/swarms_banner_intro_new.png)
 
 Swarms v15，代号 Akira，已在本周提前公布。Akira 是一次面向性能的全框架更新，多智能体架构的 token 用量最高降低 40%，并在运行时引入了更底层的并发执行。token 消耗是多智能体系统的主要成本来源，因为每增加一个智能体都会成倍放大上下文、工具 schema 与中间输出。降低 40% 会改变哪些架构在生产规模下具备经济可行性，尤其是宽并发工作流与长时间运行的分层集群。并发方面的改进针对第二个约束，把协调逻辑下沉到更底层，使并行执行的智能体减少等待编排层的时间。该版本将在未来几天发布，订阅 newsletter 可第一时间收到发布通知。
 
@@ -30,17 +34,23 @@ Swarms v15，代号 Akira，已在本周提前公布。Akira 是一次面向性�
 
 ## 代币化 AI 智能体构建指南
 
+![代币化 AI 智能体构建指南](/complete_guide_to_tokenizing_agent.png)
+
 本周发布的《代币化 AI 智能体构建指南》是一份完整的实施参考，讲解如何在 Swarms Launchpad 上把智能体与提示词发布为产品。指南涵盖哪些类别的智能体适合这种分发方式、四条受支持的实现路径（Code、x402、MCP 与 Website）、面向已有仓库的 GitHub 导入、包含定价模型与 USDC 或 SOL 计价市场的发行配置选项，以及发行时可用的运行模式。它完整走通了整个发布流程，而不是抽象地罗列功能。对于已经在生产中运行智能体的开发者，最实用的部分是导入路径：现有仓库或托管端点无需重写智能体本身即可成为上架产品。
 
 **了解更多:** [swarms.ai/zh/blog/complete-guide-tokenizing-your-agent](/zh/blog/complete-guide-tokenizing-your-agent)
 
 ## USDC 发行锦标赛开赛
 
+![USDC 发行锦标赛](/usdc_competition.png)
+
 USDC 发行锦标赛于 8 月 26 日开赛，持续至 UTC 时间 9 月 2 日。开发者在 Swarms Launchpad 发布智能体或提示词时选择 USDC 作为计价货币即自动参赛，按总交易量排名的前三名将分享 1,000 USDC 奖金池，分配为 500、350 与 150。排行榜在整个比赛窗口内持续更新。值得注意的技术细节是计价货币本身。以 USDC 计价让创作者拥有稳定的记账单位，收入与定价决策不会受计价资产波动影响，从而让已发布智能体的经济模型更容易推演。对于把上架视为产品而非实验的开发者来说，这一点尤为重要。
 
 **了解更多:** [swarms.ai/zh/blog/usdc-launch-championship](/zh/blog/usdc-launch-championship)
 
 ## 生态与社区
+
+![Swarms Marketplace](/marketplace_banner.png)
 
 在产品更新之外，Marketplace 本周继续扩张，社区发行、提示词发布与 Launchpad 活动贯穿全周。上周发布的 Swarms MCP 服务器仍通过单一托管端点提供 23 个工具，覆盖智能体执行、多智能体集群、批量处理、工作流编排、模型发现与服务健康检查，Swarms Cloud 上的 MCP Portal 仍是连接配置与诊断的入口。基于 AgentHQ、Akira 或 Launchpad 构建的开发者，可以在这三个界面上使用同一个 API 密钥。
 

@@ -1,0 +1,1309 @@
+---
+title: "Swarms v15 'Akira': Dynamic Tool Loading, a Real Agent Harness, and Typed Chat Turns"
+description: "The complete technical changelog for Swarms v15, code-named Akira. A DynamicToolLoader defers tool schemas behind a searchable catalog so a fifty-tool agent sends one schema, the autonomous agent harness ships sixteen working built-in tools with an honest transcript and a mutable plan, every multi-agent structure now delivers context as typed chat turns instead of one flattened blob, and 27 dead modules are gone. Every new feature, improvement, and bug fix from July 29 to September 1, 2026, day by day."
+date: "2026-09-01"
+author: "Kye Gomez"
+categories: ["Engineering", "Product"]
+readTime: "50 min read"
+featured: true
+image: "/swarms_akira.png"
+---
+
+# Swarms v15 "Akira"
+
+Akira is five weeks of work: **131 commits between July 29 and September 1, 2026**, across 312 files, **+27,151 / −36,790 lines**. It is the first Swarms release that is net *smaller* than the one before it by nearly ten thousand lines, and that is the point.
+
+Zena (v14) made the framework observable. Akira makes it honest.
+
+There is a single defect that runs through most of this release, and it is worth naming before anything else. Every multi-agent structure in Swarms kept a shared `Conversation`, and when it was time to hand that context to the next agent, it called `return_history_as_string()` and passed the result as `agent.run(task=<one giant string>)`. Nine words of prose describing the bug, and it cost you three things at once:
+
+1. **Role attribution was destroyed.** An agent could not tell its own prior output from a peer's. It read `"Researcher: ...\nAnalyst: ..."` as one anonymous user message.
+2. **Prompt caching never fired.** Every turn produced a different single message, so no request was ever a prefix of the next. You paid full price for every token, every turn.
+3. **Context grew superlinearly.** `Agent.run()` returns the agent's *whole conversation* by default (`output_type="str-all-except-first"`), and structures recorded that return value as the agent's contribution. So each agent's transcript was folded back into the shared transcript, which was then folded into the next agent's transcript. On `AgentRearrange` the measured growth was 1,157 characters by turn 6 where 116 was correct.
+
+Akira converts every structure in the framework onto **typed chat turns** — real `[{role, content}]` message lists where the agent's own output arrives as an `assistant` turn and every peer arrives as a labelled `user` turn. Four PRs, sixteen structures, and a set of shared helpers in `swarms/structs/context_utils.py` that any structure can use.
+
+The second thread is the **autonomous loop**. `max_loops="auto"` kept its own view of the world — the plan, the schedule, which subtask was done — while sending the model a flattened string that hid what had actually happened. When those two views disagreed, runs failed silently, and in one reproduced case a single stuck subtask burned **2,002 LLM calls**. That is now 22.
+
+The third thread is the **agent harness**. `max_loops="auto"` now ships sixteen built-in tools — files, shell, grep, sub-agents, control flow — and before this release *every file and shell tool among them raised `AttributeError` on every call*, silently, because the file tools catch the error and hand it back to the model as a tool result. Alongside that, a new `DynamicToolLoader` stops sending every tool schema on every request: tools are registered and executable but **deferred**, discoverable through a single `tool_search` tool, and pre-warmed from the plan the moment it is created. Tool definitions live in the cached prefix and are paid for continuously — the sixteen built-ins alone are roughly 2,600 tokens per request, and one MCP server can add forty more.
+
+The fourth thread is **deletion**. AOP is gone (5,633 lines). `BaseSwarm` and `BaseStructure` are gone (2,637 lines with their tests). Thirty hand-written batch runners collapsed into one. Five copies of autosave collapsed into one `WorkspaceManager`. Twenty-seven modules with zero call sites anywhere in the repository were removed. Every deletion in this release was verified by grep across `swarms/`, `tests/`, and `examples/` before it landed.
+
+This post covers all of it. New features and improvements first, then a **day-by-day, commit-by-commit** record of the entire release.
+
+---
+
+## Getting the Update
+
+```bash
+# pip
+pip install -U swarms
+
+# uv
+uv pip install -U swarms
+
+# uv, in a project managed by uv
+uv add swarms --upgrade
+
+# poetry
+poetry add swarms@latest
+
+# pdm
+pdm update swarms
+```
+
+Pin it if you want reproducible installs:
+
+```bash
+pip install "swarms==15.0.0"
+uv pip install "swarms==15.0.0"
+```
+
+Confirm what you got:
+
+```bash
+python -c "import swarms; print(swarms.__version__)"
+```
+
+**If you are coming from v14, read [Breaking Changes](#breaking-changes) first.** Nine public names were removed in this release, and `Agent.run_multiple_images` was replaced by something better but differently shaped.
+
+---
+
+## New Features
+
+### Dynamic tool loading: `tool_search` and the `DynamicToolLoader`
+
+**The single biggest new capability in Akira.** Tool definitions are part of the prompt. They are re-sent with every call and they sit in the cached prefix, so a large tool set is paid for *continuously* — the 16 built-in autonomous-loop tools alone are roughly **2,600 tokens per request**, and a single MCP server can add 40 more. Selection accuracy falls as the list grows, too: a model choosing among 80 tools chooses worse than one choosing among 8.
+
+`swarms/tools/dynamic_tool_loader.py` keeps tools **deferred** — registered and executable, but absent from the schema list sent to the model. Exactly one extra tool is always present: `tool_search`, which matches the catalog by name and description and loads what it finds.
+
+```python
+from swarms.tools.dynamic_tool_loader import DynamicToolLoader
+
+loader = DynamicToolLoader(tools=[get_weather, send_email, read_csv])
+
+len(loader.schemas())          # 1 — only tool_search is exposed
+print(loader.run_search("weather"))
+# get_weather: Get the current weather for a city.
+# 
+# Loaded 1: get_weather. They are callable from your next turn.
+len(loader.schemas())          # 2 — tool_search + get_weather
+```
+
+On an `Agent` it is one flag, and it is **on by default**:
+
+```python
+from swarms import Agent
+
+agent = Agent(
+    agent_name="Researcher",
+    model_name="gpt-5.4",
+    max_loops="auto",
+    tools=[...],            # fifty tools, one schema sent
+    dynamic_tools=True,     # default
+)
+```
+
+Design decisions worth knowing, because they show up in behaviour:
+
+- **Matching is deliberately simple** — token overlap, with a name match worth 3× a description match. No dependencies, deterministic, and therefore testable. The docstring is explicit that embeddings go in only when this measurably fails.
+- **`select:name1,name2` loads exact names**, and a total miss **falls through to keyword search** over the requested names rather than returning nothing. This was a real bug fixed in [#2011](https://github.com/kyegomez/swarms/pull/2011): `select:` was exact-match only, so a model guessing `exa_web_search` for `web_search_exa` got silence back — and a single-loop agent had no turn left to retry.
+- **A miss lists the catalog** (capped at 30 names), which turns a failed search into a productive retry with `select:` instead of the model concluding the task is impossible.
+- **A loaded tool becomes callable on the model's *next* turn**, not the current one. The tool description says so in capitals, and tells the model to load everything it expects to need in a *single* call.
+- **Control-flow tools are never deferred.** `ALWAYS_LOADED_TOOLS` pins `create_plan`, `think`, `subtask_done`, `complete_task` and `respond_to_user` — an agent that has to search for its own `complete_task` cannot finish.
+- **Loaded tools stay loaded** for the rest of the run.
+
+**Plan-based pre-warming.** With deferral on, the model otherwise discovers tools one subtask at a time, because the execution prompt deliberately scopes each turn to a single subtask — so it cannot know what later steps need and searches again for each one, at a full round-trip each. The plan is the best statement of what the whole run needs, and it exists before any subtask starts, so the loop uses it as a search query the moment `create_plan` succeeds:
+
+```python
+PREWARM_TOOL_LIMIT = 8        # enough for a typical plan, not the whole catalog
+PREWARM_MIN_SCORE_RATIO = 0.6 # speculative, so relevance must beat an explicit search
+```
+
+This costs **no extra turn** — it happens inside the `create_plan` call that just succeeded — and if it misses, nothing breaks: the model still searches mid-run exactly as before. The higher score ratio is there because a long query contains enough common words to give weak matches a nonzero score.
+
+**MCP schemas join the catalog rather than every request** ([#2007](https://github.com/kyegomez/swarms/pull/2007)), which is what makes connecting several MCP servers practical at all.
+
+One fix worth calling out: `Agent(tools=[])` used to **enable the deferral machinery with nothing to search** ([#2026](https://github.com/kyegomez/swarms/pull/2026)). `exists()` is `is not None`, so `exists([])` was `True` — the agent got the `tool_search` schema and the "most tools are not loaded" notice in its system prompt, then advertised a tool whose catalog was empty on every request. `tools=None` behaved correctly, so the two spellings of "no tools" differed.
+
+---
+
+### The autonomous agent harness
+
+`max_loops="auto"` is no longer just a plan-execute loop — it is a working harness with **16 built-in tools**, and in Akira all of them actually run.
+
+| Category | Tools |
+|---|---|
+| Files | `read_file`, `create_file`, `update_file`, `delete_file`, `list_directory` |
+| Search | `grep` |
+| Shell | `run_bash` |
+| Sub-agents | `create_sub_agent`, `check_sub_agent_status`, `cancel_sub_agent_tasks` |
+| Control flow | `create_plan`, `subtask_done`, `complete_task`, `respond_to_user`, `think` |
+| Discovery | `tool_search` |
+
+```python
+from swarms import Agent
+
+agent = Agent(
+    agent_name="Researcher",
+    model_name="gpt-5.4",
+    max_loops="auto",
+    think_tool=True,          # new in v15
+    dynamic_tools=True,       # default
+    persistent_memory=True,
+    context_compression=True,
+)
+agent.run("Research the top 10 open-source LLMs and write a comparison to report.md")
+```
+
+**Every file and shell tool was broken before this release.** When the loop was extracted into `AutonomousAgentLoop` ([#1867](https://github.com/kyegomez/swarms/pull/1867)), the handler lambdas kept passing `self` — which was now the *loop*, not the agent. Every built-in reaches into `agent.short_memory`, `agent.print_on`, `agent.verbose` and `agent._get_agent_workspace_dir`, so all eight raised `AttributeError`. And because the file tools **catch it and return the error as the tool result**, the model was calmly told its own file operation had failed rather than the run crashing. Fixed in [#1894](https://github.com/kyegomez/swarms/pull/1894). The sub-agent handlers were included for the same reason: they store state via `setattr` on whatever object they are given, so the registry was landing on the loop.
+
+**`Agent(think_tool=...)` is new.** The `think` tool was previously **unreachable**: the filter tested `thinking_tokens is not None`, but that defaults to 1024, so `think` was stripped for every agent while the prompt still told the model to call it. The default is `False`, preserving the effective old behaviour, and the prompt now follows the flag.
+
+**The harness keeps an honest transcript.** `swarms/structs/transcript.py` is a new module owning one invariant: **every recorded tool call receives a matching tool result before the next request**, including on the failure path. Previously every call flattened the whole conversation into a single user message, so the model never saw assistant turns carrying `tool_calls` or tool results, and prompt caching was defeated. The same fix was applied to the integer `max_loops` path in `Agent._run`, which had the identical problem — so it reaches every agent and every swarm structure, not just autonomous ones. `transforms` keeps the legacy flattened prompt by design.
+
+**The plan is mutable.** `create_plan` is now idempotent: steps merge by `step_id`, finished work keeps its status and summary, unmentioned finished steps are retained as history, and a revision reports a diff. Discovered work no longer has to be forced into an unrelated subtask.
+
+**Tool retries actually retry.** `tool_execution_retry` documented `tool_retry_attempts` retries and a re-raise on exhaustion. It called `execute_tools` **exactly once**, caught only `AgentToolExecutionError` — an exception **never raised anywhere in the framework** — and logged a line announcing "3 attempts" that never happened. Real tool failures escaped the method entirely, and when the handler *did* fire, the failure was swallowed with no Tool Executor entry in `short_memory`, so **the model saw the call as having produced nothing and carried on as if it had succeeded** ([#1923](https://github.com/kyegomez/swarms/pull/1923)).
+
+**And MCP works with `max_loops="auto"` at all now.** Single MCP tool calls returned a bare dict where callers expected a list, which silently discarded every `create_plan` call — that is precisely why the combination could never start. The loop also had no MCP dispatch. Both fixed in [#2007](https://github.com/kyegomez/swarms/pull/2007), and mcp 2.x is supported alongside 1.x.
+
+Five correctness fixes to the loop itself are in [Improvements](#the-autonomous-loop-tells-the-truth) below.
+
+---
+
+### Typed chat turns, and the `context_utils` helpers
+
+This is the largest behavioural change in Akira and the one that most affects what you pay and what your agents actually see.
+
+The blocker was that a structure had nowhere to *put* typed turns. `Agent.run` accepted `messages=` through `**kwargs` and then silently overwrote it with the memory-derived transcript. `_run` now takes `messages` explicitly, and `_transcript_from_messages` prefers caller-supplied turns, falling back to memory when none are given.
+
+```python
+from swarms.structs.context_utils import messages_for, split_last_turn, agent_answer
+
+# Render a shared conversation from ONE agent's point of view:
+#   its own turns become `assistant`, everyone else's become `user`
+#   turns labelled with the speaker, structure bookkeeping omitted.
+turns = messages_for(conversation, agent_name="Writer")
+
+# Agent.run still takes one task, so hand the newest turn over as the task
+# and the rest as prior context.
+prior, task = split_last_turn(turns)
+result = writer.run(task=task, messages=prior)
+
+# And record the agent's ANSWER, not its whole transcript.
+conversation.add(writer.agent_name, agent_answer(writer, fallback=result))
+```
+
+Captured off the wire, a 3-agent `SequentialWorkflow` on its third step:
+
+```
+before                              after
+[system] You are Writer.            [system] You are Writer.
+[user]   User: Explain rate hikes.  [system] Sequential awareness: ...
+         Researcher: ANSWER_1       [user]   Explain rate hikes.
+         Analyst: ANSWER_2          [user]   Researcher: ANSWER_1
+                                    [user]   Analyst: ANSWER_2
+```
+
+Message counts grow 2 → 3 → 4 across the run, and each call is a **strict prefix** of the next. That is exactly what prompt caching needs.
+
+Nothing changes at your call site — what changes is the wire format:
+
+```python
+from swarms import Agent, SequentialWorkflow
+
+pipeline = SequentialWorkflow(
+    agents=[
+        Agent(agent_name="Researcher", model_name="gpt-5.4", max_loops=1),
+        Agent(agent_name="Analyst", model_name="gpt-5.4", max_loops=1),
+        Agent(agent_name="Writer", model_name="gpt-5.4", max_loops=1),
+    ],
+    max_loops=1,
+)
+pipeline.run("Analyse the impact of interest rate hikes on tech stocks.")
+```
+
+Converted across [#2078](https://github.com/kyegomez/swarms/pull/2078), [#2079](https://github.com/kyegomez/swarms/pull/2079), [#2085](https://github.com/kyegomez/swarms/pull/2085) and [#2125](https://github.com/kyegomez/swarms/pull/2125): `MixtureOfAgents`, `AgentRearrange`, `SequentialWorkflow`, `GroupChat`, `HierarchicalSwarm`, `MajorityVoting`, `GraphWorkflow`, `SwarmRouter`, `RoundRobinSwarm`, `AgentJudge`, `ReasoningDuo`, and all four `swarming_architectures` patterns.
+
+---
+
+### `HierarchicalSwarm(print_on=True)`: see what the director decided
+
+The director's plan was parsed and thrown away, and the panel showing its orders was gated behind `verbose`, which defaults to `False`. A run delegated to every worker in silence.
+
+```python
+from swarms import Agent, HierarchicalSwarm
+
+swarm = HierarchicalSwarm(
+    director=Agent(agent_name="Director", model_name="gpt-5.4", max_loops=1),
+    agents=[
+        Agent(agent_name="DataWorker", model_name="gpt-5.4-mini", max_loops=1),
+        Agent(agent_name="WritingWorker", model_name="gpt-5.4-mini", max_loops=1),
+    ],
+    max_loops=2,
+    print_on=True,   # new, default True — the plan and the full orders are shown
+)
+swarm.run("Produce a competitive analysis of the AI chip market.")
+```
+
+`print_on` follows the convention `Agent` and `auction_swarm` already use, and it separates *"show me what the director decided"* from log verbosity — so seeing the panel no longer means turning on debug logs. Orders are no longer truncated at 160 characters, labels are built with `Text.assemble` so a model-generated order mentioning `[scalability]` is not swallowed as an unknown style tag, and the panel titles itself with the director's name so nested orchestrators are distinguishable.
+
+The module was also split: prompts to `swarms/prompts/hierarchical_swarm_prompts.py`, schemas to `swarms/schemas/hs_schemas.py`, and director-output parsing to `swarms/structs/hierarchical_order_parser.py` with its own tests. The **live dashboard was removed** ([#2093](https://github.com/kyegomez/swarms/pull/2093)) — 55 references threaded through the director phase, the loop, error handling and both execution paths, plus a 563-line module with exactly one importer.
+
+---
+
+### `WorkspaceManager`: one autosave for the whole framework
+
+Every structure that autosaved had grown its own copy of the same logic. `SequentialWorkflow`, `ConcurrentWorkflow` and `HierarchicalSwarm` each carried a **byte-identical** `_setup_autosave`; `Agent` had a third variant, `SwarmRouter` a fourth, and three more classes advertised an `autosave` flag that did nothing at all.
+
+```python
+from swarms.utils.workspace_manager import WorkspaceManager
+
+class MySwarm:
+    def __init__(self, agents, autosave=True):
+        self.workspace = WorkspaceManager(self, enabled=autosave)
+
+    def run(self, task):
+        ...
+        self.workspace.save_conversation()   # never raises, never needs a guard
+```
+
+A disabled manager is a **live no-op object** rather than `None`, so the `if self.autosave and self.swarm_workspace_dir:` guards are gone — and no method raises, so the surrounding `try/except` blocks are gone too. **Autosave is a side effect of a run, never a reason for one to fail.** `save_json` is now atomic for everyone, which matters because `config.json` is rewritten on every loop and a crash mid-write truncated it.
+
+Agents keep the `agents/{name}-{uuid}` path rather than moving to the new layout: the autonomous loop's file tools resolve against it in six places and four examples read it. The replacement name builder was verified against the previous algorithm on adversarial inputs. 35 new offline tests cover directory layout, the disabled path, names that would otherwise escape the directory, atomic writes, and that a failed write leaves the previous file intact.
+
+---
+
+### `execution_utils`: one batch runner for every structure
+
+Thirty methods across twenty-eight files spelled out *"run this list of tasks"* by hand, under five different names — `batch_run`, `batched_run`, `run_batch`, `run_batched`, `abatch_run` — and twelve were the identical one-liner. Eight more did the concurrent version, each with its own executor.
+
+```python
+from swarms.structs.execution_utils import batched_run, run_concurrently
+
+batched_run(self.run, tasks)                    # sequential, list in task order
+batched_run(self.run, tasks, imgs=imgs)         # one image per task
+run_concurrently(self.run, tasks, *args, **kwargs)
+```
+
+Defaults match what the hand-written methods did: sequential, a list in task order, exceptions propagating. Concurrency, per-task images, dict output and exception capture are opt-in. Twenty-one call sites now share the two functions ([#2012](https://github.com/kyegomez/swarms/pull/2012)) — and **six real bugs went with them**, listed under [Improvements](#six-bugs-that-fell-out-of-the-batch-runner-consolidation).
+
+---
+
+### `CronJob`: error budgets and `run_many`
+
+A task that raised **killed the schedule**. `_run_schedule` set `is_running=False` and re-raised on any exception, so one transient rate limit stopped the job permanently — and `_block_forever` also loops on `is_running`, so `run()` then returned a `Job` object as if nothing had happened. You got a plausible return value and a dead cron job.
+
+```python
+from swarms import Agent
+from swarms.structs.cron_job import CronJob
+
+job = CronJob(
+    agent=Agent(agent_name="Monitor", model_name="gpt-5.4", max_loops=1),
+    interval="30second",
+    max_consecutive_errors=5,   # new: stop after 5 back-to-back failures
+)
+job.run(task="Check the deployment health endpoint and report anomalies.")
+```
+
+A failed execution is now logged with traceback and retried on the next tick, which is what cron does. When the budget is exhausted the job stops **and** `run()`/`batched_run()` raise, so a dead schedule is never mistaken for a healthy one. `error_count`, `consecutive_errors` and `last_error` are surfaced through `get_execution_stats()`.
+
+`run_many()` and `stop_many()` are new, for fleets on different cadences:
+
+```python
+jobs = CronJob.run_many(
+    [
+        (price_agent, "10second", "Fetch BTC and ETH spot prices."),
+        (news_agent, "5minute", "Summarise crypto headlines since the last check."),
+        (report_agent, "1hour", "Write an hourly market summary."),
+    ]
+)
+```
+
+Each job gets its **own scheduler thread**, so a failing agent does not delay or stop its siblings, and each carries its own error budget. Tests went 3 → 38. Two validation gaps closed alongside: `interval="0second"` was accepted and then silently never fired, and `interval=""` was accepted at construction and failed much later claiming no interval had been provided.
+
+---
+
+### Per-module logging under `{WORKSPACE_DIR}/logs`
+
+`initialize_logger` treated its `log_folder` argument as a *directory path*, so the 28 modules that pass a *name* (`"graph_workflow"`, `"round-robin"`, …) each created a directory of that name in whatever the working directory happened to be. **Importing swarms littered your repository root with two dozen folders regardless of what you actually ran.**
+
+```bash
+export WORKSPACE_DIR=/var/lib/myapp/swarms
+```
+
+```
+/var/lib/myapp/swarms/logs/
+  swarms_2026-09-01.log      # combined, daily rotation, 10-day retention
+  graph_workflow.log         # this module and nothing else
+  agent.log
+  conversation.log
+```
+
+The per-module split routes on `record["name"]` through a **single sink** rather than a filtered handler per caller — which matters, because 42 modules take `from loguru import logger` directly and never call `initialize_logger`. A per-caller scheme would have covered 40% of the package and silently missed `agent`, `conversation` and `hiearchical_swarm`. Files are opened on demand, so a bare `import swarms` creates none of them, and write failures are swallowed so logging can never take down a caller.
+
+And `WORKSPACE_DIR` **actually works now** ([#2023](https://github.com/kyegomez/swarms/pull/2023)): `bootup()` assigned it unconditionally at `import swarms`, then `disable_logging()` assigned it *again* with the relative string `"agent_workspace"`. Either write alone discarded whatever you exported.
+
+---
+
+### Smaller additions
+
+- **`SequentialWorkflow(drift_max_retries=3)`** — `_run_drift_detection()` was a `while True:` whose only exits were an unparseable judge output or a score reaching the threshold. **Neither is guaranteed.** A task the pipeline cannot satisfy reran every agent forever, with no ceiling and no way for the caller to stop it. `0` disables reruns entirely.
+- **`LiteLLM.arun()`** — a real async twin of `run()` on `litellm.acompletion`, where before there was none.
+- **`Agent(imgs=[...])` in one request** — see [Improvements](#multiple-images-in-one-provider-request).
+- **`SocialAlgorithms` records to a `Conversation`** — it previously tracked communication by hand in a list that was **off by default**, so nothing was recorded unless you opted in. Recording is now unconditional and reachable through the standard `Conversation` API. Tests went 5 → 49; the file went 650 → 514 lines.
+- **`AutoAgentBuilder`** and a **class-to-pydantic** helper, both landed at the start of the cycle (July 31).
+- **`Conversation.add(metadata=...)`** now actually persists the metadata it accepted and silently discarded.
+- **Four new MCP examples**, including the folder's first multi-agent one, plus a `FREE_MCP_SERVERS.md` corrected from a live probe of every endpoint.
+
+---
+
+## Improvements
+
+### The autonomous loop tells the truth
+
+The loop kept its own view of the task — the plan, the schedule, which subtask was finished — while sending the model a flattened string that hid what had actually happened. When those two views disagreed, the run failed silently.
+
+| Defect | Before | After |
+|---|---|---|
+| Batched tool calls after `subtask_done` | A `break` abandoned the rest of the response, discarding real work at random | `complete_task` defers its return until the whole response has run |
+| Tool failures | Logged and thrown away; the next iteration rebuilt an identical prompt and the model repeated the same failing call until its budget ran out | Handler exceptions and malformed arguments are returned as the tool's result |
+| Failed dependencies | A *failed* dependency satisfied its dependents, and an unknown `step_id` defaulted to satisfied — one early failure cascaded into downstream subtasks succeeding against output that was never produced | Only a completed dependency satisfies; dependents of a failed step are marked skipped; dangling and self-referential ids are dropped at plan time |
+| The consecutive-think guard | Reset its counter at the top of each iteration and checked it at the bottom of the same one — dead code | Counts across a subtask; any non-think call breaks the streak; the nudge is written to the transcript the model actually reads |
+| A stuck subtask | Left *pending*, so it stayed eligible and the outer loop re-ran the same doomed budget up to 100 times — **2,002 LLM calls reproduced** | Marked failed. **22 calls.** |
+
+Also fixed: the loop appended the handoff prompt to `system_prompt` inside per-run setup, so a reused agent accumulated a fresh copy every `run()` — **+1,988 characters per run, linearly, with no ceiling** ([#1991](https://github.com/kyegomez/swarms/pull/1991)).
+
+```
+base 15,359 -> run1 17,347 -> run2 19,335 -> run3 21,323
+```
+
+---
+
+### Context growth is linear again
+
+`Agent.run()` returns the agent's **whole conversation** by default (`output_type="str-all-except-first"`), and structures recorded that return value as the agent's contribution. So each agent's transcript was folded back into the shared transcript, which was folded into the next agent's transcript.
+
+Measured on `AgentRearrange`: **1,157 → 116 characters by turn 6.**
+
+The same shape appeared in six more places, each fixed independently:
+
+- **`AgentJudge`** rebuilt each iteration's task from the flattened conversation and appended the response back into it, so with `max_loops > 1` the input grew superlinearly and **the judge re-read its own verdicts as material to evaluate**.
+- **`SelfMoASeq`** neither agent set `output_type`, so a "sample" was a transcript and `samples[i]` literally contained samples 0..*i*−1 as text. With the default `num_samples=30`, cost grew **quadratically**.
+- **`DebateWithJudge`** used whole transcripts verbatim as `pro_argument`, `con_argument` and the judge synthesis — including the discarded intro-priming turn, so **the judge was scoring the setup text**.
+- **`one_on_one_debate`** fed each speaker the whole transcript, so context grew every turn.
+- **`MajorityVoting`** recorded each voter's whole conversation as its vote.
+- **`ReasoningDuo`** re-interpolated the transcript into the reasoning agent's task from the second loop on — and both agents were constructed with the **same `agent_name`**, so neither could be attributed and each read the other's output as its own.
+
+And `SwarmRouter` stopped appending its collaboration preamble to every agent's `system_prompt`. That assignment happened *after* the LLM was built, so it never reached the model — while accumulating **13,433 characters** on the caller's live agents on every construction.
+
+---
+
+### Six bugs that fell out of the batch-runner consolidation
+
+`execution_utils.batched_run` already existed but could not be reused as written: it returned a dict keyed by task rather than a list, lost task order to `as_completed`, collapsed duplicate tasks into one key, swallowed exceptions into result strings, and called `func(task, img)` unconditionally — so every `run(self, task)` method raised `TypeError` that was then hidden inside the returned string. **Nothing imported it, so none of that had ever been noticed.**
+
+- `HybridHierarchicalClusterSwarm` collected results with `as_completed`, so `results[i]` was not the result for `tasks[i]`.
+- `ReasoningDuo` zipped tasks with imgs: three tasks and one image ran one task and silently dropped two.
+- `AgentRearrange.concurrent_run` did the same, and a bare string image was iterated character by character — task 0 got `"x"`, task 1 got `"."`.
+- `AdvisorSwarm` called `self.run(task=t, *args)`, which raises `TypeError` for any non-empty args.
+- `LiteLLM.batched_run` waited on a loop that did nothing but `pass`.
+- `batched_run` broadcast a list-valued `img` to every task instead of pairing it.
+
+Autosave consolidation found four more: `SwarmRouter` built its workspace only when autosave was on then called it unconditionally (`AttributeError` for every router with autosave off); `MajorityVoting.autosave` and `PlannerWorkerSwarm.autosave` were assigned and never read; `SpreadSheetSwarm` overwrote a caller-supplied `save_file_path` three lines after assigning it.
+
+---
+
+### Three structures stopped sharing one `Agent` across threads
+
+- **`SelfMoASeq`** ([#2099](https://github.com/kyegomez/swarms/pull/2099)) draws N samples from one model and aggregates them — but sample *i* was generated with samples 1..*i*−1 already in context, **removing the independence the entire method is built on**. `grep -n "short_memory" swarms/structs/self_moa_seq.py` matched nothing.
+- **`SpreadSheetSwarm`** ([#2096](https://github.com/kyegomez/swarms/pull/2096), [#2116](https://github.com/kyegomez/swarms/pull/2116)) with 3 agents and `max_loops=3` made 9 concurrent calls across only 3 `Agent` instances — three threads calling `run()` on the same object and appending to one unguarded `short_memory`. Messages interleaved, writes were lost, and identical inputs produced different output run to run. Fixed in `_run_tasks`, then again one method away in `run_from_config` — the CSV-loaded mode the structure is *named for*.
+- **`ImageAgentBatchProcessor`** ([#2100](https://github.com/kyegomez/swarms/pull/2100)) submitted the same `Agent` once per image and never reset it, so image N was answered with images 1..N−1 still in context.
+
+**Behaviour note:** with `max_loops > 1`, `SpreadSheetSwarm` loops are now sequential, so a run takes about `max_loops` times as long. The previous wall-clock came from racing one object, so it was never a real speedup.
+
+---
+
+### Concurrency returns results in submission order
+
+`run_agents_concurrently` collected results with `as_completed`, so the list came back ordered by **finish time**. Every caller pairs it against the agent list positionally — `MajorityVoting`, `AgentRearrange`'s concurrent workflow, and `ma_blocks.aggregate` all do.
+
+Nothing raised. The list was still the right length and still full of valid answers. **The attribution was simply wrong**, whenever agents finished in a different order than they were submitted — the normal case once output lengths differ.
+
+Fixed in `multi_agent_exec` ([#1862](https://github.com/kyegomez/swarms/pull/1862)), `MajorityVoting`/`MixtureOfAgents` `run_concurrently` ([#1896](https://github.com/kyegomez/swarms/pull/1896)), and `MultiAgentRouter.concurrent_batch_run` ([#2087](https://github.com/kyegomez/swarms/pull/2087)). `future.result()` blocks, but every task was already submitted, so total wall time is unchanged.
+
+---
+
+### Multiple images in one provider request
+
+`Agent.run_multiple_images` submitted one full `self.run(img=...)` per image to a thread pool, so each image was analysed **in isolation** and the model could never compare them — then optionally glued the answers together with an extra summarisation call. Multi-image handling belongs at the provider layer: every vision-capable provider accepts several image blocks in a single message, and litellm passes them straight through.
+
+```python
+agent = Agent(agent_name="VisionAnalyst", model_name="gpt-5.4", max_loops=1)
+
+# ONE provider request carrying three image blocks, per-image MIME types
+# preserved. The model sees all three at once and can compare them.
+agent.run("Which of these charts shows the steepest decline?",
+          imgs=["q1.png", "q2.jpeg", "q3.webp"])
+```
+
+---
+
+### Six structures accepted an image and dropped it
+
+Each accepted `img`, documented it, sometimes threaded it down two or three levels — and then never passed it to an agent. Every one ran a vision task blind and returned a confident answer about an image no agent ever saw.
+
+| Structure | PR |
+|---|---|
+| `SequentialWorkflow.run(imgs=...)` | [#1822](https://github.com/kyegomez/swarms/pull/1822) |
+| `AgentRearrange` parallel flow steps — `"A, B"` dropped it, `"A -> B"` kept it | [#1890](https://github.com/kyegomez/swarms/pull/1890) |
+| `HeavySwarm` — threaded down two levels, dropped at *both* executors | [#1902](https://github.com/kyegomez/swarms/pull/1902) |
+| `PlannerWorkerSwarm` — planner, workers and judge all called with task only | [#1944](https://github.com/kyegomez/swarms/pull/1944) |
+| `Agent.run_batched(imgs=...)` — `zip(tasks, None)` raised before running anything | [#1938](https://github.com/kyegomez/swarms/pull/1938) |
+| `Agent.run(imgs=[...])` — would have started dropping images when `run_multiple_images` was deleted | [#1866](https://github.com/kyegomez/swarms/pull/1866) |
+
+---
+
+### Performance
+
+- **`AgentRearrange` orchestration: 3.00 → 2.00 ms/run.** Profiling with stubbed agents showed **logging dominates it** — 3.00 ms/run by default, 0.14 ms with logging removed, so roughly 95% of the overhead. The cost is in the sink configuration rather than the call sites: `enqueue=True` pickles every record through a multiprocessing queue and three sinks each take a copy. The 15 unconditional records per run are now gated on `verbose`.
+- **`supports_vision` / `supports_reasoning`: 84× and 13× faster** on the vision hot path via `lru_cache`. They depend only on the model name.
+- **`MultiAgentRouter` selected agents run concurrently** — three 0.35s agents complete in **0.35s rather than 1.05s**. The boss prompt asks for non-overlapping tasks, so they are independent by construction.
+- **Remote images are fetched once per process** ([#1768](https://github.com/kyegomez/swarms/pull/1768)) — an agent re-sends the same `img` on every loop and every retry, so the same image was downloaded once per loop. Narrower than it looks: this helps local models and anything litellm does not flag as vision-capable, not the default GPT/Claude/Gemini paths.
+- **AOP `get_stats()` worst latency: 20,665 ms → 0.0 ms** — idle queue workers waited on their stop event *inside* the lock, handing it off among themselves. (AOP was subsequently deleted.)
+- **Prompt caching now possible at all**, via typed turns and by dropping `GroupChat`'s per-message timestamps, which were pure token cost and guaranteed a different prefix every turn.
+
+---
+
+### Surface reduction
+
+Twenty-seven modules with **zero call sites anywhere** in `swarms/`, `tests/` or `examples/` were removed, each verified by module-name *and* symbol-level grep before deletion. `agent.py` went **5,237 → 4,084 lines**; `GraphWorkflow` 3,997 → 3,776; `multi_agent_debates.py` 1,192 → 280; the litellm wrapper 1,720 → ~1,450.
+
+Two consolidations found latent bugs that had never been caught because the code was untested: `GraphWorkflow`'s `to_json → from_json` and `save_to_file → load_from_file` had **never round-tripped** (ids derived from live `Agent` objects, and node types written as `"NodeType.AGENT"` which `NodeType()` refuses to parse), and `Agent.load()` **crashed for every agent** on a read-only property — which looked like covered behaviour for ten months because the only round-trip test had been erroring at setup since 2025-10-21.
+
+The full list is in [Breaking Changes](#breaking-changes).
+
+---
+
+## Breaking Changes
+
+Read this section before upgrading.
+
+| Removed | Notes |
+|---|---|
+| `from swarms import BaseSwarm` | 775-line ABC with one real subclass that used nothing from it. Raises `ImportError`. |
+| `from swarms import BaseStructure` | 527 lines, no subclass in `swarms/`. Raises `ImportError`. |
+| `from swarms import SkillOrchestra` | Moved to `examples/multi_agent/skill_orchestra_examples/`. |
+| `swarms.structs.aop` (AOP) | Deprecated and deleted — 2,954 lines plus examples. It had also stopped working: it imports `mcp.server.fastmcp`, removed in mcp 2.x. |
+| `Agent.run_multiple_images` / `summarize_multiple_images` | Replaced by `agent.run(task, imgs=[...])`, which sends one request. |
+| `Agent.retry_interval`, `Agent.tokenizer` | Assigned, never read. `__init__` ends in `**kwargs`, so passing them still raises no `TypeError` — the *attribute* is what disappears. |
+| `Agent.set_system_prompt`, `update_retry_attempts`, `update_retry_interval` | Zero references. Use `update_system_prompt` / direct assignment. |
+| `Agent.handle_artifacts`, `undo_last`, `update_tool_usage`, `receieve_message`, `get_agent_role`, `cleanup`, `enable_autosave`, `disable_autosave` | Zero callers. `swarms/artifacts/` itself is untouched. |
+| `SwarmRouter(swarm_type="auto")` | Was in the `SwarmType` Literal with no factory entry — accepted at construction, raised at first `run()`. Use `"AutoSwarmBuilder"`. |
+| `SwarmRouter(swarm_type="BatchedGridWorkflow")` | Structurally undispatchable: the router runs `swarm.run(task=...)`, the workflow takes `tasks: List[str]`. Construct `BatchedGridWorkflow` directly. |
+| `BatchedGridWorkflow(output_type=...)` | Documented, never read. The class keeps no `Conversation`, so no `HistoryOutputType` value has a meaning for it. |
+| `RoundTableDiscussion` | Deleted. Participants never saw one another — `facilitator_response` was computed once and every participant got the identical prompt. Use `RoundRobinSwarm`. |
+| Eight scripted debate patterns | `InterviewSeries`, `PeerReviewProcess`, `MediationSession`, `BrainstormingSession`, `TrialSimulation`, `CouncilMeeting`, `MentorshipSession`, `NegotiationSession` moved to `examples/multi_agent/alternate_debates/`. None was exported, so no public API change. |
+| 10 math-sequence swarms | `FibonacciSwarm`, `PrimeSwarm`, `PowerSwarm`, `LogSwarm`, `ExponentialSwarm`, `GeometricSwarm`, `HarmonicSwarm`, `StaircaseSwarm`, `SigmoidSwarm`, `SinusoidalSwarm`. Zero references; every `run()` built a responses list it never returned. |
+| `SocialAlgorithms(enable_communication_logging=...)`, `parallel_execution`, `max_workers` | Recording is now unconditional via `Conversation`. Retired parameters are swallowed by `**kwargs`. |
+| `create_agent_map` with duplicate names | Now raises `ValueError` instead of silently last-wins. |
+
+**Changed defaults:** `Agent(max_tokens=...)` and `Agent(context_length=...)` now actually take effect (both were overwritten later in `__init__`). If you were relying on the accidental 16000 context window, set it explicitly.
+
+---
+
+# The Full Changelog, Day by Day
+
+Every commit, in order.
+
+---
+
+## Wednesday, July 29
+
+**`ab1d0e9`** · [#1768](https://github.com/kyegomez/swarms/pull/1768) · **perf(vision): cache remote image fetches so a URL image is downloaded once per process**
+
+`get_image_base64` had no caching, so a URL was re-fetched over the network on every call — and an agent re-sends the same `img` into `call_llm` on every loop iteration and every retry. The same image was downloaded once per loop. An `lru_cache` on a new private URL-fetch helper takes 5 identical calls from 5 GETs to 1.
+
+The scope is narrower than it looks, and the PR says so plainly: a URL only reaches this function when direct-URL passing is off, so this helps **local models** (ollama, llama-cpp, custom `base_url`) and anything litellm does not flag as vision-capable — not the default GPT/Claude/Gemini paths, which hand the URL to the provider verbatim.
+
+The cache sits *below* the data-URI and raw-base64 short-circuits on purpose, so multi-megabyte data URIs never become cache keys. The SSRF guard moves *inside* the cached helper: a cache hit issues no HTTP request, so there is nothing left to protect, and `lru_cache` does not memoize exceptions, so a blocked URL is re-rejected on every call. Ten near-miss URL variants (trailing dot, `:443`, userinfo, fragment, percent-encoding) were verified to each miss the cache and be re-guarded.
+
+---
+
+## Friday, July 31
+
+**`0e25e3a`** · **feat(auto-agent-builder): agent roster generation harness** — adds the builder, an extensive roster-design system prompt, package exports, and a full example suite. 891 lines.
+
+**`fb5aafc`** · [#1779](https://github.com/kyegomez/swarms/pull/1779) · **fix(examples): undefined name in the AOP client example** — `call_agent_tool` built a `call` dict and passed an undefined `tool_call_request`, so the example raised `NameError` and flake8 failed the build for the whole repo (F821 + F841).
+
+**`4f59689`** · **feat(class-to-pydantic): build a pydantic model from class init params** — plus a runnable schema-and-defaults example. 321 lines.
+
+**`3dabed4`** · **docs(v14-zena): add the v14 changelog example suite** — 14 files, 510 lines, one runnable example per v14 feature.
+
+**`d92c0a4`** · **v14 code formatting**
+
+---
+
+## Saturday, August 1
+
+**`297ae6b`** · **v14** — version bump.
+
+**`608058c`** · [#1783](https://github.com/kyegomez/swarms/pull/1783) · **fix(deps): pin `mcp <2.0.0` so `import swarms` doesn't break on mcp 2.0**
+
+`pyproject.toml` and `requirements.txt` declared `mcp` unbounded, so a fresh install resolved to mcp 2.0.0, which **removes `mcp.server.fastmcp`**. `swarms/structs/aop.py` imported `FastMCP` from there and AOP was re-exported eagerly from `swarms.structs`, so `import swarms` raised `ModuleNotFoundError` before any user code ran — **containers crashlooped on rebuild.**
+
+Pinned to `>=1.28.1,<2.0.0`: 1.28.1 is the oldest version verified to import the whole surface swarms uses, and 2.0.0 is the first that drops `mcp.server.fastmcp`.
+
+**`72bf3fe`** · **remove aop from `__init__`** — stops the eager re-export that turned an AOP import failure into an `import swarms` failure.
+
+---
+
+## Sunday, August 2
+
+**`b0033a0`** · [#1800](https://github.com/kyegomez/swarms/pull/1800) · **fix(agent): stop discarding the `context_length` constructor argument**
+
+`self.context_length` was assigned from the argument and then unconditionally overwritten with `16000` about 100 lines later in the same `__init__`. `Agent(context_length=...)` was a **no-op**, and every agent ran a 16k window regardless of model. `Conversation` received the same 16000 and truncated history against it; `ContextCompressor` divided by it.
+
+The fallback now only applies when the caller passed nothing, and resolves from the model's real input window via `get_model_info()["max_input_tokens"]`.
+
+**`eaacf5c`** · **feat(default-max-tokens): derive max output tokens from model info** — plus an expanded context-length docstring.
+
+---
+
+## Monday, August 3
+
+**`d9f5834`** · [#1805](https://github.com/kyegomez/swarms/pull/1805) · **fix(requirements): add the two opentelemetry deps so a clean install can import swarms** — v14 shipped telemetry on by default; `requirements.txt` omitted both packages it needs.
+
+**`a63d072`** · [#1803](https://github.com/kyegomez/swarms/pull/1803) · **dependabot: ruff `>=0.5.1,<0.15.9` → `>=0.5.1,<0.16.2`**
+
+**`3476c06`** · [#1806](https://github.com/kyegomez/swarms/pull/1806) · **fix(aop): reset the restart count after a successful start so the persistence failsafe can fire**
+
+**`10a255e`** · **cleanup**
+
+**`6a7fcdc`** · [#1807](https://github.com/kyegomez/swarms/pull/1807) · **chore(tests): fold the two AOP persistence tests into one** — 31 fewer lines.
+
+---
+
+## Tuesday, August 4
+
+**`829a667`** · [#1808](https://github.com/kyegomez/swarms/pull/1808) · **improvement: add system prompts to the MCP examples; drop the hard exit on a missing Exa key** — an example that `sys.exit`s on a missing optional key is a worse teaching tool than one that degrades.
+
+---
+
+## Wednesday, August 5
+
+**`352668d`** · [#1799](https://github.com/kyegomez/swarms/pull/1799) · **fix(agent): give each Agent its own `tools_list_dictionary`**
+
+The classic mutable-default bug, with an unusually bad blast radius. The parameter defaulted to a literal `[]`, so **every Agent constructed without one shared a single list object**. Any agent appending a tool schema wrote through to that shared default, so unrelated agents in the same process picked the tool up and **sent it to their model** — and the pollution outlived them all on `Agent.__init__.__defaults__`.
+
+Default is now `None` with a fresh list built per instance. The attribute stays a list rather than `None` so existing `exists()` and `is not None` checks behave exactly as before.
+
+**`ba2122b`** · [#1809](https://github.com/kyegomez/swarms/pull/1809) · **fix(tests): move the stream-token demo out of tests so pytest stops billing a live call at import**
+
+`tests/structs/test_agent_stream_token.py` was nine lines with **no test function in it** — an `Agent` construction and a `run()` call at module level, in a file matching pytest's default glob. Collection imported the module, so `pytest` issued a real billed streaming completion against `gpt-5.4` before a single test ran, and failed there without an API key. CI hit it too. Zero lines added, zero removed, one `git mv` into the streaming examples folder.
+
+**`06413eb`** · [#1811](https://github.com/kyegomez/swarms/pull/1811) · **fix(pydantic): revive the two validators that `pydantic.v1` silently disabled on v2 models**
+
+`swarms/artifacts/main_artifact.py` and `swarms/prompts/prompt.py` decorated methods with `validator` imported from `pydantic.v1` on **v2** `BaseModel` classes. The v1 decorator registers into v1 machinery that a v2 model never consults, so neither method ran. No error, no warning.
+
+The damaging consequence: `Prompt(content="ORIGINAL").edit_history` was `[]` instead of `["ORIGINAL"]`, so after one edit the history held only the edit — and `rollback(0)`, documented as "0 is the first version", returned the *first edit*. **The original prompt was unrecoverable.**
+
+`prompt.py` needed `model_validator(mode="after")`, not `field_validator`: in v2 a before-validator is skipped for a field that was not supplied and has a default, and `edit_history` has `default_factory=list`. `main_artifact.py` needed `field_validator` **plus a reachable default**, since the field was `Field(...)` (required) and v2 errors on a missing field before any validator could derive it.
+
+**`16afc75`** · [#1813](https://github.com/kyegomez/swarms/pull/1813) · **fix(agent): fall back instead of raising when the model id is unmapped**
+
+Constructing an `Agent` with any model id litellm does not know raised out of `__init__` — closing the door on custom, self-hosted and newly released model ids, and on anyone passing their own `llm` object while leaving `model_name` as a label. A regression from `eaacf5cc`. The docstring already promised "returns 16000 as default if it can't be determined"; `get_model_info` *raises* for an unknown model rather than returning an empty mapping, so "can't be determined" was never handled.
+
+---
+
+## Friday, August 7
+
+**`4bbe2bd`** · [#1817](https://github.com/kyegomez/swarms/pull/1817) · **chore(ruff): scope example and test lint rules so the library stays fully enforced**
+
+**`8a8d560`** · [#1814](https://github.com/kyegomez/swarms/pull/1814) · **chore(lint): the blank line after a module docstring that black wants** — unblocks the Lint job.
+
+**`f274511`** · [#1816](https://github.com/kyegomez/swarms/pull/1816) · **fix(agent): the function-calling warning fires for every agent that has no tools** — a warning that fires unconditionally is noise, not a signal.
+
+**`11cdaba`** · [#1818](https://github.com/kyegomez/swarms/pull/1818) · **fix(AOP): treat port-in-use and permission errors as what they are, not network failures** — also drops `socket.timeout`, an alias of `TimeoutError`.
+
+**`fd9c2e0`** · [#1743](https://github.com/kyegomez/swarms/pull/1743) · **fix(sequential-workflow): bound drift-detection reruns with `drift_max_retries`**
+
+`_run_drift_detection()` was a `while True:` with exactly two exits: the judge output failing to parse, or the score reaching `drift_threshold`. **Neither is guaranteed.** A task the pipeline cannot satisfy, a threshold set too high, or a judge that consistently scores low reran every agent in the workflow forever — spending tokens on every iteration with no ceiling and no way for the caller to stop it.
+
+```python
+from swarms import SequentialWorkflow
+
+pipeline = SequentialWorkflow(
+    agents=[...],
+    drift_threshold=8.0,
+    drift_max_retries=3,   # new, default 3; 0 disables reruns entirely
+)
+```
+
+When the budget is spent the last output is returned with a warning naming the exhausted setting. Returning the *last* attempt rather than the best-scoring one keeps this a bounding change: the returned value is the same as before on every path that previously terminated. Fixes #1536.
+
+---
+
+## Saturday, August 8
+
+**`21c2b78`** · [#1822](https://github.com/kyegomez/swarms/pull/1822) · **fix(sequential-workflow): `run` accepts `imgs` and then drops it** — only `task` and `img` ever made it into the kwargs handed to `AgentRearrange`, so a multi-image run silently degraded to a text-only run. No error, no warning: the agents just answered a question about images they were never shown. Also annotates `run_kwargs` as `Dict[str, Any]` so Pyre accepts the list.
+
+**`7e33302`** · **clean up graph workflow** — 1,508 deletions.
+
+**`2bd7f1c`** · [#1825](https://github.com/kyegomez/swarms/pull/1825) · **Deduplicate the litellm wrapper (+4 bug fixes) and remove 10 dead swarm classes** — −819 net lines
+
+The wrapper went from 1,720 to ~1,450 lines with identical functionality: anthropic/openai vision processing merged into one `_build_vision_message` (old names kept as aliases); the 305-line `run()` decomposed into `_build_completion_params`, `_process_response` and `_raise_network_error`; the twice-written Anthropic thinking clamp unified with exact thresholds preserved; four inline Anthropic-model checks consolidated into `_is_anthropic_model`.
+
+**New:** a real `arun()` using `litellm.acompletion`, and `lru_cache` on `supports_vision`/`supports_reasoning` — **84× and 13× faster** on the vision hot path, since they depend only on the model name.
+
+**Four fixes:**
+- `batched_run` called `self._process_batch`, which **never existed** — `AttributeError` on every invocation.
+- `run()` re-set `temperature` *after* merging runtime kwargs, silently clobbering `llm.run(task, temperature=X)` for nearly all models.
+- `check_if_model_name_uses_anthropic` missed `"claude-*"` model names.
+- `check_internet_connection` mutated the **process-wide** socket default timeout and leaked the socket.
+
+The 10 deleted math-sequence swarms had zero references anywhere, differed from each other only in one index-generator expression, and every `run()` built a responses list it never returned.
+
+**`f894187`** · [#1826](https://github.com/kyegomez/swarms/pull/1826) · **Remove 7 more dead modules (−499 lines) and fix litellm test fixtures**
+
+Deleted with zero call sites anywhere in `swarms/`, `tests/` or `examples/`, verified by module-name *and* symbol-level grep: `tools/create_agent_tool.py`, `tools/json_utils.py`, `tools/openai_func_calling_schema_pydantic.py`, `tools/openai_tool_creator_decorator.py`, `tools/func_calling_utils.py`, `schemas/agent_class_schema.py`, `schemas/agent_step_schemas.py`, `schemas/handoffs_schema.py`.
+
+Also: the six vision tests pointed at `swarms_logo_new.png`, which no longer exists on master — a 404. Repointed to a tracked image; the suite went from 10/14 to 13/13.
+
+---
+
+## Sunday, August 9
+
+**`028fd0d`** · [#1830](https://github.com/kyegomez/swarms/pull/1830) · **Remove the last 2 dead schema modules and switch ID generation to `secrets.token_hex`** — output format unchanged (32 hex chars, optionally prefixed), entropy up from 122 to 128 bits since `uuid4` fixes 6 bits for version and variant.
+
+**`7f1703c`** · **format generate id function**
+
+---
+
+## Monday, August 10
+
+**`4f6d9a1`** · [#1865](https://github.com/kyegomez/swarms/pull/1865) · **Move 8 scripted conversation patterns out of `swarms/structs` into examples, and delete `RoundTableDiscussion`**
+
+The eight are compositions, not framework machinery: each is built entirely from the public `Agent`, `Conversation` and `history_output_formatter` APIs, adds no capability, and is most useful as something you copy and adapt. Each new file carries the class plus a runnable `__main__` demo. The 34 tests were **relocated rather than deleted**, so coverage travels with the code. `multi_agent_debates.py`: 1,192 → 280 lines.
+
+`RoundTableDiscussion` was deleted outright because it does not do what its name claims. Despite *"each participant speaks in order"*, participants never see one another: `facilitator_response` is computed **once** before the inner loop and every participant receives the identical prompt, so speaking order carries no information. The topology is hub-and-spoke, and it was 91% structurally identical to `ExpertPanelDiscussion`.
+
+**`8c64f4c`** · **format files and logger**
+
+**`89cd067`** · [#1866](https://github.com/kyegomez/swarms/pull/1866) · **Strip 10 dead methods from Agent, and move multi-image handling to the provider** — −418 lines
+
+See [Multiple images in one provider request](#multiple-images-in-one-provider-request). Also removes `ConcurrentWorkflow.cleanup` and the `finally:` block that called it on every run — it had become inert, guarded by a `hasattr(agent, "cleanup")` that no longer matches any Agent, with its only other statement being `if hasattr(self, "conversation"): pass`, and a docstring claiming it reset agent statuses, which it never did.
+
+**`2fca62b`** · [#1867](https://github.com/kyegomez/swarms/pull/1867) · **Extract the `max_loops="auto"` loop into `AutonomousAgentLoop`** — `agent.py`: **5,237 → 4,084 lines**
+
+Roughly a fifth of `agent.py` was code that never runs unless `max_loops == "auto"`. The 1,164 moved lines were chosen by a fixpoint over the call graph: every method whose referrers are all inside the cluster and which has zero references outside `agent.py`.
+
+`AutonomousAgentLoop` mirrors the existing `LLMManager` arrangement — it takes the owning agent and reads and writes agent state through that reference. `Agent` constructs it beside the other managers and keeps `_run_autonomous_loop` as a documented delegate, so `max_loops="auto"` and any external caller are unaffected. Verified behaviour-identical: the same stubbed autonomous run produces the same LLM call count, prompt sequence and output length.
+
+**`f0eeb0d`** · [#1861](https://github.com/kyegomez/swarms/pull/1861) · **fix(AOP): stop the queue lock and the persistence loop from blocking forever**
+
+Two bugs, and together they were why `tests/structs/test_aop.py` never finished — the suite hung until CI killed the runner.
+
+`TaskQueue._worker_loop` waited on its stop event **inside** `with self._lock`, so with `max_workers` idle workers the lock was held essentially all the time by whichever worker was sleeping in it, handed off among themselves. Python locks are not fair, so there was no bound on how long an outside caller waited. Measured with 4 workers and 20 `get_stats()` calls: **worst latency 20,665 ms → 0.0 ms.**
+
+Separately, `AOP.run()` reset the restart counter on every clean return from `start_server()` — but `start_server()` returning *means the server stopped*. That pinned the counter at 0, so `max_restart_attempts` could never fire, and because the backoff is guarded by `if self._restart_count > 0`, no delay was applied either. **A server that died on startup respawned in a hot loop.**
+
+---
+
+## Tuesday, August 11
+
+**`433954c`** · [#1871](https://github.com/kyegomez/swarms/pull/1871) · **fix(agent): forward `arun`'s positional args to `run`, and stop awaiting a synchronous error handler**
+
+`asyncio.to_thread(func, *a, **kw)` calls `func(*a, **kw)`, so the splatted `*args` arrived **positionally** while `task` was also passed by keyword — and `run`'s first positional parameter *is* `task`. Any extra positional argument collided with `TypeError: run() got multiple values for argument 'task'`. `arun` declares `*args` specifically to accept those, so the one documented way to use them was the one way that failed.
+
+Second defect in the same three lines: `await self._handle_run_error(error)` on a plain `def` whose last statement is `raise error`. This only ever worked by accident — the method raises before returning, so the `await` never evaluated its operand. The moment it stops raising unconditionally, that line becomes `await None`, on the error path, where it is hardest to notice.
+
+**`d450d70`** · [#1870](https://github.com/kyegomez/swarms/pull/1870) · **fix(tools): name the pydantic tool schema after the model, not the metaclass or the last docstring param**
+
+Two compounding bugs put the **wrong function name** into the schema handed to the LLM — and the name is what the LLM emits back to call it.
+
+1. `name = type(pydantic_type).__name__` reads the *metaclass*, because `pydantic_type` is the class, not an instance: `"ModelMetaclass"`.
+2. The docstring loop's walrus, `if (name := param.arg_name) in parameters["properties"]`, rebinds `name` on every match — so whenever the model's docstring documents its fields, the emitted name is **whichever parameter matched last**.
+
+```
+master:  function_call.name: units          <- the last documented field
+fixed:   function_call.name: WeatherQuery
+```
+
+This is not an internal helper: `base_model_to_openai_function` is exported from `swarms.tools` and used by `base_tool.py` in two places, so it reaches real tool schemas. `check_pydantic_name` was deleted too — zero callers, not exported, and carrying the same `type(...)` mistake, so leaving it was a live copy of the bug waiting to be picked up.
+
+**`0dd6b5c`** · [#1863](https://github.com/kyegomez/swarms/pull/1863) · **fix(graph-workflow): sanitize the workflow name in the path `visualize` actually uses**
+
+`output_path` was assigned unconditionally at the top of the method, so the `if output_path is None:` guard ~190 lines later — **the only place `safe_name` was ever built** — was unreachable. graphviz treats its argument as a filesystem path, so a workflow named `team/alpha` rendered to `team/alpha_visualization_<uuid>`, a directory that does not exist, and the call failed. The sanitization written to prevent exactly that was sitting in dead code.
+
+**`830b54c`** · **docs: pydantic to json**
+
+---
+
+## Wednesday, August 12
+
+**`f43192a`** · [#1881](https://github.com/kyegomez/swarms/pull/1881) · **style: strip trailing whitespace failing black in CI** — the `lint` job runs `black . --check --diff` over the whole repo, so one line turned the check red on every open PR and every new branch cut from master.
+
+**`4bc5888`** · [#1876](https://github.com/kyegomez/swarms/pull/1876) · **fix(agent): only prompt for an empty task in interactive mode**
+
+The `self.interactive and ...` half of the empty-task guard in `run()` was **commented out**, leaving the branch unconditional. A non-interactive caller that passed an empty or `None` task fell into the interactive prompt and blocked on `formatter.console.input()`. In a script, a worker, or CI, that is a hang, not an error. The non-interactive path now raises a `ValueError` naming the fix.
+
+**`af2b3c2`** · [#1877](https://github.com/kyegomez/swarms/pull/1877) · **fix(AOP): stop over-broad network-error classification, drop the duplicate "timeout"**
+
+`_is_network_error`'s keyword fallback listed `"timeout"` twice and included bare tokens — `"socket"`, `"network"`, `"connection"`, `"refused"`, `"reset"`, `"aborted"`, `"unreachable"` — that match ordinary non-network messages like `"reset the counter"` or `"socket_id must be an integer"`. Those failures were classified as network errors and handed to a retry loop that can never resolve them.
+
+**`707ebc0`** · [#1862](https://github.com/kyegomez/swarms/pull/1862) · **fix(multi-agent-exec): return concurrent results in input order** — see [Concurrency returns results in submission order](#concurrency-returns-results-in-submission-order).
+
+**`2616a62`** · [#1882](https://github.com/kyegomez/swarms/pull/1882) · **style: wrap two over-length asserts in `test_aop.py` for black**
+
+---
+
+## Thursday, August 13
+
+**`47d94eb`** · [#1883](https://github.com/kyegomez/swarms/pull/1883) · **examples(MCP): four new examples, and two stale server entries corrected**
+
+- `07_huggingface_model_search.py` — Hugging Face Hub model/dataset search, showing **optional** auth: a missing `HF_TOKEN` degrades to anonymous access rather than failing at startup.
+- `10_firecrawl_web_scraping.py` — a third auth shape for this folder: the key is a **URL path segment**, so the URL must stay out of logs.
+- `12_semgrep_security_scan.py` — static-analysis security review, with a prompt written specifically to stop the model inventing plausible-sounding findings.
+- `13_mcp_sequential_workflow.py` — the folder's first multi-agent MCP example. Gives each agent only the server it needs (DeepWiki for the researcher, Context7 for the librarian, no tools for the reporter) and explains why per-agent tool scoping beats one agent holding every tool.
+
+`FREE_MCP_SERVERS.md` was corrected from a **live probe of every endpoint on 2026-08-12**, not from the previous listing: Semgrep and Globalping were documented as no-auth and now return 401, so both moved to the key-required table. Verified reachable without auth: DeepWiki, Microsoft Learn, Context7, Hugging Face, AWS Knowledge.
+
+---
+
+## Saturday, August 15
+
+**`a3f7a6e`** · [#1887](https://github.com/kyegomez/swarms/pull/1887) · **style: format two MCP examples so black passes on master** — lint runs against the merge commit, so a red master makes lint useless as a signal on every open PR.
+
+**`aa81316`** · [#1889](https://github.com/kyegomez/swarms/pull/1889) · **fix(concurrent): honour `on_error` in the dashboard path**
+
+`run()` forks on `show_dashboard`, and only `_run` applied the failure policy:
+
+```
+on_error="raise", show_dashboard=False  ->  RuntimeError: provider 500
+on_error="raise", show_dashboard=True   ->  returns, no exception
+```
+
+A caller who set `on_error="raise"` to abort on provider failures had that guarantee revoked by an **unrelated display flag**. The failure also skipped `capture_error`, so it never reached telemetry on that path.
+
+---
+
+## Sunday, August 16
+
+**`3ff3475`** · **improve the find-agent-by-name utility** — 16 insertions, 41 deletions.
+
+---
+
+## Monday, August 17
+
+**`a576413`** · [#1896](https://github.com/kyegomez/swarms/pull/1896) · **fix: `MajorityVoting` and `MixtureOfAgents` `run_concurrently` return results in completion order, mislabelling every task**
+
+---
+
+## Tuesday, August 18
+
+**`375d808`** · [#1923](https://github.com/kyegomez/swarms/pull/1923) · **fix(agent): make `tool_execution_retry` actually retry, and surface failures**
+
+The method documented `tool_retry_attempts` retries and a re-raise once exhausted. It called `execute_tools` **exactly once**, caught only `AgentToolExecutionError`, logged a line announcing "3 attempts" that never happened, and returned.
+
+Two things made that worse than a missing loop:
+
+- `AgentToolExecutionError` is **never raised anywhere in the framework** (`grep -rn "raise AgentToolExecutionError" swarms/` returns nothing), and `execute_tools` re-raises the tool's own exception verbatim — so the handler never fired and real tool failures escaped the method entirely.
+- When it *did* fire, the failure was swallowed. `_run` continued to the next loop with no Tool Executor entry in `short_memory`, so **the model saw the call as having produced nothing and carried on as if it had succeeded**.
+
+Now loops `tool_retry_attempts` times, catches `Exception` (what `execute_tools` actually raises), returns as soon as an attempt succeeds, and raises `AgentToolExecutionError` chained from the last error once attempts are spent. `tool_retry_attempts` of 0 or `None` still runs once — reading it as "never execute tools" would silently disable tool calling.
+
+---
+
+## Wednesday, August 19
+
+**`9bdc143`** · [#1922](https://github.com/kyegomez/swarms/pull/1922) · **drop a `BatchedGridWorkflow` `output_type` that was never read** — documented as *"Type of output to return"* and never stored. Every other structure honours `output_type` through `history_output_formatter` and `SwarmRouter` sets it on all of them, so switching `swarm_type` silently dropped the caller's output formatting with no error to explain it. Removed rather than implemented, because the workflow keeps no `Conversation` and all 17 `HistoryOutputType` values are conversation-shaped.
+
+**`df8273d`** · [#1928](https://github.com/kyegomez/swarms/pull/1928) · **size the hierarchical dashboard to the terminal, and stop the panel lying about progress and orders**
+
+Four independent reports, all the dashboard showing something untrue:
+
+- The comment said *"Show first 5 orders"*; the loop had no slice, so **all** orders rendered and *then* `"... and N more orders"` was appended. With 8 orders it printed all 8 and claimed 3 were hidden.
+- Progress was `current_loop / max_loops` with `current_loop` set at the *top* of each iteration, so the final loop **began at 100%**. Counting finished loops instead: `33.3/66.7/100` → `0/33.3/66.7`, with the `COMPLETED` branch supplying the final 100%.
+- The OUTPUT column was hardcoded to 150, with fixed widths totalling 238 — overflowing almost any terminal. Now `ratio=1, min_width=20, overflow="fold"`; fixed total 238 → 88.
+- The full-output Panel was hardcoded to `width=120`, so an 80-char terminal got a 120-char panel.
+
+**`d59a2da`** · [#1933](https://github.com/kyegomez/swarms/pull/1933) · **move `SkillOrchestra` out of `swarms.structs` into `examples/multi_agent`** — breaking for anyone importing it; see [Breaking Changes](#breaking-changes).
+
+**`8a6504c`** · [#1920](https://github.com/kyegomez/swarms/pull/1920) · **fix(cronjob): `batched_run` now schedules all tasks before blocking** — it called `run()` per task, and `run()` blocks forever, so **only task 1 was ever scheduled**. The blocking wait is extracted into `_block_forever()`, shared by `run()` and `batched_run()`.
+
+**`36d40c3`** · [#1921](https://github.com/kyegomez/swarms/pull/1921) · **fix(ma_utils): drop the stale agent-identity cache, and reject duplicate agent names in `create_agent_map`**
+
+`_create_agent_map_cached` was wrapped in `@lru_cache` keyed on `tuple(agents)`. `Agent` objects hash by **identity**, so modifying `agent.agent_name` after the map was built did not invalidate the entry — `create_agent_map` silently returned stale names. Separately, the map was built with plain dict assignment, so agents with identical names overwrote earlier ones silently. Duplicates now raise `ValueError`. Name-resolution fallback (`agent_name` → `name` → `__name__`) is preserved.
+
+**`9796adb`** · [#1909](https://github.com/kyegomez/swarms/pull/1909) · **fix(agent): build a call-scoped pool for concurrent execution**
+
+`run_concurrent_tasks` and `talk_to_multiple_agents` submitted to `self.executor`, which `__init__` **never assigns**. `run_concurrent_tasks` caught the resulting `AttributeError`, logged it and fell out returning `None`; `talk_to_multiple_agents` had no handler and raised it to the caller. **Neither method has ever worked.**
+
+Both now open a `ContextThreadPoolExecutor` for the duration of the call — a pool held on the `Agent` would keep idle threads alive for the process lifetime of every agent a swarm builds, so the attribute is not reinstated. `_reinitialize_after_load` assigned `self.executor` inside a `with` block, so the executor it stored had already been shut down on exit; removed rather than repaired.
+
+The bare `except` returning `None` is what hid this: the existing test asserted `len(results) == 3` and died with *"object of type 'NoneType' has no len()"*, which read as a missing-credentials failure rather than a broken method.
+
+---
+
+## Thursday, August 20
+
+**`9d8f6ef`** · **formatting code**
+
+**`ac0f6e8`** · [#1938](https://github.com/kyegomez/swarms/pull/1938) · **fix(agent): `run_batched` drops every task when `imgs` is omitted**
+
+Three problems in four lines:
+
+```python
+return [
+    self.run(task=task, imgs=imgs, *args, **kwargs)
+    for task, imgs in zip(tasks, imgs)
+]
+```
+
+1. `imgs` defaults to `None` and is documented as optional, but `zip(tasks, None)` raises `TypeError` — so the documented basic call `agent.run_batched(["a", "b"])` **never ran a single task**.
+2. The loop variable rebinds the parameter, so each `self.run` call received one image *string* in `imgs`, a field declared `List[str]` and passed straight to the provider.
+3. Unequal lengths zip to the shorter one, so passing fewer images than tasks silently discarded tasks.
+
+Now: no images runs the tasks plainly, paired images go through `img`, and a length mismatch raises. The docstring said "concurrently" while the body was always a list comprehension; it now says what it does.
+
+**`d40b1d3`** · [#1904](https://github.com/kyegomez/swarms/pull/1904) · **fix(cronjob): dispatch on having `run()`, not on being `Callable`** — the check was inverted, so `CronJob` rejected every plain callable it documents supporting.
+
+**`6ba36f4`** · [#1942](https://github.com/kyegomez/swarms/pull/1942) · **CronJob: survive failed executions, add `run_many` for mixed schedules** — see [`CronJob`: error budgets and `run_many`](#cronjob-error-budgets-and-run_many). Tests 3 → 38, plus five new examples, two of which run without API keys.
+
+**`54d3f42`** · **docs: correct the persistent-memory and max-tokens defaults; opt in persistent memory on both agents in the memory example**
+
+**`b7cae2f`** · [#1945](https://github.com/kyegomez/swarms/pull/1945) · **fix(aop): `AOPCluster.get_tools` ignores the `output_type` it documents** — declared `Literal["json", "dict", "str"]`, documented all three, and returned the dict list every time. Honoured rather than removed, since three call sites already pass `output_type="dict"`.
+
+**`9afe629`** · [#1944](https://github.com/kyegomez/swarms/pull/1944) · **fix(planner-worker-swarm): `run` accepts `img` and never passes it on** — the planner, every worker and the judge were all called with task only, so a vision request ran as a text-only workflow and returned a confident answer about an image no agent ever saw. `WorkerPool` carries it now, because workers claim tasks from a queue rather than being called directly.
+
+---
+
+## Friday, August 21
+
+**`5b65b79`** · [#1812](https://github.com/kyegomez/swarms/pull/1812) · **fix(ci): four workflow defects** — a laptop-only path, an unscoped pytest, an unbounded test job that could burn a runner on a hang, and a py3.9 release build. Also installs the package under test so the Python-package job can `import swarms`.
+
+**`455d7c0`** · [#1820](https://github.com/kyegomez/swarms/pull/1820) · **fix(hierarchical-swarm): `planning_enabled` permanently strips the director's `SwarmSpec` schema**
+
+`run_director` and the async streaming loop both set `self.director.tools_list_dictionary = None` before running the planning sub-step. That assignment cannot do what it looks like it does: `setup_director_with_planning` builds its own throwaway `Agent` and already excludes `base_model` and `tools_list_dictionary`, so planning always ran schema-free without any help. The line only reached the **real** director — the one the swarm depends on for structured `SwarmSpec` output on the very next call, and the one the caller may own when a director is passed in explicitly.
+
+**`2265caa`** · [#1890](https://github.com/kyegomez/swarms/pull/1890) · **fix(rearrange): forward `img` on parallel flow steps**
+
+```
+flow "A, B"   ->  A saw img=None,         B saw img=None
+flow "A -> B" ->  A saw img='chart.png',  B saw img='chart.png'
+```
+
+`_run_concurrent_workflow` accepted `img` and never used it. The sequential path forwarded it, and so did the async twin — the sync parallel path was the only one that did not, so **the same request behaved differently depending on whether its flow contained a comma.**
+
+**`e5c27a0`** · [#1902](https://github.com/kyegomez/swarms/pull/1902) · **fix(heavy-swarm): pass `img` through to the worker agents** — accepted, documented, threaded down two levels, then dropped at *both* executors. Verified separately for the basic and dashboard paths rather than assuming one followed the other.
+
+**`c91a8e3`** · [#1957](https://github.com/kyegomez/swarms/pull/1957) · **fix(agent): `max_tokens` is overwritten in `__init__`, so setting it does nothing**
+
+```python
+self.max_tokens = max_tokens
+...   # ~80 lines later
+self.max_tokens = self._default_max_tokens() or 16000
+```
+
+`Agent(max_tokens=500)` ran with the model's full output window. Anyone capping output for cost, latency or a downstream length limit was silently ignored — and `CLAUDE.md` documented the *symptom* rather than the cause. The model default now applies only when nothing usable was given, matching how `context_length` already behaves; the parameter default becomes `None` so "unset" is distinguishable from a deliberate 16000.
+
+---
+
+## Saturday, August 22
+
+**`674fe5b`** · [#1894](https://github.com/kyegomez/swarms/pull/1894) · **fix(autonomous-loop): pass the agent, not the loop, to the built-in tool handlers**
+
+Every built-in tool takes the agent as its first argument and reaches into `agent.short_memory`, `agent.print_on`, `agent.verbose` and `agent._get_agent_workspace_dir`. When the loop was extracted into `AutonomousAgentLoop`, the handler lambdas kept passing `self` — which is now the *loop*.
+
+`read_file`, `list_directory`, `grep`, `create_file`, `update_file`, `delete_file`, `run_bash` and `respond_to_user` all raised `AttributeError`. The file tools **catch it and return the error as the tool result**, so the model was told its own file operation failed rather than the run crashing. That is every file and shell built-in broken under `max_loops="auto"`. The sub-agent handlers are included for the same reason: they store state via `setattr` on whatever object they are given, so the registry was landing on the loop.
+
+**`8e5d44b`** · [#1925](https://github.com/kyegomez/swarms/pull/1925) · **fix(conversation): can't load the file it just saved — history comes back empty**
+
+```
+BEFORE (master)                       AFTER
+  json  save -> reload : 0 messages     json  save -> reload : 2 messages restored
+  yaml  save -> reload : 0 messages     yaml  save -> reload : 1 message restored
+```
+
+`save_as_json`/`save_as_yaml` write `to_dict()`. Despite its docstring — *"a dictionary containing: metadata … conversation_history …"* — `to_dict()` is `return self.conversation_history`, a **bare list**. Both loaders only understood the documented wrapper, so they called `.get` on a list. `setup_file_path` auto-loads on construction, so the failure was swallowed upstream and the conversation just came back empty with a traceback in the log.
+
+`to_dict()` is deliberately left alone — `history_output_formatter` uses it for `output_type="dict"/"yaml"/"json"`, so those callers need the list. A shared `_restore(data)` now accepts either shape. The default `save_filepath` also moved under `conversations_dir` instead of being a bare relative name, which is part of the same defect: with loading fixed, a CWD-relative default means any program constructing `Conversation(name="X")` from a different directory silently picks up an unrelated file. It is also why `conversation_conversation-test.json` kept appearing in the repo root.
+
+**`c254985`** · [#1961](https://github.com/kyegomez/swarms/pull/1961) · **cleanup: compact 17 multi-line comment blocks added by recent PRs** — −72/+17. Bug-fix PRs kept leaving four-to-seven-line comments narrating the defect they fixed, above a one-line change. That history belongs in the PR and the commit, not in source you have to read past on every future visit. Scope was picked by blaming every run of three or more consecutive comment lines and keeping only those authored by the last 25 commits.
+
+**`07f3bd3`** · [#1990](https://github.com/kyegomez/swarms/pull/1990) · **Autonomous loop: structured transcript, mutable plan, and five correctness fixes** — see [The autonomous loop tells the truth](#the-autonomous-loop-tells-the-truth). 43 new tests, fully offline (verified with API keys blanked); 17 of them fail against the unpatched loop.
+
+---
+
+## Sunday, August 23
+
+Nine commits. The largest single day of the release.
+
+**`3297757`** · [#2007](https://github.com/kyegomez/swarms/pull/2007) · **Context handling across the agent loop, multi-agent structures, dynamic tools and MCP**
+
+Closes eight issues at once. 27 files, +3,554 lines, **99 new offline tests**, verified against master with the same 19 pre-existing failures and no regressions.
+
+- **Autonomous loop:** batched tool calls after `subtask_done` are no longer dropped; tool errors reach the model; failed and unknown dependencies block instead of unblocking; the think guard fires and a stuck subtask is contained (**2,002 LLM turns → 22**); the transcript is a real message list on *both* the auto and the integer `max_loops` paths; the plan is mutable.
+- **Multi-agent structures:** agents receive only what is new to them and contribute their *answer* rather than their whole transcript, so context grows linearly instead of exponentially (**1,157 → 116 chars by turn 6** on `AgentRearrange`). `Conversation` no longer auto-loads a shared default-named file into every swarm.
+- **Dynamic tools:** schemas are deferred behind `tool_search`, with plan-based pre-warming. MCP schemas join the catalog rather than every request.
+- **MCP:** single tool calls returned a bare dict where callers expected a list, which silently discarded every `create_plan` call — **that is why MCP with `max_loops="auto"` could never start.** The autonomous loop also had no MCP dispatch. mcp 2.x is now supported alongside 1.x.
+
+**`d34de4e`** · [#2008](https://github.com/kyegomez/swarms/pull/2008) · **Merge the five telemetry test files into one and drop the duplication**
+
+```
+5 files, 3,361 lines, 162 tests, 3 failing
+1 file,  3,074 lines, 127 tests, 0 failing
+```
+
+Four of the five carried their own copy of the same scaffolding. Removed: three copies of `FakeLLM`, four of the exporter and `spans` fixtures, three or four copies each of `_attrs`, `_by_name` and `_all_by_name`; `break_agent`/`break_member_run`, the same function under two names; and `test_all()` in `test_user_utils.py`, which re-called the other four tests **and ran at module import**, so those four executed twice per session.
+
+Two pre-existing bugs fixed: the three failing tests were a stale test double (`PlannerWorkerSwarm` calls `self._run_judge(img=img)`, the stub was `def fake_run_judge():`), and `requires_llm` skipped only when *no* provider key was set — so with a Groq or Gemini key present and no OpenAI key, tests that build an Agent on `gpt-4o-mini` ran anyway and failed on an empty credential.
+
+**`cfd5184`** · [#2011](https://github.com/kyegomez/swarms/pull/2011) · **Unify swarm and agent autosave behind a single `WorkspaceManager`** — see [`WorkspaceManager`](#workspacemanager-one-autosave-for-the-whole-framework). −98/−87/−92/−119 lines of duplicated autosave across four classes, four bugs fixed, 35 new offline tests.
+
+Also fixes `tool_search`: `select:` was an exact-match lookup with no fallback, so a model guessing `exa_web_search` for `web_search_exa` got nothing back — and a single-loop agent had no turn left to retry. A total miss now falls through to keyword search over the requested names.
+
+**`5a24a1b`** · [#2012](https://github.com/kyegomez/swarms/pull/2012) · **One batch runner for every structure, and delete the unused `BaseStructure`** — see [`WorkspaceManager`](#workspacemanager-one-autosave-for-the-whole-framework). Six real bugs fixed in the consolidation; `BaseStructure` and its 1,043-line test drop 1,570 lines.
+
+`SwarmRouter.concurrent_run` took a **single** task and submitted it to a pool sized to `os.cpu_count()`, then blocked on the one future — its own docstring admitted *"concurrency is limited to the wrapper thread"*. It now takes a task list.
+
+**`1063bbc`** · [#2013](https://github.com/kyegomez/swarms/pull/2013) · **Delete `BaseSwarm`, which nothing inherited except one class that used none of it**
+
+775 lines of ABC with a single real subclass and no test anywhere — not in `tests/`, not on master, not in git history. Its apparent subclass count was misleading: four classes in `various_alt_swarms.py` appear to extend it, but that file **declares its own local class of the same name at line 14** and never imports this one.
+
+The only true subclass was `HierarchicalStructuredCommunicationFramework`, and walking its AST for `self.<attr>` against `BaseSwarm`'s public surface returns an **empty set** — it never touches `self.agents` at all. Its whole relationship to the base was one `super().__init__(agents=all_agents)` call, and it already assigns `name`, `description` and `max_loops` itself beforehand.
+
+**`089e1f9`** · [#2016](https://github.com/kyegomez/swarms/pull/2016) · **Remove the AOP test files and drop a duplicate `Conversation` method**
+
+`tests/structs/test_aop.py` imported `swarms.structs.aop` at module level, which imports `mcp.server.fastmcp` — a module that does not exist in the pinned mcp release. The import raised **at collection time and aborted the entire `test` CI job before any test ran**. The file contributed zero collected tests; removing it took collection from *"1936 collected, 1 error / Interrupted"* to *"1936 collected"*.
+
+Also removes two example scripts named `test_*` that pytest picked up by name without being tests, and `Conversation.clear_memory`, byte-identical to `Conversation.clear` with no callers anywhere.
+
+**`bcda9a4`** · [#2017](https://github.com/kyegomez/swarms/pull/2017) · **Consolidate `GraphWorkflow`'s duplicated internals and drop dead Agent params** — 3,997 → 3,776 lines
+
+Every public name still works; the seven persistence entry points each have 11–20 call sites across `examples/` and the docs, so they became thin wrappers rather than being removed. What collapsed: the node/edge/agent builders `to_spec` and `to_json` each had a copy of; the makedirs/open/dump in `save_spec` and `save_to_file`; the six checks `validate` and `_fast_validate` each implemented; the validate-append-register block written four times; fan-out/fan-in grouping written three times across the two visualizers; duplicated checkpoint key derivation; the per-agent try/except in `run()`.
+
+**Two latent bugs fell out, both on the deep serialization path, both previously untested:**
+
+1. `from_json` passed deserialized agent dicts into `from_spec`, which derives node ids from **live `Agent` objects**. Ids came out wrong and every edge failed with *"Source node 'X' does not exist"*. `to_json → from_json` had **never** round-tripped, and neither had `save_to_file → load_from_file`.
+2. `to_json` wrote node types as `str(node.type)` — `"NodeType.AGENT"` — which `NodeType()` refuses to parse.
+
+Both fixed, with `_parse_node_type` accepting the legacy spelling so older files still load. Twelve tests now pin the round trips, up from zero.
+
+**`27c47f1`** · [#2014](https://github.com/kyegomez/swarms/pull/2014) · **fix(agent): `Agent.load()` raised for every agent on a read-only property**
+
+`SafeStateManager.load_state` assigns every safe-typed key from the state file back onto the object. `create_state_dict` reads instance state, which includes **class-level read-only properties**, so the file carries keys that cannot be written back. `Agent` has two — `workspace` and `mcp_enabled` — and the first one reached ends the load:
+
+```
+AttributeError: property 'workspace' of 'Agent' object has no setter
+```
+
+That is not an edge case. **Every Agent has both properties, so `Agent.load()` could not complete for any agent, from either loop.**
+
+Why it went unnoticed: the repo's only save/load round-trip test has errored at setup since 2025-10-21 on a fixture deleted out from under it. **It looked like coverage for ten months.** `tests/structs/test_safe_loading.py` is new — nothing under `tests/` owned `safe_loading.py`. Against unfixed source: 5 failed, 1 passed. Here: 6 passed.
+
+**`ad8016a`** · **fix(llm-output-parsing): catch real exceptions and fix a broken import** — plus removing unused schema models and exports, deleting an example importing a missing module, enabling dynamic tools and an extra loop in the Exa example, and dropping the waste-audit report.
+
+---
+
+## Monday, August 24
+
+**`7b78b25`** · **improvement: remove the duplicate computer-use toolkit, delete unused Swarms API schemas, let the agent loader accept any pydantic model config, remove a duplicate chunking helper, drop markdown parsing from tool exec** — 14 files, −1,626 lines.
+
+**`60f8c15`** · [#2021](https://github.com/kyegomez/swarms/pull/2021) · **Consolidate duplicate test suites onto one file per subject**
+
+Three subjects were each covered by two files. Test counts are preserved in every case; the redundant half goes.
+
+- **add_prompt:** eleven of thirteen tests were already covered in the surviving file, and covered *better* — it routes through `httpx.MockTransport` so real request construction, URL encoding and status handling stay in the loop, while the deleted file mocked `httpx.Client` directly. The two genuinely uncovered cases were **ported, not copied**. 69 → 77 tests.
+- **litellm:** the 444 lines it replaces collected exactly one test, and **that test asserted nothing** — every check sat inside a `try/except` that printed a mark and continued, so it could not fail. Its module docstring now records what is therefore still unasserted. 1 real test → 31.
+- **one-on-one debate:** a new file covers both implementations of the same feature (the function in `deep_discussion` and the class in `multi_agent_debates`), sectioned by API so they cannot drift apart unnoticed. 18 + 11 → 24 + 5.
+
+Also fixes an import-time crash: `initialize_logger`'s log folder defaulted to `os.getenv("WORKSPACE_DIR")`, which a **default argument evaluates once at import** — with the variable unset that froze to `None`, and `os.path.exists(None)` raises `TypeError`. Importing swarms failed for anyone without it set.
+
+**`f8e3fff`** · [#2022](https://github.com/kyegomez/swarms/pull/2022) · **Send all logs to `{WORKSPACE_DIR}/logs`, one file per module** — see [Per-module logging](#per-module-logging-under-workspace_dirlogs). Verified on a `GraphWorkflow` run driving a real `Agent`: per-module record counts sum exactly to the combined log's.
+
+**`32d5ec9`** · [#2023](https://github.com/kyegomez/swarms/pull/2023) · **fix(bootup): `WORKSPACE_DIR` is discarded at import, so it never takes effect**
+
+**`465bafb`** · [#2015](https://github.com/kyegomez/swarms/pull/2015) · **test(agent): revive the eight tests that have errored since 2025-10-21**
+
+```
+master   19 failed, 78 passed, 8 errors
+here     19 failed, 84 passed, 0 errors
+```
+
+`6f4803ef` deleted the `mocked_llm` fixture but left the two fixtures that request it, and the eight tests that request those. Because they **error rather than fail**, they read as infrastructure noise rather than missing coverage — and one of them is the only save/load round-trip test the repo has.
+
+Restoring the fixture is not the whole job: three of the eight assert an `Agent` API that has not existed for years, which is exactly the drift the erroring hid. `test_provide_feedback` and `test_format_prompt` were **deleted** — their subject does not exist. `test_flow_initialization`, `test_save_and_load` and `test_flow_call` were rewritten against the API that does.
+
+**`8b7b80c`** · [#2024](https://github.com/kyegomez/swarms/pull/2024) · **Make `WORKSPACE_DIR` handling resilient, and cover it with tests**
+
+Now that the value actually reaches the code that uses it, the two places that act on it have to cope with a value they do not control.
+
+`bootup._prepare_workspace()` defers to `workspace_manager.ensure_workspace_env()` instead of keeping a second copy of the defaulting logic — the two copies had **already drifted**, since one clears `get_workspace_dir`'s `lru_cache` when it invents a default and the other did not, so a cached `None` could stick for the life of the process. `mkdir` on the caller's path is now guarded: it ran inside a try block that logs and re-raises, so a `WORKSPACE_DIR` that cannot be created **took down `import swarms` entirely**. `exist_ok` does not help, because it suppresses "already exists" only when the existing entry is a directory — a `WORKSPACE_DIR` naming a *file* raised regardless.
+
+`initialize_logger` also tracks which directory its handlers point at. The `_CONFIGURED` guard stops modules tearing down each other's handlers, but it also **latched the first directory seen** — and the first call happens before bootup settles `WORKSPACE_DIR`. After a fallback, the logger stayed aimed at the unusable path and wrote nothing anywhere.
+
+Two new test files, 18 tests total; four of them fail against master.
+
+---
+
+## Tuesday, August 25
+
+**`9fa537b`** · [#2063](https://github.com/kyegomez/swarms/pull/2063) · **fix(swarm-router): drop `"auto"` from `SwarmType`, which had no factory entry** — `reliability_check` accepted it at construction and the first `run()` raised. A caller reading the type hint, or an IDE completing it, saw a legitimate option that **always** failed later. Removed rather than implemented: the class docstring's supported list already excludes it and there is no auto-selection anywhere in the file. `CLAUDE.md` advertised it in two tables; both now point at `AutoSwarmBuilder`.
+
+**`43e4806`** · [#2062](https://github.com/kyegomez/swarms/pull/2062) · **fix(agent-rearrange): `remove_agent` indexes a list by name and always raises**
+
+`self.agents` is a list, but `remove_agent` did `del self.agents[agent_name]`, so **every call raised `TypeError`**. `add_agent` already used list semantics, so the two methods disagreed about the container. `tests/structs/test_agent_rearrange.py` already covered both, and **both were failing** — `test_add_agent` because `'EditorAgent' in agent_rearrange.agents` is a membership test against `Agent` objects and is never true for a list.
+
+**`3e89f27`** · **fix moa issue**
+
+**`27a34b5`** · [#2026](https://github.com/kyegomez/swarms/pull/2026) · **fix(agent): `tools=[]` enables the deferred-tool machinery it has nothing to search**
+
+`exists()` is `is not None`, so `exists([])` is `True` and an empty tools list counted as having tools. An agent built with `tools=[]` was given the `tool_search` schema and `DYNAMIC_TOOLS_NOTICE` in its system prompt, then **advertised a tool whose catalog is empty on every request**. `tools=None` produced the correct empty result, so the two spellings of "no tools" behaved differently — and `CLAUDE.md` documented the difference as a footgun to avoid. The warning goes away with the cause. `mcp_enabled` and `max_loops="auto"` still enable deferral on their own.
+
+**`1c0e833`** · **improvement: reduce the agent test file by 60%, delete four unused structs test files, strip module docstrings and banner comments from tests, remove example docstrings and shebangs** — 16 files, −4,090 lines.
+
+**`7243327`** · **fix: default `reasoning_effort` to none so tools work; stop overwriting a caller-supplied state path; allow `none` as a reasoning effort; enable pytest asyncio auto mode; let callers override max loops in the patched-agent helper; correct stale test assertions and add regression pins**
+
+---
+
+## Wednesday, August 26
+
+**`d7c6f1e`** · [#1991](https://github.com/kyegomez/swarms/pull/1991) · **fix(autonomous-loop): stop re-appending the handoff prompt every run**
+
+The loop appended the handoff prompt to `system_prompt` inside per-run setup, so a reused agent accumulated a fresh copy on every `run()`. Measured on master: **+1,988 characters per run, linearly, with no ceiling.**
+
+```
+base 15,359 -> run1 17,347 -> run2 19,335 -> run3 21,323
+```
+
+The tool append immediately above it already guards against duplicates by name, so idempotency was considered for the tools and missed for the prompt. The loop now remembers the block it applied and **removes it before applying the current one** — a plain "already present" check would have been shorter but wrong, pinning the first registry's text forever so a handoff target added between runs would never be described to the model.
+
+Worth noting for review: the handoff prompt is already applied once in `Agent.__init__`, so on an unchanged registry the correct result is that `run()` leaves `system_prompt` **exactly as it found it** — not that it appends once. The tests assert both that the size is stable *and* that the delegation instructions are still present, since a fix that stopped the growth by never applying the prompt would silently break handoffs.
+
+**`9bd9354`** · [#2065](https://github.com/kyegomez/swarms/pull/2065) · **improvement: compact every multi-line comment in `autonomous_loop.py` to one line** — 34 blocks, the longest nine lines. One block was not merely reformatted: *"Tools the loop itself depends on … never deferred"* sat directly above `PREWARM_TOOL_LIMIT` but described `ALWAYS_LOADED_TOOLS` five lines further down, which had no comment at all.
+
+**`a193a8e`** · [#1955](https://github.com/kyegomez/swarms/pull/1955) · **fix(majority-voting): validate agents and loop count** — empty agent lists and non-positive `max_loops` are rejected before voting begins, since a non-positive loop count produces no voting iterations at all.
+
+---
+
+## Thursday, August 27
+
+**`c6134af`** · [#2067](https://github.com/kyegomez/swarms/pull/2067) · **fix(swarm-router): drop `BatchedGridWorkflow` from `SwarmType`, which the router can never dispatch**
+
+`SwarmRouter` dispatches every swarm with `task=`, but `BatchedGridWorkflow.run` takes `tasks: List[str]`. Selecting it raised `TypeError` on the first `run()`. The mismatch is **structural, not a wiring slip**: `BatchedGridWorkflow` pairs agent *i* with task *i*, so it is many-tasks-to-many-agents, while `SwarmRouter.run(task)` is one task for the whole swarm. There is no signature satisfying both without changing what the router means.
+
+**`99b4d14`** · [#1956](https://github.com/kyegomez/swarms/pull/1956) · **fix(social-algorithms): remove agents by name** — searches by `agent.agent_name`, preserves the order of the rest, and raises the existing `AgentNotFoundError` on no match.
+
+**`c36e57e`** · [#2072](https://github.com/kyegomez/swarms/pull/2072) · **fix(social-algorithms): stop `run()` writing kwargs into the caller's dict**
+
+`algorithm_args or {}` is **not a copy**. When the caller passes a non-empty dict, `algorithm_kwargs` *is* that same object, and the following `.update(kwargs)` writes the call's keyword arguments straight into it. A caller reusing one config dict therefore accumulates arguments from every previous run: pass `temperature=0.2` once and every later run receives it, with nothing in the signature suggesting the dict is written to.
+
+**`32398fa`** · [#2074](https://github.com/kyegomez/swarms/pull/2074) · **feat(social-algorithms): record agent messages in a `Conversation`**
+
+`SocialAlgorithms` tracked communication by hand in a `CommunicationStep` list that was **off by default**, so nothing was recorded unless the caller opted in. It now adopts `Conversation` like every other structure: the task, every agent message and the final result are recorded automatically and reachable through the standard API.
+
+Recording is unconditional, which retires `enable_communication_logging`. The old wrapper patched `Agent.talk_to` and `Agent.run` **at the class level**, which would have been unsafe to leave permanently on; it now patches only the agent instances in the swarm and restores them in a `finally`, so bystander agents and other swarms are unaffected.
+
+Also drops `_log_execution_step` and its 13 call sites, which narrated the code (*"Preparing algorithm arguments"*, *"Creating algorithm result object"*). What is left is `logger.info` gated on `verbose`, plus `logger.warning` on timeout and `logger.error` on failure — and those two **no longer depend on `verbose`**, so a failure is visible by default. 650 → 514 lines; tests 5 → 49.
+
+**`ff8a60e`** · [#2075](https://github.com/kyegomez/swarms/pull/2075) · **fix(agent-rearrange): isolate concurrent tasks** — keeps `concurrent_run()` on the shared `run_concurrently(...)` abstraction while routing each task through a fresh `_clone_for_task()` orchestrator, giving each task an isolated `Conversation`.
+
+---
+
+## Friday, August 28
+
+Twelve commits — the typed-turns push, and the largest deletion in the release.
+
+**`8f6854f`** · [#2078](https://github.com/kyegomez/swarms/pull/2078) · **fix(multi-agent): deliver context as typed chat turns, not one user blob** — see [Typed chat turns](#typed-chat-turns-and-the-context_utils-helpers). Converts `MixtureOfAgents`, `AgentRearrange` and therefore `SequentialWorkflow`; adds `messages_for` and `split_last_turn` to `context_utils`. Fixes #2030, #2035, #2036, #2037.
+
+**`069634f`** · [#2079](https://github.com/kyegomez/swarms/pull/2079) · **fix(multi-agent): typed chat turns for the remaining structures**
+
+Converts `GroupChat`, `HierarchicalSwarm`, `MajorityVoting` and `GraphWorkflow`, and moves `SwarmRouter` off mutating the caller's agents. Six issues closed, and several independent bugs surfaced in the process:
+
+- `SwarmRouter(list_all_agents=True)` **raised `AttributeError` at construction** — `setup()` reached for `self.swarm`, which is created lazily on the first `run()`.
+- `GraphWorkflow` fan-in filtered `pred_outputs` by presence but zipped against the **unfiltered** predecessor list, so one missing predecessor shifted every label — B's output announced as A's, and the last output dropped.
+- `MajorityVoting` recorded each voter's whole conversation as its vote, compounding the shared conversation every loop.
+- `HierarchicalSwarm` never recorded the user's task, and its judge received worker outputs as a **Python list repr with the author names stripped**.
+- `GroupChat` **could never seat a speaker**: agents bid correctly, but `_extract_args` could not parse a tool call returned as a string, so every bid scored 0.0. Recovered with `ast.literal_eval`. Its conversations also drop timestamps, which were pure token cost and guaranteed a different prefix every turn.
+
+`Conversation.return_messages_as_list` now returns message dicts; the `"role: content"` rendering moved to `return_messages_as_strings`.
+
+**`f1f4043`** · [#2080](https://github.com/kyegomez/swarms/pull/2080) · **cleanup: compact multi-line comment blocks and delete dead example code**
+
+A scan of all 213 modules found **202 runs of three or more consecutive comment lines**, so the one-line rule was being lost faster than it was applied. 163 were explanatory prose, each now a single line that keeps the surprise and drops the mechanism the code already states. The other 39 were commented-out code, which the rule says to *delete*: almost all of it a dead `if __name__ == "__main__":` script at the end of a module — `agent_router.py` alone carried 170 lines. 47 files, −1,067 lines, every line in the diff a comment or a blank.
+
+**`3f94a65`** · **clean up prompts comments**
+
+**`6b4b108`** · [#2085](https://github.com/kyegomez/swarms/pull/2085) · **fix(multi-agent): typed chat turns for the last four flattening structures**
+
+- `swarming_architectures` passed the conversation as the **positional task with no wrapper at all**, in `circular_swarm`, `star_swarm` and both halves of `broadcast`. A single `_run_on_conversation` helper now delivers typed turns and records `agent_answer` rather than the raw `run()` return. `circular_swarm` also added the user task **once per agent** rather than once per task, so every agent saw it twice.
+- `AgentJudge` built each iteration's task from the flattened conversation and appended the response back into it, so with `max_loops > 1` the input grew superlinearly and **the judge re-read its own verdicts as material to evaluate**.
+- `ReasoningDuo` handed the main agent `conversation.get_str()` on every step and re-interpolated the transcript into the reasoning agent's task from the second loop on. Both agents were also constructed with the **same `agent_name`**, so neither could be attributed and each read the other's output as its own; they are now suffixed `-reasoning` and `-main`.
+- `GraphWorkflow._build_prompt` joined predecessor outputs into one user string. It now returns `(prompt, messages)`: the standing instruction as the task, each predecessor as its own labelled turn.
+
+**`b73ba33`** · [#2086](https://github.com/kyegomez/swarms/pull/2086) · **cleanup: compact the comments added by #2085 to one line each**
+
+**`9f1d01d`** · [#2087](https://github.com/kyegomez/swarms/pull/2087) · **fix(multi-agent-router): honour `skip_null_tasks`, tolerate an absent task key, run selected agents concurrently**
+
+Six contained fixes, no restructuring:
+
+- `skip_null_tasks` **did nothing on the single-agent path**. `handle_single_handoff` logged *"Skipping execution"* and then ran the agent anyway, because the guard had no `return`. `route_task` sends every single-handoff decision there, so the documented flag was inert for the common case and the agent was run on an empty task.
+- `HandOffsResponse.task` is `Optional`, but both handlers read `handoff["task"]` rather than `.get("task")`, so a boss that omits the field instead of nulling it raised `KeyError` and took the run down.
+- Selected agents ran **in series**. The boss prompt asks for non-overlapping tasks, so they are independent by construction — N agents cost the sum of their latencies rather than the maximum. Now on a thread pool: **three 0.35s agents complete in 0.35s rather than 1.05s.**
+- `handle_multiple_handoffs` resolved every agent twice.
+- `concurrent_batch_run` returned completion order while `batch_run` returned input order, so the two were not interchangeable.
+- Removed `get_agent_response_schema` (no callers) and corrected two handler annotations from `-> dict` to `-> None`.
+
+**`b24afcf`** · [#2088](https://github.com/kyegomez/swarms/pull/2088) · **cleanup: remove the deprecated AOP module and every reference to it** — 36 files, **−5,633 lines**
+
+`swarms/structs/aop.py` (2,954 lines) was never exported from `swarms.structs.__init__`, so nothing in the package or the test suite imported it — only examples did. Removed with it: `examples/guides/aop_examples/` in full, `examples/utils/misc/aop/`, the `aop_raw_*` workshop files, two server scripts that existed only to serve agents over AOP, the AOP section and capability-table row from `README.md`, a 24-row table from `examples/README.md`, and a `tests/README.md` block documenting a `tests/aop/` directory that no longer existed on disk.
+
+The module had also **stopped working**: it imports `mcp.server.fastmcp`, removed in mcp 2.x, and `pyproject` declared `mcp = "*"`, so a fresh install pulled 2.x and every AOP import failed.
+
+**`392a3b1`** · [#2089](https://github.com/kyegomez/swarms/pull/2089) · **docs(examples): add a `MultiAgentRouter` specialist-routing example** — the `mar/` folder had a minimal example and a general one, neither of which showed the thing that decides whether the structure works: **the boss routes on each agent's `description`, not on its `system_prompt`.** The example gives three specialists descriptions written as routing hints, then runs two tasks against the same router — one clear task handed to a single agent, and one with three distinct pieces split across all three. Verified by stubbing the boss decision and the agents, so the file is checked without contacting a model.
+
+**`cc17134`** · [#2091](https://github.com/kyegomez/swarms/pull/2091) · **refactor(agent-rearrange): parse the flow once, drop a duplicate system message, gate logging on verbose**
+
+`__init__` called `_reset_conversation()`, which already seeds the team-awareness system message, **and then seeded it again**. With `team_awareness=True` the identical message was added twice at construction, so every agent read the flow structure twice on every call for the whole run.
+
+The flow string was re-split in **six** places, each with its own comma-split and strip loop. A `steps` property now parses once into `List[List[str]]`, cached against the flow string so reassigning `flow` re-parses on next access without an explicit invalidation call.
+
+And profiling with stubbed agents showed **logging dominates the orchestration**:
+
+```
+default                3.00 ms/run
+with logging removed   0.14 ms/run
+```
+
+Roughly 95% of the overhead was logging — the cost being in the sink configuration rather than the call sites, since `enqueue=True` pickles every record through a multiprocessing queue and three sinks each take a copy. `AgentRearrange` emitted 15 records per run unconditionally; they now go through `SerializableMixin._log`, which returns early unless `verbose` is set. **2.58 → 2.00 ms/run.**
+
+**`7d0a3e1`** · [#1895](https://github.com/kyegomez/swarms/pull/1895) · **fix(auto-agent-builder): `agent_kwargs` collided with the builder's own Agent arguments** — raised `TypeError` on any `agent_kwargs`, so **all four shipped examples crashed.**
+
+**`cfc4366`** · [#2093](https://github.com/kyegomez/swarms/pull/2093) · **refactor(hierarchical-swarm): remove the live dashboard** — 55 references and a 563-line module with exactly one importer. See [`HierarchicalSwarm(print_on=True)`](#hierarchicalswarmprint_ontrue-see-what-the-director-decided).
+
+---
+
+## Sunday, August 30
+
+**`73f9a53`** · [#2105](https://github.com/kyegomez/swarms/pull/2105) · **fix(hierarchical-structured-communication): parse the evaluator's score**
+
+The evaluator prompt already asks for a score and a confidence; the result **discarded both and hardcoded 7.5 / 0.8**. Since the refinement loop stops on `avg_score >= 8.0`, that threshold was unreachable and **the early stop was dead code** — every run burned its full loop budget regardless of quality.
+
+---
+
+## Monday, August 31
+
+**`6fc422b`** · [#2099](https://github.com/kyegomez/swarms/pull/2099) · **fix(self-moa-seq): draw each sample from a fresh proposer** — see [Three structures stopped sharing one `Agent`](#three-structures-stopped-sharing-one-agent-across-threads). `grep -n "short_memory" swarms/structs/self_moa_seq.py` matched nothing.
+
+**`64b5c3e`** · [#2096](https://github.com/kyegomez/swarms/pull/2096) · **fix(spreadsheet-swarm): stop running one Agent in several threads** — 9 concurrent calls across 3 `Agent` instances with `max_loops=3`. `short_memory` is reset before each loop with `agent.short_memory = agent.short_memory_init()`, the idiom `auction_swarm.py` already uses for this hazard — without it the loops would stop being independent samples.
+
+**`6199265`** · [#2116](https://github.com/kyegomez/swarms/pull/2116) · **fix(spreadsheet-swarm): stop `run_from_config` running one Agent in several threads** — the identical race, one method away, that #2096 did not touch. **This is not a side path:** `_run` dispatches to `run_from_config` whenever `run()` is called without a task and `agent_tasks` is populated, which is exactly the CSV-loaded mode `load_from_csv` sets up. On master the recorded peak concurrency came out at `[3, 3, 3]` for `max_loops=3`, not `[1, 1, 1]`.
+
+**`de3e73c`** · [#2114](https://github.com/kyegomez/swarms/pull/2114) · **fix(debate-with-judge): record each agent's argument, not its transcript** — the three agents are built without `output_type`, so `run()` returned their whole conversation *including the discarded intro-priming turn*. Those returns were used verbatim as `pro_argument`, `con_argument` and the judge synthesis, then embedded in the opponent's and judge's prompts. **The judge was scoring the setup text.**
+
+**`3977d78`** · [#2113](https://github.com/kyegomez/swarms/pull/2113) · **fix(deep-discussion): pass the speaker's answer, not its whole transcript** — `one_on_one_debate` fed `Agent.run`'s default whole-conversation return straight back in as the next speaker's message, so context grew every turn and each transcript was recorded as the speaker's contribution. `agent_answer` already exists for exactly this and is used the same way in `agent_rearrange`.
+
+---
+
+## Tuesday, September 1
+
+Ten commits. Release day.
+
+**`78dc056`** · [#2118](https://github.com/kyegomez/swarms/pull/2118) · **feat(hierarchical-swarm): show the director's plan and orders, and split the module** — see [`HierarchicalSwarm(print_on=True)`](#hierarchicalswarmprint_ontrue-see-what-the-director-decided). 10 files, +1,340/−1,822. The async and streaming entry points (`arun`, `arun_stream`, `run_stream`) are removed with their tests; nothing in the repo called them.
+
+**`1e02bec`** · [#2121](https://github.com/kyegomez/swarms/pull/2121) · **fix(formatter): stop panel body text inheriting the random border color**
+
+`print_panel` passed `style="bold {random_color}"` to the `Panel`, which colors the **body text as well as the border** — so every panel rendered its content in a random bold color. The random color now goes to `border_style` and the content is wrapped in `Text` with an explicit style. The rest of the module had the same problem in smaller forms: `"white"`, `"white on grey23"` and `"dim italic"` hardcoded in six places, none of them agreeing. All routed through a single `DEFAULT_CONTENT_STYLE` so markdown, code blocks, fallbacks and streaming panels read the same.
+
+Also updates the `concurrent_mix` example off `claude-sonnet-4-20250514` onto `claude-sonnet-5`, and stops it writing two `.md` artifacts into the working directory as a side effect of being run.
+
+**`d00ab68`** · [#1888](https://github.com/kyegomez/swarms/pull/1888) · **fix(sequential): isolate each task in `run_batched`**
+
+`AgentRearrange` builds its conversation once in `__init__` and never resets it. `run` appends to that conversation and then formats the whole history, so calling it repeatedly on one instance returns task N's output **plus everything from tasks 1..N−1**. `run_batched` is a plain loop over `self.agent_rearrange.run`, so the contamination is guaranteed rather than incidental:
+
+```
+run_batched(["q1", "q2"])
+[0] 'User: q1\n\nA: A-ans'
+[1] 'User: q1\n\nA: A-ans\n\nUser: q2\n\nA: A-ans'
+```
+
+**Every task after the first is billed for, and returns, the transcripts of the ones before it.** `AgentRearrange.batch_run` already solved this with `_clone_for_task()`; `run_batched` just did not use it. `ConcurrentWorkflow.batch_run` was checked and is not affected.
+
+**`f66aac2`** · [#1948](https://github.com/kyegomez/swarms/pull/1948) · **fix(conversation): preserve message metadata** — `Conversation.add()` accepted a `metadata` argument and **silently discarded it**, because it was never forwarded to `add_in_memory()`. Metadata is now persisted on the stored message and survives serialization.
+
+**`f2db05d`** · [#2125](https://github.com/kyegomez/swarms/pull/2125) · **fix(round-robin): pass the shared history as typed turns**
+
+`return_history_as_string()` collapsed every speaker into one user blob embedded in the task, so an agent could not tell its own prior output from a peer's. Now uses `messages_for`, as `MixtureOfAgents` already does.
+
+The second commit is worth reading on its own: the first pass used `split_last_turn`, which **dropped the newest shared-conversation turn** — so an agent never saw the immediate prior speaker's output, *the very thing the turn header tells it to build on*. `messages_for()` is now passed directly, and the tests assert both the prior speaker's output and the original task are present.
+
+**`e80a118`** · [#2120](https://github.com/kyegomez/swarms/pull/2120) · **fix(SpreadSheetSwarm): record runtime timestamps correctly** — 168 new lines, mostly tests.
+
+**`d407f5e`** · [#2101](https://github.com/kyegomez/swarms/pull/2101) · **fix(expert-panel): send the moderator named text, not a Python list repr**
+
+The synthesis prompt interpolated a list comprehension directly, so the moderator received:
+
+```
+['First answer.', 'Second, with "quotes" mangled']
+```
+
+Bracket syntax, Python quoting, escaped newlines, and **no expert names at all** — while being asked to synthesise expert responses. The conversation already stores the agent name as the message role, so building a labelled transcript costs nothing.
+
+**`247bca3`** · [#2100](https://github.com/kyegomez/swarms/pull/2100) · **fix(image-batch): give each image its own agent instead of sharing one**
+
+Where the agent cannot be copied — a held thread lock, an HTTP connection pool — the fallback returns the **original untouched** rather than resetting it: resetting an object another worker is mid-run on would be worse than the sharing it is meant to fix.
+
+**`3371c12`** · [#2102](https://github.com/kyegomez/swarms/pull/2102) · **fix(agent): make `reasoning_effort` a real `Literal` instead of a function call**
+
+`reasoning_effort: Literal[get_reasoning_efforts()]` is not valid typing. `Literal` takes literal members, so every type checker rejects a call there — and the annotation is **evaluated when the class body runs**, which calls `get_reasoning_efforts()`, which does `import litellm` to read the values off `litellm.completion`'s signature. The members are now spelled out as a `ReasoningEffort` Literal with the runtime tuple derived from it via `get_args`, so the static type and the runtime tuple cannot disagree.
+
+**`d5927e2`** · **Improve `pyproject.toml`** — the v15.0.0 release commit.
+
+---
+
+## By the Numbers
+
+| | |
+|---|---|
+| Commits | **131** |
+| Merged pull requests | **~120** |
+| Files changed | **312** |
+| Lines added | **+27,151** |
+| Lines removed | **−36,790** |
+| **Net** | **−9,639** |
+| Contributors | 6 |
+
+**Contributors this release:** Ayaan Gazali (59), Kye Gomez (58), Steve-Dusty (6), Prince Thummar (4), Vidith Salla (3), dependabot (1).
+
+Ayaan Gazali is the top contributor to this release by commit count, almost entirely in bug fixes, and the quality bar in those PRs — a reproduction on master, a before/after measurement, an explicit statement of what was deliberately left out of scope — set the tone for the whole cycle. Steve-Dusty's three shared-`Agent`-across-threads fixes and Prince Thummar's `CronJob` and `ma_utils` work were the other spine of it.
+
+---
+
+## Upgrade Notes
+
+1. **Check the [Breaking Changes](#breaking-changes) table.** Nine public names are gone.
+2. **`Agent(max_tokens=...)` and `Agent(context_length=...)` now work.** If your agents were quietly running a 16k window and the model's full output budget, they will now run what you asked for. This can change cost and behaviour — set them explicitly if you were relying on the accident.
+3. **`WORKSPACE_DIR` now takes effect**, and all logs move under `{WORKSPACE_DIR}/logs`. If you were scraping log files from the working directory, repoint.
+4. **`SpreadSheetSwarm` with `max_loops > 1` is now sequential per loop** and will take roughly `max_loops` times as long. The previous wall-clock came from racing one object.
+5. **`create_agent_map` rejects duplicate agent names** with `ValueError`. Give every agent in a swarm a unique `agent_name` — this was already required for `persistent_memory`, and it is now enforced.
+6. **Structures reset their conversation per task.** A reused `SequentialWorkflow` or `AgentRearrange` instance no longer serves the previous task's transcript as context. If you were depending on that carry-over, hold the `Conversation` yourself.
+7. **If you use MCP**, `mcp` is pinned `>=1.28.1,<2.0.0` in v14 and 2.x is supported alongside 1.x from #2007 onward.
+
+---
+
+## What's Next
+
+The audit that drove Akira is not finished, and the open threads are written down rather than implied:
+
+- **Per-task conversations in `MultiAgentRouter.concurrent_batch_run`** — it still shares one `Conversation` across threads, so histories interleave. Documented on the method; tracked in #2041 and #2054.
+- **Typed turns for `SelfMoASeq`'s aggregator** — samples still reach it as `"\n[Response i]:\n"` concatenation rather than as turns. Tracked in #2029.
+- **What `max_loops` should mean for `SpreadSheetSwarm`** — iterative refinement or repeated sampling. #2096 keeps today's meaning (repeated sampling) deliberately; #2045 asks the question.
+- **`SocialAlgorithms` SIGALRM timeouts** — three tests are marked `xfail` for pre-existing bugs that make `run_async` and any off-main-thread run fail on the default configuration. Tracked in #2070.
+- **The framework-wide logging cost.** #2091 measured ~95% of `AgentRearrange`'s orchestration overhead as logging, and located it in the sink configuration — `enqueue=True` pickling every record through a multiprocessing queue, three sinks each taking a copy, and `diagnose=True` capturing local variable values into log files. Gating call sites on `verbose` is a per-module patch; the sink settings are the real fix.
+
+---
+
+**Learn more:** [Documentation](https://docs.swarms.world) · [GitHub](https://github.com/kyegomez/swarms) · [Examples](https://github.com/kyegomez/swarms/tree/master/examples) · [Discord](https://discord.gg/jM3Z6M9uMq)

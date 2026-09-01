@@ -38,9 +38,9 @@ export function Footer() {
             {/* Left Side - Logo and Mission */}
             <div className="lg:w-1/3 xl:w-1/4">
               <div className="flex flex-col gap-4">
-                <Image 
-                  src="/logo.svg" 
-                  alt="Swarms AI Multi-Agent Framework Logo - Enterprise-Grade Autonomous Agent Infrastructure" 
+                <Image
+                  src="/logo.svg"
+                  alt="Swarms AI Multi-Agent Framework Logo - Enterprise-Grade Autonomous Agent Infrastructure"
                   width={40}
                   height={40}
                   className="h-8 w-8 sm:h-10 sm:w-10 flex-shrink-0"
@@ -57,36 +57,151 @@ export function Footer() {
 
             {/* Right Side - All Links */}
             <div className="lg:w-2/3 xl:w-3/4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-            {/* Products */}
-            <div className="relative p-3 sm:p-4">
-              <h3 className="mb-2 sm:mb-3 flex items-center gap-2 text-xs sm:text-sm font-bold text-white">
-                <span className="h-1 w-1 sm:h-1.5 sm:w-1.5 rounded-full bg-neutral-600" />
-                Products
-              </h3>
+              {/* Products */}
+              <div className="relative p-3 sm:p-4">
+                <h3 className="mb-2 sm:mb-3 flex items-center gap-2 text-xs sm:text-sm font-bold text-white">
+                  <span className="h-1 w-1 sm:h-1.5 sm:w-1.5 rounded-full bg-neutral-600" />
+                  Products
+                </h3>
 
-              <ul className="space-y-1 sm:space-y-2">
-                {[
-                  { name: "Products Overview", icon: Package, url: "/products" },
-                  { name: "Simulations", icon: Network, url: "/simulations" },
-                  { name: "Mobile App", icon: Smartphone, url: "/mobile" },
-                  { name: "Swarms Python", icon: Github, url: "https://github.com/kyegomez/swarms" },
-                  {
-                    name: "Swarms API",
-                    icon: Code,
-                    url: "https://docs.swarms.ai",
-                  },
-                  { name: "Swarms RS", icon: Rocket, url: "https://github.com/The-Swarm-Corporation/swarms-rs" },
-                  { name: "Swarms Marketplace", icon: Sparkles, url: "https://swarms.world" },
-                  { name: "Swarms Cloud", icon: Cloud, url: "https://cloud.swarms.world" },
-                  { name: "Agent Economy", icon: DollarSign, url: "https://swarms.world/agent-economy" },
-                  { name: "Launch on Marketplace", icon: Rocket, url: "https://swarms.world/launch" },
-                ].map((item, index) => (
-                  <li key={index} className="group">
+                <ul className="space-y-1 sm:space-y-2">
+                  {[
+                    { name: "Products Overview", icon: Package, url: "/products" },
+                    { name: "Simulations", icon: Network, url: "/simulations" },
+                    { name: "Mobile App", icon: Smartphone, url: "/mobile" },
+                    { name: "Swarms Python", icon: Github, url: "https://github.com/kyegomez/swarms" },
+                    {
+                      name: "Swarms API",
+                      icon: Code,
+                      url: "https://docs.swarms.ai",
+                    },
+                    { name: "Swarms RS", icon: Rocket, url: "https://github.com/The-Swarm-Corporation/swarms-rs" },
+                    { name: "Swarms Marketplace", icon: Sparkles, url: "https://swarms.world" },
+                    { name: "Swarms Cloud", icon: Cloud, url: "https://cloud.swarms.world" },
+                    { name: "Agent Economy", icon: DollarSign, url: "https://swarms.world/agent-economy" },
+                    { name: "Launch on Marketplace", icon: Rocket, url: "https://swarms.world/launch" },
+                  ].map((item, index) => (
+                    <li key={index} className="group">
+                      <Link
+                        href={item.url}
+                        target={item.url.startsWith("http") ? "_blank" : undefined}
+                        rel={item.url.startsWith("http") ? "noopener noreferrer" : undefined}
+                        className="flex items-center rounded-lg bg-transparent p-2 sm:p-2 text-sm transition-all duration-300 hover:bg-neutral-900/30 min-h-[44px] touch-manipulation"
+                      >
+                        <div className="flex items-center gap-2 min-w-0 flex-1">
+                          <div className="flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded bg-neutral-800/50 transition-colors duration-300 group-hover:bg-neutral-800/70 flex-shrink-0">
+                            <item.icon className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-neutral-400" />
+                          </div>
+                          <span className="text-xs text-gray-300 transition-colors duration-300 group-hover:text-gray-100 leading-tight truncate">{item.name}</span>
+                        </div>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Resources & Programs */}
+              <div className="relative p-3 sm:p-4">
+                <h3 className="mb-2 sm:mb-3 flex items-center gap-2 text-xs sm:text-sm font-bold text-white">
+                  <span className="h-1 w-1 sm:h-1.5 sm:w-1.5 rounded-full bg-neutral-600" />
+                  Resources & Programs
+                </h3>
+
+                <div className="grid gap-1 sm:gap-2">
+                  {[
+                    { name: "Swarms Academy", icon: GraduationCap, url: "/academy", isNew: true },
+                    { name: "Swarms API Course", icon: GraduationCap, url: "/academy/swarms-api" },
+                    { name: "Documentation", icon: BookOpen, url: "https://docs.swarms.world" },
+                    { name: "Research Program", icon: Award, url: "/programs" },
+                    { name: "Foundry Program", icon: Award, url: "https://swarms.world/foundry" },
+                    { name: "Research", icon: BookOpen, url: "/research" },
+                    { name: "Research Papers", icon: FileText, url: "/research-papers" },
+                    { name: "Startup Program", icon: Rocket, url: "https://www.swarms.ai/programs/startups" },
+                    { name: "Grants Program", icon: DollarSign, url: "https://grants.swarms.world", isNew: true },
+                    { name: "Ecosystem Hub", icon: BookOpen, url: "https://ecosystem.swarms.world" },
+                    { name: "Open Source", icon: Github, url: "/open-source" },
+                  ].map((item, index) => (
                     <Link
+                      key={index}
                       href={item.url}
                       target={item.url.startsWith("http") ? "_blank" : undefined}
                       rel={item.url.startsWith("http") ? "noopener noreferrer" : undefined}
-                      className="flex items-center rounded-lg bg-transparent p-2 sm:p-2 text-sm transition-all duration-300 hover:bg-neutral-900/30 min-h-[44px] touch-manipulation"
+                      className="group flex items-center rounded-lg bg-transparent p-2 text-sm transition-all duration-300 hover:bg-neutral-900/30 min-h-[44px] touch-manipulation"
+                    >
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        <div className="flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded bg-neutral-800/50 transition-colors duration-300 group-hover:bg-neutral-800/70 flex-shrink-0">
+                          <item.icon className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-neutral-400" />
+                        </div>
+                        <span className="text-xs text-gray-300 transition-colors duration-300 group-hover:text-gray-100 leading-tight truncate">{item.name}</span>
+                        {item.isNew && (
+                          <span className="text-xs px-1.5 py-0.5 bg-white/10 text-white rounded-full flex-shrink-0">New</span>
+                        )}
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+
+              {/* Community & Social */}
+              <div className="relative p-3 sm:p-4">
+                <h3 className="mb-2 sm:mb-3 flex items-center gap-2 text-xs sm:text-sm font-bold text-white">
+                  <span className="h-1 w-1 sm:h-1.5 sm:w-1.5 rounded-full bg-neutral-600" />
+                  Community & Social
+                </h3>
+
+                <div className="grid gap-1 sm:gap-2">
+                  {[
+                    { name: "Discord Community", icon: SiDiscord as React.ComponentType<{ className?: string }>, url: "https://discord.gg/EamjgSaEQf" },
+                    { name: "Telegram Group", icon: SiTelegram as React.ComponentType<{ className?: string }>, url: "https://t.me/swarmsgroupchat" },
+                    { name: "Swarms Twitter", icon: Twitter, url: "https://twitter.com/swarms_corp" },
+                    { name: "LinkedIn", icon: Building, url: "https://www.linkedin.com/company/swarms-corp/" },
+                    { name: "YouTube", icon: MessageCircle, url: "https://www.youtube.com/@kyegomez3242" },
+                    { name: "GitHub", icon: Github, url: "https://github.com/kyegomez/swarms" },
+                  ].map((item, index) => {
+                    const Icon = item.icon
+                    return (
+                      <Link
+                        key={index}
+                        href={item.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="group flex items-center rounded-lg bg-transparent p-2 text-sm transition-all duration-300 hover:bg-neutral-900/30 min-h-[44px] touch-manipulation"
+                      >
+                        <div className="flex items-center gap-2 min-w-0 flex-1">
+                          <div className="flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded bg-neutral-800/50 transition-colors duration-300 group-hover:bg-neutral-800/70 flex-shrink-0">
+                            <Icon className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-neutral-400" />
+                          </div>
+                          <span className="text-xs text-gray-300 transition-colors duration-300 group-hover:text-gray-100 leading-tight truncate">{item.name}</span>
+                        </div>
+                      </Link>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Support & Contact */}
+              <div className="relative p-3 sm:p-4">
+                <h3 className="mb-2 sm:mb-3 flex items-center gap-2 text-xs sm:text-sm font-bold text-white">
+                  <span className="h-1 w-1 sm:h-1.5 sm:w-1.5 rounded-full bg-neutral-600" />
+                  Support & Contact
+                </h3>
+
+                <div className="grid gap-1 sm:gap-2">
+                  {[
+                    { name: "Contact Us", icon: Phone, url: "/contact" },
+                    { name: "Pricing", icon: DollarSign, url: "/pricing" },
+                    { name: "Book a Call", icon: Phone, url: "https://cal.com/swarms" },
+                    { name: "Careers", icon: Users, url: "/hiring" },
+                    { name: "Status Page", icon: Activity, url: "https://status.swarms.ai" },
+                    { name: "Customer Support", icon: MessageCircle, url: "https://swarms.world/support" },
+                    { name: "Email Support", icon: MessageCircle, url: "mailto:kye@swarms.world" },
+                  ].map((item, index) => (
+                    <Link
+                      key={index}
+                      href={item.url}
+                      target={item.url.startsWith("http") ? "_blank" : undefined}
+                      rel={item.url.startsWith("http") ? "noopener noreferrer" : undefined}
+                      className="group flex items-center rounded-lg bg-transparent p-2 text-sm transition-all duration-300 hover:bg-neutral-900/30 min-h-[44px] touch-manipulation"
                     >
                       <div className="flex items-center gap-2 min-w-0 flex-1">
                         <div className="flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded bg-neutral-800/50 transition-colors duration-300 group-hover:bg-neutral-800/70 flex-shrink-0">
@@ -95,123 +210,9 @@ export function Footer() {
                         <span className="text-xs text-gray-300 transition-colors duration-300 group-hover:text-gray-100 leading-tight truncate">{item.name}</span>
                       </div>
                     </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Resources & Programs */}
-            <div className="relative p-3 sm:p-4">
-              <h3 className="mb-2 sm:mb-3 flex items-center gap-2 text-xs sm:text-sm font-bold text-white">
-                <span className="h-1 w-1 sm:h-1.5 sm:w-1.5 rounded-full bg-neutral-600" />
-                Resources & Programs
-              </h3>
-
-              <div className="grid gap-1 sm:gap-2">
-                {[
-                  { name: "Swarms Academy", icon: GraduationCap, url: "/academy", isNew: true },
-                  { name: "Swarms API Course", icon: GraduationCap, url: "/academy/swarms-api" },
-                  { name: "Documentation", icon: BookOpen, url: "https://docs.swarms.world" },
-                  { name: "Research Program", icon: Award, url: "/programs" },
-                  { name: "Foundry Program", icon: Award, url: "https://swarms.world/foundry" },
-                  { name: "Research", icon: BookOpen, url: "/research" },
-                  { name: "Research Papers", icon: FileText, url: "/research-papers" },
-                  { name: "Startup Program", icon: Rocket, url: "https://www.swarms.ai/programs/startups" },
-                  { name: "Grants Program", icon: DollarSign, url: "https://grants.swarms.world", isNew: true },
-                  { name: "Ecosystem Hub", icon: BookOpen, url: "https://ecosystem.swarms.world" },
-                  { name: "Open Source", icon: Github, url: "/open-source" },
-                ].map((item, index) => (
-                  <Link
-                    key={index}
-                    href={item.url}
-                    target={item.url.startsWith("http") ? "_blank" : undefined}
-                    rel={item.url.startsWith("http") ? "noopener noreferrer" : undefined}
-                    className="group flex items-center rounded-lg bg-transparent p-2 text-sm transition-all duration-300 hover:bg-neutral-900/30 min-h-[44px] touch-manipulation"
-                  >
-                    <div className="flex items-center gap-2 min-w-0 flex-1">
-                      <div className="flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded bg-neutral-800/50 transition-colors duration-300 group-hover:bg-neutral-800/70 flex-shrink-0">
-                        <item.icon className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-neutral-400" />
-                      </div>
-                      <span className="text-xs text-gray-300 transition-colors duration-300 group-hover:text-gray-100 leading-tight truncate">{item.name}</span>
-                      {item.isNew && (
-                        <span className="text-xs px-1.5 py-0.5 bg-white/10 text-white rounded-full flex-shrink-0">New</span>
-                      )}
-                    </div>
-                  </Link>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
-
-            {/* Community & Social */}
-            <div className="relative p-3 sm:p-4">
-              <h3 className="mb-2 sm:mb-3 flex items-center gap-2 text-xs sm:text-sm font-bold text-white">
-                <span className="h-1 w-1 sm:h-1.5 sm:w-1.5 rounded-full bg-neutral-600" />
-                Community & Social
-              </h3>
-
-              <div className="grid gap-1 sm:gap-2">
-                {[
-                  { name: "Discord Community", icon: SiDiscord as React.ComponentType<{ className?: string }>, url: "https://discord.gg/EamjgSaEQf" },
-                  { name: "Telegram Group", icon: SiTelegram as React.ComponentType<{ className?: string }>, url: "https://t.me/swarmsgroupchat" },
-                  { name: "Swarms Twitter", icon: Twitter, url: "https://twitter.com/swarms_corp" },
-                  { name: "LinkedIn", icon: Building, url: "https://www.linkedin.com/company/swarms-corp/" },
-                  { name: "YouTube", icon: MessageCircle, url: "https://www.youtube.com/@kyegomez3242" },
-                  { name: "GitHub", icon: Github, url: "https://github.com/kyegomez/swarms" },
-                ].map((item, index) => {
-                  const Icon = item.icon
-                  return (
-                    <Link
-                      key={index}
-                      href={item.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="group flex items-center rounded-lg bg-transparent p-2 text-sm transition-all duration-300 hover:bg-neutral-900/30 min-h-[44px] touch-manipulation"
-                    >
-                      <div className="flex items-center gap-2 min-w-0 flex-1">
-                        <div className="flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded bg-neutral-800/50 transition-colors duration-300 group-hover:bg-neutral-800/70 flex-shrink-0">
-                          <Icon className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-neutral-400" />
-                        </div>
-                        <span className="text-xs text-gray-300 transition-colors duration-300 group-hover:text-gray-100 leading-tight truncate">{item.name}</span>
-                      </div>
-                    </Link>
-                  )
-                })}
-              </div>
-            </div>
-
-            {/* Support & Contact */}
-            <div className="relative p-3 sm:p-4">
-              <h3 className="mb-2 sm:mb-3 flex items-center gap-2 text-xs sm:text-sm font-bold text-white">
-                <span className="h-1 w-1 sm:h-1.5 sm:w-1.5 rounded-full bg-neutral-600" />
-                Support & Contact
-              </h3>
-
-              <div className="grid gap-1 sm:gap-2">
-                {[
-                  { name: "Pricing", icon: DollarSign, url: "/pricing" },
-                  { name: "Book a Call", icon: Phone, url: "https://cal.com/swarms" },
-                  { name: "Careers", icon: Users, url: "/hiring" },
-                  { name: "Status Page", icon: Activity, url: "https://status.swarms.ai" },
-                  { name: "Customer Support", icon: MessageCircle, url: "https://swarms.world/support" },
-                  { name: "Email Support", icon: MessageCircle, url: "mailto:kye@swarms.world" },
-                ].map((item, index) => (
-                  <Link
-                    key={index}
-                    href={item.url}
-                    target={item.url.startsWith("http") ? "_blank" : undefined}
-                    rel={item.url.startsWith("http") ? "noopener noreferrer" : undefined}
-                    className="group flex items-center rounded-lg bg-transparent p-2 text-sm transition-all duration-300 hover:bg-neutral-900/30 min-h-[44px] touch-manipulation"
-                  >
-                    <div className="flex items-center gap-2 min-w-0 flex-1">
-                      <div className="flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded bg-neutral-800/50 transition-colors duration-300 group-hover:bg-neutral-800/70 flex-shrink-0">
-                        <item.icon className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-neutral-400" />
-                      </div>
-                      <span className="text-xs text-gray-300 transition-colors duration-300 group-hover:text-gray-100 leading-tight truncate">{item.name}</span>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </div>
             </div>
           </div>
 
@@ -222,6 +223,7 @@ export function Footer() {
               <div className="text-xs text-gray-500">© {new Date().getFullYear()} Swarms. All rights reserved.</div>
               <nav className="flex items-center gap-3 sm:gap-4">
                 {[
+                  { name: "Contact", url: "/contact" },
                   { name: "Privacy Policy", url: "/privacy" },
                   { name: "Terms of Service", url: "/terms" },
                   { name: "Data Policy", url: "/data-policy" },

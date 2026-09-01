@@ -1,6 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
+import { HomeAnnouncementBanner } from "@/components/home-announcement-banner"
 import { motion, useReducedMotion } from "framer-motion"
 import { ArrowRight, ArrowUpRight } from "lucide-react"
 import { useEffect, useState } from "react"
@@ -44,6 +45,8 @@ export function HomeHero() {
 
       <div className="container relative w-full px-4 sm:px-6 lg:px-8">
         <div className="mx-auto flex max-w-4xl flex-col items-center pb-16 pt-24 text-center sm:pb-20 sm:pt-28">
+          <HomeAnnouncementBanner />
+
           {/* Crab invader hovering above the wordmark */}
           <motion.div
             aria-hidden="true"

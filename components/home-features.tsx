@@ -62,7 +62,7 @@ export function HomeFeatures() {
             Everything you need to ship agents.
           </h2>
           <p className="mt-5 max-w-2xl text-base font-normal leading-relaxed text-white/50 sm:text-lg">
-            Pioneered infrastructure for multi-agent collaboration — communication
+            Pioneered infrastructure for multi-agent collaboration: communication
             protocols, optimized runtimes, memory systems, and simulation
             environments.
           </p>

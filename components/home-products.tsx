@@ -116,7 +116,7 @@ async fn main() -> Result<()> {
     title: "Swarms Marketplace",
     subtitle: "Buy & Sell Agents",
     description:
-      "Discover, buy, and sell agents, prompts, tools, and components on swarms.world — the premier marketplace for AI agents.",
+      "Discover, buy, and sell agents, prompts, tools, and components on swarms.world, the premier marketplace for AI agents.",
     link: "https://swarms.world",
     docsLink: "https://swarms.world",
     image: "/marketplace_banner.png",
@@ -197,7 +197,7 @@ function ProductRow({
       {/* Copy */}
       <div className={`space-y-5 ${isEven ? "lg:order-1" : "lg:order-2"}`}>
         <p className="font-mono text-[11px] font-medium uppercase tracking-[0.2em] text-white/40">
-          {String(index + 1).padStart(2, "0")} — {product.subtitle}
+          {String(index + 1).padStart(2, "0")} · {product.subtitle}
         </p>
         <div className="flex flex-wrap items-center gap-3">
           <h3 className="text-xl font-semibold tracking-tight text-white sm:text-3xl md:text-4xl">
@@ -264,7 +264,7 @@ function ProductRow({
             const panel = (
               <Image
                 src={product.image}
-                alt={`${product.title} — ${product.subtitle}`}
+                alt={`${product.title}: ${product.subtitle}`}
                 width={800}
                 height={600}
                 className="h-auto w-full object-cover"

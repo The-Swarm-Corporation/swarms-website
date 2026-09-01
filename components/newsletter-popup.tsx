@@ -1,10 +1,13 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
-import { X, Mail, Sparkles, Users, Calendar, BookOpen } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { useEffect, useRef, useState } from "react"
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
+import { ArrowRight, Check, X } from "lucide-react"
+
+const ease: [number, number, number, number] = [0.22, 1, 0.36, 1]
+
+const BENEFITS = ["Latest updates", "Tutorials", "Events", "Research news"]
 
 interface NewsletterPopupProps {
   isOpen: boolean
@@ -12,19 +15,37 @@ interface NewsletterPopupProps {
 }
 
 export function NewsletterPopup({ isOpen, onClose }: NewsletterPopupProps) {
+  const prefersReducedMotion = useReducedMotion()
   const [email, setEmail] = useState("")
   const [firstName, setFirstName] = useState("")
   const [lastName, setLastName] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
   const [error, setError] = useState("")
+  const dialogRef = useRef<HTMLDivElement>(null)
+
+  // Escape closes, and the page behind the modal stops scrolling while it is up.
+  useEffect(() => {
+    if (!isOpen) return
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose()
+    }
+
+    document.addEventListener("keydown", onKeyDown)
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = "hidden"
+
+    return () => {
+      document.removeEventListener("keydown", onKeyDown)
+      document.body.style.overflow = previousOverflow
+    }
+  }, [isOpen, onClose])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
     setError("")
-
-    console.log("Submitting form with:", { email, firstName, lastName })
 
     try {
       const response = await fetch("/api/newsletter", {
@@ -40,7 +61,6 @@ export function NewsletterPopup({ isOpen, onClose }: NewsletterPopupProps) {
       })
 
       const data = await response.json()
-      console.log("Response:", data)
 
       if (response.ok) {
         // Remember the subscription so the site greets them as subscribed
@@ -56,137 +76,162 @@ export function NewsletterPopup({ isOpen, onClose }: NewsletterPopupProps) {
         }, 3000)
       } else {
         setError(data.error?.message || "Something went wrong")
-        console.error("Subscription failed:", data)
       }
-    } catch (err) {
-      console.error("Network error:", err)
+    } catch {
       setError("Network error. Please try again.")
     } finally {
       setIsSubmitting(false)
     }
   }
 
-  if (!isOpen) return null
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300"
-        onClick={onClose}
-      />
+    <AnimatePresence>
+      {isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <motion.div
+            className="absolute inset-0 bg-black/85 backdrop-blur-sm"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25, ease }}
+            onClick={onClose}
+          />
 
-      {/* Modal */}
-      <div className="relative w-full max-w-md bg-black border border-red-500/20 rounded-2xl shadow-2xl animate-in zoom-in-95 duration-300">
-        {/* Close Button */}
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 p-2 text-gray-400 hover:text-white transition-colors rounded-full hover:bg-white/10"
-        >
-          <X className="w-5 h-5" />
-        </button>
+          <motion.div
+            ref={dialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="newsletter-popup-title"
+            className="relative w-full max-w-lg overflow-hidden rounded-lg border border-white/[0.08] bg-[#0a0a0a] shadow-2xl"
+            initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 12, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 8, scale: 0.98 }}
+            transition={{ duration: 0.35, ease }}
+          >
+            {/* Hairline grid, the same motif the hero uses */}
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.04)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.04)_1px,transparent_1px)] bg-[size:44px_44px] [mask-image:radial-gradient(ellipse_80%_60%_at_50%_0%,black_10%,transparent_100%)]"
+            />
 
-        {/* Content */}
-        <div className="p-8">
-          {!isSuccess ? (
-            <>
-              {/* Header */}
-              <div className="text-center mb-6">
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-red-500 to-red-600 rounded-full mb-4 animate-pulse">
-                  <Users className="w-8 h-8 text-white" />
-                </div>
-                <h2 className="text-2xl font-bold text-white mb-2">Join the Swarms Community</h2>
-                <p className="text-gray-300 text-sm">
-                  Stay up to date with the latest updates, tutorials, events, and more from the world's first
-                  multi-agent research lab.
-                </p>
-              </div>
+            <button
+              onClick={onClose}
+              aria-label="Close"
+              className="absolute right-4 top-4 z-10 rounded-lg p-1.5 text-white/40 transition-colors duration-200 hover:bg-white/[0.06] hover:text-white"
+            >
+              <X className="h-4 w-4" />
+            </button>
 
-              {/* Benefits */}
-              <div className="grid grid-cols-2 gap-3 mb-6">
-                <div className="flex items-center space-x-2 text-sm text-gray-300">
-                  <Sparkles className="w-4 h-4 text-red-400" />
-                  <span>Latest Updates</span>
-                </div>
-                <div className="flex items-center space-x-2 text-sm text-gray-300">
-                  <BookOpen className="w-4 h-4 text-red-400" />
-                  <span>Tutorials</span>
-                </div>
-                <div className="flex items-center space-x-2 text-sm text-gray-300">
-                  <Calendar className="w-4 h-4 text-red-400" />
-                  <span>Events</span>
-                </div>
-                <div className="flex items-center space-x-2 text-sm text-gray-300">
-                  <Mail className="w-4 h-4 text-red-400" />
-                  <span>Research News</span>
-                </div>
-              </div>
+            <div className="relative p-6 sm:p-10">
+              {!isSuccess ? (
+                <>
+                  <p className="font-mono text-[11px] font-medium uppercase tracking-[0.2em] text-white/40">
+                    Newsletter
+                  </p>
+                  <h2
+                    id="newsletter-popup-title"
+                    className="mt-4 text-2xl font-semibold leading-[1.1] tracking-tighter text-white sm:text-3xl"
+                  >
+                    Join the Swarms community
+                  </h2>
+                  <p className="mt-4 text-sm font-normal leading-relaxed text-white/50 sm:text-base">
+                    Updates, tutorials, events and research from the world&apos;s first
+                    multi-agent research lab.
+                  </p>
 
-              {/* Form */}
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-2 gap-3">
-                  <Input
-                    type="text"
-                    placeholder="First Name"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    className="bg-white/5 border-white/10 text-white placeholder:text-gray-400 focus:border-red-500"
-                  />
-                  <Input
-                    type="text"
-                    placeholder="Last Name"
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    className="bg-white/5 border-white/10 text-white placeholder:text-gray-400 focus:border-red-500"
-                  />
-                </div>
-                <Input
-                  type="email"
-                  placeholder="Enter your email address"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="bg-white/5 border-white/10 text-white placeholder:text-gray-400 focus:border-red-500"
-                />
+                  <ul className="mt-6 flex flex-wrap gap-2">
+                    {BENEFITS.map((benefit) => (
+                      <li
+                        key={benefit}
+                        className="rounded-full border border-white/[0.12] bg-white/[0.03] px-3 py-1 font-mono text-[10px] uppercase tracking-[0.12em] text-white/50"
+                      >
+                        {benefit}
+                      </li>
+                    ))}
+                  </ul>
 
-                {error && (
-                  <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
-                    <p className="text-red-400 text-sm text-center">{error}</p>
-                  </div>
-                )}
-
-                <Button
-                  type="submit"
-                  disabled={isSubmitting || !email}
-                  className="w-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-semibold py-3 rounded-lg transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-                >
-                  {isSubmitting ? (
-                    <div className="flex items-center justify-center space-x-2">
-                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      <span>Joining...</span>
+                  <form onSubmit={handleSubmit} className="mt-8 space-y-3">
+                    <div className="grid grid-cols-2 gap-3">
+                      <input
+                        type="text"
+                        placeholder="First name"
+                        aria-label="First name"
+                        autoComplete="given-name"
+                        value={firstName}
+                        onChange={(e) => setFirstName(e.target.value)}
+                        className="w-full rounded-full border border-white/15 bg-white/[0.03] px-4 py-3 text-sm text-white placeholder-white/35 outline-none transition-colors duration-300 focus:border-white/40"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Last name"
+                        aria-label="Last name"
+                        autoComplete="family-name"
+                        value={lastName}
+                        onChange={(e) => setLastName(e.target.value)}
+                        className="w-full rounded-full border border-white/15 bg-white/[0.03] px-4 py-3 text-sm text-white placeholder-white/35 outline-none transition-colors duration-300 focus:border-white/40"
+                      />
                     </div>
-                  ) : (
-                    "Join the Community"
-                  )}
-                </Button>
-              </form>
 
-              <p className="text-xs text-gray-400 text-center mt-4">
-                No spam, unsubscribe at any time. We respect your privacy.
-              </p>
-            </>
-          ) : (
-            /* Success State */
-            <div className="text-center py-8">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-green-500 rounded-full mb-4 animate-bounce">
-                <Sparkles className="w-8 h-8 text-white" />
-              </div>
-              <h3 className="text-xl font-bold text-white mb-2">Welcome to Swarms!</h3>
-              <p className="text-gray-300 text-sm">You've successfully joined our community. Stay tuned for updates!</p>
+                    <input
+                      type="email"
+                      placeholder="you@company.com"
+                      aria-label="Email address"
+                      autoComplete="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      className="w-full rounded-full border border-white/15 bg-white/[0.03] px-4 py-3 text-sm text-white placeholder-white/35 outline-none transition-colors duration-300 focus:border-white/40"
+                    />
+
+                    {error && (
+                      <p role="alert" className="pt-1 text-sm text-white/60">
+                        {error}
+                      </p>
+                    )}
+
+                    <button
+                      type="submit"
+                      disabled={isSubmitting || !email}
+                      className="group flex w-full items-center justify-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-medium text-black transition-colors duration-300 hover:bg-neutral-200 disabled:pointer-events-none disabled:opacity-50"
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-black/25 border-t-black" />
+                          Subscribing
+                        </>
+                      ) : (
+                        <>
+                          Subscribe
+                          <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
+                        </>
+                      )}
+                    </button>
+                  </form>
+
+                  <p className="mt-5 text-xs leading-relaxed text-white/35">
+                    No spam, unsubscribe at any time. We respect your privacy.
+                  </p>
+                </>
+              ) : (
+                <div className="py-6">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-white/[0.04]">
+                    <Check className="h-5 w-5 text-white/80" />
+                  </div>
+                  <h2
+                    id="newsletter-popup-title"
+                    className="mt-6 text-2xl font-semibold leading-[1.1] tracking-tighter text-white sm:text-3xl"
+                  >
+                    You&apos;re in.
+                  </h2>
+                  <p className="mt-4 text-sm font-normal leading-relaxed text-white/50 sm:text-base">
+                    Check your inbox for a confirmation. The next issue lands there too.
+                  </p>
+                </div>
+              )}
             </div>
-          )}
+          </motion.div>
         </div>
-      </div>
-    </div>
+      )}
+    </AnimatePresence>
   )
 }

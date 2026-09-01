@@ -53,7 +53,7 @@ export function HomeEnterpriseInfrastructure() {
               </h2>
               <p className="max-w-xl text-base font-normal leading-relaxed text-white/50 sm:text-lg">
                 Global availability, compliance certifications, and custom
-                deployment options — built for the most demanding workloads.
+                deployment options, built for the most demanding workloads.
               </p>
             </div>
 

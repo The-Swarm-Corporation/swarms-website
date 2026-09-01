@@ -75,7 +75,7 @@ export function HomeCookbook() {
           </h2>
           <p className="mt-5 max-w-2xl text-base font-normal leading-relaxed text-white/50 sm:text-lg">
             Curated examples, templates, implementation guides, and API
-            documentation — ship in minutes.
+            documentation. Ship in minutes.
           </p>
         </motion.div>
 

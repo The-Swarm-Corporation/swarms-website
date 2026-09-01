@@ -27,7 +27,7 @@ export function HomeMission() {
             </span>
           </h2>
           <p className="mt-8 max-w-2xl text-base font-normal leading-relaxed text-white/50 sm:text-lg">
-            Our stack prioritizes performance, reliability, and scalability —
+            Our stack prioritizes performance, reliability, and scalability,
             serving as the foundation for teams shipping production-grade
             autonomous systems.
           </p>

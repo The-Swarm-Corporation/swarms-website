@@ -28,6 +28,8 @@ The important part is the value column. Anything you never set shows the API's o
 
 You can copy the whole configuration as JSON from the header of the page.
 
+![An agent's page on Swarms Cloud: activity, system prompt, and the full configuration table](/agent_config_page_swarms_cloud.png)
+
 ## Context Window Usage, Per Run
 
 Below the configuration is the run history: the same log table as `/history`, filtered to this agent, paginated, sortable, and exportable to CSV.
@@ -37,6 +39,8 @@ Open a single run and you get something new. A grid of one hundred cells, one ce
 This is the number that is hard to get any other way. An agent running on a million-token model and using eight thousand tokens per call is one lit cell in a hundred, and seeing that is the point: you are paying for headroom you are not using, or you are pushing toward a wall. Sent is the half that grows. A prompt that has been quietly accumulating history is the one that eventually runs out of room, and this shows it happening a run at a time instead of on the run where it finally breaks.
 
 The window sizes come from OpenRouter's public model catalogue, because the Swarms API does not publish model limits. It is fetched server side, cached for hours, and only the resolved number ever reaches your browser. If a model publishes no window, the run says so plainly instead of guessing.
+
+![Run history for an agent, with the per-run context window fill grid open](/context_window_usage_swarms_cloud.png)
 
 ## The List Got Fixed Too
 

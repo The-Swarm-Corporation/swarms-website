@@ -382,6 +382,12 @@ export function InstallationClientPage() {
                     file: "shell",
                     commandId: "verify-installation",
                   },
+                  {
+                    label: "Verify CLI",
+                    command: "swarms --help",
+                    file: "shell",
+                    commandId: "verify-cli",
+                  },
                 ].map((step, index) => (
                   <div key={step.commandId} className="space-y-3">
                     <p className="font-mono text-[11px] font-medium uppercase tracking-[0.2em] text-white/40">

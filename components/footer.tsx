@@ -23,6 +23,7 @@ import {
   Building,
   Network,
   Smartphone,
+  Terminal,
 } from "lucide-react"
 import { SiDiscord, SiTelegram } from "react-icons/si"
 
@@ -70,6 +71,7 @@ export function Footer() {
                   { name: "Simulations", icon: Network, url: "/simulations" },
                   { name: "Mobile App", icon: Smartphone, url: "/mobile" },
                   { name: "Swarms Python", icon: Github, url: "https://github.com/kyegomez/swarms" },
+                  { name: "Swarms CLI", icon: Terminal, url: "https://docs.swarms.world/cli" },
                   {
                     name: "Swarms API",
                     icon: Code,

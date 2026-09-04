@@ -116,9 +116,10 @@ async fn main() -> Result<()> {
     title: "Swarms Marketplace",
     subtitle: "Buy & Sell Agents",
     description:
-      "Discover, buy, and sell agents, prompts, tools, and components on swarms.world, the premier marketplace for AI agents.",
-    link: "https://swarms.world",
+      "Discover, buy, and sell agents, prompts, tools, MCP servers, and skills. Publish for free, keep 90% of every sale.",
+    link: "/marketplace",
     docsLink: "https://swarms.world",
+    docsLabel: "Open swarms.world",
     image: "/marketplace_banner.png",
   },
   {

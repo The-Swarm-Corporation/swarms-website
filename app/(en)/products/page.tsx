@@ -62,10 +62,10 @@ const productCards: ProductCard[] = [
   {
     title: "Swarms Marketplace",
     description:
-      "Discover, buy, and sell agents, prompts, and tools. The first open marketplace for the multi-agent economy.",
+      "Discover, buy, and sell agents, prompts, tools, MCP servers, and skills. Publish for free, keep 90% of every sale.",
     icon: Sparkles,
-    href: "https://swarms.world",
-    external: true,
+    href: "/marketplace",
+    external: false,
     meta: "swarms.world",
   },
   {

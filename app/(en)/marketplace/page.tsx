@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Image from "next/image"
 import { motion } from "framer-motion"
 import {
   ArrowRight,
@@ -85,6 +86,7 @@ const businessModels = [
   {
     icon: DollarSign,
     name: "Direct sale",
+    image: "/swarms_blog_fiat_cover.png",
     mechanic: "One-time purchase. Buyer pays once, gets permanent access.",
     rows: [
       ["Platform fee", "10%, flat"],
@@ -97,6 +99,7 @@ const businessModels = [
   {
     icon: TrendingUp,
     name: "Tokenization",
+    image: "/swarms_screener.png",
     mechanic: "Launch as a tradeable token on Solana via a bonding curve. You bring the agent, not capital.",
     rows: [
       ["Standard trading fee", "1.0% per trade (0.5% you / 0.5% platform)"],
@@ -109,6 +112,7 @@ const businessModels = [
   {
     icon: Lock,
     name: "Vault Mode",
+    image: "/vault_mode_blog_banner.png",
     mechanic: "Gate access behind token ownership instead of a price.",
     rows: [
       ["Access mechanism", "Holding the token, not buying it"],
@@ -533,6 +537,15 @@ export default function MarketplacePage() {
                     </span>
                   ))}
                 </div>
+                <div className="relative aspect-[16/9] w-full overflow-hidden rounded-lg border border-white/[0.08]">
+                  <Image
+                    src="/autonomous_marketplace_blog.png"
+                    alt="The Swarms Marketplace registry: search, filters, and industries applied live"
+                    fill
+                    className="object-cover"
+                    loading="lazy"
+                  />
+                </div>
               </motion.div>
 
               <motion.div
@@ -614,22 +627,35 @@ export default function MarketplacePage() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, margin: "-100px" }}
                   transition={{ duration: 0.5, delay: i * 0.06, ease }}
-                  className="flex flex-col rounded-lg border border-white/[0.08] bg-black p-6 transition-colors duration-300 hover:bg-[#0a0a0a] sm:p-7 md:p-8"
+                  className="flex flex-col overflow-hidden rounded-lg border border-white/[0.08] bg-black transition-colors duration-300 hover:bg-[#0a0a0a]"
                 >
-                  <model.icon className="mb-4 h-5 w-5 text-white/50" strokeWidth={1.5} />
-                  <h3 className="mb-2 text-xl font-semibold text-white">{model.name}</h3>
-                  <p className="mb-5 text-sm font-normal leading-relaxed text-white/55 sm:text-base">
-                    {model.mechanic}
-                  </p>
-                  <div className="mb-5 divide-y divide-white/[0.06] border-y border-white/[0.06]">
-                    {model.rows.map(([label, value]) => (
-                      <div key={label} className="flex items-center justify-between gap-4 py-2.5">
-                        <span className="text-xs text-white/40 sm:text-sm">{label}</span>
-                        <span className="text-right text-xs font-medium text-white/85 sm:text-sm">{value}</span>
-                      </div>
-                    ))}
+                  {model.image && (
+                    <div className="relative aspect-[16/9] w-full flex-shrink-0 overflow-hidden border-b border-white/[0.08] bg-[#0a0a0a]">
+                      <Image
+                        src={model.image}
+                        alt={`${model.name} on the Swarms Marketplace`}
+                        fill
+                        className="object-cover"
+                        loading="lazy"
+                      />
+                    </div>
+                  )}
+                  <div className="flex flex-1 flex-col p-6 sm:p-7 md:p-8">
+                    <model.icon className="mb-4 h-5 w-5 text-white/50" strokeWidth={1.5} />
+                    <h3 className="mb-2 text-xl font-semibold text-white">{model.name}</h3>
+                    <p className="mb-5 text-sm font-normal leading-relaxed text-white/55 sm:text-base">
+                      {model.mechanic}
+                    </p>
+                    <div className="mb-5 divide-y divide-white/[0.06] border-y border-white/[0.06]">
+                      {model.rows.map(([label, value]) => (
+                        <div key={label} className="flex items-center justify-between gap-4 py-2.5">
+                          <span className="text-xs text-white/40 sm:text-sm">{label}</span>
+                          <span className="text-right text-xs font-medium text-white/85 sm:text-sm">{value}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-xs leading-relaxed text-white/40 sm:text-sm">{model.note}</p>
                   </div>
-                  <p className="text-xs leading-relaxed text-white/40 sm:text-sm">{model.note}</p>
                 </motion.div>
               ))}
             </div>

@@ -35,21 +35,16 @@ export const metadata: Metadata = {
     "AI agent registry",
   ],
   alternates: { canonical: url },
+  // The og:image / twitter:image tags are generated automatically by the
+  // sibling opengraph-image.tsx / twitter-image.tsx files in this route
+  // segment (a branded card built from next/og, pulling the same stats
+  // shown on the page), so no manual images array is needed here.
   openGraph: {
     type: "website",
     url,
     title,
     description,
     siteName: siteConfig.name,
-    images: [
-      {
-        url: "/marketplace_banner.png",
-        width: 1280,
-        height: 720,
-        alt: "Swarms Marketplace — buy, sell, and monetize AI agents, prompts, tools, MCP servers, and skills",
-        type: "image/png",
-      },
-    ],
   },
   twitter: {
     card: "summary_large_image",
@@ -57,14 +52,6 @@ export const metadata: Metadata = {
     description,
     creator: "@swarms_corp",
     site: "@swarms_corp",
-    images: [
-      {
-        url: "/marketplace_banner.png",
-        width: 1280,
-        height: 720,
-        alt: "Swarms Marketplace — buy, sell, and monetize AI agents, prompts, tools, MCP servers, and skills",
-      },
-    ],
   },
   robots: {
     index: true,

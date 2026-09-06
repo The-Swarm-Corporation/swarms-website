@@ -1,0 +1,125 @@
+---
+title: "Swarms 生态周报 [8月31日 - 9月6日]：Swarms v15 Akira 正式发布、USDC 竞赛以 500 万美元交易量收官、MCP 新教程上线"
+description: "本周 Swarms 生态进展：Swarms v15 Akira 正式发布，带来动态工具加载与重建的自主智能体 harness；USDC 竞赛以近 500 万美元交易量和 3,500 多名交易者收官；Marketplace 产品数突破 6,125 个，来自 720 多位卖家；新一批 MCP 教程覆盖 DeepWiki、Exa、Firecrawl、Hugging Face 与 Semgrep；Swarms 还就多家前沿模型同时宕机给出了保持在线的建议。"
+date: "2026-09-06"
+author: "Kye Gomez"
+categories: ["Company"]
+readTime: "8 min read"
+featured: false
+image: "/swarms_akira.png"
+---
+
+# Swarms 生态周报 [8月31日 - 9月6日]：Swarms v15 Akira 正式发布、USDC 竞赛以 500 万美元交易量收官、MCP 新教程上线
+
+上周周报留下了两个未完成事项：Swarms v15 已经预告但尚未发布，USDC 竞赛正在进行但尚未分出胜负。这两件事本周都有了结果。Akira 于 9 月 1 日正式发布，是迄今为止对框架最大的一次结构性改动；USDC 竞赛于 9 月 2 日结束，3,500 名交易者贡献了近 500 万美元的交易量。
+
+本周其余进展建立在这两件事之上。Marketplace 产品数突破 6,125 个，新一批 MCP 教程展示了如何在不写任何自定义封装的情况下把 Akira 智能体接入外部工具服务器，而 9 月 3 日多家模型提供商同时宕机，则成了一次关于模型可移植性为何在生产环境中重要的现场演示。
+
+贯穿其中的主线是：框架、Marketplace 与教程现在正在同步推进。Akira 让大规模工具集的运行成本足够低，MCP 指南展示了如何接入这些工具集，而 Marketplace 则为由此构建出的智能体提供了分发与变现的场所。
+
+## Swarms v15 Akira 正式发布
+
+![Swarms v15 Akira](/swarms_akira.png)
+
+Swarms v15，代号 Akira，于 9 月 1 日正式发布。它围绕更高效、更可靠的多智能体执行重建了整个框架，也是第一个净体积小于前一版的 Swarms 版本：共删除 36,790 行代码，并移除了 27 个在整个仓库中没有任何调用点的模块。
+
+最核心的新特性是动态工具加载。工具定义是提示词的一部分，每次调用都会重新发送，因此大型工具集的成本是持续支付的，而且工具列表越长，选择准确率越低。有了动态工具加载，智能体在运行时只发现并加载当前任务所需的工具，从而降低 token 开销、提升工具选择准确率，并让大型工具集与 MCP 集成的扩展性大幅提升。
+
+自主智能体 harness 也随之重建。现在设置 `max_loops="auto"` 即可为智能体提供结构化转录、可修改的计划，以及 16 个内置工具，涵盖文件、shell、grep、子智能体与控制流，且全部可以端到端运行。多智能体结构间的上下文处理更加可靠，MCP 2.x 支持得到扩展，执行逻辑也有所改进。
+
+Akira 还引入了 `WorkspaceManager`，一个覆盖整个框架的统一自动保存系统。原先五份独立的自动保存逻辑合并为一份，自动保存失败不再阻塞执行，写入采用原子操作以避免磁盘上的状态损坏。
+
+一条命令即可升级：
+
+```bash
+pip3 install -U swarms
+```
+
+**了解更多:** [swarms.ai/zh/blog/swarms-v15-akira-release](/zh/blog/swarms-v15-akira-release)
+
+## USDC 竞赛以近 500 万美元交易量收官
+
+![USDC 竞赛](/usdc_competition.png)
+
+USDC 竞赛于 8 月 26 日至 UTC 时间 9 月 2 日在 Swarms Launchpad 举行，最终数据已经出炉。以 USDC 计价的发行项目共产生近 500 万美元交易量，3,500 名交易者参与，Marketplace 在竞赛期间新增了 2,000 多名用户。
+
+按总交易量排名，第一名是 Agent HQ，获得 500 USDC；第二名是 AKIRA，获得 350 USDC；第三名的发行项目获得 150 USDC。完整排行榜可在竞赛页面查看。
+
+这次竞赛有一个明确的目的：教会构建者如何以 USDC 作为计价货币发行代币化的智能体与提示词，并直接以稳定的记账单位获得收入。交易量与参与人数表明这一形式是有效的。截至目前，Swarms 通过历次竞赛已向社区发放了超过 4,000 美元的奖励，更多竞赛正在筹备中。
+
+**了解更多:** [swarms.world/competitions/usdc-launch-championship](https://swarms.world/competitions/usdc-launch-championship)
+
+## Swarms Marketplace 产品数突破 6,125 个
+
+![Swarms Marketplace](/marketplace_banner.png)
+
+Swarms Marketplace 目前上架产品超过 6,125 个，来自 720 多位卖家，涵盖 Agents、Skills、Prompts、MCP Servers 与 x402 Servers。所有产品都可以通过 Swarms Registry 浏览，Registry 支持在同一页面按全部产品类型进行筛选。
+
+这一增长承接了过去两周集中的 Launchpad 活动。根据 Jupiter 的公开排名，Swarms 目前是 Solana 上第四大发行平台，USDC 竞赛也为平台带来了一大批新用户。对开发者而言，最实际的影响是分发：新上架的智能体、技能或 MCP 服务器在发布当天就能触达既有的买家与交易者群体。
+
+卖家只需创建账户、上架产品，几次点击即可开始销售。启用 Frenzy Mode 的代币化发行可直接从发行页面完成。
+
+**了解更多:** [swarms.world/registry](https://swarms.world/registry)
+
+## MCP 新教程：把智能体连接到一切
+
+![Swarms MCP](/mcp_page.png)
+
+Swarms 本周发布了一批新的 MCP 教程，覆盖与外部工具服务器的真实集成场景。这些指南把 Swarms 智能体接入 DeepWiki 以回答关于公开 GitHub 仓库的问题、接入 Exa 进行实时网页搜索与研究、接入 Firecrawl 把网页抓取为干净的 Markdown、接入 Hugging Face 检索模型与数据集、接入 Semgrep 进行安全分析，全程无需编写自定义工具封装或 HTTP 集成。
+
+教程覆盖了从连接第一个 MCP 服务器到构建同时使用多个外部工具集的多智能体系统的完整路径，包括多服务器智能体、动态工具、身份认证、自定义 MCP 服务器与多智能体工作流。每篇指南都附带可运行的示例。
+
+关于动态 MCP 工具加载的指南把这项工作与 Akira 联系了起来。智能体现在可以只在判断确有必要时才从 MCP 服务器懒加载工具，借助 Dynamic Tool Loader 降低在暴露大型工具集的服务器上的 token 消耗与成本。
+
+**了解更多:** [docs.swarms.world/examples/mcp/overview](https://docs.swarms.world/examples/mcp/overview)
+
+## 在前沿模型宕机期间保持在线
+
+![Swarms 上的 Kimi K3](/kimi_banner.png)
+
+9 月 3 日，GPT、Claude、Grok 与 Gemini 同时出现故障，许多用户对这四个模型家族全部失去了访问。Swarms 建议在生产环境中运行智能体的团队切换到这些家族之外的模型，包括 GLM、Kimi 与 Qwen，它们都在 Swarms Cloud 上受支持。
+
+这一建议之所以可行，是因为在 Swarms 中切换模型只需一行代码。框架与 API 都接受模型名称字符串，因此更换智能体的基础模型不需要改动提示词、工具或编排逻辑。Kimi K3 教程完整演示了一种这样的配置，Swarms Cloud 的模型列表则展示了当前可用的全部提供商。
+
+对于把智能体视为生产基础设施的团队，结论是：基础模型和其他依赖一样是一种依赖，只能运行在单一提供商上的系统存在单点故障。
+
+**了解更多:** [swarms.ai/zh/blog/getting-started-kimi-k3-swarms](/zh/blog/getting-started-kimi-k3-swarms)
+
+## 生态与社区
+
+![AgentHQ](/agent_hq_banner.png)
+
+AgentHQ，用于运行 Claude 与 Codex 智能体的交互式办公室，仍处于预测试阶段，通过等候名单开放访问。其发布推文本周浏览量超过 65,000 次，是本期浏览量最高的 Swarms 推文，等候名单也在持续增长。Agent HQ 作为代币化发行项目还在 USDC 竞赛中获得了第一名。
+
+Swarms MCP 服务器继续通过单一托管端点提供 23 个工具，Swarms Cloud 上的 MCP Portal 仍是连接配置的入口。基于 Akira、Marketplace 或 Swarms Cloud 构建的开发者，可以在这三个界面上使用同一个 API 密钥。
+
+**了解更多:** [swarms.ai/agenthq](/agenthq)
+
+## 结语
+
+上周留下的两个未完成事项本周都已收尾。Akira 已经上线并可安装，USDC 竞赛以近 500 万美元交易量和一批获胜者告终。Marketplace 产品数突破 6,125 个，MCP 教程展示了如何在不写自定义代码的情况下把 Akira 智能体接入外部工具服务器，而一次多提供商同时宕机则比任何文章都更有力地说明了模型可移植性的价值。
+
+准备升级到 Akira 的开发者，请在运行 `pip3 install -U swarms` 之前阅读更新日志中的破坏性变更。错过 USDC 竞赛的构建者可以关注竞赛页面，等待下一场 🦾
+
+## 链接与资源
+
+| 资源 | 链接 |
+| --- | --- |
+| Swarms v15 Akira 发布说明 | [swarms.ai/zh/blog/swarms-v15-akira-release](/zh/blog/swarms-v15-akira-release) |
+| 安装指南 | [docs.swarms.world/installation](https://docs.swarms.world/installation) |
+| MCP 教程总览 | [docs.swarms.world/examples/mcp/overview](https://docs.swarms.world/examples/mcp/overview) |
+| 动态 MCP 工具加载 | [docs.swarms.world/examples/mcp/dynamic-tool-loading](https://docs.swarms.world/examples/mcp/dynamic-tool-loading) |
+| USDC 竞赛页面 | [swarms.world/competitions/usdc-launch-championship](https://swarms.world/competitions/usdc-launch-championship) |
+| 全部 Swarms 竞赛 | [swarms.world/competitions](https://swarms.world/competitions) |
+| Swarms Registry | [swarms.world/registry](https://swarms.world/registry) |
+| Swarms Launchpad | [swarms.world/launch](https://swarms.world/launch?model=tokenized&frenzy=true) |
+| Swarms Marketplace 注册 | [swarms.world/signin](https://swarms.world/signin/password_signin) |
+| Swarms Cloud 支持的模型 | [cloud.swarms.world/models](https://cloud.swarms.world/models) |
+| Kimi K3 入门教程 | [swarms.ai/zh/blog/getting-started-kimi-k3-swarms](/zh/blog/getting-started-kimi-k3-swarms) |
+| OpenRouter 模型提供商 | [docs.swarms.world/examples/model-providers/openrouter](https://docs.swarms.world/examples/model-providers/openrouter) |
+| AgentHQ 等候名单 | [swarms.ai/agenthq](/agenthq) |
+| Swarms Cloud | [cloud.swarms.world](https://cloud.swarms.world) |
+| MCP Portal | [cloud.swarms.world/mcp](https://cloud.swarms.world/mcp) |
+| Swarms API 文档 | [docs.swarms.ai](https://docs.swarms.ai) |
+| Swarms 框架 GitHub | [github.com/kyegomez/swarms](https://github.com/kyegomez/swarms) |
+| Swarms X 账号 | [x.com/swarms_corp](https://x.com/swarms_corp) |

@@ -1,0 +1,125 @@
+---
+title: "Swarms Weekly Ecosystem Update [August 31 - September 6]: Swarms v15 Akira Ships, the USDC Competition Closes at $5M, and New MCP Tutorials"
+description: "This week across the Swarms ecosystem: Swarms v15 Akira shipped with dynamic tool loading and a rebuilt autonomous agent harness, the USDC Competition closed with nearly $5M in trading volume and 3,500+ traders, the Marketplace passed 6,125 products from 720+ sellers, a new set of MCP tutorials covered DeepWiki, Exa, Firecrawl, Hugging Face, and Semgrep, and Swarms published guidance for staying online through a multi-provider frontier model outage."
+date: "2026-09-06"
+author: "Kye Gomez"
+categories: ["Company"]
+readTime: "8 min read"
+featured: false
+image: "/swarms_akira.png"
+---
+
+# Swarms Weekly Ecosystem Update [August 31 - September 6]: Swarms v15 Akira Ships, the USDC Competition Closes at $5M, and New MCP Tutorials
+
+Last week's update ended with two open items: Swarms v15 was announced but not yet released, and the USDC Competition was running but not yet decided. Both closed this week. Akira shipped on September 1 as the largest structural change to the framework so far, and the USDC Competition ended on September 2 with nearly $5M in trading volume across 3,500 traders.
+
+The rest of the week built on those two events. The Marketplace crossed 6,125 products, a new set of MCP tutorials showed how to connect Akira agents to external tool servers with no custom wrappers, and a multi-provider outage on September 3 turned into a practical demonstration of why model portability matters in production.
+
+The common thread is that the framework, the Marketplace, and the tutorials are now moving together. Akira makes large toolsets cheap enough to run, the MCP guides show how to attach those toolsets, and the Marketplace gives the resulting agents a place to be distributed and paid for.
+
+## Swarms v15 Akira Is Live
+
+![Swarms v15 Akira](/swarms_akira.png)
+
+Swarms v15, codenamed Akira, shipped on September 1. It rebuilds the framework around more efficient and more reliable multi-agent execution, and it is the first Swarms release that is net smaller than the one before it: 36,790 lines were deleted and 27 modules with no call sites anywhere in the repository were removed.
+
+The headline feature is dynamic tool loading. Tool definitions are part of the prompt and are re-sent on every call, so a large toolset is paid for continuously, and selection accuracy falls as the list grows. With dynamic tool loading, agents discover and load only the tools a task requires at runtime, which cuts token overhead, improves tool-selection accuracy, and makes large toolsets and MCP integrations far more scalable.
+
+The autonomous agent harness was rebuilt alongside it. Setting `max_loops="auto"` now gives an agent structured transcripts, mutable plans, and 16 built-in tools covering files, shell, grep, sub-agents, and control flow, all of which run end to end. Context handling across multi-agent structures is more reliable, and MCP 2.x support is expanded with improved execution.
+
+Akira also introduces `WorkspaceManager`, a single autosave system for the whole framework. Five separate copies of autosave logic collapsed into one, autosave failures are now non-blocking, and writes are atomic to prevent corrupted state on disk.
+
+Upgrade with a single command:
+
+```bash
+pip3 install -U swarms
+```
+
+**Learn more:** [swarms.ai/blog/swarms-v15-akira-release](/blog/swarms-v15-akira-release)
+
+## The USDC Competition Closes at Nearly $5M in Volume
+
+![USDC Competition](/usdc_competition.png)
+
+The USDC Competition ran from August 26 through September 2 UTC on Swarms Launchpad, and the final numbers are in. Launches priced in USDC generated nearly $5M in trading volume, 3,500 traders participated, and the Marketplace gained more than 2,000 new users over the competition window.
+
+The winners, ranked by total trading volume, were Agent HQ in first place with 500 USDC and AKIRA in second with 350 USDC, with 150 USDC going to the third-ranked launch. The full leaderboard is on the competition page.
+
+The competition had a specific purpose: to teach builders how to launch tokenized agents and prompts with USDC as the quote currency and earn revenue directly in a stable unit of account. The volume and participation numbers suggest the format works. Across all competitions run so far, Swarms has distributed more than $4,000 in rewards to the community, and more competitions are planned.
+
+**Learn more:** [swarms.world/competitions/usdc-launch-championship](https://swarms.world/competitions/usdc-launch-championship)
+
+## Swarms Marketplace Passes 6,125 Products
+
+![Swarms Marketplace](/marketplace_banner.png)
+
+The Swarms Marketplace now lists more than 6,125 products from 720+ sellers, spanning Agents, Skills, Prompts, MCP Servers, and x402 Servers. All of them are browsable through the Swarms Registry, which supports filtering across every product type from a single page.
+
+The growth follows two weeks of concentrated Launchpad activity. Swarms is now the fourth largest launchpad on Solana by the public Jupiter rankings, and the USDC Competition brought a large cohort of new users onto the platform. For developers, the practical consequence is distribution: a newly listed agent, skill, or MCP server reaches an existing audience of buyers and traders on the day it is published.
+
+Sellers create an account, list their products, and start selling in a few clicks. Tokenized launches with Frenzy Mode are available directly from the launch page.
+
+**Learn more:** [swarms.world/registry](https://swarms.world/registry)
+
+## New MCP Tutorials: Connect Agents to Anything
+
+![Swarms MCP](/mcp_page.png)
+
+Swarms published a new set of MCP tutorials this week covering real-world integrations with external tool servers. The guides connect Swarms agents to DeepWiki for questions about public GitHub repositories, Exa for live web search and research, Firecrawl for scraping pages into clean Markdown, Hugging Face for model and dataset discovery, and Semgrep for security analysis, all without writing custom tool wrappers or HTTP integrations.
+
+The tutorials cover the full path from connecting a first MCP server to building multi-agent systems that use several external toolsets at once, including multi-server agents, dynamic tools, authentication, custom MCP servers, and multi-agent workflows. Every guide ships with runnable examples.
+
+The guide on dynamic MCP tool loading ties this work back to Akira. Agents can now lazy-load tools from MCP servers only when they determine those tools are necessary, using the Dynamic Tool Loader to cut token consumption and cost on servers that expose large toolsets.
+
+**Learn more:** [docs.swarms.world/examples/mcp/overview](https://docs.swarms.world/examples/mcp/overview)
+
+## Staying Online Through a Frontier Model Outage
+
+![Kimi K3 on Swarms](/kimi_banner.png)
+
+On September 3, GPT, Claude, Grok, and Gemini experienced outages at the same time, and many users lost access to all four. Swarms recommended that teams running agents in production switch to models outside those families, including GLM, Kimi, and Qwen, all of which are supported on Swarms Cloud.
+
+The recommendation is possible because model choice in Swarms is a single line of code. The framework and the API both accept a model name string, so switching an agent's base model requires no change to prompts, tools, or orchestration logic. The Kimi K3 tutorial walks through one such configuration end to end, and the model list on Swarms Cloud shows every provider currently available.
+
+For teams that treat agents as production infrastructure, the takeaway is that the base model is a dependency like any other, and a system that can only run on one provider has a single point of failure.
+
+**Learn more:** [swarms.ai/blog/getting-started-kimi-k3-swarms](/blog/getting-started-kimi-k3-swarms)
+
+## Ecosystem and Community
+
+![AgentHQ](/agent_hq_banner.png)
+
+AgentHQ, the interactive office for running Claude and Codex agents, remains in pre-beta with access granted through the waitlist. The announcement post reached over 65,000 views this week, making it the most viewed Swarms post of the period, and the waitlist continues to grow. Agent HQ also finished first in the USDC Competition as a tokenized launch.
+
+The Swarms MCP server continues to serve 23 tools from a single hosted endpoint, and the MCP Portal on Swarms Cloud remains the entry point for connection setup. Developers building on Akira, the Marketplace, or Swarms Cloud use the same API key across all three surfaces.
+
+**Learn more:** [swarms.ai/agenthq](/agenthq)
+
+## Conclusion
+
+Two of last week's open items closed this week. Akira is live and installable, and the USDC Competition ended with nearly $5M in volume and a set of winners. The Marketplace passed 6,125 products, the MCP tutorials showed how to connect Akira agents to external tool servers with no custom code, and a multi-provider outage made the case for model portability better than any blog post could.
+
+Developers upgrading to Akira should read the changelog for breaking changes before running `pip3 install -U swarms`. Builders who missed the USDC Competition can watch the competitions page for the next one 🦾
+
+## Links and Resources
+
+| Resource | Link |
+| --- | --- |
+| Swarms v15 Akira release notes | [swarms.ai/blog/swarms-v15-akira-release](/blog/swarms-v15-akira-release) |
+| Installation | [docs.swarms.world/installation](https://docs.swarms.world/installation) |
+| MCP tutorials overview | [docs.swarms.world/examples/mcp/overview](https://docs.swarms.world/examples/mcp/overview) |
+| Dynamic MCP tool loading | [docs.swarms.world/examples/mcp/dynamic-tool-loading](https://docs.swarms.world/examples/mcp/dynamic-tool-loading) |
+| USDC Competition page | [swarms.world/competitions/usdc-launch-championship](https://swarms.world/competitions/usdc-launch-championship) |
+| All Swarms competitions | [swarms.world/competitions](https://swarms.world/competitions) |
+| Swarms Registry | [swarms.world/registry](https://swarms.world/registry) |
+| Swarms Launchpad | [swarms.world/launch](https://swarms.world/launch?model=tokenized&frenzy=true) |
+| Swarms Marketplace sign up | [swarms.world/signin](https://swarms.world/signin/password_signin) |
+| Models supported on Swarms Cloud | [cloud.swarms.world/models](https://cloud.swarms.world/models) |
+| Getting started with Kimi K3 | [swarms.ai/blog/getting-started-kimi-k3-swarms](/blog/getting-started-kimi-k3-swarms) |
+| OpenRouter model providers | [docs.swarms.world/examples/model-providers/openrouter](https://docs.swarms.world/examples/model-providers/openrouter) |
+| AgentHQ waitlist | [swarms.ai/agenthq](/agenthq) |
+| Swarms Cloud | [cloud.swarms.world](https://cloud.swarms.world) |
+| MCP Portal | [cloud.swarms.world/mcp](https://cloud.swarms.world/mcp) |
+| Swarms API documentation | [docs.swarms.ai](https://docs.swarms.ai) |
+| Swarms Framework on GitHub | [github.com/kyegomez/swarms](https://github.com/kyegomez/swarms) |
+| Swarms on X | [x.com/swarms_corp](https://x.com/swarms_corp) |

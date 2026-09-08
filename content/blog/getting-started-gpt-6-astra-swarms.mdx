@@ -1,0 +1,394 @@
+---
+title: "How to Build Agents and Multi-Agent Systems with GPT-6 Astra in Swarms"
+description: "A step-by-step tutorial for OpenAI's GPT-6 Astra: build a custom agent and a Mixture of Agents with the open-source Swarms framework, then run the same thing through the Swarms API with no infrastructure, per-run cost reporting, and 50% off token costs at night."
+date: "2026-09-08"
+author: "Swarms Team"
+categories: ["Guides", "Engineering"]
+readTime: "9 min read"
+featured: false
+image: "/astra_blog_banner.png"
+---
+
+# How to Build Agents and Multi-Agent Systems with GPT-6 Astra in Swarms
+
+OpenAI's **GPT-6 Astra** is a reasoning model: it thinks before it answers, and it reports how much of its output was thinking. That makes it a strong fit for agents that plan, compare, and decide — and a slightly awkward fit for tooling written before reasoning models existed, which is why this tutorial exists. In it you will build a custom GPT-6 Astra agent with the open-source [Swarms framework](https://github.com/kyegomez/swarms), turn it into a **Mixture of Agents**, and then run both through the **Swarms API**, where the same work takes one key, no infrastructure, and reports its own cost. Every script here is in the repository under [`examples/models/gpt_astra`](https://github.com/kyegomez/swarms/tree/master/examples/models/gpt_astra), and every number you see came from running it.
+
+## Two ways to run GPT-6 Astra
+
+| | Swarms framework | Swarms API |
+| --- | --- | --- |
+| Where it runs | Your machine, your OpenAI key | Swarms Cloud, one Swarms key for every model |
+| Install | `pip install swarms` | `pip install requests` |
+| Cost visibility | `agent.usage` — tokens, reasoning tokens | `usage` in every response — tokens **and dollars** |
+| Best for | Local development, custom tools, full control | Shipping, batch jobs, teams that do not want to run infrastructure |
+
+They are not competing options. The framework is where you prototype an agent; the API is where you run it at scale. The agent definitions are the same shape in both, so moving between them is a copy-paste.
+
+## Step 1: Install
+
+```bash
+uv init astra-swarms && cd astra-swarms
+uv add swarms python-dotenv requests
+```
+
+`pip install swarms python-dotenv requests` works just as well.
+
+## Step 2: Set your keys
+
+For the framework you need an OpenAI key. For the API you need a Swarms key from [swarms.world/platform/api-keys](https://swarms.world/platform/api-keys) — new accounts come with sign-up credits, so the API half of this tutorial costs nothing to try.
+
+```bash
+cat > .env <<'EOF'
+OPENAI_API_KEY="sk-..."
+SWARMS_API_KEY="..."
+EOF
+```
+
+Both are loaded with `load_dotenv()`, so no secret ever appears in a script.
+
+## Step 3: A single GPT-6 Astra agent
+
+Create `astra_agent.py`. The model name is `gpt-6-astra`, and that string is the only thing that says "Astra" in the file:
+
+```python
+from dotenv import load_dotenv
+from swarms import Agent
+
+load_dotenv()
+
+agent = Agent(
+    agent_name="Astra-Agent",
+    system_prompt="You are a concise research assistant.",
+    model_name="gpt-6-astra",
+    max_loops=1,
+    persistent_memory=False,
+    streaming_on=True,
+)
+
+out = agent.run(
+    "A bat and a ball cost $1.10 in total. The bat costs $1.00 more than "
+    "the ball. How much does the ball cost? Answer with the number only."
+)
+
+print(out)
+print(agent.usage)
+```
+
+Run it:
+
+```bash
+uv run astra_agent.py
+```
+
+```
+0.05
+{'input_tokens': 55, 'output_tokens': 23, 'cached_tokens': 0, 'reasoning_tokens': 11, 'total_tokens': 78}
+```
+
+Two things worth noticing. The answer streamed to your terminal as it was generated, and `agent.usage` still filled in afterwards — the provider sends token counts in the final chunk of a stream, and Swarms reads them off. And `reasoning_tokens: 11` is GPT-6 Astra thinking: 11 of the 23 output tokens were spent working out the answer before writing "0.05". You are billed for them, so it pays to see them.
+
+One detail Swarms handles for you: GPT-6 Astra, like OpenAI's other reasoning models, rejects the classic `max_tokens` parameter and requires `max_completion_tokens`. Swarms sends the right one per model family, and if a model it has never heard of rejects the key it was sent, it retries once with the other. You will never see the error.
+
+## Step 4: A custom agent
+
+A custom agent is a persona plus a task. This one is a quantitative trading analyst — the system prompt tells it what to weigh and how to talk, and everything else is the same three lines. Create `quant_agent.py`:
+
+```python
+from dotenv import load_dotenv
+from swarms import Agent
+
+load_dotenv()
+
+system_prompt = (
+    "You are Quantitative-Trading-Agent, a highly advanced and helpful assistant specializing "
+    "in quantitative trading, algorithmic analysis, and financial research. "
+    "When evaluating investment options, you critically analyze metrics such as performance, "
+    "expense ratios, holdings, strategy, and notable risk factors. Provide data-driven "
+    "recommendations, explain your reasoning, and always clarify any assumptions or "
+    "limitations in your analysis."
+)
+
+agent = Agent(
+    agent_name="Quantitative-Trading-Agent",
+    agent_description="Advanced quantitative trading and algorithmic analysis agent",
+    system_prompt=system_prompt,
+    model_name="gpt-6-astra",
+    max_loops=1,
+    persistent_memory=False,
+)
+
+out = agent.run(
+    "Analyze the best semiconductor ETFs and provide a detailed comparison. "
+    "Include metrics such as performance, expense ratio, holdings, and any notable strategies."
+)
+
+print(out)
+print(agent.usage)
+```
+
+Run it and you get a structured comparison of SMH, SOXX, SOXQ and XSD, with a risk section and a ranking by objective. On our run the full report cost 149 input tokens and 3,397 output tokens. To give this agent tools, pass any Python function with a docstring as `tools=[...]`; to let it work autonomously across several steps, set `max_loops="auto"`. The persona stays the same.
+
+## Step 5: A Mixture of Agents
+
+One agent gives you one view. A **Mixture of Agents** runs several specialists on the same task in parallel and hands their answers to an aggregator, which writes the final response. It is the pattern to reach for when a question has more than one angle and you want them reconciled rather than listed. Create `astra_moa.py`:
+
+```python
+from dotenv import load_dotenv
+from swarms import Agent, MixtureOfAgents
+
+load_dotenv()
+
+MODEL = "gpt-6-astra"
+
+analyst = Agent(
+    agent_name="Fundamentals-Analyst",
+    system_prompt="You are a fund analyst. Compare ETFs on holdings, concentration and expense ratio. Be concrete and brief.",
+    model_name=MODEL,
+    max_loops=1,
+)
+
+risk = Agent(
+    agent_name="Risk-Officer",
+    system_prompt="You are a risk officer. State the main risks of each option and who should avoid it. Be concrete and brief.",
+    model_name=MODEL,
+    max_loops=1,
+)
+
+manager = Agent(
+    agent_name="Portfolio-Manager",
+    system_prompt="You are a portfolio manager for long-term retail investors. Give a clear recommendation and the reason. Be brief.",
+    model_name=MODEL,
+    max_loops=1,
+)
+
+synthesizer = Agent(
+    agent_name="Synthesizer",
+    system_prompt="You combine the expert answers you are given into one short, decision-oriented brief. Keep every concrete number.",
+    model_name=MODEL,
+    max_loops=1,
+)
+
+moa = MixtureOfAgents(
+    agents=[analyst, risk, manager],
+    aggregator_agent=synthesizer,
+    layers=1,
+)
+
+result = moa.run(
+    "Should a long-term investor choose SMH or SOXX for semiconductor exposure? "
+    "Compare concentration, expense ratio and risk."
+)
+print(result)
+```
+
+Three GPT-6 Astra agents answer at once, and a fourth turns their answers into one brief. Nothing about the agents changed from Step 4 — you defined personas and dropped them into a structure. Swap `MixtureOfAgents` for `SequentialWorkflow`, `HierarchicalSwarm`, or `GroupChat` and the four `Agent` definitions stay exactly as they are.
+
+## Step 6: The same single agent through the Swarms API
+
+Now the other route. The Swarms API runs the same agent on Swarms Cloud: you send the agent's configuration and task as JSON, and you get back the conversation and the bill. There is nothing to install beyond `requests`, and your OpenAI key is not involved — one Swarms key covers GPT-6 Astra and the 1,900 other models the API serves. Create `api_single_agent.py`:
+
+```python
+import json
+import os
+
+import requests
+from dotenv import load_dotenv
+
+load_dotenv()
+
+API_KEY = os.getenv("SWARMS_API_KEY")
+BASE_URL = "https://api.swarms.world"
+
+headers = {"x-api-key": API_KEY, "Content-Type": "application/json"}
+
+payload = {
+    "agent_config": {
+        "agent_name": "Quantitative-Trading-Agent",
+        "description": "Quantitative trading and financial research agent.",
+        "system_prompt": (
+            "You are a quantitative trading assistant. When comparing "
+            "investment options, weigh performance, expense ratio, holdings, "
+            "strategy and risk, and state your assumptions."
+        ),
+        "model_name": "gpt-6-astra",
+        "max_loops": 1,
+        "max_tokens": 8000,
+    },
+    "task": (
+        "Compare the SMH and SOXX semiconductor ETFs in one short paragraph: "
+        "concentration, expense ratio, and which suits a long-term investor."
+    ),
+}
+
+response = requests.post(
+    f"{BASE_URL}/v1/agent/completions", headers=headers, json=payload
+)
+response.raise_for_status()
+result = response.json()
+
+# outputs is the conversation, the agent's answer is the last entry
+print(result["outputs"][-1]["content"])
+print(json.dumps(result["usage"], indent=2))
+```
+
+The `agent_config` block is the `Agent(...)` call from Step 4 written as JSON — same field names, same meaning. The response looks like this:
+
+```json
+{
+  "job_id": "agent-feb1a3ae700d21180f2cceba12763546",
+  "success": true,
+  "outputs": [
+    {"role": "Human", "content": "..."},
+    {"role": "Astra-Agent", "content": "A semiconductor ETF is an exchange-traded fund that holds ..."}
+  ],
+  "usage": {
+    "input_tokens": 27,
+    "output_tokens": 31,
+    "total_tokens": 58,
+    "total_cost": 0.00073
+  }
+}
+```
+
+That `total_cost` is the difference in practice. With the framework you know your tokens; with the API you know what the run cost, in dollars, in the same response — which is what you need to put a price on a feature, cap a batch job, or bill a customer.
+
+## Step 7: The Mixture of Agents through the Swarms API
+
+Multi-agent systems are where the API earns its keep. The four agents from Step 5 become four entries in an `agents` list, `swarm_type` selects the architecture, and Swarms Cloud runs the fan-out, the aggregation, and the accounting. Create `api_moa.py`:
+
+```python
+import json
+import os
+
+import requests
+from dotenv import load_dotenv
+
+load_dotenv()
+
+API_KEY = os.getenv("SWARMS_API_KEY")
+BASE_URL = "https://api.swarms.world"
+
+headers = {"x-api-key": API_KEY, "Content-Type": "application/json"}
+
+MODEL = "gpt-6-astra"
+
+payload = {
+    "name": "Semiconductor-ETF-Council",
+    "description": "Three views on a semiconductor ETF question, then a synthesis.",
+    "swarm_type": "MixtureOfAgents",
+    "max_loops": 1,
+    "agents": [
+        {
+            "agent_name": "Fundamentals-Analyst",
+            "description": "Weighs holdings, concentration and expense ratios.",
+            "system_prompt": "You are a fund analyst. Compare ETFs on holdings, concentration and expense ratio. Be concrete and brief.",
+            "model_name": MODEL,
+            "max_loops": 1,
+            "max_tokens": 4000,
+        },
+        {
+            "agent_name": "Risk-Officer",
+            "description": "Names the risks an investor is taking on.",
+            "system_prompt": "You are a risk officer. State the main risks of each option and who should avoid it. Be concrete and brief.",
+            "model_name": MODEL,
+            "max_loops": 1,
+            "max_tokens": 4000,
+        },
+        {
+            "agent_name": "Portfolio-Manager",
+            "description": "Recommends an allocation for a long-term investor.",
+            "system_prompt": "You are a portfolio manager for long-term retail investors. Give a clear recommendation and the reason. Be brief.",
+            "model_name": MODEL,
+            "max_loops": 1,
+            "max_tokens": 4000,
+        },
+        {
+            "agent_name": "Synthesizer",
+            "description": "Combines the specialists' answers into one brief.",
+            "system_prompt": "You combine the expert answers you are given into one short, decision-oriented brief. Keep every concrete number.",
+            "model_name": MODEL,
+            "max_loops": 1,
+            "max_tokens": 4000,
+        },
+    ],
+    "task": (
+        "Should a long-term investor choose SMH or SOXX for semiconductor "
+        "exposure? Compare concentration, expense ratio and risk."
+    ),
+}
+
+response = requests.post(
+    f"{BASE_URL}/v1/swarm/completions", headers=headers, json=payload
+)
+response.raise_for_status()
+result = response.json()
+
+# output is the whole conversation, the synthesis is the last entry
+for message in result["output"]:
+    print(f"[{message['role']}]\n{message['content']}\n")
+print(json.dumps(result["usage"], indent=2))
+```
+
+We ran exactly this. The three specialists each produced a comparison table; the Synthesizer's final brief opened *"SOXX is the more balanced default for a long-term semiconductor allocation. Choose SMH if you intentionally want a larger bet on dominant companies, particularly Nvidia and TSMC,"* kept every number the specialists had cited — roughly 25 holdings vs 30, top-10 weight of 70–80% vs 55–65%, 0.35% vs 0.34% — and ended with the fee difference being "$1 annually per $10,000", so concentration should decide. The usage block came back as:
+
+```json
+"usage": {
+  "input_tokens": 165,
+  "output_tokens": 2244,
+  "total_tokens": 2409,
+  "total_cost": 0.082586,
+  "billing_info": {
+    "cost_breakdown": {
+      "agent_cost": 0.04,
+      "input_token_cost": 0.001073,
+      "output_token_cost": 0.041514,
+      "num_agents": 4,
+      "night_time_discount_applied": false
+    }
+  }
+}
+```
+
+Four GPT-6 Astra agents, a synthesized answer, 39 seconds, **8.3 cents** — itemized. Note the `night_time_discount_applied` field; more on that below.
+
+## Why teams end up on the API
+
+The framework is genuinely good for building. But once an agent works, the questions change: how much did that run cost, how many can we run at once, and who is keeping the keys. The API answers all three.
+
+- **One key, every model.** GPT-6 Astra sits next to Claude, Gemini, Grok, DeepSeek and the rest — over 1,900 models — behind a single `x-api-key`. Switching the whole council above to a different model is one string.
+- **Cost in the response.** Every completion returns `total_cost`, and swarm runs return the itemized `cost_breakdown`. Pricing is flat and public: $0.01 per agent per swarm run, $6.50 per million input tokens, $18.50 per million output tokens, the same on every endpoint. A `/v1/usage/costs` endpoint and a cost-estimator example let you price a workload before you run it.
+- **50% off at night.** Swarm completions run between **8 PM and 6 AM Pacific** get **half off token costs** — the `night_time_discount_applied` flag in the response tells you it kicked in. Batch jobs, overnight pipelines, and anything not latency-sensitive should simply be scheduled there. The [night-mode pricing guide](https://docs.swarms.ai/docs/guides/guides/night-mode-pricing-strategy) walks through it, and the [cost optimization playbook](https://docs.swarms.ai/docs/guides/guides/cost-optimization-playbook) covers the other levers — tiering models so cheap agents draft and GPT-6 Astra synthesizes, and compressing context between agents.
+- **No infrastructure.** Fan-out across agents, retries, streaming, rate-limit headers on every response, and the hosted MCP server all come with the key. The `agents` list above ran on Swarms Cloud; your laptop sent 60 lines of JSON.
+- **Every architecture, same request.** `swarm_type` accepts `SequentialWorkflow`, `ConcurrentWorkflow`, `HierarchicalSwarm`, `GroupChat`, `MajorityVoting`, `HeavySwarm` and the rest. Changing the council above into a hierarchy with a director is one field.
+- **Annual billing takes 15% off** Pro and Ultra plans, and new accounts start with sign-up credits.
+
+## What you learned and where to go next
+
+You built a GPT-6 Astra agent, gave it a persona, saw its reasoning tokens, combined four of them into a Mixture of Agents, and then ran the same two things through the Swarms API with per-run cost reporting. The pattern that matters is the separation: agents are personas plus tasks, structures are how agents are wired, and the API is where structures run. Change any one without touching the others.
+
+From here: give the framework agent tools (`tools=[any_python_function]`), try `max_loops="auto"` for multi-step autonomy, and on the API side, schedule your batch swarms into the night window and read `cost_breakdown` until you know what your system costs per run. The four scripts in this post live in [`examples/models/gpt_astra`](https://github.com/kyegomez/swarms/tree/master/examples/models/gpt_astra); the [Swarms API Examples](https://github.com/The-Swarm-Corporation/Swarms-API-Examples) repository has a hundred more.
+
+## Conclusion
+
+GPT-6 Astra brings reasoning that is worth paying for and worth measuring. The Swarms framework gives you a place to build agents around it and to see, down to the token, what the reasoning cost. The Swarms API gives you a place to run those agents — alone or as a council — with one key, no servers, a dollar figure on every response, and half-price tokens overnight. Start with `astra_agent.py`; when it works, paste the config into `api_single_agent.py` and it is in production.
+
+## Links and Resources
+
+| Resource | Link |
+| --- | --- |
+| GPT-6 Astra examples (this post) | [examples/models/gpt_astra](https://github.com/kyegomez/swarms/tree/master/examples/models/gpt_astra) |
+| Get a Swarms API key | [swarms.world/platform/api-keys](https://swarms.world/platform/api-keys) |
+| API key setup guide | [docs.swarms.ai/.../api-key-setup](https://docs.swarms.ai/docs/documentation/getting-started/api-key-setup) |
+| Agent completions reference | [docs.swarms.ai/.../execute-agent-completion](https://docs.swarms.ai/api-reference/agents/execute-agent-completion) |
+| Swarm completions reference | [docs.swarms.ai/.../execute-swarm-completion](https://docs.swarms.ai/api-reference/swarms/execute-swarm-completion) |
+| Pricing | [docs.swarms.ai/.../pricing](https://docs.swarms.ai/docs/documentation/resources/pricing) |
+| Night-mode pricing strategy | [docs.swarms.ai/.../night-mode-pricing-strategy](https://docs.swarms.ai/docs/guides/guides/night-mode-pricing-strategy) |
+| Cost optimization playbook | [docs.swarms.ai/.../cost-optimization-playbook](https://docs.swarms.ai/docs/guides/guides/cost-optimization-playbook) |
+| Swarms API Examples repository | [github.com/The-Swarm-Corporation/Swarms-API-Examples](https://github.com/The-Swarm-Corporation/Swarms-API-Examples) |
+| Swarms framework on GitHub | [github.com/kyegomez/swarms](https://github.com/kyegomez/swarms) |
+| Swarms documentation | [docs.swarms.ai](https://docs.swarms.ai) |
+| Discord community | [discord.gg/VapjxpSyHC](https://discord.gg/VapjxpSyHC) |
+
+---
+
+*Have questions or feedback? Join our [Discord community](https://discord.gg/VapjxpSyHC) or check out the [documentation](https://docs.swarms.ai).*

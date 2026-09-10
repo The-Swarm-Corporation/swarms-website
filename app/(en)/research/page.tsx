@@ -17,12 +17,24 @@ import {
   Grid3X3,
   Table,
   X,
+  Workflow,
 } from "lucide-react"
 import { useState, useMemo } from "react"
 
 const ease: [number, number, number, number] = [0.22, 1, 0.36, 1]
 
 const researchProjects = [
+  {
+    icon: Workflow,
+    title: "GraphWorkflow",
+    subtitle: "Compile-Once Graph Execution Engine for Multi-Agent Systems",
+    description: "A systems paper on the graph orchestration engine inside the Swarms framework. Compiles static agent DAGs once into a frozen layered execution plan, then runs them with near-zero per-node overhead: a geometric-mean 7.0x speedup over LangGraph across five topologies, rising to 62.5x on 200-node chains, with an open benchmark suite.",
+    github: "https://github.com/The-Swarm-Corporation/GraphWorkflow-Paper",
+    tags: ["Orchestration", "Graph Execution", "Benchmarks", "Systems"],
+    status: "Published",
+    impact: "High",
+    categories: ["multi-agent", "novel-architecture"]
+  },
   {
     icon: Brain,
     title: "VLAM",

@@ -15,6 +15,10 @@ const ease: [number, number, number, number] = [0.22, 1, 0.36, 1]
 
 const researchPapers = [
   {
+    title: "GraphWorkflow: A Low-Overhead Compile-Once Graph Execution Engine for Multi-Agent Systems",
+    link: "https://github.com/The-Swarm-Corporation/GraphWorkflow-Paper",
+  },
+  {
     title: "ModelGrid: A Quantitative Framework for Dynamic Memory Allocation in Multi-Model Deployment",
     link: "https://github.com/The-Swarm-Corporation/ModelGrid",
   },

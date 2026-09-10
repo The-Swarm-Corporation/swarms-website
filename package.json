@@ -30,7 +30,7 @@
     "framer-motion": "latest",
     "gray-matter": "^4.0.3",
     "lucide-react": "^0.454.0",
-    "mermaid": "^11.16.0",
+    "mermaid": "^11.16.1",
     "motion": "^12.23.26",
     "next": "latest",
     "next-themes": "latest",

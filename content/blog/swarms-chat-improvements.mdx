@@ -1,0 +1,84 @@
+---
+title: "A Better Swarms Chat Experience Is Here"
+description: "We redesigned the chat experience on the Swarms Marketplace. Every prompt now opens in a full-screen chat, with a settings panel that exposes the full agent spec, a cleaner header, and a model picker that lists nearly 2,000 models from the Swarms API with Claude 5, GPT-5.4+, GLM 5, and Kimi K3 pinned to the top."
+date: "2026-09-12"
+author: "Swarms Team"
+categories: ["Product"]
+featured: false
+readTime: "5 min read"
+---
+
+# A Better Swarms Chat Experience Is Here
+
+Every prompt on the [Swarms Marketplace](https://swarms.world) has a Chat button. Click it and you are talking to an agent that runs that prompt as its system prompt, backed by the Swarms API. It is the fastest way to try a prompt before you buy it, fork it, or build on it.
+
+We have redesigned that experience from the ground up. Chat is now full screen, the agent behind it is fully customizable, the header is one consistent set of controls, and the model picker lists nearly every model the Swarms API can run. This post walks through what changed and how to use it.
+
+## Full-Screen Chat
+
+Chat used to open inside the product page, sharing the screen with the sidebar and the navbar. That worked for a quick question, but it left the conversation cramped for anything longer.
+
+Chat now opens as its own full-screen page. Click **Chat** on any prompt and the sidebar and navbar are gone. The conversation gets the whole viewport, the composer sits at the bottom where you expect it, and long replies are readable without scrolling inside a box inside a page.
+
+A **Back to product** button in the header returns you to the listing when you are done, so nothing about discovery changed. You browse the marketplace the same way; the chat itself just has more room. If you prefer the embedded view, a **Fullscreen** toggle in the header switches between the two.
+
+## Customize Your Agent
+
+This is the biggest change. A new **Settings** panel in the chat header exposes the full Swarms `AgentSpec` for the prompt you are chatting with. Everything you can set when you call `/v1/agent/completions` directly, you can now set from the chat.
+
+The prompt owns three fields: its name, its description, and its system prompt. Those stay fixed, because they are what makes the prompt the prompt. Everything else is yours to change:
+
+- **Max loops.** Set a fixed number of reasoning loops, or switch to `auto` and let the agent decide when its task is done. In auto mode the agent gets the autonomous tool set: planning, thinking, file operations, and sub-agents.
+- **Sampling.** Temperature, top-p, max tokens, and dynamic temperature.
+- **Reasoning.** Reasoning effort from `minimal` up to `max`, a thinking-token budget, and a switch to turn extended reasoning on or off for models that support it.
+- **MCP servers.** Point the agent at one or more MCP servers by URL or full config, and it can call the tools they expose mid-conversation.
+- **Tools.** Attach tool definitions directly, choose which of the agent's tools are active, and decide whether tool calls are summarized in the reply.
+- **Fallback models.** Name one or more models to fall back to if the primary model errors or is unavailable.
+- **Streaming.** Stream tokens as they arrive, or wait for the complete reply. If streaming fails for a given model, the chat retries as a normal completion on its own.
+
+Settings are saved per prompt in your browser's local storage. Nothing is written to your account, nothing is shared, and the next time you open that prompt's chat your configuration is exactly where you left it. Reset returns the prompt to its defaults in one click.
+
+For prompt authors, this means the chat is now a faithful test bench. The configuration you dial in from the settings panel is the same spec you would send to the API, so what works in the chat will work in production.
+
+## A Cleaner Header
+
+The chat header used to collect buttons from several different features, each styled its own way. It is now one consistent row:
+
+- **Model** picker.
+- **Web search** on or off, so the agent can pull in live results when you want them.
+- **Settings** for the agent spec. The icon lights up when your settings differ from the defaults.
+- **Reset** the conversation.
+- **Fullscreen** toggle, for the times you open the chat from inside the product page.
+- **Back to product**.
+
+Every button shares the same size, color, and hover state, and every one shows a short hint on hover so you never have to guess what an icon does.
+
+## Pick From Nearly 2,000 Models
+
+The old model picker was a short fixed list. The new one asks the Swarms API which models are available and shows all of them. As of this post that is 1,947 models from OpenAI, Anthropic, Google, xAI, Meta, DeepSeek, Moonshot, Zhipu, and dozens of providers routed through OpenRouter.
+
+A list that long needs structure, so the picker has it:
+
+- **Featured models on top.** The Claude 5 family, the GPT-5.4 and later series, GLM 5, and Kimi K3 are pinned to the top of the list, newest version first.
+- **Search.** Start typing and the list narrows to matching model IDs. If you know the model you want, you can select it in a few keystrokes.
+- **Provider tags.** Each entry shows which provider serves it, so `openrouter/moonshotai/kimi-k3` and a first-party model are easy to tell apart.
+- **Compact and adaptive.** The menu sizes itself to its content, uses a smaller type size so long model IDs are fully visible, and opens above the trigger when there is more room there than below.
+- **Clear selection state.** The active model is highlighted in green.
+
+Any model the API accepts, the chat accepts. Switch models mid-conversation to compare how two of them handle the same prompt, with the same settings applied to both.
+
+## Try It
+
+Open any prompt on [swarms.world](https://swarms.world) and click **Chat**. The full-screen page, the settings panel, and the new picker are live for every prompt on the marketplace today. No account changes, no new keys, and no action required from prompt authors.
+
+If you have not built a prompt yet, the chat is also a good place to start: pick a prompt close to what you need, tune the agent behind it until it does what you want, then fork it and make it yours.
+
+## Distribute and Monetize Your Prompts
+
+Every prompt in this new chat is a product someone published. Yours can be too.
+
+Turn your prompts and skills into products on the Swarms Marketplace. Publish them for free, or set a flat fee and get paid every time someone buys access. Tokenize a prompt and you earn a share of every trade of its token on top. The marketplace handles discovery, payments, reviews, and now a chat that lets buyers try your work with any model before they commit.
+
+**Publish now:** [swarms.world/launch](https://swarms.world/launch)
+
+**See the announcement thread:** [x.com/swarms_corp](https://x.com/swarms_corp/status/2098952773052055671)

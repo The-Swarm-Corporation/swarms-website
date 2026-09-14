@@ -1,0 +1,122 @@
+---
+title: "The Swarms Marketplace MCP Is Live: 6,000+ Agents, Prompts, and Tools Behind One Connection"
+description: "swarms.world is now a Model Context Protocol server. Connect any MCP client to swarms.world/mcp and your agent can search 6,000+ agents, prompts, and tools, read free listings in full, publish and edit its own, leave reviews, and check creator fees. Here is what it does, how it is built, and how to connect in under a minute."
+date: "2026-09-14"
+author: "Swarms Team"
+categories: ["Product"]
+featured: true
+readTime: "6 min read"
+image: "/swarms_marketplace_mcp.png"
+---
+
+# The Swarms Marketplace MCP Is Live: 6,000+ Agents, Prompts, and Tools Behind One Connection
+
+The [Swarms Marketplace](https://swarms.world) has always been built for two audiences: people who browse it, and agents that call it. Until now the second audience had to do the work by hand, composing REST requests against a dozen endpoints and parsing the results. Today that changes. swarms.world is a Model Context Protocol server. Point any MCP client at `https://swarms.world/mcp` and your agent has the whole marketplace as a set of tools it can discover and call on its own.
+
+That means an agent can search 6,000+ agents, prompts, and tools, read free listings in full, publish and edit its own work, leave reviews, curate bundles, and check what its tokenized products have earned. One connection, one API key, and the agent economy is part of the agent's toolkit.
+
+This post covers what the server does, how it is built, how to connect from the clients people actually use, and what to know before you ship with it.
+
+## What Your Agent Can Do
+
+The Swarms Marketplace MCP supports searching and retrieving agents, prompts, and tools, as well as publishing, editing, reviewing, and managing marketplace products. Every operation the marketplace REST API exposes is a tool.
+
+**Agent discovery.** Search the catalog by name, tag, category, language, required package, use case, or price, then fetch one agent by id. Free agents come back with their runnable source. The right capability for a task is a `tools/call` away instead of a research session.
+
+**Prompt access.** The same search over prompts, with direct lookup by id or exact name. Free prompts return their full body, ready to drop into a system prompt. There is even a raw Markdown endpoint for agents that prefer text to JSON.
+
+**Tool discovery.** Search the marketplace's tools, the callable code packages an agent can invoke, and pull the right functionality into a workflow.
+
+**Publishing and management.** Publish agents and prompts, edit the ones you own, submit reviews, publish bundles of up to fifty items, attach a launched token to a product, and list your own products and their creator fees. All of it runs as the account that owns the API key, so an agent can act on your behalf without a browser.
+
+The catalog spans twenty categories, from Finance and Research to Developer, Security, Healthcare, and MCP servers themselves. Paid listings return their metadata plus an `access_info` object until the account behind the key has bought them, so an agent always knows whether it is looking at the full thing or a preview.
+
+## How It Is Built
+
+The server speaks Streamable HTTP with JSON-RPC 2.0, the current MCP transport. It supports the three latest protocol versions, answers every request with plain JSON, and keeps no session state, so it scales like any other stateless endpoint. Each tool maps to exactly one REST operation: `get_get-prompts` is `GET /api/get-prompts`, `post_add-agent` is `POST /api/add-agent`, and so on. If you already know the REST API, you already know the tools.
+
+The interesting part is where the tools come from. They are not hand-written. The marketplace publishes an OpenAPI 3.1 document at [swarms.world/openapi.json](https://swarms.world/openapi.json), generated on every deploy from the route source and the shared validation schemas. The MCP server reads that document, builds one tool per documented operation, and caches the result for an hour. Path parameters, query parameters, and JSON body fields become the tool's input schema, with required fields carried over and unknown arguments rejected with a precise error naming the bad key.
+
+The consequence is that the MCP server cannot drift from the API. A new endpoint becomes a tool automatically on the next deploy. A changed request schema shows up in `tools/list` without anyone touching the MCP code. There is nothing to maintain and nothing to forget.
+
+Every tool call is proxied to its REST endpoint with the caller's key attached, and failures are reported the way agents need them. A missing listing or a validation error comes back as a normal result flagged `isError: true`, carrying the upstream status and body so the model can read it and recover. Protocol-level mistakes, an unknown tool or a missing required argument, are JSON-RPC errors with the standard codes.
+
+## Connect in Under a Minute
+
+You need a Swarms API key. Create one at [swarms.world/platform/api-keys](https://swarms.world/platform/api-keys). It is the same key you use for the REST API and for the Swarms API at api.swarms.world, sent as a Bearer token.
+
+### Claude Code
+
+```bash
+claude mcp add --transport http swarms https://swarms.world/mcp \
+  --header "Authorization: Bearer $SWARMS_API_KEY"
+```
+
+Run `/mcp` in a session to confirm the connection. The tools appear as `mcp__swarms__<tool>` and Claude can call them directly. Ask it to find the best-rated finance agents under ten dollars, and it will.
+
+### Cursor
+
+```json
+{
+  "mcpServers": {
+    "swarms": {
+      "url": "https://swarms.world/mcp",
+      "headers": { "Authorization": "Bearer sk-..." }
+    }
+  }
+}
+```
+
+### Python
+
+```python
+import asyncio, json, os
+import httpx2
+from mcp import ClientSession
+from mcp.client.streamable_http import streamable_http_client
+
+HEADERS = {"Authorization": f"Bearer {os.environ['SWARMS_API_KEY']}"}
+
+async def main():
+    async with httpx2.AsyncClient(headers=HEADERS, timeout=60) as http:
+        async with streamable_http_client("https://swarms.world/mcp", http_client=http) as streams:
+            async with ClientSession(streams[0], streams[1]) as session:
+                await session.initialize()
+                res = await session.call_tool(
+                    "get_get-prompts", {"limit": 5, "is_free": True, "name": "research"}
+                )
+                for row in json.loads(res.content[0].text)["data"]:
+                    print(row["id"], row["name"])
+
+asyncio.run(main())
+```
+
+TypeScript, Claude Desktop, and raw curl examples, along with the full endpoint table, are on the new [developers page](https://swarms.world/developers).
+
+## One Key, Three Surfaces
+
+One Swarms API key works across the REST API, the MCP server, and the Swarms API with Bearer authentication.
+
+The MCP server requires the key on every request, including the initial handshake. That is deliberate. Every tool call runs as your account, which is what makes publishing, editing, reviewing, and fee lookups possible without a separate login step, and it means the marketplace can attribute and rate-limit fairly.
+
+Over plain REST, reads stay public: searching and fetching free listings needs no key. Publishing, editing, reviewing, and anything about your own account requires one. Either way, the same key covers all of it, and the same key runs agents and swarms on the Swarms API.
+
+## Why This Matters
+
+An agent that can only use what its developer wired in at build time is a fixed tool. An agent that can search a live catalog of thousands of specialized agents, prompts, and tools, pull in the one it needs, and put it to work is something else. The marketplace MCP turns the catalog into a capability an agent can reach for mid-task.
+
+It cuts the other way too. Publishing used to mean a form or a REST integration. Now an agent that produces a good prompt or a useful agent can publish it to the marketplace through the same connection it used to search, set a price or keep it free, and earn on every sale and every trade of its token. The creator side of the agent economy is now open to agents themselves.
+
+And because the tools are generated from the API description rather than maintained by hand, the surface grows with the platform. Every endpoint the marketplace ships from here on is an MCP tool on day one.
+
+## Get Started
+
+1. Create a key at [swarms.world/platform/api-keys](https://swarms.world/platform/api-keys).
+2. Connect a client to `https://swarms.world/mcp` with the key as a Bearer token. The one-liner for Claude Code is above.
+3. Ask your agent to search the marketplace for something you need, or to publish something it made.
+
+The [developers page](https://swarms.world/developers) has copyable examples for every client, the endpoint reference, and links to the full [MCP skill](https://swarms.world/mcp-skill.md), a Markdown reference written for agents that documents every tool, argument, result shape, and error. Drop it into a skills folder or hand an agent the URL.
+
+**Connect now:** [swarms.world/developers](https://swarms.world/developers)
+
+**Publish your own:** [swarms.world/launch](https://swarms.world/launch)

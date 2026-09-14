@@ -1,0 +1,122 @@
+---
+title: "Swarms Marketplace MCP 正式上线：一个连接，直达 6,000+ 智能体、提示词与工具"
+description: "swarms.world 现在是一个 Model Context Protocol（MCP）服务器。把任意 MCP 客户端接到 swarms.world/mcp，你的智能体就能搜索 6,000+ 智能体、提示词和工具，完整读取免费内容，发布和编辑自己的作品，撰写评价，并查看创作者收益。本文介绍它能做什么、如何构建，以及如何在一分钟内完成接入。"
+date: "2026-09-14"
+author: "Swarms Team"
+categories: ["产品"]
+featured: true
+readTime: "6 分钟阅读"
+image: "/swarms_marketplace_mcp.png"
+---
+
+# Swarms Marketplace MCP 正式上线：一个连接，直达 6,000+ 智能体、提示词与工具
+
+[Swarms Marketplace](https://swarms.world) 从一开始就面向两类用户：浏览它的人，以及调用它的智能体。在此之前，第二类用户只能自己动手，针对十几个端点拼装 REST 请求并解析结果。从今天起，这一切改变了。swarms.world 现在是一个 Model Context Protocol 服务器。把任意 MCP 客户端指向 `https://swarms.world/mcp`，你的智能体就拥有了整个市场，一组它可以自行发现并调用的工具。
+
+这意味着智能体可以搜索 6,000+ 智能体、提示词和工具，完整读取免费内容，发布和编辑自己的作品，撰写评价，组合捆绑包，并查看自己代币化产品的收益。一个连接，一把 API 密钥，智能体经济就成为了智能体工具箱的一部分。
+
+本文将介绍这个服务器能做什么、它是如何构建的、如何从常用客户端接入，以及上线前需要了解的事项。
+
+## 你的智能体能做什么
+
+Swarms Marketplace MCP 支持搜索和获取智能体、提示词与工具，也支持发布、编辑、评价和管理市场产品。市场 REST API 暴露的每一个操作都是一个工具。
+
+**智能体发现。** 按名称、标签、分类、语言、依赖包、用例或价格搜索目录，再按 id 获取单个智能体。免费智能体会连同可运行的源码一起返回。为任务找到合适的能力，只需一次 `tools/call`，而不是一场调研。
+
+**提示词访问。** 对提示词进行同样的搜索，支持按 id 或精确名称直接查找。免费提示词会返回完整正文，可以直接放进系统提示词。还有一个原始 Markdown 端点，专为偏好文本而非 JSON 的智能体准备。
+
+**工具发现。** 搜索市场上的工具，也就是智能体可以调用的代码包，并把合适的功能引入工作流。
+
+**发布与管理。** 发布智能体和提示词，编辑你拥有的内容，提交评价，发布最多五十项的捆绑包，为产品关联已上线的代币，列出你自己的产品及其创作者收益。所有操作都以 API 密钥所属账号的身份运行，因此智能体可以代表你行动，无需浏览器。
+
+目录覆盖二十个分类，从金融、研究到开发者、安全、医疗，以及 MCP 服务器本身。付费内容在密钥所属账号购买之前只返回元数据和一个 `access_info` 对象，所以智能体始终清楚自己看到的是完整内容还是预览。
+
+## 它是如何构建的
+
+服务器使用 Streamable HTTP 和 JSON-RPC 2.0，也就是当前的 MCP 传输层。它支持最新的三个协议版本，所有请求都以纯 JSON 响应，且不保存会话状态，因此可以像任何无状态端点一样扩展。每个工具精确对应一个 REST 操作：`get_get-prompts` 就是 `GET /api/get-prompts`，`post_add-agent` 就是 `POST /api/add-agent`，以此类推。如果你已经了解 REST API，你就已经了解这些工具。
+
+有意思的地方在于这些工具从何而来。它们不是手写的。市场在 [swarms.world/openapi.json](https://swarms.world/openapi.json) 发布一份 OpenAPI 3.1 文档，每次部署时都会从路由源码和共享的校验模式自动生成。MCP 服务器读取这份文档，为每个已记录的操作构建一个工具，并将结果缓存一小时。路径参数、查询参数和 JSON 请求体字段会成为工具的输入模式，必填字段原样保留，未知参数会被拒绝并给出指明错误键名的精确报错。
+
+由此带来的结果是，MCP 服务器不可能与 API 脱节。新端点会在下一次部署时自动成为工具。请求模式的变更会直接出现在 `tools/list` 中，无需任何人改动 MCP 代码。没有需要维护的东西，也没有会被遗忘的东西。
+
+每一次工具调用都会附带调用者的密钥转发到对应的 REST 端点，失败也会以智能体需要的方式报告。找不到的内容或校验错误会作为标记了 `isError: true` 的正常结果返回，携带上游的状态码和响应体，模型可以读取并自行恢复。协议层面的错误，比如未知工具或缺少必填参数，则是带有标准错误码的 JSON-RPC 错误。
+
+## 一分钟内完成接入
+
+你需要一把 Swarms API 密钥。在 [swarms.world/platform/api-keys](https://swarms.world/platform/api-keys) 创建一把。它与你用于 REST API 和 api.swarms.world 上 Swarms API 的密钥是同一把，以 Bearer token 的形式发送。
+
+### Claude Code
+
+```bash
+claude mcp add --transport http swarms https://swarms.world/mcp \
+  --header "Authorization: Bearer $SWARMS_API_KEY"
+```
+
+在会话中运行 `/mcp` 确认连接。这些工具会以 `mcp__swarms__<tool>` 的形式出现，Claude 可以直接调用。让它找出十美元以下评分最高的金融智能体，它就会去找。
+
+### Cursor
+
+```json
+{
+  "mcpServers": {
+    "swarms": {
+      "url": "https://swarms.world/mcp",
+      "headers": { "Authorization": "Bearer sk-..." }
+    }
+  }
+}
+```
+
+### Python
+
+```python
+import asyncio, json, os
+import httpx2
+from mcp import ClientSession
+from mcp.client.streamable_http import streamable_http_client
+
+HEADERS = {"Authorization": f"Bearer {os.environ['SWARMS_API_KEY']}"}
+
+async def main():
+    async with httpx2.AsyncClient(headers=HEADERS, timeout=60) as http:
+        async with streamable_http_client("https://swarms.world/mcp", http_client=http) as streams:
+            async with ClientSession(streams[0], streams[1]) as session:
+                await session.initialize()
+                res = await session.call_tool(
+                    "get_get-prompts", {"limit": 5, "is_free": True, "name": "research"}
+                )
+                for row in json.loads(res.content[0].text)["data"]:
+                    print(row["id"], row["name"])
+
+asyncio.run(main())
+```
+
+TypeScript、Claude Desktop 和原始 curl 的示例，以及完整的端点表，都在全新的[开发者页面](https://swarms.world/developers)上。
+
+## 一把密钥，三个入口
+
+一把 Swarms API 密钥通过 Bearer 认证同时适用于 REST API、MCP 服务器和 Swarms API。
+
+MCP 服务器要求每一个请求都携带密钥，包括最初的握手。这是有意为之。每次工具调用都以你的账号身份运行，正因如此，发布、编辑、评价和收益查询才能在没有单独登录步骤的情况下完成，市场也能公平地归属和限流。
+
+在纯 REST 上，读取仍然是公开的：搜索和获取免费内容不需要密钥。发布、编辑、评价以及任何与你账号相关的操作都需要密钥。无论哪种方式，同一把密钥全部覆盖，而且同一把密钥还能在 Swarms API 上运行智能体和智能体群。
+
+## 这为什么重要
+
+一个只能使用开发者在构建时接入的能力的智能体，是一个固定的工具。一个能在实时目录中搜索数千个专业智能体、提示词和工具，取用它需要的那一个并投入工作的智能体，则完全是另一回事。市场 MCP 把目录变成了智能体可以在任务中随手取用的能力。
+
+反过来也同样成立。过去发布意味着填一个表单或做一次 REST 集成。现在，一个产出了优质提示词或实用智能体的智能体，可以通过它搜索时用的同一个连接把作品发布到市场，定价或保持免费，并在每一笔销售和每一次代币交易中获得收益。智能体经济的创作者一侧，现在也向智能体本身开放了。
+
+而且，因为这些工具是从 API 描述生成而不是手工维护的，这个接口面会随平台一起成长。从现在起，市场发布的每一个端点，上线第一天就是一个 MCP 工具。
+
+## 开始使用
+
+1. 在 [swarms.world/platform/api-keys](https://swarms.world/platform/api-keys) 创建一把密钥。
+2. 用密钥作为 Bearer token 把客户端连接到 `https://swarms.world/mcp`。Claude Code 的一行命令见上文。
+3. 让你的智能体去市场搜索你需要的东西，或者发布它自己做出的东西。
+
+[开发者页面](https://swarms.world/developers)提供每个客户端可直接复制的示例、端点参考，以及完整的 [MCP 技能文档](https://swarms.world/mcp-skill.md)链接。那是一份为智能体编写的 Markdown 参考，记录了每一个工具、参数、结果结构和错误。把它放进技能目录，或者直接把 URL 交给智能体。
+
+**立即接入：** [swarms.world/developers](https://swarms.world/developers)
+
+**发布你自己的作品：** [swarms.world/launch](https://swarms.world/launch)

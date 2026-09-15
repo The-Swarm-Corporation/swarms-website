@@ -57,6 +57,21 @@ workflow = SequentialWorkflow(
 final_post = workflow.run("AI history")`,
   },
   {
+    title: "Swarms CLI",
+    subtitle: "Command Line",
+    description: "Manage agents, swarms, and deployments directly from your terminal. Built into the Swarms Python package.",
+    link: "https://docs.swarms.world/cli",
+    docsLink: "https://docs.swarms.world/cli",
+    code: `# Install (includes CLI)
+pip install swarms
+
+# Verify CLI
+swarms --help
+
+# List available commands
+swarms --version`,
+  },
+  {
     title: "Swarms API",
     subtitle: "Swarms Cloud",
     file: "agent.py",

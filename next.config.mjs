@@ -50,19 +50,6 @@ const nextConfig = {
         source: "/zh/blog/:slug/markdown",
         headers: [{ key: "X-Robots-Tag", value: "noindex, follow" }],
       },
-      {
-        // Blog posts are Accept-negotiated (proxy.ts rewrites text/markdown
-        // requests to the /markdown variant), so caches must key on Accept
-        // for BOTH variants or a CDN can serve cached HTML to a markdown
-        // request. Set here as well as in proxy.ts because Next drops the
-        // middleware-set Vary on prerendered HTML responses.
-        source: "/blog/:slug",
-        headers: [{ key: "Vary", value: "Accept, Accept-Encoding" }],
-      },
-      {
-        source: "/zh/blog/:slug",
-        headers: [{ key: "Vary", value: "Accept, Accept-Encoding" }],
-      },
     ]
   },
 }

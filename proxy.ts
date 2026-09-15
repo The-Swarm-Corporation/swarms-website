@@ -26,10 +26,9 @@ import { API_NOT_FOUND } from "./lib/api-error"
  *
  * 2. Markdown content negotiation for blog posts (acceptmarkdown.com). Blog
  *    posts already publish a raw-markdown variant at /blog/<slug>/markdown;
- *    a request for /blog/<slug> with `Accept: text/markdown` is rewritten to
- *    it. Every negotiated path carries `Vary: Accept` on BOTH variants, so a
- *    CDN never serves the cached HTML variant to an agent that asked for
- *    markdown (or vice versa) depending on which landed in cache first.
+ *    a request for /blog/<slug> with `Accept: text/markdown` is 307-redirected
+ *    to it, and the redirect carries `Vary: Accept`. See the inline comment
+ *    for why this is a redirect and not a rewrite.
  */
 
 const BLOCKED_SEGMENT = /^(test|tests|debug|dev|internal|admin|_test)([-_].*)?$/i
@@ -61,20 +60,22 @@ export function proxy(request: NextRequest) {
     const accept = request.headers.get("accept") ?? ""
 
     if (accept.includes("text/markdown")) {
+      // Redirect rather than rewrite: both Next's local server and Vercel's
+      // routing layer overwrite a middleware-set Vary on prerendered HTML
+      // (confirmed against production), so a rewrite would leave the HTML
+      // variant cacheable without Vary and let a CDN hand cached HTML to a
+      // markdown request. With a redirect every URL serves exactly one
+      // representation, which no cache can confuse, and middleware runs
+      // before Vercel's cache so the redirect always fires. The redirect
+      // response itself is the negotiated one, so it carries Vary: Accept.
       const url = request.nextUrl.clone()
       url.pathname = `${pathname}/markdown`
-      const response = NextResponse.rewrite(url)
+      const response = NextResponse.redirect(url, 307)
       response.headers.set("Vary", "Accept, Accept-Encoding")
       return response
     }
 
-    // The HTML variant of a negotiated path must also vary on Accept, or a
-    // cached HTML response can be served to a markdown request. Next's local
-    // server overwrites Vary on prerendered HTML, so next.config.mjs also
-    // declares this header; on Vercel the routing layer applies it.
-    const response = NextResponse.next()
-    response.headers.set("Vary", "Accept, Accept-Encoding")
-    return response
+    return NextResponse.next()
   }
 
   return NextResponse.next()

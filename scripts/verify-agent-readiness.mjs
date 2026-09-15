@@ -87,27 +87,32 @@ async function main() {
     check("#70 newsletter validation error is structured JSON", ok, `status ${res.status}, code ${code}`)
   }
 
-  // --- #71: markdown content negotiation ---
+  // --- #71: markdown content negotiation (redirect-based; every URL serves
+  // exactly one representation, so caches cannot mix variants) ---
+  {
+    const res = await fetch(`${base}/blog/${BLOG_SLUG}`, {
+      headers: { Accept: "text/markdown" },
+      redirect: "manual",
+    })
+    const vary = res.headers.get("vary") ?? ""
+    const location = res.headers.get("location") ?? ""
+    check("#71 Accept: text/markdown gets a redirect", res.status === 307, `got ${res.status}`)
+    check("#71 redirect targets the /markdown variant", location.endsWith(`/blog/${BLOG_SLUG}/markdown`), location)
+    check("#71 negotiated redirect sends Vary: Accept", /(^|,\s*)accept(,|$)/i.test(vary), vary)
+  }
   {
     const res = await fetch(`${base}/blog/${BLOG_SLUG}`, {
       headers: { Accept: "text/markdown" },
     })
     const type = res.headers.get("content-type") ?? ""
-    const vary = res.headers.get("vary") ?? ""
-    check("#71 Accept: text/markdown returns markdown", type.includes("text/markdown"), type)
-    check("#71 markdown variant sends Vary: Accept", /(^|,\s*)accept(,|$)/i.test(vary), vary)
+    check("#71 following the redirect yields markdown", type.includes("text/markdown"), type)
   }
   {
     const res = await fetch(`${base}/blog/${BLOG_SLUG}`, {
       headers: { Accept: "text/html" },
     })
     const type = res.headers.get("content-type") ?? ""
-    const vary = res.headers.get("vary") ?? ""
-    check("#71 Accept: text/html still returns HTML", type.includes("text/html"), type)
-    // Next's local server overwrites Vary on prerendered HTML; the header is
-    // declared in next.config.mjs and applied by Vercel's routing layer, so
-    // this check is strict only against a deployed URL.
-    check("#71 HTML variant also sends Vary: Accept", /(^|,\s*)accept(,|$)/i.test(vary), vary, true)
+    check("#71 Accept: text/html still returns HTML directly", res.status === 200 && type.includes("text/html"), type)
   }
 
   console.log(failures === 0 ? "\nAll checks passed." : `\n${failures} check(s) failed.`)

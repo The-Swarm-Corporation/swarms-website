@@ -1,8 +1,9 @@
 "use client"
 
 import Link from "next/link"
-import { ArrowRight, Award, RotateCcw, Star } from "lucide-react"
+import { ArrowRight, Award, GraduationCap, RotateCcw, Star } from "lucide-react"
 import {
+  isCourseComplete,
   isPartComplete,
   LEVELS,
   levelFor,
@@ -28,6 +29,8 @@ export function CourseProgressCard({ parts }: { parts: PartSummary[] }) {
   const totalLessons = parts.reduce((n, p) => n + p.lessonIds.length, 0)
   const doneLessons = parts.reduce((n, p) => n + partLessonsDone(progress, p.lessonIds), 0)
   const started = doneLessons > 0 || points > 0
+
+  const courseComplete = isCourseComplete(progress)
 
   const firstIncomplete =
     parts.find((p) => !isPartComplete(progress, p.part, p.lessonIds)) ?? parts[0]
@@ -66,13 +69,23 @@ export function CourseProgressCard({ parts }: { parts: PartSummary[] }) {
           </div>
         </div>
         <div className="flex flex-col gap-2 sm:items-end">
-          <Link
-            href={`/academy/swarms-api/${firstIncomplete.slug}`}
-            className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-2.5 text-sm font-medium text-black transition-colors hover:bg-neutral-200"
-          >
-            {started ? `Continue Part ${firstIncomplete.part}` : "Start Part 1"}
-            <ArrowRight className="h-4 w-4" />
-          </Link>
+          {courseComplete ? (
+            <Link
+              href="/academy/certificate"
+              className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-2.5 text-sm font-medium text-black transition-colors hover:bg-neutral-200"
+            >
+              <GraduationCap className="h-4 w-4" />
+              View Certificate
+            </Link>
+          ) : (
+            <Link
+              href={`/academy/swarms-api/${firstIncomplete.slug}`}
+              className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-2.5 text-sm font-medium text-black transition-colors hover:bg-neutral-200"
+            >
+              {started ? `Continue Part ${firstIncomplete.part}` : "Start Part 1"}
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          )}
           <span className="text-[12px] text-white/40">
             {doneLessons}/{totalLessons} lessons complete
           </span>

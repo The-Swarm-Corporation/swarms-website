@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { Navigation } from "@/components/navigation"
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
@@ -151,10 +152,10 @@ export default function SimulationsPage() {
                   className="h-12 w-full rounded-full bg-white px-8 text-base font-medium text-black hover:bg-neutral-200 sm:h-14 sm:w-auto sm:text-lg"
                   asChild
                 >
-                  <a href="/hiring">
+                  <Link href="/hiring">
                     Join the team
                     <ArrowRight className="ml-2 h-5 w-5" />
-                  </a>
+                  </Link>
                 </Button>
                 <Button
                   variant="outline"
@@ -362,10 +363,10 @@ export default function SimulationsPage() {
                   className="h-11 w-full rounded-full bg-white px-6 text-sm font-medium text-black hover:bg-neutral-200 sm:w-auto"
                   asChild
                 >
-                  <a href="/hiring">
+                  <Link href="/hiring">
                     Join our team
                     <ArrowRight className="ml-2 h-4 w-4" />
-                  </a>
+                  </Link>
                 </Button>
                 <Button
                   variant="outline"

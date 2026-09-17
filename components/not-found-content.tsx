@@ -1,3 +1,4 @@
+import { AppLink } from "@/components/app-link"
 import Link from "next/link"
 
 // Crawlers landing on a dead URL should find live routes to follow rather than
@@ -74,12 +75,12 @@ export function NotFoundContent({ locale = "en" }: { locale?: "en" | "zh" }) {
           {machineNote}{" "}
           {machineIndexes.map((index, i) => (
             <span key={index.href}>
-              <a
+              <AppLink
                 href={index.href}
                 className="text-neutral-400 underline underline-offset-4 transition-colors hover:text-white"
               >
                 {index.label}
-              </a>
+              </AppLink>
               {i < machineIndexes.length - 1 ? " · " : ""}
             </span>
           ))}

@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { Navigation } from "@/components/navigation"
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
@@ -159,11 +160,11 @@ export default function ResearchPapersPage() {
                   className="h-11 w-full rounded-full border-white/[0.14] bg-black px-6 text-sm font-medium text-white hover:border-white/30 hover:bg-white/[0.06] hover:text-white sm:w-auto"
                   asChild
                 >
-                  <a href="/research">
+                  <Link href="/research">
                     <BookOpen className="mr-2 h-4 w-4" />
                     View research
                     <ArrowUpRight className="ml-2 h-4 w-4 text-white/50" />
-                  </a>
+                  </Link>
                 </Button>
               </div>
             </motion.div>

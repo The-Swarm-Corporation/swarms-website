@@ -1,3 +1,4 @@
+import { AppLink } from "@/components/app-link"
 import type { Metadata } from "next"
 import Link from "next/link"
 import { Navigation } from "@/components/navigation"
@@ -228,11 +229,9 @@ export default function ZhHomePage() {
 
             <div className="mx-auto grid max-w-7xl grid-cols-1 gap-px overflow-hidden rounded-lg border border-white/[0.08] bg-white/[0.08] sm:grid-cols-3">
               {products.map((product) => (
-                <a
+                <AppLink
                   key={product.title}
                   href={product.href}
-                  target={product.external ? "_blank" : undefined}
-                  rel={product.external ? "noopener noreferrer" : undefined}
                   className="group flex min-h-[260px] flex-col justify-between gap-8 bg-black p-6 transition-colors duration-300 hover:bg-[#0a0a0a] sm:p-8"
                 >
                   <product.icon
@@ -251,7 +250,7 @@ export default function ZhHomePage() {
                       <ArrowUpRight className="h-4 w-4" />
                     </span>
                   </div>
-                </a>
+                </AppLink>
               ))}
             </div>
           </div>

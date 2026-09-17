@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { AppLink } from "@/components/app-link"
 import Link from "next/link"
 import {
   Menu,
@@ -119,10 +120,10 @@ export function Navigation() {
     const borderHoverClass = iconColor === "red" ? "group-hover:border-white/25" : "group-hover:border-neutral-600/50"
     
     return (
-      <a
+      <AppLink
         href={href}
-        target="_blank"
-        rel="noopener noreferrer"
+        // Internal items now navigate in place, so close the hover menu behind them.
+        onClick={() => setHoveredDropdown(null)}
         className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
       >
         <div className={`mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 ${borderHoverClass} transition-all duration-200`}>
@@ -132,7 +133,7 @@ export function Navigation() {
           <span className="text-sm font-semibold text-white block">{children}</span>
         </div>
         {isNew && <span className="ml-2 text-xs px-2 py-0.5 bg-white/10 text-white rounded-full border border-white/20">New</span>}
-      </a>
+      </AppLink>
     )
   }
 
@@ -478,7 +479,7 @@ export function Navigation() {
                               <FuturisticMenuItem icon={Award} href="/programs" iconColor="red">
                                 Research Program
                               </FuturisticMenuItem>
-                              <FuturisticMenuItem icon={Rocket} href="https://www.swarms.ai/programs/startups" iconColor="red">
+                              <FuturisticMenuItem icon={Rocket} href="/programs/startups" iconColor="red">
                                 Startup Program
                               </FuturisticMenuItem>
                               <FuturisticMenuItem icon={DollarSign} href="https://grants.swarms.world" isNew={true} iconColor="red">
@@ -1102,7 +1103,7 @@ export function Navigation() {
                         </div>
                       </Link>
                       <a
-                        href="https://www.swarms.ai/programs/startups"
+                        href="/programs/startups"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"

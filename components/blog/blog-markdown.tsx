@@ -1,8 +1,10 @@
 import { isValidElement } from "react"
+import Image from "next/image"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import rehypeRaw from "rehype-raw"
 import { MermaidDiagram } from "@/components/blog/mermaid-diagram"
+import { AppLink } from "@/components/app-link"
 import { CodeBlock } from "@/components/code-block"
 
 // Shared article renderer for the English and Chinese blog post pages so the
@@ -21,14 +23,26 @@ export function BlogMarkdown({ content }: { content: string }) {
             {children}
           </video>
         ),
-        img: ({ node, ...props }) => (
+        img: ({ node, src, alt, ...props }) => {
+          const className = "mb-8 w-full rounded-2xl border border-white/10"
+          // Post images live in /public, so they can go through the optimizer.
+          // Remote hosts have to be allowlisted in next.config.mjs, and a post
+          // can link anywhere, so those stay plain <img>.
+          if (typeof src === "string" && src.startsWith("/")) {
+            return (
+              <Image
+                src={src}
+                alt={alt ?? ""}
+                width={1920}
+                height={1080}
+                sizes="(max-width: 768px) 100vw, 768px"
+                className={`${className} h-auto`}
+              />
+            )
+          }
           // eslint-disable-next-line @next/next/no-img-element
-          <img
-            {...props}
-            alt={props.alt ?? ""}
-            className="mb-8 w-full rounded-2xl border border-white/10"
-          />
-        ),
+          return <img {...props} src={src} alt={alt ?? ""} className={className} />
+        },
         h1: ({ children }) => (
           <h1 className="mb-6 mt-12 text-3xl font-semibold tracking-tighter text-white first:mt-0 sm:text-4xl">
             {children}
@@ -115,14 +129,12 @@ export function BlogMarkdown({ content }: { content: string }) {
           </td>
         ),
         a: ({ href, children }) => (
-          <a
-            href={href}
+          <AppLink
+            href={href ?? "#"}
             className="text-white underline decoration-white/30 underline-offset-4 transition-colors duration-300 hover:decoration-white"
-            target="_blank"
-            rel="noopener noreferrer"
           >
             {children}
-          </a>
+          </AppLink>
         ),
         strong: ({ children }) => <strong className="font-semibold text-white">{children}</strong>,
         em: ({ children }) => <em className="italic text-white/70">{children}</em>,

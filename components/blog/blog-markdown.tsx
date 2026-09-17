@@ -3,6 +3,7 @@ import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import rehypeRaw from "rehype-raw"
 import { MermaidDiagram } from "@/components/blog/mermaid-diagram"
+import { CodeBlock } from "@/components/code-block"
 
 // Shared article renderer for the English and Chinese blog post pages so the
 // markdown styling stays identical across locales.
@@ -82,9 +83,12 @@ export function BlogMarkdown({ content }: { content: string }) {
             )
           }
           return (
-            <code className="block overflow-x-auto rounded-lg border border-white/10 bg-white/[0.03] p-6 font-mono text-sm text-white/75">
-              {children}
-            </code>
+            <CodeBlock
+              chrome
+              code={String(children)}
+              lang={className}
+              className="p-6 font-mono text-sm leading-relaxed"
+            />
           )
         },
         pre: ({ children }) => {
@@ -92,11 +96,8 @@ export function BlogMarkdown({ content }: { content: string }) {
           if (isValidElement(child) && child.type === MermaidDiagram) {
             return child
           }
-          return (
-            <pre className="mb-8 overflow-x-auto rounded-lg border border-white/10 bg-white/[0.03] p-0 text-sm">
-              {children}
-            </pre>
-          )
+          // CodeBlock renders its own rounded card, header and copy button.
+          return <div className="mb-8">{children}</div>
         },
         table: ({ children }) => (
           <div className="mb-8 overflow-x-auto rounded-lg border border-white/10">

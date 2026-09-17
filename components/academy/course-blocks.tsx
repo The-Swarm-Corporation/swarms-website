@@ -1,6 +1,8 @@
 import type { ReactNode } from "react"
 import type { CourseBlock } from "@/lib/academy/swarms-api-course"
 import { ApiTrial } from "@/components/academy/api-trial"
+import { CopyButton } from "@/components/copy-button"
+import { CodeBlock } from "@/components/code-block"
 
 // Renders **bold** and `code` spans inside course prose strings.
 export function InlineText({ text }: { text: string }) {
@@ -43,12 +45,11 @@ function CodePanel({ title, code }: { title?: string; code: string }) {
           <span className="h-2.5 w-2.5 rounded-full bg-white/[0.12]" />
           <span className="h-2.5 w-2.5 rounded-full bg-white/[0.12]" />
           <span className="ml-3 font-mono text-[11px] font-normal text-white/40">{title}</span>
+          <CopyButton value={code} className="ml-auto" />
         </div>
       )}
-      <div className="overflow-x-auto p-4 sm:p-5">
-        <pre className="font-mono text-[11px] font-normal leading-relaxed text-white/70 sm:text-[12.5px]">
-          <code>{code}</code>
-        </pre>
+      <div className="p-4 sm:p-5">
+        <CodeBlock code={code} file={title} className="font-mono text-[11px] font-normal leading-relaxed sm:text-[12.5px]" />
       </div>
     </div>
   )

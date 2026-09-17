@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useState } from "react"
 import { Check, Copy, Loader2, Play } from "lucide-react"
 import { POINTS, recordTrial, useAcademyProgress } from "@/lib/academy/progress"
+import { CodeBlock } from "@/components/code-block"
+import { CopyButton } from "@/components/copy-button"
 
 const KEY_STORAGE = "swarms-academy-api-key"
 const KEY_EVENT = "swarms-academy-api-key-change"
@@ -194,10 +196,16 @@ export function ApiTrial({
                   +{POINTS.trial} pts
                 </span>
               )}
+              <CopyButton
+                value={result.body}
+                className={earnedNow ? "ml-3" : "ml-auto"}
+              />
             </div>
-            <pre className="max-h-80 overflow-auto bg-black p-3 font-mono text-[11.5px] leading-relaxed text-white/70">
-              <code>{result.body}</code>
-            </pre>
+            <CodeBlock
+              code={result.body}
+              lang="json"
+              className="max-h-80 overflow-auto rounded-b-lg bg-black p-3 font-mono text-[11.5px] leading-relaxed"
+            />
           </div>
         )}
       </div>

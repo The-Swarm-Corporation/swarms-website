@@ -17,6 +17,7 @@ import {
 import { Navigation } from "@/components/navigation"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { CodeBlock as ShikiCode } from "@/components/code-block"
 
 const ease: [number, number, number, number] = [0.22, 1, 0.36, 1]
 
@@ -248,10 +249,12 @@ export function InstallationClientPage() {
             )}
           </button>
         </div>
-        <div className="overflow-x-auto p-4 sm:p-5">
-          <pre className="font-mono text-[11px] font-normal leading-relaxed text-white/70 sm:text-[12.5px]">
-            <code className="break-all">{command}</code>
-          </pre>
+        <div className="p-4 sm:p-5">
+          <ShikiCode
+            code={command}
+            lang="bash"
+            className="whitespace-pre-wrap break-all font-mono text-[11px] font-normal leading-relaxed sm:text-[12.5px]"
+          />
         </div>
       </div>
       {description && (

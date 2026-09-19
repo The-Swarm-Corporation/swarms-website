@@ -1,0 +1,313 @@
+---
+title: "Swarms Cloud Changelog: August 3 to September 19"
+description: "Seven weeks of platform work, day by day: the Auto Agent Builder, multi-agent Chat, Batch runs, the Grid runner, an encrypted Skills library, the MCP page, an Examples gallery, a page per agent and a page per completion, S2A deployments, syntax highlighting everywhere, a dashboard rebuilt for speed, and a long run of billing, security and correctness fixes."
+date: "2026-09-19"
+author: "Swarms Team"
+categories: ["Product"]
+readTime: "17 min read"
+featured: true
+image: "/swarms_cloud_changelog_sep19.png"
+---
+
+# Swarms Cloud Changelog: August 3 to September 19
+
+This picks up where the [last changelog](/blog/swarms-cloud-changelog-july-august) left off, and it covers a longer and busier window: seven weeks, 238 commits, and more new surfaces than the previous two changelogs combined.
+
+The shape of the work is different again. The July window was mostly about making existing pages correct. This one is mostly about reach. Eight new pages shipped, several of them things the API could do that the console had no way to drive: batch runs, batched grid workflows, an agent builder, an encrypted prompt library, a hosted MCP server page, and the first surfaces for S2A. Alongside that runs a quieter thread that matters more than any single feature: a dashboard rebuilt to paint instantly, a billing system that stopped being able to double charge you, and a long series of fixes to places where the platform was confidently telling you a wrong number.
+
+Two notes carried over from previous changelogs. This lists what is live today, so work that shipped and was rolled back inside the window is left out unless it came back in a form that held. And where something has its own deep dive, the entry here is short and links out.
+
+## Highlights
+
+The five that matter most from this window. The full day by day log follows.
+
+- **[Completion logs](https://cloud.swarms.world/history).** Every API request your account has made, searchable and filterable, with token usage and cost per run. Every completion now has its own page carrying the full request payload and response, so a single run can be linked, bookmarked or downloaded as JSON. [Read the deep dive](/blog/completion-logs-swarms-cloud).
+- **[A page per agent](https://cloud.swarms.world/agents).** Activity and cost, the full system prompt, all 34 configuration fields with the API's own defaults filled in where you set nothing, and a per-run view of how much of the model's context window each call actually filled. [Read the deep dive](/blog/agent-detail-pages-swarms-cloud).
+- **[S2A](https://cloud.swarms.world/s2a), in beta.** Scale-to-zero agent hosting. Point it at a GitHub repository, get a cost quote across clouds before you commit, and deploy to the cheapest one behind an autoscaling HTTPS endpoint, with deployments, templates and logs in the dashboard.
+- **[Batch](https://cloud.swarms.world/batch) and [Grid](https://cloud.swarms.world/grid).** Run one agent over up to 500 tasks, or every task against every agent as a matrix. Both fill in as the run proceeds, with per-task progress, retry for the failures only, and CSV export.
+- **[Auto Agent Builder](https://cloud.swarms.world/auto-agent-builder).** Describe a task and a builder agent designs the roster for it: complete agent configurations with names, prompts and models, ready to post to the swarm endpoints unmodified.
+
+![Completion logs on Swarms Cloud: every API request the account has made, with search, date filters, and tokens and cost per run](/api_logs.png)
+
+## Week of August 3
+
+**August 3**
+
+- **Swarm architecture detail pages went live**, fetched from `/v1/swarms/available` rather than from a checked-in list, so the 16 architectures on [cloud.swarms.world/swarms](https://cloud.swarms.world/swarms) describe what the API actually offers. This was the second attempt; the first was reverted in July.
+- The footer connection check now runs a real network check on page load instead of reporting a status it had not verified.
+
+**August 5**
+
+- The "You are signing into Swarms" pill on login and signup was a disabled button with a dropdown chevron that did nothing when clicked, at the top of the registration flow. It is now plain text that reads as context rather than a broken control.
+- The quickstart on every architecture page sent you to the legacy platform for an API key. It now points at [cloud.swarms.world/api-keys](https://cloud.swarms.world/api-keys), which is one click away instead of a different product.
+
+**August 7**
+
+A large day, with three separate pieces landing.
+
+- **The [Auto Agent Builder](https://cloud.swarms.world/auto-agent-builder) shipped.** Describe a task and a builder agent designs a ready-to-run roster of agent configurations for it. Each generated agent shows its description, system prompt and every parameter the builder set, with copy per agent, copy the whole array, copy the full JSON, or download the roster as CSV. You can cap the roster size or demand an exact count, choose the builder model, and pass custom builder instructions.
+- **[Chat](https://cloud.swarms.world/chat) shipped.** Build a roster and talk to it. One agent chats directly with full memory of the conversation, since each turn posts the accumulated transcript through the completions history field. Add more agents and every turn runs the roster as a concurrent swarm, with each agent's reply as its own attributed bubble carrying its name, model and per-turn cost. Conversations persist across reloads.
+- **Token Usage opens on today** rather than the current month, and the period label now opens an interactive calendar: two-click range selection with hover preview, presets for today, last 7 days, last 30 days and this month, and future days disabled. Custom ranges became a first-class view mode alongside month, week and day.
+- **Social links stopped unfurling as a login card.** Crawlers were being redirected to `/login` by the auth middleware, so every shared link showed "Log in" no matter what page it pointed at. Known crawlers now pass through to public metadata, and every page gained a dynamically generated social card.
+
+![The Auto Agent Builder: describe a task and a builder agent designs the roster of agent configurations for it](/auto_agent_builder_banner.png)
+
+**August 9**
+
+- **The Observability page was deleted and redirected to [History](https://cloud.swarms.world/history).** It derived its metrics client-side from the last 24 hours of the shared logs hook rather than from real telemetry, so it looked like monitoring without being it, which is worse than not having the page at all. Everything honest about it was already covered elsewhere. The old URL was indexed and bookmarked, so it redirects permanently rather than 404ing.
+- **One-click category filters on the swarm catalog.** Every architecture already carried a category, but narrowing to "the routing ones" meant scrolling 16 cards and reading each badge. A chip row now filters them, composes with search, and round-trips through the URL so a filtered view is shareable.
+
+## Week of August 10
+
+**August 10**
+
+- The pricing calculator accepted negative numbers, which let it quote a negative price. Inputs are clamped.
+- The agent forms could send a zero or negative `max_loops` or `max_tokens` to the API, which bills the per-agent fee and then runs nothing. Both are now floored.
+- **The model list was refreshed off the GPT-4o era.** The 20 ids that drive the static pages, sitemap and recommendation ranking were replaced with a current, provider-diverse set spanning Anthropic, OpenAI, Google, xAI, DeepSeek, Meta and Moonshot, with every id verified against the live catalog of 1,605 models at the time. Runnable sample code deliberately uses only models verified working end to end.
+- The execution and saved-workflow recency sorts were made NaN-safe.
+
+**August 12**
+
+Billing, and in particular the accounts that sign in with a wallet.
+
+- **Plan selection joined onboarding.** After creating a first API key, you get a Free, Pro and Premium picker rather than discovering the plans later.
+- Wallet accounts could not reconcile their tier after checkout, because the sync path required a confirmed email to match a Stripe customer. It now matches on the account id stamped on every subscription, with email as a fallback.
+- Wallet accounts start with no name or email, and had no way to add one. Settings now has an edit form for both.
+- Checkout failures were arriving as a generic 500. Stripe permission errors, expired keys and missing prices now map to explicit responses naming the fix.
+- Wallet sign-ins carry an empty-string email, which Stripe rejects, so **every wallet upgrade was failing**. The field is now omitted when there is no real address.
+
+**August 13**
+
+Two data-safety fixes.
+
+- **Saved workflows and saved agent configs were not wiped on sign-out.** Both persist to the browser, and both carry system prompts, task text and stored run output. On a shared browser, the next account to sign in could open the Workflow Builder and read the previous user's work. Every persisted store is now either wiped on sign-out or a documented preference-only exception.
+- **Checkout could leave you paying twice.** Nothing checked whether you already had a subscription, and the "switch plan" button in Settings called the same endpoint, so a plan switch opened a second concurrent subscription. Every read path took only the newest, so Settings showed one plan and the cancel button reached one subscription: cancel it and the older one kept charging while your tier dropped to free. The second checkout is now refused.
+
+**August 14**
+
+- **A security fix in CSV exports.** Spreadsheets execute any cell beginning with certain characters as a formula, and export columns carry caller-controlled text like task and agent name, so an exported file could run something on whoever opened it. Every export now routes through one hardened writer. The numeric exemption was also tightened: the old check let `+1e5` through, which Excel evaluated and rewrote to 100000, while neutralising `-1,234.56` and breaking sums over that column.
+- **A user's model catalog could be served to another user.** `/api/models` is auth-gated and fetched with the signed-in user's own key, but its cache header said `public`, which authorises shared caches and CDNs to store the response and replay it to anyone for ten hours, without the request ever reaching the handler that would have rejected it. Marked private. Every other route under `/api` was audited; this was the only one.
+- **Revoking an API key erased its historical spend.** Token Usage filtered its log query by live keys, so rotating a credential, which the API keys page encourages, made every completion the old key ever paid for disappear from the chart, the table, the export and the cost total. No error, no warning, just a smaller number you could not reconcile against your invoice.
+
+**August 15**
+
+- The Compare page exposes the reasoning and sampling parameters, and its number inputs are clamped.
+
+**August 16**
+
+- **Plan switching works properly now.** The August 13 fix stopped the double billing by refusing a second checkout and telling you to cancel first. This replaces the refusal with a real switch: upgrades apply immediately with proration, so unused time is credited and only the difference is charged, and a failed charge aborts cleanly. Downgrades keep the plan you paid for until the period ends. Picking a plan also clears a pending cancellation, and re-picking your current plan while a downgrade is pending cancels the downgrade.
+- A dependency and dead code sweep removed six unreferenced files and two packages that could not run.
+- The chat transcript is now cleared on sign-out, alongside the stores fixed on the 13th.
+
+## Week of August 17
+
+**August 17**
+
+The single densest day in the window.
+
+- **The dashboard got roughly eight times faster to authenticate.** Every request to every API route ran two database round trips before it could even reach a cache, and five routes ran a third just to build their cache key, which pollers re-paid forever. That is now about 2 round trips per load instead of 17.
+- **And it paints instantly on refresh.** A reload wiped the in-memory caches, so all five dashboard requests re-fired and the page flashed skeletons even though the server would answer with identical bytes. Payloads now persist per user in the browser, stamped with the account that wrote them and discarded on any mismatch, so a refresh paints from the last known state and revalidates quietly behind it.
+- **[Batch runs](https://cloud.swarms.world/batch) shipped.** Run one agent configuration over up to 500 tasks, pasted, uploaded as CSV, or given as JSON. Per-task progress with an ETA, retry only the failures, filter results, and survive a refresh mid-run.
+- **Your tier stopped disagreeing with itself.** The tier that gates API features lives upstream; the platform's own table only tracks Stripe plans, and the two can differ. Settings and the paid-feature gates now read the upstream tier, which is the one that decides whether your call succeeds.
+- **Subscription status is now visible.** A chip next to every tier display shows renewal date, end date, or a payment issue. Past-due subscriptions had been invisible, because the tier silently resets to free and the active banner hides.
+- **Premium endpoints now explain themselves.** Pages backed by subscriber-only endpoints open a plan picker titled for that specific feature, instead of letting you build something and discover the restriction in a 403.
+- Every upgrade call to action still pointed at the legacy platform's account page, written before this platform had its own billing. They now point at the checkout one click away.
+- The sitemap is now generated from the apps catalog rather than a hand-maintained list that had already drifted, and **[llms.txt](https://cloud.swarms.world/llms.txt) is generated and served**, with live pricing, every public page, and every swarm architecture.
+- Settings shows your real name and photo from your OAuth identity, instead of initials and an email address.
+
+**August 18**
+
+- **[Skills](https://cloud.swarms.world/skills) shipped: a private, encrypted prompt and skill library.** Upload many files at once, in Anthropic's SKILL.md format, plain markdown, or JSON. Search across name, description, tags and content. Every skill gets its own page with inline editing. Everything is encrypted at rest under a key derived per user, so the wrong user's key fails authentication and ownership is enforced by the cryptography as well as by the query.
+- Batch chunking was corrected to the limit the API enforces rather than the one its spec advertised.
+
+![A skill in the encrypted Skills library, with its stats strip, rendered preview and private and encrypted badge](/swarms_cloud_skills_library.png)
+
+**August 19**
+
+- Skills gained a stats strip with character, word and token counts, a safe rendered markdown preview, and a duplicate action.
+- **The dashboard gained a Get started section**, and the snippet builder gained Rust.
+- **[Support](https://cloud.swarms.world/support) shipped**, with the contact channels in one place.
+- **An exhausted browser storage quota no longer breaks Chat.** The page wrote the whole conversation on every message, unguarded, so once the origin's storage filled it failed on every subsequent message and stayed broken across reloads until you cleared site data by hand. It now degrades in steps, keeps the roster you assembled by hand in preference to the transcript, and tells you once when it has had to do so.
+
+**August 20**
+
+- The logs call moved off a deprecated alias to `/v1/account/logs`. One call feeds both History and the dashboard activity cards, so the alias disappearing would have taken out both at once.
+- **The Workflow Builder catches loops before the run instead of after.** A cycle passed validation, the Run button stayed enabled, and the request went out. Agents inside a cycle never appear in a topological layer, so they simply never ran: a completed request quietly missing whatever the loop contained.
+
+**August 21**
+
+- Batch chunking went to 50 now that the endpoint accepts 50. A 500-task run is 10 round trips instead of 50.
+- API key creation is capped at 100 active keys per account. There was no bound at all, so a loop against a session could mint working credentials indefinitely, each needing individual revocation.
+
+**August 22**
+
+- **The History CSV export was undercounting.** It read one of the three keys the charge can arrive under, so the cost column came out blank for graph workflows, grid workflows, auto agent builder and swarm runs. The one artifact you take away to reconcile spend was the one getting it wrong.
+- `/models/<anything>` returned a full, official-looking model listing for any string, complete with structured data and copy-paste payloads carrying that string as a model id. Ids that name no model now 404.
+- The token rates were typed by hand in six places, five of them prose. They agreed, and nothing kept them agreeing. One definition now, with everything else derived.
+
+**August 23**
+
+- CI was fixed so all three API suites actually run, and so a fork skip is visible instead of hiding inside a green tick.
+- A skill tag containing a comma was silently stored as two tags, which meant an import could add tags you never wrote and lose one you did.
+
+## Week of August 24
+
+**August 24**
+
+- **The [MCP page](https://cloud.swarms.world/mcp) shipped**, for the hosted Model Context Protocol server: the endpoint, its live status, connection snippets, and the tutorials. Status is a real MCP handshake sent server-side, not a ping, because a bare request only proves the host is listening. Uptime is reported honestly as observations across N checks rather than dressed up as an SLA.
+- **The tool roster is read from the server**, not hardcoded, so a tool added to the API appears here with no change to the page. It renders as a gallery or a table.
+
+![The MCP page: the hosted Model Context Protocol endpoint, its live status, connection snippets and tool roster](/mcp_page.png)
+
+**August 25**
+
+- **Pricing reads the published rate card from the API.** The console had been quoting prices from a checked-in copy while the API served the real one, so a rate change upstream stayed invisible here until someone edited this repo and redeployed. A malformed payload is refused rather than rendered, because a $0.00 rate on the page a customer reads a price off is worse than a stale one.
+- **A twelve-answer FAQ joined Support**, above the contact channels so self-serve comes first. Plan names, prices and the signup grant are interpolated from their sources rather than retyped, so the FAQ cannot go stale.
+
+**August 26**
+
+- Search over the MCP tool catalog. The names are machine generated, run up to 64 characters, and bury the meaningful part in the middle, so a reference list with no filter meant reading all 23 to answer one question.
+
+**August 27**
+
+Another very large day.
+
+- **[Examples](https://cloud.swarms.world/examples) shipped:** a browsable gallery of ready-to-run API calls across agents, swarms, batch and account, each expanding to a copyable snippet in every language we support. Before this, the only way to learn what a sequential pipeline looks like was to read the OpenAPI spec.
+- **[Grid](https://cloud.swarms.world/grid) shipped:** a runner for batched grid workflows. A task list, an agent list, and a matrix of results with tasks as rows and agents as columns. Until now the only way to run M tasks across N agents was to call the API directly.
+- **Syntax highlighting everywhere.** Every code block on the platform had been rendering as one flat color, and the markdown renderer threw away the language from model output and painted every block green, whether it was Python, JSON or a shell command. Every code surface now highlights with the same engine and grammars VS Code uses, on a VS Code surface, so a snippet here looks the way it would in an editor. Two follow-up commits kept it out of every page's first load, so pages that never show code do not pay for it.
+- **The generated Python and TypeScript snippets got real types.** Both were shown untyped, which is the shape of code nobody would write by hand. This also fixed a real defect: the Python snippet was rendering booleans as `true` and `false`, so any payload carrying one produced a snippet that raises an error when pasted.
+
+![The Examples gallery: ready-to-run API calls across agents, swarms, batch and account, each expanding to a copyable snippet](/api_example_suite.png)
+
+**August 28**
+
+- **One agent spec, one editor.** Three pages each carried their own hand-written copy of the API's agent object, at 18, 12 and 19 fields against the 34 the API accepts. Two of them defined fields the API does not have. So the same agent could be configured differently depending on which page you opened, and most of what the API accepts was unreachable anywhere: the Grid editor exposed three fields out of thirty-four. There is now one definition, checked against the published spec by a test, and one editor over all of it.
+- Grid and Examples were registered in the apps catalog, which they had shipped without, so both were missing from the apps directory, nav search, the sitemap and llms.txt. The navbar's separate copy of the same list was the reason it could happen, and is now derived.
+- **Skills imports folders**, which is how skills are actually distributed: a directory per skill with a SKILL.md inside. Dropping one used to import nothing. A batch with one bad entry no longer fails the whole import.
+- The Grid matrix renders before the run, not only after it, so the page shows the shape it is about to produce instead of 400px of nothing.
+
+**August 29**
+
+- **[A page per agent](https://cloud.swarms.world/agents) shipped**, with activity, the full system prompt, all 34 configuration fields carrying the API's own defaults where you set nothing, and a per-run view of how much of the model's context window each run actually filled. It has its own [deep dive](/blog/agent-detail-pages-swarms-cloud).
+- **Examples open in the playground with their payload intact.** The link used to pass only the swarm type, so you arrived at a default empty form with everything the example existed to demonstrate dropped on the way.
+- **Pricing became a comparison table.** Nothing on the old page said what a subscription actually buys, so the only way to learn that graph workflows, batch runs, reasoning agents and the grid are subscriber-only was to call one and read the 403. The lead line now says the thing the old page buried: every plan pays the same per token on every model, so a subscription buys access and throughput, not cheaper tokens. The calculator moved to its own page.
+
+![An agent's page on Swarms Cloud: activity, the full system prompt and all 34 configuration fields](/agent_config_page_swarms_cloud.png)
+
+![Per-run context window usage for an agent, showing how much of the model's context each run actually filled](/context_window_usage_swarms_cloud.png)
+
+## Week of August 31
+
+A stretch of correctness work, most of it in places that were quietly reporting the wrong thing.
+
+**September 1**
+
+- The workflow-level loop count on two pages was parsed with expressions that let a negative value through on one and a fractional one on the other, and both values go straight into a request. Both now use the same guard the other twelve call sites already used.
+- **"60 minutes ago" and "24 hours ago" can no longer appear.** Every relative time branch was entered on a threshold and then rounded to nearest, so the last third of every unit was reported as the whole of the next one, and 36 hours read as "2 days ago" when one day had passed.
+- Changing the model on an agent page kept showing the previous model's context window, presented as a settled value rather than a loading state.
+- **A skipped task in a batch misattributed every result after it.** The route filtered unusable tasks out and ran what was left, while the page mapped answers back by position, so row 1 held row 2's answer and the last row reported no result for work that had run and been billed. The batch is now refused with the offending index named.
+
+**September 3**
+
+- **The Grid results matrix survives 50 agents.** The header row scrolled away, so a wide grid became a wall of answers with no names above them, the task column scrolled away sideways, and clicking a cell opened a panel below a 24-task table, well past the fold. The matrix now scrolls in its own region with the header and task column pinned, and cell detail opens as a side sheet.
+- The reasoning effort selector displayed "low" for an unset value, so turning reasoning on and leaving the effort alone submitted a request with no effort set while the page showed one.
+
+**September 4**
+
+- Social cards render in the site's own dark palette rather than an unrelated light one.
+- The Grid loops field shows its ceiling like every other limit on the page, and says what a loop costs: each one is a billed completion.
+
+**September 5**
+
+- **A generated prompt can be saved straight into your Skills library.** The prompt generator offered Copy and nothing else, so output went to local notes.
+
+**September 6**
+
+- Chat's roster rail moved onto the shared agent editor. Chat had defined its own three-field agent type, so the swarms it posted could never carry a temperature, a fallback model, an MCP server or tools.
+
+## Week of September 7
+
+**September 7**
+
+- **The navbar got bigger**, and the search box, Docs and Status buttons were resized to match it.
+- **The sticky navbar actually sticks.** Blocking horizontal scroll with `overflow-x: hidden` turned the body into its own scroll container, so the header computed its offset against a box that never scrolls and simply scrolled away with the page.
+- Sign-out now clears the in-memory per-user caches, not just browser storage. Both sign-in and sign-out end in a soft navigation, so module state outlived the session that filled it.
+
+**September 8**
+
+- **The Grid fills in as the run proceeds.** A run was one blocking request for the whole matrix, so a 50 by 50 grid, which is 2,500 completions, showed one spinner on one button for the entire wait. Rows now land as they finish, each cell carries its own state, and usage accumulates as it goes. Same completions, same cost.
+
+**September 9**
+
+- **Five first-party starter skills** you can add to your library in one click: a swarm architecture chooser, a prompt tightener, a cost-aware model picker, an eval rubric writer, and an agent failure triage pack.
+- **Token Usage projects end-of-month spend** from what the period has cost so far, and refuses to answer rather than answer badly: below ten per cent elapsed, one early run implies an absurd month. The tile shows the elapsed fraction it extrapolated from.
+
+**September 10**
+
+- Local development honours `SWARMS_API_KEY` when Supabase is not configured, which the README had been promising and the code did not do.
+
+**September 11**
+
+- **[S2A](https://cloud.swarms.world/s2a) was announced**, the scale-to-zero agent hosting service, with a landing page covering how it works, use cases, a three-step quick start, pricing and an FAQ.
+- Signups from Outlook, Hotmail, Live and MSN addresses are blocked, on both the password and magic-link paths, and skipped for the free credit grant.
+- The Skills toolbar was reorganised: starter skills moved below the search bar and collapse by default, and the two upload buttons became one with a menu, since a native file picker cannot offer both loose files and a directory.
+
+**September 12**
+
+- **An animated systems diagram of how S2A works**: your repository and your users on the left, the platform in the middle, the clouds on the right, with a deployment loop and a live traffic loop running on the wires. Plain SVG, no new dependency, static when reduced motion is requested.
+
+## Week of September 14
+
+**September 14**
+
+- **S2A deployments shipped.** A deployments list with search, status filters and gallery, table or globe views; a new-deployment flow that reads a GitHub repository and pre-fills the form, with a live cost quote; a detail page with metrics, logs, settings and a timeline; and a template catalog. The globe draws continents and borders on a canvas with a marker per region.
+- Every control in the navbar utility bar was given one height, radius and font size. Docs, Status, Credits, the theme toggle and the account button each had their own.
+- The Models and Swarm types toolbars put search on the left and the count on the right, which is the order you read them in.
+
+**September 16**
+
+- **[Every completion has its own page](https://cloud.swarms.world/history).** Clicking a row in History opens a permalink for that run instead of expanding it in place, so a completion can be linked in a bug report, bookmarked, or sent to a teammate. The page shows when it ran, its tokens and cost, the agent it ran as linked to its own page, the job id, and the full request payload and response. There is a [deep dive on it](/blog/completion-logs-swarms-cloud).
+- **One frame for every code block.** The border, radius, padding and font were repeated across 13 call sites with slightly different values at each. They now come from one rule, and every block wraps long lines instead of running them off to the right behind a hairline scrollbar.
+
+**September 17**
+
+- **The nav tab strip keeps its scroll position across navigation.** Scroll right, click a tab, and the strip used to snap back to the far left with the tab you just clicked off screen. A deep link to a tab past the right edge now scrolls it into view.
+
+**September 18**
+
+- The Token Usage filter row and stat tiles were aligned: one control height, one padding scale, selects that no longer render at four different widths depending on whose data is loaded, and a tile grid that no longer strands the fifth tile alone on a row.
+- The SDKs search bar moved under the description, and the Browse examples button came out of the dashboard hero.
+
+## What This Window Adds Up To
+
+Eight new pages: Auto Agent Builder, Chat, Batch, Skills, MCP, Examples, Grid, Support, plus S2A and its deployment surfaces, plus a page per agent and a page per completion.
+
+Underneath that, a theme worth naming. A large share of the fixes above are the same category of bug: the platform showing a number, or a state, that was not true. A tier that disagreed with the tier actually gating your calls. A cost column blank for four endpoint families. Historical spend that vanished when you rotated a key. A context window belonging to the previous model. A batch row holding the next row's answer. A reasoning effort displayed but never sent. None of these threw an error, which is exactly what made them worth chasing: a wrong number presented confidently is harder to catch than a failure.
+
+The other theme is consolidation. One agent spec instead of three. One cost mapping instead of a copy per consumer. One rate card, read from the API. One editor, one code block frame, one navigation list. Most of those started as a bug in one of the copies.
+
+## Links and Resources
+
+| Resource | Link |
+| --- | --- |
+| Swarms Cloud | [cloud.swarms.world](https://cloud.swarms.world) |
+| Execution History | [cloud.swarms.world/history](https://cloud.swarms.world/history) |
+| Agents | [cloud.swarms.world/agents](https://cloud.swarms.world/agents) |
+| Auto Agent Builder | [cloud.swarms.world/auto-agent-builder](https://cloud.swarms.world/auto-agent-builder) |
+| Chat | [cloud.swarms.world/chat](https://cloud.swarms.world/chat) |
+| Batch Runs | [cloud.swarms.world/batch](https://cloud.swarms.world/batch) |
+| Grid | [cloud.swarms.world/grid](https://cloud.swarms.world/grid) |
+| Skills | [cloud.swarms.world/skills](https://cloud.swarms.world/skills) |
+| Examples | [cloud.swarms.world/examples](https://cloud.swarms.world/examples) |
+| MCP Server | [cloud.swarms.world/mcp](https://cloud.swarms.world/mcp) |
+| S2A | [cloud.swarms.world/s2a](https://cloud.swarms.world/s2a) |
+| Pricing | [cloud.swarms.world/pricing](https://cloud.swarms.world/pricing) |
+| Support and FAQ | [cloud.swarms.world/support](https://cloud.swarms.world/support) |
+| Previous Changelog | [July 14 to August 3](/blog/swarms-cloud-changelog-july-august) |
+| Service Status | [status.swarms.ai](https://status.swarms.ai) |
+| Documentation | [docs.swarms.ai](https://docs.swarms.ai) |
+| Discord Community | [discord.gg/VapjxpSyHC](https://discord.gg/VapjxpSyHC) |
+
+---
+
+*Have questions or feedback? Join our [Discord community](https://discord.gg/VapjxpSyHC) or check out the [documentation](https://docs.swarms.ai).*

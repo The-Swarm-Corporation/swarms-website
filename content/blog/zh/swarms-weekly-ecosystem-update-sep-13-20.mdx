@@ -1,0 +1,112 @@
+---
+title: "Swarms 生态周报[9 月 13 日 - 9 月 20 日]：调用日志上线、Cloud 更新日志发布、Prompt Royale 收官"
+description: "本周 Swarms 生态：调用日志在 Swarms Cloud 上线，每一次 API 请求都有了自己的页面；8 月 3 日至 9 月 19 日的更新日志梳理了七周平台工作，涵盖自动智能体构建器、Chat、Batch、Grid、Skills 与 MCP；Prompt Royale 完整运行七天，奖池为 5,000 美元等值 SOL；Marketplace MCP 服务器发布深度解析；一个 Swarms 账户现已可登录全部产品。"
+date: "2026-09-20"
+author: "Kye Gomez"
+categories: ["公司"]
+readTime: "7 分钟阅读"
+featured: false
+image: "/swarms_banner_intro_new.png"
+---
+
+# Swarms 生态周报[9 月 13 日 - 9 月 20 日]：调用日志上线、Cloud 更新日志发布、Prompt Royale 收官
+
+本周的主题是"可见性"，而且是两种意义上的可见。在 Swarms Cloud 上，你的账户发出的每一次 API 请求现在都汇总在同一个地方，并且每一次调用都有自己的页面，承载完整的请求负载与响应。在 Marketplace 上，Prompt Royale 用七天时间把代币化的提示词推到交易者面前，5,000 美元等值的 SOL 将分给交易量最高的三个提示词。
+
+两条线索都为更长一段工作画上了句号。9 月 19 日发布的 Cloud 更新日志覆盖 8 月 3 日至 9 月 19 日：七周、238 次提交、八个新页面，其中大部分此前从未被集中梳理过。Prompt Royale 于 9 月 13 日开启、9 月 20 日结束，这是连续第二场完整运行一周且中途未调整规则的竞赛。
+
+在这两者之下还有一个较小但对多产品用户很重要的变化：现在一个账户就能登录全部 Swarms 产品。
+
+## 调用日志在 Swarms Cloud 上线
+
+![Swarms Cloud 的调用日志](/api_logs.png)
+
+9 月 18 日公布的调用日志，把发往 Swarms API 的每一次请求都汇总在同一个地方。你可以按智能体名称、端点或 ID 搜索和筛选，监控每次运行的 token 用量与成本，并查看任意一次调用完整的请求负载与输出。
+
+搜索框覆盖的范围比屏幕上的字段更广。它会匹配智能体名称、端点、请求 ID、时间戳和任务文本，然后继续深入原始日志正文，因此只要某个字符串在请求或响应中出现过，就能定位到承载它的那次运行。日期筛选作用于整个页面，提供最近 24 小时、7 天和 30 天的预设，以及自定义区间。
+
+更大的变化是每一次调用现在都有自己的页面，因而也有了自己的 URL。单次运行可以被写进缺陷报告、收藏、在三个标签页里并排打开，或者一键下载为 JSON。页面上有以它的身份运行的智能体（并链接到该智能体自己的页面）、作业 ID、输入与输出 token、成本，以及格式化 JSON 形式的确切请求与响应。
+
+随之还上线了一项正确性修复。Swarms API 会根据端点不同，把一次运行的费用放在不同的字段下，因此最直觉的实现会让大多数运行类型显示为 $0.00。历史页面、调用详情页和 CSV 导出中的每一个成本数字，现在都经由同一份认得全部三种情况的共享定义计算。
+
+**立即体验：**[cloud.swarms.world/history](https://cloud.swarms.world/history)
+
+**了解更多：**[swarms.ai/blog/completion-logs-swarms-cloud](/zh/blog/completion-logs-swarms-cloud)
+
+## Swarms Cloud 更新日志：8 月 3 日至 9 月 19 日
+
+![Swarms Cloud 更新日志，8 月 3 日至 9 月 19 日](/swarms_cloud_changelog_sep19.png)
+
+9 月 19 日发布的更新日志，逐日梳理了七周的平台工作。这段时间里上线了八个新页面，其中好几个是 API 早已支持、控制台却无从驱动的能力。
+
+- **自动智能体构建器。** 描述一个任务，构建器智能体就为它设计整套阵容，生成的完整智能体配置无需修改即可直接提交给 swarm 端点。
+- **Chat。** 组建一套阵容并与之对话：单个智能体可以带着完整会话记忆聊天，整套阵容则会以并发 swarm 的方式运行，每条回复都标注所用模型与本轮成本。
+- **Batch 与 Grid。** 让一个智能体跑最多 500 个任务，或让每个任务与每个智能体组成矩阵逐一运行。两者都会随运行推进逐步填充，支持仅重试失败项和 CSV 导出。
+- **Skills。** 一个私密的提示词与技能库，静态存储时使用按用户派生的密钥加密，支持以 Anthropic 的 SKILL.md 格式导入文件夹，并内置五个官方入门技能。
+- **MCP 与 Examples。** 托管 MCP 服务器有了自己的页面，状态来自真实握手；示例库则可浏览可直接运行的 API 调用，并能带着完整负载在 playground 中打开。
+
+与这些新界面并行的是一条更安静的主线：鉴权速度提升约八倍、刷新后瞬时渲染的仪表盘，一套不再可能开出两个并存订阅的计费系统，以及一长串针对"平台自信地报告了一个并不真实的数字"的修复。
+
+**了解更多：**[swarms.ai/blog/swarms-cloud-changelog-august-september](/zh/blog/swarms-cloud-changelog-august-september)
+
+## Prompt Royale 完整运行一周
+
+![Swarms 竞赛](/competitions_banner.png)
+
+Prompt Royale 于 9 月 13 日开启、9 月 20 日结束，5,000 美元等值的 SOL 按总交易量分给排名前三的代币化提示词：第一名 2,500 美元，第二名 1,500 美元，第三名 1,000 美元。
+
+参赛是自动的。凡是在 UTC 时间 9 月 13 日（周六）21:00 至 9 月 20 日（周六）21:00 之间完成代币化的提示词都会进入排行榜，而排行榜在竞赛期间持续刷新。所有发行配置都符合参赛条件，包括 Frenzy Mode 或标准费率、以 SOL 或 USDC 计价，以及 Vault Mode 开启或关闭。智能体不参与评选，无论它们产生多少交易量，这一场只面向提示词。对敲交易、自买自卖以及在同一批钱包之间循环制造的交易量属于禁止行为，可能导致取消资格。奖金按公布的美元价值以 SOL 发放，打入获胜创作者账户绑定的钱包。
+
+竞赛公告是本周浏览量最高的 Swarms 帖子，超过 8,100 次浏览，9 月 17 日"还剩三天"的提醒又带来 3,400 次。这一场紧接在 USDC 竞赛之后，后者已于 9 月上旬结束，创造了近 500 万美元交易量，并为 Marketplace 带来 2,000 多名新用户。
+
+**了解更多：**[swarms.world/competitions/prompt-royale](https://swarms.world/competitions/prompt-royale)
+
+## Marketplace MCP 服务器深度解析
+
+![Swarms Marketplace MCP](/swarms_marketplace_mcp.png)
+
+Marketplace MCP 服务器的深度解析于 9 月 14 日发布。swarms.world 现在是一个 Model Context Protocol 服务器，把任意 MCP 客户端指向 `https://swarms.world/mcp`，智能体就拥有了整个市场，一组它可以自行发现并调用的工具。
+
+这意味着智能体可以搜索 6,000+ 智能体、提示词和工具，完整读取免费内容，发布和编辑自己的作品，撰写评价，组合捆绑包，并查看自己代币化产品的收益。一个连接、一把 API 密钥，不必再针对十几个端点手工拼装 REST 请求。
+
+**了解更多：**[swarms.ai/blog/swarms-marketplace-mcp-server](/zh/blog/swarms-marketplace-mcp-server)
+
+## 一个账户，所有产品
+
+![Swarms Marketplace](/marketplace_banner.png)
+
+9 月 16 日公布：你的 Swarms Marketplace 账户现在可以登录整个产品栈，包括用于构建和运行智能体的 Swarms Cloud、让 Claude 与 Codex 智能体协同工作的互动式办公室 AgentHQ，以及未来推出的每一款产品。构建、部署、管理和变现智能体，不必为每个界面单独维护一套身份。
+
+推荐计划也在同一天上线。通过你的推荐链接邀请他人注册，双方各获得 10 美元的 Swarms API 额度，既可用于单智能体工作流，也可用于大规模多智能体集群，并支持来自主流供应商的 2,000+ 模型。直接注册的新账户仍然可以获得 5 美元的免费 API 额度。
+
+**推荐门户：**[swarms.world/platform/referral](https://swarms.world/platform/referral)
+
+## 结语
+
+本周的主题是：平台现在会告诉你它做了什么。调用日志把每一次运行变成可查看、可链接的记录，更新日志把七周的交付整理成一份可读的文档，而共享账户把三个产品收敛成一次登录。
+
+Prompt Royale 已于 9 月 20 日结束，排行榜已定，接下来值得关注的是下一场竞赛。想从可观测性入手的开发者，可以打开历史页面并按成本降序排序 🦾
+
+## 链接与资源
+
+| 资源 | 链接 |
+| --- | --- |
+| 执行历史 | [cloud.swarms.world/history](https://cloud.swarms.world/history) |
+| 调用日志深度解析 | [swarms.ai/blog/completion-logs-swarms-cloud](/zh/blog/completion-logs-swarms-cloud) |
+| Swarms Cloud 更新日志 | [swarms.ai/blog/swarms-cloud-changelog-august-september](/zh/blog/swarms-cloud-changelog-august-september) |
+| 自动智能体构建器 | [cloud.swarms.world/auto-agent-builder](https://cloud.swarms.world/auto-agent-builder) |
+| Chat | [cloud.swarms.world/chat](https://cloud.swarms.world/chat) |
+| 批量运行 | [cloud.swarms.world/batch](https://cloud.swarms.world/batch) |
+| Grid | [cloud.swarms.world/grid](https://cloud.swarms.world/grid) |
+| Skills | [cloud.swarms.world/skills](https://cloud.swarms.world/skills) |
+| Prompt Royale | [swarms.world/competitions/prompt-royale](https://swarms.world/competitions/prompt-royale) |
+| 全部 Swarms 竞赛 | [swarms.world/competitions](https://swarms.world/competitions) |
+| Swarms Launchpad | [swarms.world/launch](https://swarms.world/launch?type=prompt&model=tokenized&frenzy=true) |
+| Marketplace MCP 深度解析 | [swarms.ai/blog/swarms-marketplace-mcp-server](/zh/blog/swarms-marketplace-mcp-server) |
+| Swarms Marketplace | [swarms.world](https://swarms.world) |
+| AgentHQ | [game.swarms.world](https://game.swarms.world) |
+| 推荐门户 | [swarms.world/platform/referral](https://swarms.world/platform/referral) |
+| Swarms Cloud 注册 | [cloud.swarms.world/signup](https://cloud.swarms.world/signup) |
+| Swarms API 文档 | [docs.swarms.ai](https://docs.swarms.ai) |
+| GitHub 上的 Swarms 框架 | [github.com/kyegomez/swarms](https://github.com/kyegomez/swarms) |
+| Swarms 的 X 账号 | [x.com/swarms_corp](https://x.com/swarms_corp) |

@@ -1,52 +1,30 @@
 ---
 title: "Swarms 与 CrewAI 对比：多智能体框架该选哪一个？"
-description: "用 CrewAI 和 Swarms 搭建同一条研究流水线，并说明为什么 Swarms 是更适合生产环境的选择：一次编译的编排引擎背后有公开发表的系统论文，一把密钥通达 1,605 个模型，统一定价，15+ 种编排形态，并且没有任何基础设施需要你运维。"
+description: "一次框架层面的对比，附可运行代码：先用 CrewAI 和 Swarms 搭同一条流水线，再看 Swarms 有而 CrewAI 没有的能力。拓扑是一个参数、15+ 种结构、一次编译的图引擎、把五十个工具压成一份 schema 的动态工具加载、内置 16 个工具的自主智能体框架、一等公民的 MCP、按智能体选择模型，以及让多智能体上下文保持正确的类型化对话轮次。"
 date: "2026-09-22"
 author: "Swarms 团队"
 categories: ["对比"]
-readTime: "5 分钟阅读"
+readTime: "9 分钟阅读"
 featured: false
 ---
 
 # Swarms 与 CrewAI 对比：多智能体框架该选哪一个？
 
-如果你已经用 CrewAI 搭过东西，你就知道问题的形态。角色、任务、crew、kickoff。它让你的原型跑了起来。现在的问题是：它是否值得你在接下来一年里放进生产环境。
+两者都是用来构建智能体团队的 Python 框架。都用 pip 安装，都跑在你自己的进程里，也都能让一个两智能体的原型在今天下午跑起来。本文要回答的是之后的事：当原型变成一个需要你长期维护的系统时会发生什么。
 
-该给的肯定要给：CrewAI 的 `role`、`goal`、`backstory` 和 `expected_output` 这套词汇读起来很顺，新同事不看教程也能读懂一份 crew 定义。这是真诚的称赞，而对比也就在这里不再势均力敌。
+先把该给的肯定给足。CrewAI 的 `role`、`goal`、`backstory` 和 `expected_output` 这套词汇读起来很顺，新同事不看教程也能读懂一份 crew 定义。把业务流程映射成角色和任务，确实是一个很好的入门坡道，而对于三个智能体的线性流水线，它在可读性上很难被超越。
 
-本文会用两者搭建同一份工作，然后从决定生产系统成败的三件事出发论证 Swarms：可测量的性能、运维面，以及你必须自己承担的部分。
+这篇对比关心的是你会成长进去的那个框架。下面的一切都是 `pip install swarms`，在本地运行，不需要任何托管服务。
 
-## 已发表的性能工作
-
-先从这个类别里没有第二家拿得出的东西说起：一篇可供同行评议的系统论文，以及一套开放的基准测试。
-
-Swarms 研究团队发表了 **["GraphWorkflow：一个面向多智能体系统的低开销一次编译图执行引擎"](https://github.com/The-Swarm-Corporation/GraphWorkflow-Paper/blob/main/main.pdf)**，这是对驱动 Swarms 编排的图引擎的一次完整系统性论述。在一套开放测试集上，覆盖 5 种拓扑、10 到 200 个节点、15 组拓扑与规模配置，每个数字都是 9 次采样的中位数并带 95% 置信区间：
-
-- 在已编译图的执行上，相对 LangGraph 取得 **7.0 倍的几何平均加速**
-- **200 节点链式图上 62.5 倍**，0.29 毫秒对 18.15 毫秒
-- 即使在浅而宽的图上也有 **2.7 到 4 倍**
-- 图的编译速度快 **21.6 到 31.3 倍**
-- 冷启动的构建、编译、执行全路径快 **7.9 倍**
-
-上述每一个数字都可以用[公开的测试工具](https://github.com/The-Swarm-Corporation/GraphWorkflow-Paper/tree/main/benchmarks)复现，原始采样数据和分析流程随论文一并发布。我们的[论文完整解读](/zh/blog/graphworkflow-research-paper)梳理了成本分类，以及每一处实测差距的归因。
-
-这正是关键区别。这个领域里的大多数智能体框架，包括 CrewAI，交付的是关于速度的营销说辞。Swarms 交付的是一篇论文、一套测试工具和原始 JSON 数据，并邀请任何人在自己的硬件上重跑一遍。
-
-## 关于速度的结构性论证
-
-上面的数字是针对 LangGraph 的，因为现成的基准测试就是它。但这些数字衡量的设计差异并不只针对 LangGraph，把它当作架构问题而不是比分牌来理解更有价值。
-
-CrewAI 所属的那一类，也就是进程内的 Python 编排库，在每一次运行时都会做两件事：从你的任务与依赖定义中重新推导执行顺序，并且在你自己的进程里跑编排循环。这意味着准备工作是按次付费而不是一次付清，而你的吞吐上限就是你的解释器、你的线程池、你的那台机器。
-
-Swarms 把这两半都反了过来。图只编译一次，固化成一份执行计划，之后的重复运行只是扫过这份计划，而不是重建它。编排本身作为托管服务运行，因此上限属于平台，而不是你的进程。用论文里的说法，单次运行的成本收敛到边际执行项，而这正是深链上 62.5 倍的来源。
-
-对于一次原型运行，这一切在模型延迟面前都看不出来。但在高请求速率下、在评估扫描中、在冷启动时，它就是全部。
+```bash
+pip install -U swarms
+```
 
 ## 同一条流水线的两种写法
 
-一个研究智能体把工作交给一个分析智能体，顺序执行。
+一个研究智能体顺序地把工作交给一个分析智能体。
 
-### CrewAI
+**CrewAI**
 
 ```python
 from crewai import Agent, Task, Crew, Process
@@ -55,14 +33,12 @@ researcher = Agent(
     role="Researcher",
     goal="Gather the facts on the given market",
     backstory="A thorough analyst who cites sources.",
-    verbose=False,
 )
 
 analyst = Agent(
     role="Analyst",
     goal="Turn research into a decision-ready brief",
     backstory="A skeptical reviewer who flags weak claims.",
-    verbose=False,
 )
 
 research_task = Task(
@@ -87,84 +63,265 @@ crew = Crew(
 print(crew.kickoff())
 ```
 
-它跑在你把它放到的任何地方。模型凭证、进程、守护、重试逻辑，以及凌晨三点让它继续活着的那一套，都由你提供。
-
-### Swarms
+**Swarms**
 
 ```python
-import httpx
+from swarms import Agent, SequentialWorkflow
 
-payload = {
-    "name": "Research Swarm",
-    "description": "A two-agent research and analysis pipeline",
-    "swarm_type": "SequentialWorkflow",
-    "task": "Research the EV battery supply chain in 2026 and write a decision brief.",
-    "agents": [
-        {
-            "agent_name": "Researcher",
-            "description": "Gathers the facts on the given market",
-            "system_prompt": "Research thoroughly and cite sources.",
-            "model_name": "claude-sonnet-5",
-            "fallback_model_name": "gpt-4.1",
-            "max_loops": 1,
-        },
-        {
-            "agent_name": "Analyst",
-            "description": "Turns research into a decision-ready brief",
-            "system_prompt": "Write a one-page brief. Flag weak claims.",
-            "model_name": "gpt-4.1",
-            "max_loops": 1,
-        },
-    ],
-    "max_loops": 1,
-}
-
-response = httpx.post(
-    "https://api.swarms.world/v1/swarm/completions",
-    headers={"x-api-key": "YOUR_API_KEY"},
-    json=payload,
-    timeout=300.0,
+researcher = Agent(
+    agent_name="Researcher",
+    system_prompt="Research thoroughly and cite sources.",
+    model_name="claude-sonnet-5",
+    max_loops=1,
 )
 
-print(response.json())
+analyst = Agent(
+    agent_name="Analyst",
+    system_prompt="Write a one-page brief. Flag weak claims.",
+    model_name="gpt-4.1",
+    max_loops=1,
+)
+
+workflow = SequentialWorkflow(agents=[researcher, analyst])
+print(workflow.run("Assess the EV battery supply chain in 2026."))
 ```
 
-同一条流水线，一个 HTTP 请求，没有任何东西需要你维持运行。如果你不想手写这个调用，官方 SDK 也都在：Python 用 `pip install swarms-client`，TypeScript 用 `npm install swarms-ts`，此外还有 Go、Java 和 C#。任何能发出 HTTP 请求的语言都是一等客户端。
+篇幅相当，智能体在两边也是同一个概念。但已经能看到两处差别：智能体自带模型，而不是继承整个 crew 的统一配置；流水线是一个你把智能体传进去的结构，而不是靠 `context` 连接起来的一组任务对象。
 
-这份负载里有三个字段承载了大部分杠杆。
+第二点差别会越滚越大。
 
-**`swarm_type` 只是一个字段。** 把 `SequentialWorkflow` 改成 `ConcurrentWorkflow`，两个智能体就会同时运行。通过这种方式可选的具名架构有 15 种以上：`MixtureOfAgents`、`GroupChat`、`HierarchicalSwarm`、`MajorityVoting`、`CouncilAsAJudge`、`HeavySwarm`、`DebateWithJudge`、`MultiAgentRouter`、`AgentRearrange`、`LLMCouncil`、`RoundRobin`、`PlannerWorkerSwarm`、`BatchedGridWorkflow`，以及让平台自行选择的 `auto`。改变拓扑是改一个词，而不是一次重构。关于每种形态适用的场景，可以看[智能体编排模式](/zh/blog/agent-orchestration-patterns)。
+## 拓扑是一个参数，不是一次重写
 
-**两家供应商，一把密钥。** 研究员跑在 Claude 上，分析师跑在 GPT 上。单把 API 密钥背后是 1,605 个模型，覆盖 Anthropic、OpenAI、Google、xAI、DeepSeek、Meta、Moonshot 和 OpenRouter。不需要六个供应商账户，不需要六套计费关系，也不需要琢磨六套限流规则。
+在 CrewAI 里，系统的形状由任务、任务之间的 `context` 关联，以及 crew 的 `Process` 共同表达。改变形状就意味着编辑这些关系。
 
-**`fallback_model_name` 是按智能体设置的。** 如果主模型报错，该智能体会在回退模型上重试。它是按智能体而不是全局生效的，因此你那个便宜的摘要智能体和那个昂贵的终审智能体可以有不同的降级方式。这是你原本需要自己编写并维护的故障转移能力。
+在 Swarms 里，智能体与运行它们的结构是分开的，因此同一套阵容只要换一个类，就能在另一种拓扑下运行：
 
-## 定价，也就是大家常忘的那部分
+```python
+from swarms import Agent, SequentialWorkflow
+from swarms.structs.concurrent_workflow import ConcurrentWorkflow
 
-Swarms 按每百万输入 token 6.50 美元、每百万输出 token 18.50 美元计费，而且无论哪家供应商的哪个模型，价格完全相同。把便宜模型换成前沿模型并不会改变你的单位 token 成本，因此模型选择变成了质量决策，而不是预算谈判。平台还有夜间折扣，订阅买到的是访问权限和吞吐能力，而不是更便宜的 token。新账户注册即可获得免费额度。
+agents = [researcher, analyst, risk_reviewer]
 
-## 你不必自己搭建的可观测性
+# 一个接一个，每个都能看到上一个的输出
+SequentialWorkflow(agents=agents).run(task)
 
-每一次运行都会落在 [cloud.swarms.world](https://cloud.swarms.world) 的控制台里。打开任意一次调用，就能看到完整的请求负载、每个智能体的输出，以及这次运行的花费。当某个智能体在生产环境里出问题时，你要问的永远是"我们到底发了什么给它"，而答案已经在页面上了。详见[调用日志](/zh/blog/completion-logs-swarms-cloud)。
+# 三个同时处理同一个任务
+ConcurrentWorkflow(agents=agents).run(task)
+```
+
+或者保留一个统一入口，用 `SwarmRouter` 按名称选择拓扑：
+
+```python
+from swarms.structs.swarm_router import SwarmRouter
+
+router = SwarmRouter(
+    name="research-swarm",
+    agents=agents,
+    swarm_type="ConcurrentWorkflow",  # 也可以是 SequentialWorkflow、MajorityVoting……
+)
+
+print(router.run("Assess the EV battery supply chain in 2026."))
+```
+
+这个目录里有 15 种以上的结构，而且它们不是顺序与层级的变体。`MajorityVoting` 让多个智能体处理同一个任务并对答案进行归并。`CouncilAsAJudge` 按给定标准为输出打分。`MixtureOfAgents` 把众多意见聚合成一份综述。`DebateWithJudge` 组织一场对抗式交锋，由第三个智能体裁决。`HeavySwarm`、`GroupChat`、`RoundRobinSwarm`、`AgentRearrange`、`HierarchicalSwarm` 和 `AutoSwarmBuilder` 各自编码了一种不同的协作模式。在 CrewAI 里，这些大多需要你用任务和回调亲手搭出来。
+
+下面是一个只需四行的质量门禁，因为结构本身已经存在：
+
+```python
+from swarms.structs.majority_voting import MajorityVoting
+
+vote = MajorityVoting(agents=[analyst_a, analyst_b, analyst_c])
+print(vote.run("Is this contract clause enforceable? Answer yes or no, then justify."))
+```
+
+## 一张真正的图，只编译一次
+
+顺序和并发能覆盖很多场景，但分支加汇聚需要一张图。`GraphWorkflow` 是一等结构，包含节点、边和编译步骤：
+
+```python
+from swarms.structs.graph_workflow import GraphWorkflow
+
+workflow = GraphWorkflow(name="market-analysis")
+
+workflow.add_node(collector)
+workflow.add_node(macro_analyst)
+workflow.add_node(credit_analyst)
+workflow.add_node(risk_analyst)
+workflow.add_node(synthesizer)
+
+# 从一个节点扇出到三个，再汇聚回来
+workflow.add_edges_from_source("collector", ["macro", "credit", "risk"])
+workflow.add_edges_to_target(["macro", "credit", "risk"], "synthesizer")
+
+workflow.compile()
+print(workflow.run("Assess the EV battery supply chain in 2026."))
+```
+
+`compile()` 是值得理解的那部分。它从节点度数推断入口与出口，计算拓扑分层，一次遍历物化邻接关系，校验可达性，并固化一份逐层执行计划，其中每个节点都已预先解析。之后的重复运行只是扫过这份固化的计划，而不是重新推导顺序；任何变更都会让缓存失效，因此过期的计划不可能被执行。这个引擎有一篇[公开发表的系统论文](/zh/blog/graphworkflow-research-paper)，附带开放的测试工具和原始数据，你可以在自己的硬件上重跑。
+
+结构之间还可以组合。图里的一个节点可以是一整个工作流：
+
+```python
+triage = ConcurrentWorkflow(agents=[macro_analyst, credit_analyst, risk_analyst])
+
+workflow.add_node(collector)
+workflow.add_node(triage)        # 一整个并发工作流作为一个节点
+workflow.add_node(synthesizer)
+```
+
+真实系统很少从头到尾都是单一模式，它们通常是一张图，而图的节点本身是小的顺序或并发工作流，这正是上面这段代码表达的东西。
+
+## 动态工具加载：五十个工具，一份 schema
+
+这是 CrewAI 没有对应物的能力，而在大型工具集上，它决定了一个智能体是能用，还是既昂贵又困惑。
+
+工具定义是提示词的一部分。它们在每次调用时重新发送，并且位于缓存前缀中，因此大型工具集是被持续付费的。仅内置的 16 个框架工具每次请求就约 2,600 个 token，而一个 MCP 服务器还能再加四十个。选择准确率也随列表长度下降：在 80 个工具里挑选的模型，表现不如在 8 个里挑选的。
+
+Swarms 把它们延迟加载。工具保持注册且可执行，但不出现在发送给模型的 schema 列表里，通过一个 `tool_search` 工具即可发现：
+
+```python
+from swarms import Agent
+
+agent = Agent(
+    agent_name="Researcher",
+    model_name="gpt-4.1",
+    max_loops="auto",
+    tools=[...],          # 注册了五十个工具
+    dynamic_tools=True,   # 只发送一份 schema，其余可搜索
+)
+```
+
+智能体在需要时搜索目录，加载找到的工具，并在下一轮调用它。已加载的工具在本次运行的剩余时间里保持加载。控制流工具被固定住、从不延迟，因为一个需要搜索自己 `complete_task` 的智能体根本无法收尾。搜索未命中时会回退到关键词匹配，并返回一份有上限的目录清单而不是沉默，这样一次失败的查找就变成了一次有效的重试。
+
+在没有这项能力的框架里，五十个工具意味着整个运行期间每一次请求都要带上五十份 schema。
+
+## 一个自主执行框架，而不只是一个循环
+
+`max_loops="auto"` 是一个能干活的智能体框架，内置 16 个工具，覆盖文件、shell、grep、子智能体和控制流：
+
+```python
+agent = Agent(
+    agent_name="Engineer",
+    system_prompt="You fix failing tests in the repository you are given.",
+    model_name="claude-sonnet-5",
+    max_loops="auto",
+)
+
+agent.run("The auth test suite is failing. Find the cause and fix it.")
+```
+
+智能体会制定计划、执行、修订计划，并在工作完成时停下来。它拿到的是结构化的执行记录和可变的计划，而不是一个被压平的字符串，因此它对进度的认知和模型对进度的认知是同一个对象。子智能体是内置工具之一，所以一个自主智能体可以为子任务派生助手，而不需要你再接一个结构。
+
+## MCP 是构造函数参数
+
+Model Context Protocol 的支持内建在 `Agent` 类里，而不是外挂上去的：
+
+```python
+agent = Agent(
+    agent_name="MCP-Agent",
+    model_name="gpt-4.1",
+    mcp_url="http://localhost:8000/mcp",
+    max_loops=1,
+)
+```
+
+也可以同时接入多个服务器，带认证、请求头和超时：
+
+```python
+agent = Agent(
+    agent_name="Multi-MCP-Agent",
+    model_name="gpt-4.1",
+    mcp_urls=[
+        "http://localhost:8000/mcp",
+        "https://tools.internal.example.com/mcp",
+    ],
+    mcp_authorization_token="Bearer ...",
+    mcp_headers={"X-Tenant-Id": "acme"},
+    mcp_timeout=30,
+)
+```
+
+对于需要 OAuth 的服务器，框架支持 OAuth 流程和令牌存储。配合动态工具加载，一个智能体可以接入多个暴露了数百个工具的 MCP 服务器，而每次请求仍然只发送一份工具 schema。
+
+## 按智能体选模型，跨供应商
+
+每个智能体都用一个普通字符串指定自己的模型，而框架与供应商无关：OpenAI、Anthropic、Google、DeepSeek、Mistral、Together、OpenRouter、AWS Bedrock、Azure OpenAI、Hugging Face，以及通过 LM Studio 或 Ollama 运行的本地模型。
+
+```python
+writer = Agent(agent_name="Writer", model_name="gpt-4.1", system_prompt="...")
+critic = Agent(agent_name="Critic", model_name="claude-sonnet-5", system_prompt="...")
+
+SequentialWorkflow(agents=[writer, critic]).run(task)
+```
+
+把批评者放到与写作者不同的厂商上，并不是猎奇。一个与写作者同属一个模型家族的批评者，同时也共享它的盲区和典型失效模式，因此它恰恰会在最该提出异议的地方连连点头。跨厂商审阅是"审阅"唯一真正具备对抗性的版本，而在这里它的代价只是一个字符串。
+
+## 保持正确的多智能体上下文
+
+这一点在踩到之前完全看不见。当一个结构把会话交给下一个智能体时，最朴素的实现会把整段记录压平成一个字符串，作为下一个任务传过去。这一下子付出三重代价：角色归属被摧毁，因为智能体分不清哪些是自己先前的输出、哪些是同伴的；提示词缓存永远不会命中，因为每一轮都产生一条不同的单条消息，没有任何一次请求是下一次的前缀；上下文超线性增长，因为每个智能体的记录又被折回到共享记录里。
+
+Swarms 传递的是类型化的对话轮次。每个结构交付的都是真正的 `[{role, content}]` 消息列表，智能体自己的输出作为 `assistant` 轮次到达，每个同伴则作为带标注的 `user` 轮次到达。角色归属得以保留，缓存前缀能跨轮次保持，记录保持线性增长。在一个实测结构上，压平写法到第六轮时上下文已经涨到 1,157 个字符，而正确值是 116。
+
+这一点不需要你配置。它就是框架里每个结构交接的方式，也正是那种只会在你的 token 账单上显形的正确性工作。
+
+## 执行模式与可观测性
+
+这些结构自带了你原本要自己写的运行模式：
+
+```python
+workflow = SequentialWorkflow(agents=agents)
+
+workflow.run(task)                  # 同步
+await workflow.run_async(task)      # 异步
+workflow.run_stream(task)           # token 流式输出
+workflow.run_batched([t1, t2, t3])  # 多个任务走同一条流水线
+workflow.run_concurrent([t1, t2])   # 多个任务同时走这条链
+```
+
+`ConcurrentWorkflow` 接受 `show_dashboard=True`，提供每个智能体进度的实时视图，在多件事同时发生时这一点尤其重要。`output_type` 决定返回什么，从最终字符串到按智能体名称组织的字典都可以。自动保存在整个框架里统一为一个 `WorkspaceManager`，失败不阻塞主流程，写入是原子的，因此崩溃不会在磁盘上留下损坏的状态。遥测默认开启，用 `SWARMS_TELEMETRY_ON=false` 关闭。
+
+而当你还不知道该配什么阵容时，`AutoSwarmBuilder` 会根据任务描述设计一套：
+
+```python
+from swarms.structs.swarm_router import SwarmRouter
+
+router = SwarmRouter(name="auto", agents=[], swarm_type="AutoSwarmBuilder")
+print(router.run("Produce a competitive analysis of the EV battery supply chain."))
+```
 
 ## 并排对比
 
 | | CrewAI | Swarms |
 |---|---|---|
-| 公开基准测试 | 无 | 系统论文、开放测试工具、7.0 倍几何平均、峰值 62.5 倍 |
-| 执行模型 | 每次运行在你的进程里重新推导顺序 | 一次编译，作为托管服务运行 |
-| 可用模型 | 你自己的供应商账户 | 1,605 个模型，一把密钥 |
-| Token 定价 | 各供应商各模型各自报价 | 统一价，所有模型一致 |
-| 编排形态 | 顺序与层级两种流程 | 15+ 种，由一个字段选择 |
-| 模型故障转移 | 自己写 | 每个智能体的 `fallback_model_name` |
-| 可观测性 | 你埋什么就有什么 | 每次运行的完整负载、输出与成本 |
-| 需要运维的基础设施 | 进程、队列、工作节点、重试 | 无 |
-| 客户端语言 | Python | Python、TypeScript、Go、Java、C#、纯 HTTP |
+| 编排形态 | 顺序与层级两种流程 | 15+ 种结构，换类或换 `swarm_type` 即可 |
+| 分支与汇聚 | 靠任务 context 手工接线 | `GraphWorkflow`，含节点、边与 `compile()` |
+| 已编译的执行计划 | 每次运行重新推导 | 编译一次并缓存，变更时失效 |
+| 投票、评审、辩论 | 自己搭 | `MajorityVoting`、`CouncilAsAJudge`、`DebateWithJudge`、`MixtureOfAgents` |
+| 结构可组合 | crew 套 crew | 任意结构都能作为图中的一个节点 |
+| 大型工具集 | 每次请求发送全部 schema | `dynamic_tools=True`，一份 schema 加 `tool_search` |
+| 自主智能体框架 | 未提供 | `max_loops="auto"`，内置 16 个工具 |
+| MCP | 外部集成 | `mcp_url` / `mcp_urls`，支持认证、请求头、OAuth |
+| 按智能体选模型 | 通常整个 crew 一套配置 | 每个智能体各自的 `model_name`，任意供应商 |
+| 多智能体上下文 | 压平的记录 | 带角色归属的类型化对话轮次 |
+| 运行模式 | kickoff | `run`、`run_async`、`run_stream`、`run_batched`、`run_concurrent` |
+| 公开的性能工作 | 无 | 系统论文加开放测试工具 |
+| 托管选项 | 厂商平台 | 同样的结构在 Swarms Cloud 上以 API 提供 |
 
-## 结论
+## CrewAI 仍然合适的场景
 
-选 Swarms。性能工作是公开且可复现的，而不是单方面声称；架构是一次编译而不是每次运行重新推导；编排跑在别人的基础设施上；而拓扑、故障转移、计费和可观测性，这些你原本要自己搭的东西，在这里只是负载里的字段。
+如果你的系统就是一条由三四个智能体组成的线性流水线、形态不会再变，而你选择框架的理由是让非专业同事也能读懂，那么继续用 CrewAI 的角色词汇是合理的。上面的一切都不会让这个选择变成错误。
 
-诚实的检验方法是：把一个能跑的 crew 迁过来，数一数你的代码里有多少是智能体本身，又有多少是围绕它们的管道。大多数团队会发现管道占了大头，而这部分在迁移后全部消失。
+选择 Swarms 的理由，在下列任何一条成立时开始生效：你想在不重写的前提下改变拓扑、你需要分支与汇聚、你的工具数量超过一小把、你想让智能体跑在不同供应商上、你需要投票或对抗式评审，或者你已经开始注意到框架替你拼装的那些上下文在 token 上的开销。
 
-注册即可领取免费额度，把上面的负载粘贴进 [Swarms playground](https://cloud.swarms.world/playground)，换上你自己的提示词，再把结果和你今天的 crew 产出的东西比一比。
+## 如何开始
+
+```bash
+pip install -U swarms
+python -c "import swarms; print(swarms.__version__)"
+```
+
+先迁一个 crew。把每个角色的文字提到 `system_prompt` 里，用角色名给智能体命名，去掉任务对象，然后把智能体传给 `SequentialWorkflow`，通常一个下午就够了。然后把结构换一次，改成 `ConcurrentWorkflow` 或 `MajorityVoting`，你会发现智能体本身一处都不用改。
+
+再往后，[智能体编排的三种形态](/zh/blog/agent-orchestration-patterns)讲了每种拓扑分别适用于什么场景，而 [Swarms v15 Akira](/zh/blog/swarms-v15-akira-release) 是上文提到的动态工具加载、自主执行框架和类型化轮次的完整技术记录。
+
+框架在 [github.com/kyegomez/swarms](https://github.com/kyegomez/swarms) 开源；如果你不想自己运行它们，同样的结构也可以在 [Swarms Cloud](/zh/blog/what-is-swarms-cloud) 上通过 API 使用 🦾

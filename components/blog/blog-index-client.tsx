@@ -82,7 +82,29 @@ export function BlogIndexClient({
 
   return (
     <div>
-      <div className="flex flex-col gap-4 border-b border-white/[0.08] pb-6 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-4 border-b border-white/[0.08] pb-6">
+        <div className="relative w-full">
+          <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-white/35" />
+          <input
+            type="text"
+            value={query}
+            onChange={(event) => handleQuery(event.target.value)}
+            placeholder={t.searchPlaceholder}
+            aria-label={t.searchAria}
+            className="w-full rounded-full border border-white/10 bg-white/[0.02] py-2.5 pl-11 pr-10 text-sm text-white placeholder-white/35 outline-none transition-colors duration-300 focus:border-white/30"
+          />
+          {query && (
+            <button
+              type="button"
+              onClick={() => handleQuery("")}
+              aria-label={t.clearSearch}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-white/35 transition-colors duration-300 hover:text-white"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+
         <div className="flex flex-wrap gap-2">
           {[t.all, ...categories].map((category) => (
             <button
@@ -99,28 +121,6 @@ export function BlogIndexClient({
               {category}
             </button>
           ))}
-        </div>
-
-        <div className="relative w-full sm:w-72">
-          <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-white/35" />
-          <input
-            type="text"
-            value={query}
-            onChange={(event) => handleQuery(event.target.value)}
-            placeholder={t.searchPlaceholder}
-            aria-label={t.searchAria}
-            className="w-full rounded-full border border-white/10 bg-white/[0.02] py-2 pl-10 pr-9 text-sm text-white placeholder-white/35 outline-none transition-colors duration-300 focus:border-white/30"
-          />
-          {query && (
-            <button
-              type="button"
-              onClick={() => handleQuery("")}
-              aria-label={t.clearSearch}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-white/35 transition-colors duration-300 hover:text-white"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          )}
         </div>
       </div>
 

@@ -1,0 +1,170 @@
+---
+title: "Swarms vs CrewAI: Which Multi-Agent Framework Should You Use?"
+description: "The same research pipeline built in CrewAI and in Swarms, and why Swarms is the stronger production choice: a compile-once orchestration engine with a published systems paper behind it, 1,605 models on one key, flat pricing, 15+ orchestration shapes, and no infrastructure to operate."
+date: "2026-09-22"
+author: "Swarms Team"
+categories: ["Comparison"]
+readTime: "5 min read"
+featured: false
+---
+
+# Swarms vs CrewAI: Which Multi-Agent Framework Should You Use?
+
+If you have already built something in CrewAI, you know the shape of the problem. Roles, tasks, a crew, a kickoff. It got your prototype working. The question now is whether it is the thing you run in production for the next year.
+
+Credit where it is due: CrewAI's `role`, `goal`, `backstory` and `expected_output` vocabulary reads nicely, and a new engineer can follow a crew definition without a tutorial. That is the honest compliment, and it is where the comparison stops being close.
+
+This post builds the same job in both, then makes the case for Swarms on the three things that decide production systems: measured performance, operational surface, and what you have to own.
+
+## The published performance work
+
+Start with the part nobody else in this category has: a peer-reviewable systems paper with an open benchmark suite.
+
+The Swarms research team published **["GraphWorkflow: A Low-Overhead Compile-Once Graph Execution Engine for Multi-Agent Systems"](https://github.com/The-Swarm-Corporation/GraphWorkflow-Paper/blob/main/main.pdf)**, a full systems treatment of the graph engine that runs Swarms orchestration. Across an open suite of five topologies at 10 to 200 nodes, 15 topology and size configurations, medians of 9 samples with 95% confidence intervals:
+
+- A **geometric-mean speedup of 7.0x** over LangGraph on compiled graph execution
+- **62.5x on 200-node chains**, 0.29 ms against 18.15 ms
+- **2.7x to 4x** even on shallow, wide graphs
+- Graphs compiled **21.6x to 31.3x faster**
+- The cold build, compile and execute path **7.9x faster**
+
+Every one of those numbers is reproducible from a [public harness](https://github.com/The-Swarm-Corporation/GraphWorkflow-Paper/tree/main/benchmarks) with the raw samples and the analysis pipeline released alongside the paper. Our [full write-up of the paper](/blog/graphworkflow-research-paper) walks through the cost taxonomy and the attribution of every measured gap.
+
+That is the distinguishing fact. Most agent frameworks in this space, CrewAI included, ship marketing claims about speed. Swarms shipped a paper, a harness, and the raw JSON, and invited anyone to rerun it on their own hardware.
+
+## The structural argument for speed
+
+The numbers above are against LangGraph specifically, because that is the benchmark that exists. But the design difference they measure is not specific to LangGraph, and it is worth understanding as architecture rather than as a scoreboard.
+
+An in-process Python orchestration library, the category CrewAI belongs to, does two things on every single run. It re-derives the execution order from your task and dependency definitions, and it runs the orchestration loop inside your own process. That means the preparation work is paid per run rather than once, and your throughput ceiling is your interpreter, your thread pool, your box.
+
+Swarms inverts both halves. The graph is compiled once into a frozen execution plan, and repeated runs sweep that plan instead of rebuilding it. And the orchestration itself runs as a hosted service, so the ceiling is the platform's, not your process's. In the paper's terms, the per-run cost collapses to the marginal execution term, which is exactly where the 62.5x on deep chains comes from.
+
+For a single prototype run, none of this is visible next to model latency. At request rates, in evaluation sweeps, and on cold starts, it is the whole story.
+
+## The same pipeline in both
+
+A researcher agent hands off to an analyst agent, sequentially.
+
+### CrewAI
+
+```python
+from crewai import Agent, Task, Crew, Process
+
+researcher = Agent(
+    role="Researcher",
+    goal="Gather the facts on the given market",
+    backstory="A thorough analyst who cites sources.",
+    verbose=False,
+)
+
+analyst = Agent(
+    role="Analyst",
+    goal="Turn research into a decision-ready brief",
+    backstory="A skeptical reviewer who flags weak claims.",
+    verbose=False,
+)
+
+research_task = Task(
+    description="Research the EV battery supply chain in 2026.",
+    expected_output="A factual summary with sources.",
+    agent=researcher,
+)
+
+analysis_task = Task(
+    description="Write a decision brief from the research.",
+    expected_output="A one-page brief with a recommendation.",
+    agent=analyst,
+    context=[research_task],
+)
+
+crew = Crew(
+    agents=[researcher, analyst],
+    tasks=[research_task, analysis_task],
+    process=Process.sequential,
+)
+
+print(crew.kickoff())
+```
+
+That runs wherever you run it. You supply the model credentials, the process, the supervisor, the retry logic, and whatever keeps it alive at 3am.
+
+### Swarms
+
+```python
+import httpx
+
+payload = {
+    "name": "Research Swarm",
+    "description": "A two-agent research and analysis pipeline",
+    "swarm_type": "SequentialWorkflow",
+    "task": "Research the EV battery supply chain in 2026 and write a decision brief.",
+    "agents": [
+        {
+            "agent_name": "Researcher",
+            "description": "Gathers the facts on the given market",
+            "system_prompt": "Research thoroughly and cite sources.",
+            "model_name": "claude-sonnet-5",
+            "fallback_model_name": "gpt-4.1",
+            "max_loops": 1,
+        },
+        {
+            "agent_name": "Analyst",
+            "description": "Turns research into a decision-ready brief",
+            "system_prompt": "Write a one-page brief. Flag weak claims.",
+            "model_name": "gpt-4.1",
+            "max_loops": 1,
+        },
+    ],
+    "max_loops": 1,
+}
+
+response = httpx.post(
+    "https://api.swarms.world/v1/swarm/completions",
+    headers={"x-api-key": "YOUR_API_KEY"},
+    json=payload,
+    timeout=300.0,
+)
+
+print(response.json())
+```
+
+Same pipeline, one HTTP request, nothing to keep alive. There are official SDKs if you would rather not hand-roll the call: `pip install swarms-client` for Python, `npm install swarms-ts` for TypeScript, plus Go, Java and C#. Any language that can send an HTTP request is a first-class client.
+
+Three fields in that payload carry most of the leverage.
+
+**`swarm_type` is one field.** Change `SequentialWorkflow` to `ConcurrentWorkflow` and the two agents run at the same time. There are 15+ named architectures selected this way: `MixtureOfAgents`, `GroupChat`, `HierarchicalSwarm`, `MajorityVoting`, `CouncilAsAJudge`, `HeavySwarm`, `DebateWithJudge`, `MultiAgentRouter`, `AgentRearrange`, `LLMCouncil`, `RoundRobin`, `PlannerWorkerSwarm`, `BatchedGridWorkflow`, and `auto` to let the platform choose. Changing topology is a one-word edit, not a refactor. See [Agent Orchestration Patterns](/blog/agent-orchestration-patterns) for when each shape is correct.
+
+**Two providers, one key.** The researcher is on Claude, the analyst is on GPT. There are 1,605 models behind a single API key, spanning Anthropic, OpenAI, Google, xAI, DeepSeek, Meta, Moonshot and OpenRouter. No six provider accounts, no six billing relationships, no six rate limit regimes to reason about.
+
+**`fallback_model_name` is per agent.** If the primary model errors, that agent retries on the fallback. Per agent, not global, so your cheap summarizer and your expensive final reviewer degrade differently. That is failover you would otherwise write and maintain yourself.
+
+## Pricing, which is the part people forget
+
+Swarms bills $6.50 per million input tokens and $18.50 per million output tokens, and that price is identical on every model regardless of provider. Swapping a cheap model for a frontier model does not change your cost per token, so model selection becomes a quality decision instead of a budget negotiation. There is a night-time discount, and a subscription buys access and throughput rather than cheaper tokens. New accounts get a free credit on signup.
+
+## Observability you did not have to build
+
+Every run lands in the console at [cloud.swarms.world](https://cloud.swarms.world). Open any completion and see the full request payload, every agent's output, and what the run cost. When an agent misbehaves in production, the question is always "what exactly did we send it," and the answer is already on the page. See [Completion Logs](/blog/completion-logs-swarms-cloud).
+
+## Side by side
+
+| | CrewAI | Swarms |
+|---|---|---|
+| Published benchmarks | None | Systems paper, open harness, 7.0x geomean, 62.5x peak |
+| Execution model | Order re-derived per run, in your process | Compiled once, run as a hosted service |
+| Models available | Your own provider accounts | 1,605 models, one key |
+| Token pricing | Whatever each provider charges, per model | Flat, identical on every model |
+| Orchestration shapes | Sequential and hierarchical processes | 15+, selected by one field |
+| Model failover | Write it yourself | `fallback_model_name` per agent |
+| Observability | Whatever you instrument | Full payload, outputs and cost per run |
+| Infrastructure to operate | Process, queue, workers, retries | None |
+| Client languages | Python | Python, TypeScript, Go, Java, C#, plain HTTP |
+
+## The verdict
+
+Swarms. The performance work is published and reproducible rather than asserted, the architecture compiles once instead of re-deriving every run, the orchestration runs on someone else's infrastructure, and the topology, failover, billing and observability you would otherwise build are fields in a payload.
+
+The honest test is to port one working crew and count how much of your code was the agents and how much was the plumbing around them. Most teams find the plumbing was the majority, and all of it disappears.
+
+Sign up for a free credit and paste the payload above into the [Swarms playground](https://cloud.swarms.world/playground). Swap in your own prompts and compare the result to what your crew produces today.

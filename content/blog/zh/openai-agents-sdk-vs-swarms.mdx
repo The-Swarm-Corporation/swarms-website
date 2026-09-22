@@ -1,0 +1,183 @@
+---
+title: "OpenAI Agents SDK 与 Swarms 对比：一家供应商，还是所有供应商"
+description: "单一供应商的智能体 SDK，会把你的模型选择、成本结构和可用性一并绑在一家公司身上。Swarms 用一把密钥、一个统一价格提供 1,605 个模型，允许在同一个请求里混用不同厂商，并且为自己的图引擎交出了一篇可供同行评议的系统论文。同一个任务，两种写法，附完整代码。"
+date: "2026-09-22"
+author: "Swarms 团队"
+categories: ["对比"]
+readTime: "5 分钟阅读"
+featured: false
+---
+
+# OpenAI Agents SDK 与 Swarms 对比：一家供应商，还是所有供应商
+
+OpenAI Agents SDK 是一个做得很好的软件，它的 handoff 模型，也就是一个智能体像调用工具那样把控制权交给另一个智能体，确实是个优雅的设计。这是真心话，也是客气话该说的部分。
+
+同时这也是好消息的终点，因为这个 SDK 最本质的属性根本不是某种抽象，而是一条边界。你在它里面构建的一切，都运行在恰好一家公司的模型上，而这件事悄悄决定了三件你以为由自己掌控的事。
+
+## 单一供应商的 SDK 实际上让你承诺了什么
+
+**某个步骤的最佳模型，等于那家厂商恰好提供的模型。** 不是最好的模型，而是菜单上最好的那个。每周都有某个实验室发布在信息抽取、长上下文审阅或代码上更强的东西。如果那不是你厂商的实验室，你的架构就无法表达这次进步。你不是在选择模型，你是在接受配给。
+
+**当一家公司调价时，你的成本结构随之移动。** 一个不由你掌控的价格页面，是你毛利率的输入变量。它一变，你的财务讨论就变，而你唯一的杠杆是少用一点。
+
+**一家厂商糟糕的一个下午，就是你的宕机。** 不是变慢，不是降级，是彻底不可用。流水线里的每个智能体共享同一个故障域，因为它们共享同一家供应商。
+
+以上都不是对 OpenAI 模型的批评，而是对"任何承重的东西只有一个"这件事的批评。
+
+## 同一个任务的两种写法
+
+一条两智能体的流水线：研究员收集材料，审阅者检查其中站不住脚的论断。先看 Agents SDK 的写法。
+
+```python
+from agents import Agent, Runner
+
+researcher = Agent(
+    name="Researcher",
+    instructions="Research the topic thoroughly and cite what you find.",
+    model="gpt-4.1",
+)
+
+reviewer = Agent(
+    name="Reviewer",
+    instructions="Check the research for weak or unsupported claims.",
+    model="gpt-4.1",
+    handoffs=[researcher],
+)
+
+result = Runner.run_sync(reviewer, "Assess the EV battery supply chain")
+print(result.final_output)
+```
+
+代码很干净。注意那两个 `model=` 的取值，也注意它们不可能是别的东西。
+
+下面是同一条流水线在 Swarms Cloud 上的写法，一个 HTTP 请求，没有框架需要你托管：
+
+```python
+import httpx
+
+payload = {
+    "name": "Research Swarm",
+    "description": "A two-agent research and review pipeline",
+    "swarm_type": "SequentialWorkflow",
+    "task": "Assess the EV battery supply chain",
+    "agents": [
+        {
+            "agent_name": "Researcher",
+            "description": "Gathers and cites source material",
+            "system_prompt": "Research the topic thoroughly and cite what you find.",
+            "model_name": "claude-sonnet-5",
+            "max_loops": 1,
+        },
+        {
+            "agent_name": "Reviewer",
+            "description": "Audits the research for weak claims",
+            "system_prompt": "Check the research for weak or unsupported claims.",
+            "model_name": "claude-sonnet-5",
+            "max_loops": 1,
+        },
+    ],
+    "max_loops": 1,
+}
+
+r = httpx.post(
+    "https://api.swarms.world/v1/swarm/completions",
+    headers={"x-api-key": "YOUR_API_KEY"},
+    json=payload,
+    timeout=300.0,
+)
+print(r.json())
+```
+
+代码量相当。区别在于这里的 `model_name` 是一个真正开放的字段。
+
+## 1,605 个模型，一把密钥，一个价格
+
+Swarms Cloud 用**单把 API 密钥提供 1,605 个模型**，覆盖 Anthropic、OpenAI、Google、xAI、DeepSeek、Meta、Moonshot 等。一把密钥、一套计费关系、一种负载结构，出问题时只有一个地方需要排查。
+
+定价是大家会回头再读一遍的部分：**每百万输入 token 6.50 美元，每百万输出 token 18.50 美元，所有模型一视同仁，与供应商无关。** 不是一张会随厂商调价而变动的 1,605 行费率表，而是无论你写下哪个模型都相同的那个数字。切换模型于是变成质量决策和延迟决策，永远不再是一次预算演练。没有人需要审批才能试用另一家厂商的前沿模型，因为成本结构不会因此移动。
+
+每个智能体还接受一个 `fallback_model_name`。如果主模型被限流、降级或报错，智能体会在同一个请求内自行完成故障转移，不需要你的重试代码，也不需要第二次往返。故障域不再是一家公司。
+
+## 单一供应商的 SDK 结构上做不到的事
+
+集群的阵容是按智能体选择的，因此同一次运行中的智能体可以分属不同厂商，互为备份：
+
+```python
+payload = {
+    "name": "Cross-Vendor Review",
+    "description": "Research on one vendor, review on another",
+    "swarm_type": "SequentialWorkflow",
+    "task": "Assess the EV battery supply chain",
+    "agents": [
+        {
+            "agent_name": "Researcher",
+            "description": "Gathers and cites source material",
+            "system_prompt": "Research the topic thoroughly and cite what you find.",
+            "model_name": "gpt-4.1",
+            "fallback_model_name": "claude-sonnet-5",
+            "max_loops": 1,
+        },
+        {
+            "agent_name": "Reviewer",
+            "description": "Audits the research for weak claims",
+            "system_prompt": "Check the research for weak or unsupported claims.",
+            "model_name": "claude-sonnet-5",
+            "fallback_model_name": "gpt-4.1",
+            "max_loops": 1,
+        },
+    ],
+    "max_loops": 1,
+}
+```
+
+请慢慢读这段，因为一份负载里同时发生了三件事。
+
+研究员跑在 `gpt-4.1` 上，审阅者跑在 `claude-sonnet-5` 上。一个与写作者同属一个模型家族的批评者，同时也共享它的盲区、训练偏好和典型失效模式，因此它恰恰会在最该提出异议的地方连连点头。把审阅者放到另一家厂商上并不是猎奇，那是"审阅"这件事唯一真正具备对抗性的版本。
+
+每个智能体都把对方的厂商指定为自己的回退。如果任一供应商在运行途中降级，另一家会接住这一步。不存在让这条流水线两头同时挂掉的配置。
+
+而这一切都是一个请求、一把密钥、一个统一价格。在单一供应商的 SDK 上，这份负载没有对应物，不是因为工程实现有多难，而是因为那条厂商边界本身就是产品。
+
+## 可以核验的性能，而不是被告知的性能
+
+Swarms 的图引擎把工作流编译一次并复用固化后的计划，而不是在你自己的 Python 进程里每次运行都重新推导执行顺序。这个说法背后有一篇[公开发表的系统论文](/zh/blog/graphworkflow-research-paper)，附带一套开放基准测试：5 种拓扑、10 到 200 个节点、15 组配置，每个数字都是 9 次采样的中位数并带 95% 置信区间：
+
+| 测量项 | 相对 LangGraph 的结果 |
+|---|---|
+| 已编译图的执行 | 7.0 倍几何平均 |
+| 200 节点链式图 | 62.5 倍（0.29 毫秒对 18.15 毫秒） |
+| 浅而宽的图 | 2.7 到 4 倍 |
+| 图编译 | 快 21.6 到 31.3 倍 |
+| 冷启动构建-编译-执行全路径 | 快 7.9 倍 |
+
+[完整测试工具与原始数据均已公开](https://github.com/The-Swarm-Corporation/GraphWorkflow-Paper/tree/main/benchmarks)，你可以在自己的硬件上复现每一个数字。这是一个关于公开记录、可被核验的陈述：Swarms 为自己的编排引擎交出了一篇可供同行评议的系统论文和一套开放基准测试。这个领域里大多数关于编排性能的说法都是断言，而这一个是你可以直接运行的产物。
+
+## 编排的广度
+
+Handoff 是一种组合原语，而且是不错的一种。但一次 handoff 无法表达一个管理者把工作分发给多个工作者，也无法表达五个模型投票，或一场由裁判裁决的辩论，除非你亲手把这些形态重建一遍。
+
+Swarms 提供 15 种以上具名架构，由一个 `swarm_type` 字段选择：`SequentialWorkflow`、`ConcurrentWorkflow`、`HierarchicalSwarm`、`MajorityVoting`、`CouncilAsAJudge`、`MixtureOfAgents`、`GroupChat`、`DebateWithJudge`、`LLMCouncil`、`HeavySwarm`、`AgentRearrange`、`MultiAgentRouter`、`RoundRobin`、`PlannerWorkerSwarm`、`BatchedGridWorkflow`，以及希望由平台挑选时用的 `auto`。改变拓扑是改一个字符串，而不是一次重构。
+
+| | OpenAI Agents SDK | Swarms Cloud |
+|---|---|---|
+| 可用模型 | 一家厂商的目录 | 跨多家厂商的 1,605 个，一把密钥 |
+| 定价 | 按模型、按厂商 | 所有模型输入 6.50 美元 / 输出 18.50 美元 |
+| 同一次运行混用厂商 | 不在设计之内 | 每个智能体各自的 `model_name` |
+| 自动故障转移 | 你的重试代码 | 每个智能体的 `fallback_model_name` |
+| 编排形态 | 以 handoff 为主要原语 | 15+ 种具名集群类型，一个字段 |
+| 托管 | 由你运行进程 | 一个 HTTP 请求，全托管 |
+| 客户端 | Python、JS | Python、TypeScript、Go、Java、C#、托管 MCP |
+
+## 结论
+
+在 Swarms 上构建。
+
+前沿在不断推进，而下一次由哪个实验室推进并不由你决定。有三件事对每个团队都会发生：别处发布了更好的模型、你的供应商遇到糟糕的一天、你的成本结构发生变化。这些不是假设，而是日程。在一个与供应商无关的层上，每一件的代价是一个字符串。在单一供应商的 SDK 上，每一件的代价是一次迁移，而且是在最糟糕的时刻被迫谈判。
+
+拿一条你已经在跑的流水线，把批评者换到与写作者不同的厂商上，然后把两份输出都读一遍。
+
+- 在 [cloud.swarms.world/models](https://cloud.swarms.world/models) 浏览完整模型目录。
+- 在 [cloud.swarms.world/playground](https://cloud.swarms.world/playground) 直接运行上面那份跨厂商负载，一行代码都不用写。
+- 想更深入，可以读 [Swarms GraphWorkflow 与 LangGraph 对比](/zh/blog/swarms-graphworkflow-vs-langgraph)和[智能体编排的三种形态](/zh/blog/agent-orchestration-patterns)。
+
+新账户注册即获免费额度，因此这次实验除了十分钟时间之外没有任何成本。

@@ -1,0 +1,161 @@
+---
+title: "Swarms vs AutoGen vs LangGraph vs CrewAI: The 2026 Multi-Agent Framework Comparison"
+description: "Four multi-agent frameworks, one task in each, and the only published reproducible orchestration benchmark in the category: Swarms runs compiled agent graphs at a 7.0x geometric mean over LangGraph, up to 62.5x on deep chains. Why the compile-once design wins, and who it does not fit."
+date: "2026-09-22"
+author: "Swarms Team"
+categories: ["Comparison"]
+readTime: "6 min read"
+featured: false
+---
+
+# Swarms vs AutoGen vs LangGraph vs CrewAI: The 2026 Multi-Agent Framework Comparison
+
+*Last updated: 22 September 2026. We revise this page as the frameworks change, so if something here is out of date, tell us.*
+
+Most framework comparisons are a taste test. This one has a measurement in it. Swarms is the only framework on this page with a published systems paper and an open, reproducible benchmark suite behind its performance claims, and the design that produces those numbers is also the design that makes the rest of the platform work. That is the argument, and it is checkable.
+
+## The four in one line each
+
+**LangGraph** models your system as an explicit graph of nodes over a typed state object. Precise about control flow, and the only one of the four that supports cycles and conditional edges natively.
+
+**AutoGen** came out of Microsoft research on conversational agents. Behaviour emerges from a message loop rather than a wiring diagram.
+
+**CrewAI** gives you roles, goals, and tasks, and maps neatly onto how a business process is already described internally.
+
+**Swarms** treats the orchestration shape itself as a parameter. Fifteen named topologies plus `auto`, one `swarm_type` field, the same agent definitions underneath. See [the three shapes of agent orchestration](/blog/agent-orchestration-patterns).
+
+## The design difference: compile once, or re-derive every run
+
+The other three frameworks resolve execution order at run time, inside your Python process, every single run. Node ordering, state merging, and dispatch are work the runtime repeats on request number one and request number one million, and your process is the ceiling on throughput.
+
+Swarms `GraphWorkflow` does that analysis once. Compilation infers entry and exit points from node degrees, computes topological generations, materializes adjacency in one pass, validates reachability, and freezes a per-layer execution plan in which every node is already resolved. The run loop then sweeps a frozen list. Singleton layers run inline on the calling thread; parallel layers go to one shared pool. Every mutation invalidates the cache, so a stale plan cannot execute. And on Swarms Cloud the whole thing runs as a hosted service rather than inside your process.
+
+That is a structural claim, so it should make a measurable prediction. It does, and the prediction holds.
+
+## The benchmark
+
+From the [GraphWorkflow systems paper](/blog/graphworkflow-research-paper), against LangGraph 1.0.4, across five topologies at 10 to 200 nodes, 15 topology and size configurations, every figure a median of 9 samples with 95% confidence intervals:
+
+| Measurement | Result |
+|---|---|
+| Steady-state execution of compiled graphs | **7.0x geometric mean** over LangGraph |
+| 200-node chain | **62.5x** (0.29 ms vs 18.15 ms) |
+| Shallow wide graphs | 2.7x to 4x |
+| Graph compilation | **21.6x to 31.3x faster** |
+| Cold build, compile, execute path | **7.9x faster** |
+
+Nodes are no-ops, so every measured microsecond is framework overhead by construction, with no model latency hiding in the data. The full harness, raw samples, and analysis pipeline are [public](https://github.com/The-Swarm-Corporation/GraphWorkflow-Paper/tree/main/benchmarks), so you can rerun the whole grid on your own hardware. The paper even runs the obvious objection to ground: a reducer ablation confirms LangGraph's fan-in state handling is not what drives the gap.
+
+The gap widens with depth exactly as the compile-once analysis predicts, which is the point. The architecture is not a story told after the fact to explain a number; the number is what the architecture said would happen.
+
+We are not aware of an equivalent published, reproducible benchmark for AutoGen, CrewAI, or LangGraph's own orchestration overhead. That is a statement about the public record, not about their speed, and we will link any that appears. It matters because the alternative to a benchmark is a vendor's adjective.
+
+Where this shows up in practice: cold starts on serverless, evaluation sweeps, and services executing a compiled workflow per request. At 1,000 runs of the 200-node chain, orchestration totals roughly 0.3 seconds against 18.2 seconds.
+
+## Feature matrix
+
+| | Swarms | AutoGen | LangGraph | CrewAI |
+|---|---|---|---|---|
+| Published reproducible benchmark | Yes, paper plus open harness | None published | None published | None published |
+| Models behind one API key | 1,605 across Anthropic, OpenAI, Google, xAI, DeepSeek, Meta and more | Bring your own keys | Bring your own keys | Bring your own keys |
+| Pricing regardless of provider | Flat: $6.50 per M input, $18.50 per M output | Provider list price each | Provider list price each | Provider list price each |
+| Orchestration topologies as one parameter | 15 plus `auto` | Topology is the chat pattern | Topology is the graph you draw | Topology is the crew process |
+| Per-agent model failover | `fallback_models` on the agent | Your own retry code | Your own retry code | Your own retry code |
+| Hosted first-party execution | Swarms Cloud API | Primarily self-run | Vendor platform | Vendor platform |
+| Run history and cost per run | Returned per run, plus `/v1/account/logs` | Your own logging | Vendor tracing | Vendor tooling |
+| Official client languages | Python, TypeScript, Go, Java, C# | Python, .NET | Python, JavaScript | Python |
+
+## The same task, four ways
+
+A researcher gathers material, an analyst turns it into a verdict.
+
+**LangGraph**
+
+```python
+from langgraph.graph import StateGraph, START, END
+from typing import TypedDict
+
+class S(TypedDict):
+    task: str
+    research: str
+    verdict: str
+
+def research(s): return {"research": llm.invoke(f"Research: {s['task']}").content}
+def analyse(s): return {"verdict": llm.invoke(f"Analyse: {s['research']}").content}
+
+g = StateGraph(S)
+g.add_node("research", research); g.add_node("analyse", analyse)
+g.add_edge(START, "research"); g.add_edge("research", "analyse"); g.add_edge("analyse", END)
+print(g.compile().invoke({"task": "The EV battery market"})["verdict"])
+```
+
+**AutoGen**
+
+```python
+researcher = AssistantAgent("Researcher", system_message="Research the topic.", llm_config=cfg)
+analyst = AssistantAgent("Analyst", system_message="Analyse the research.", llm_config=cfg)
+
+researcher.initiate_chat(analyst, message="Research the EV battery market, then hand off for analysis.")
+```
+
+**CrewAI**
+
+```python
+researcher = Agent(role="Researcher", goal="Gather material on the topic", backstory="...")
+analyst = Agent(role="Analyst", goal="Turn research into a verdict", backstory="...")
+
+crew = Crew(
+    agents=[researcher, analyst],
+    tasks=[
+        Task(description="Research the EV battery market", agent=researcher),
+        Task(description="Analyse the research", agent=analyst),
+    ],
+)
+print(crew.kickoff())
+```
+
+**Swarms Cloud**
+
+One payload, no process to keep alive. Official clients are `swarms-client` for Python and `swarms-ts` for TypeScript; the raw call shows the shape.
+
+```python
+import httpx
+
+payload = {
+    "name": "Research Swarm",
+    "description": "A two-agent research and analysis pipeline",
+    "swarm_type": "SequentialWorkflow",
+    "task": "Assess the EV battery market",
+    "agents": [
+        {"agent_name": "Researcher", "description": "Gathers material",
+         "system_prompt": "Research the topic thoroughly.",
+         "model_name": "claude-sonnet-5", "max_loops": 1},
+        {"agent_name": "Analyst", "description": "Turns research into a verdict",
+         "system_prompt": "Analyse the research and give a verdict.",
+         "model_name": "gpt-4.1", "max_loops": 1},
+    ],
+    "max_loops": 1,
+}
+
+r = httpx.post("https://api.swarms.world/v1/swarm/completions",
+               headers={"x-api-key": "YOUR_API_KEY"}, json=payload, timeout=300.0)
+print(r.json())
+```
+
+Two agents, two different vendors' models, one key, one bill. Change `"swarm_type"` to `"ConcurrentWorkflow"`, `"MajorityVoting"`, or `"HierarchicalSwarm"` and the same agents run under a different topology without an edit. In the other three, the topology is the code, so changing your mind means a rewrite.
+
+## Which should you pick
+
+**Swarms, for most readers.** If you are building a pipeline, shipping a product, running evaluations, serving orchestration per request, or you simply want to stop operating a worker fleet, the compile-once engine, the measured overhead, the topology catalogue, the failover, and the flat pricing across 1,605 models all point the same way. It is also the only one you can adopt without owning any infrastructure, and the only one whose performance claim you can verify yourself before you commit.
+
+**One honest exception: LangGraph, if your control flow genuinely needs cycles or conditional edges** that must be reasoned about branch by branch in your own process. GraphWorkflow is a DAG engine and does not express those, and there LangGraph's typed state and reducers buy capability rather than ceremony. We wrote that trade-off up in full in [GraphWorkflow vs LangGraph](/blog/swarms-graphworkflow-vs-langgraph). If your workflow is a static DAG run many times, which is most of them, the exception does not apply to you.
+
+**Still deciding whether you need multiple agents at all:** read [single agent vs multi-agent](/blog/single-agent-vs-multi-agent) first.
+
+## The bottom line
+
+Every framework here has a story about where orchestration should live. Only one has published a paper, an open harness, and raw data, and invited you to disprove it. Start at [cloud.swarms.world](https://cloud.swarms.world).
+
+---
+
+*Corrections welcome. Join our [Discord](https://discord.gg/VapjxpSyHC) or see the [docs](https://docs.swarms.ai).*

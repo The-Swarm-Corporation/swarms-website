@@ -1,0 +1,183 @@
+---
+title: "OpenAI's Agents SDK vs Swarms: One Provider or Every Provider"
+description: "A single-provider agent SDK ties your model choice, your cost line, and your uptime to one company. Swarms puts 1,605 models behind one key at one flat price, mixes vendors inside a single request, and ships a peer-reviewable systems paper behind its graph engine. Same task, both ways, with real code."
+date: "2026-09-22"
+author: "Swarms Team"
+categories: ["Comparison"]
+readTime: "5 min read"
+featured: false
+---
+
+# OpenAI's Agents SDK vs Swarms: One Provider or Every Provider
+
+The OpenAI Agents SDK is a well built piece of software, and its handoff model, where one agent passes control to another as if it were calling a tool, is a genuinely elegant design. That is the gracious part, and it is sincere.
+
+It is also the end of the good news, because the SDK's defining property is not an abstraction at all. It is a boundary. Everything you build inside it runs on models from exactly one company, and that fact quietly decides three things you probably thought you controlled.
+
+## What a single-provider SDK actually commits you to
+
+**The best model for a step is whichever one that vendor ships.** Not the best model. The best one on the menu. Every week a lab somewhere releases something better at extraction, or at long-context review, or at code. If it is not your vendor's lab, your architecture cannot express the improvement. You are not choosing models, you are accepting an allocation.
+
+**Your cost line moves when one company reprices.** A pricing page you do not own is an input to your gross margin. When it changes, your finance conversation changes, and your only lever is to use less.
+
+**One vendor's bad afternoon is your outage.** Not degraded, not slower. Down. Every agent in the pipeline shares one failure domain, because they share one provider.
+
+None of that is a criticism of OpenAI's models. It is a criticism of having one of anything load-bearing.
+
+## The same task, both ways
+
+A two agent pipeline: a researcher gathers material, a reviewer checks it for weak claims. Here it is with the Agents SDK.
+
+```python
+from agents import Agent, Runner
+
+researcher = Agent(
+    name="Researcher",
+    instructions="Research the topic thoroughly and cite what you find.",
+    model="gpt-4.1",
+)
+
+reviewer = Agent(
+    name="Reviewer",
+    instructions="Check the research for weak or unsupported claims.",
+    model="gpt-4.1",
+    handoffs=[researcher],
+)
+
+result = Runner.run_sync(reviewer, "Assess the EV battery supply chain")
+print(result.final_output)
+```
+
+Clean code. Note both `model=` values, and note that they could not have been anything else.
+
+Now the same pipeline on Swarms Cloud, as one HTTP request with no framework to host:
+
+```python
+import httpx
+
+payload = {
+    "name": "Research Swarm",
+    "description": "A two-agent research and review pipeline",
+    "swarm_type": "SequentialWorkflow",
+    "task": "Assess the EV battery supply chain",
+    "agents": [
+        {
+            "agent_name": "Researcher",
+            "description": "Gathers and cites source material",
+            "system_prompt": "Research the topic thoroughly and cite what you find.",
+            "model_name": "claude-sonnet-5",
+            "max_loops": 1,
+        },
+        {
+            "agent_name": "Reviewer",
+            "description": "Audits the research for weak claims",
+            "system_prompt": "Check the research for weak or unsupported claims.",
+            "model_name": "claude-sonnet-5",
+            "max_loops": 1,
+        },
+    ],
+    "max_loops": 1,
+}
+
+r = httpx.post(
+    "https://api.swarms.world/v1/swarm/completions",
+    headers={"x-api-key": "YOUR_API_KEY"},
+    json=payload,
+    timeout=300.0,
+)
+print(r.json())
+```
+
+Comparable amount of code. The difference is that `model_name` is a genuinely open field.
+
+## 1,605 models, one key, one price
+
+Swarms Cloud puts **1,605 models behind a single API key**, spanning Anthropic, OpenAI, Google, xAI, DeepSeek, Meta, Moonshot and more. One key, one billing relationship, one payload shape, one place to look when something breaks.
+
+Pricing is the part people reread. It is **$6.50 per million input tokens and $18.50 per million output tokens on every model, regardless of provider**. Not a table of 1,605 rates that shift whenever a vendor reprices. The same number whichever model you name. Switching models becomes a quality decision and a latency decision, and never a budgeting exercise. Nobody needs approval to try another vendor's frontier model, because the cost line does not move.
+
+Each agent also takes a `fallback_model_name`. If the primary model is rate limited, degraded or erroring, the agent fails over on its own, inside the same request, without your retry code and without a second round trip. The failure domain stops being one company.
+
+## The thing a single-provider SDK structurally cannot do
+
+A swarm's roster is a per-agent choice, so agents in the same run can sit on different vendors, each covering for the other:
+
+```python
+payload = {
+    "name": "Cross-Vendor Review",
+    "description": "Research on one vendor, review on another",
+    "swarm_type": "SequentialWorkflow",
+    "task": "Assess the EV battery supply chain",
+    "agents": [
+        {
+            "agent_name": "Researcher",
+            "description": "Gathers and cites source material",
+            "system_prompt": "Research the topic thoroughly and cite what you find.",
+            "model_name": "gpt-4.1",
+            "fallback_model_name": "claude-sonnet-5",
+            "max_loops": 1,
+        },
+        {
+            "agent_name": "Reviewer",
+            "description": "Audits the research for weak claims",
+            "system_prompt": "Check the research for weak or unsupported claims.",
+            "model_name": "claude-sonnet-5",
+            "fallback_model_name": "gpt-4.1",
+            "max_loops": 1,
+        },
+    ],
+    "max_loops": 1,
+}
+```
+
+Read that slowly, because three separate things happen in one payload.
+
+The researcher runs on `gpt-4.1`. The reviewer runs on `claude-sonnet-5`. A critic that shares a model family with the writer also shares its blind spots, its training biases, and its characteristic failure modes, so it will nod along at exactly the places where it should object. Putting the reviewer on a different vendor is not a novelty. It is the only version of review that is actually adversarial.
+
+Each agent names the other vendor as its fallback. If either provider degrades mid run, the other one absorbs the step. There is no configuration where both halves of this pipeline go down together.
+
+And all of it is one request, one key, one flat price. On a single-provider SDK this payload has no equivalent, not because the engineering is hard but because the vendor boundary is the product.
+
+## Performance you can check, not performance you are told
+
+Swarms' graph engine compiles a workflow once and reuses the frozen plan, rather than re-deriving execution order on every run inside your own Python process. There is a [published systems paper](/blog/graphworkflow-research-paper) behind that claim, with an open benchmark suite of five topologies at 10 to 200 nodes, 15 configurations, medians of 9 samples with 95% confidence intervals:
+
+| Measurement | Result vs LangGraph |
+|---|---|
+| Compiled graph execution | 7.0x geometric mean |
+| 200-node chains | 62.5x (0.29 ms vs 18.15 ms) |
+| Shallow wide graphs | 2.7x to 4x |
+| Graph compilation | 21.6x to 31.3x faster |
+| Cold build-compile-execute path | 7.9x faster |
+
+The [full harness and raw data are public](https://github.com/The-Swarm-Corporation/GraphWorkflow-Paper/tree/main/benchmarks), so you can reproduce every figure on your own hardware. That is a checkable statement about the public record: Swarms has put a peer-reviewable systems paper and an open benchmark suite behind its orchestration engine. Most orchestration performance claims in this space are assertions. This one is an artifact you can run.
+
+## Orchestration breadth
+
+Handoffs are one composition primitive, and a good one. But a handoff cannot express a manager fanning work to workers, or five models voting, or a debate resolved by a judge, without you rebuilding those shapes by hand.
+
+Swarms ships 15+ named architectures selected with one `swarm_type` field: `SequentialWorkflow`, `ConcurrentWorkflow`, `HierarchicalSwarm`, `MajorityVoting`, `CouncilAsAJudge`, `MixtureOfAgents`, `GroupChat`, `DebateWithJudge`, `LLMCouncil`, `HeavySwarm`, `AgentRearrange`, `MultiAgentRouter`, `RoundRobin`, `PlannerWorkerSwarm`, `BatchedGridWorkflow`, and `auto` when you want the platform to pick. Changing your topology is a one string edit, not a refactor.
+
+| | OpenAI Agents SDK | Swarms Cloud |
+|---|---|---|
+| Models available | One vendor's catalog | 1,605 across many vendors, one key |
+| Pricing | Per model, per vendor | $6.50 in / $18.50 out on every model |
+| Mixed vendors in one run | Not the design | Per agent `model_name` |
+| Automatic failover | Your retry code | `fallback_model_name` per agent |
+| Orchestration shape | Handoffs as the primary primitive | 15+ named swarm types, one field |
+| Hosting | You run the process | One HTTP request, managed |
+| Clients | Python, JS | Python, TypeScript, Go, Java, C#, hosted MCP |
+
+## The verdict
+
+Build on Swarms.
+
+The frontier keeps moving and you do not control which lab moves it next. Three things arrive for every team: a better model ships somewhere else, your provider has a rough day, and your cost structure changes. Those are not hypotheticals, they are scheduling. On a provider-agnostic layer each one costs you a string. On a single-provider SDK each one costs you a port, negotiated at the worst possible moment.
+
+Take a pipeline you already run, put the critic on a different vendor from the writer, and read both outputs.
+
+- Browse the full catalog at [cloud.swarms.world/models](https://cloud.swarms.world/models).
+- Run the cross-vendor payload above, with no code at all, at [cloud.swarms.world/playground](https://cloud.swarms.world/playground).
+- Go deeper in [Swarms GraphWorkflow vs LangGraph](/blog/swarms-graphworkflow-vs-langgraph) and [the three shapes of agent orchestration](/blog/agent-orchestration-patterns).
+
+New accounts get a free credit on signup, so the experiment costs nothing but the ten minutes.

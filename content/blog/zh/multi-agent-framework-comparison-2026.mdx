@@ -1,0 +1,161 @@
+---
+title: "Swarms、AutoGen、LangGraph 与 CrewAI：2026 多智能体框架对比"
+description: "四个多智能体框架，每个都跑同一个任务，以及这个类别里唯一一份公开且可复现的编排基准测试：Swarms 执行已编译的智能体图，相对 LangGraph 取得 7.0 倍几何平均加速，深链上最高 62.5 倍。为什么一次编译的设计更优，以及它不适合谁。"
+date: "2026-09-22"
+author: "Swarms 团队"
+categories: ["对比"]
+readTime: "6 分钟阅读"
+featured: false
+---
+
+# Swarms、AutoGen、LangGraph 与 CrewAI：2026 多智能体框架对比
+
+*最后更新：2026 年 9 月 22 日。框架在变，我们也会持续修订本页，如果这里有过时之处，欢迎告诉我们。*
+
+大多数框架对比都是一场口味测试。这一篇里有实测数据。Swarms 是本页唯一一个在性能主张背后放了系统论文和开放可复现基准测试的框架，而产生这些数字的设计，同样也是让平台其余部分成立的那个设计。这就是本文的论点，而且它可以被核验。
+
+## 一句话说清四个框架
+
+**LangGraph** 把你的系统建模为一张基于类型化状态对象的显式节点图。它对控制流的表达很精确，也是四者中唯一原生支持环和条件边的。
+
+**AutoGen** 出自微软对会话式智能体的研究。系统行为从消息循环中涌现，而不是来自一张接线图。
+
+**CrewAI** 给你角色、目标和任务，能够干净地映射到企业内部已有的业务流程描述方式。
+
+**Swarms** 把编排形态本身当作一个参数。十五种具名拓扑外加 `auto`，一个 `swarm_type` 字段，底层是同一套智能体定义。参见[智能体编排的三种形态](/zh/blog/agent-orchestration-patterns)。
+
+## 设计上的分野：一次编译，还是每次运行重新推导
+
+另外三个框架都在运行时、在你的 Python 进程里、在每一次运行中解析执行顺序。节点排序、状态合并和分发，是运行时在第 1 个请求和第 1,000,000 个请求上都要重复的工作，而你的进程就是吞吐的天花板。
+
+Swarms 的 `GraphWorkflow` 只做一次这样的分析。编译阶段从节点度数推断入口与出口，计算拓扑分层，一次遍历物化邻接关系，校验可达性，并固化一份逐层执行计划，其中每个节点都已解析完毕。运行循环随后只是扫过一个固化的列表。单节点层在调用线程上就地执行，并行层交给同一个共享线程池。任何变更都会让缓存失效，因此过期的计划不可能被执行。而在 Swarms Cloud 上，这一整套是作为托管服务运行的，不在你的进程里。
+
+这是一个结构性论断，因此它应当给出一个可测量的预测。它确实给出了，而且预测成立。
+
+## 基准测试
+
+数据来自 [GraphWorkflow 系统论文](/zh/blog/graphworkflow-research-paper)，对比对象是 LangGraph 1.0.4，覆盖 5 种拓扑、10 到 200 个节点、15 组拓扑与规模配置，每个数字都是 9 次采样的中位数并带 95% 置信区间：
+
+| 测量项 | 结果 |
+|---|---|
+| 已编译图的稳态执行 | 相对 LangGraph **7.0 倍几何平均** |
+| 200 节点链式图 | **62.5 倍**（0.29 毫秒对 18.15 毫秒） |
+| 浅而宽的图 | 2.7 到 4 倍 |
+| 图编译 | 快 **21.6 到 31.3 倍** |
+| 冷启动构建、编译、执行全路径 | 快 **7.9 倍** |
+
+测试中的节点都是空操作，因此按构造，每一微秒的测量值都是框架开销，数据里没有任何模型延迟可以藏身。完整测试工具、原始采样和分析流程[全部公开](https://github.com/The-Swarm-Corporation/GraphWorkflow-Paper/tree/main/benchmarks)，你可以在自己的硬件上重跑整个网格。论文甚至把最显而易见的质疑做实了：一次 reducer 消融实验确认，LangGraph 的扇入状态处理并不是差距的成因。
+
+差距随深度扩大的方式，恰好与一次编译的分析所预测的一致，这正是重点所在。架构不是为了解释某个数字而事后编出来的故事，那个数字才是架构预先说会发生的事。
+
+据我们所知，AutoGen、CrewAI，以及 LangGraph 自身的编排开销，都没有对应的公开可复现基准测试。这是关于公开记录的陈述，而不是关于它们速度的断言，一旦出现这样的测试我们会补上链接。它之所以重要，是因为没有基准测试时，替代品就是厂商的形容词。
+
+这些差距在实践中出现的地方是：无服务器环境的冷启动、评估扫描，以及每个请求都要执行一次已编译工作流的服务。在那个 200 节点链式图上跑 1,000 次，编排总开销大约是 0.3 秒对 18.2 秒。
+
+## 能力矩阵
+
+| | Swarms | AutoGen | LangGraph | CrewAI |
+|---|---|---|---|---|
+| 公开可复现的基准测试 | 有，论文加开放测试工具 | 未公开 | 未公开 | 未公开 |
+| 单把 API 密钥背后的模型 | 1,605 个，覆盖 Anthropic、OpenAI、Google、xAI、DeepSeek、Meta 等 | 自带密钥 | 自带密钥 | 自带密钥 |
+| 与供应商无关的定价 | 统一价：每百万输入 6.50 美元，输出 18.50 美元 | 各供应商标价 | 各供应商标价 | 各供应商标价 |
+| 编排拓扑作为一个参数 | 15 种外加 `auto` | 拓扑即聊天模式 | 拓扑即你画的图 | 拓扑即 crew 的流程 |
+| 按智能体的模型故障转移 | 智能体上的 `fallback_models` | 自己写重试代码 | 自己写重试代码 | 自己写重试代码 |
+| 第一方托管执行 | Swarms Cloud API | 主要自建运行 | 厂商平台 | 厂商平台 |
+| 运行历史与单次成本 | 每次运行返回，另有 `/v1/account/logs` | 自己做日志 | 厂商 tracing | 厂商工具 |
+| 官方客户端语言 | Python、TypeScript、Go、Java、C# | Python、.NET | Python、JavaScript | Python |
+
+## 同一个任务的四种写法
+
+研究员收集材料，分析师把它变成结论。
+
+**LangGraph**
+
+```python
+from langgraph.graph import StateGraph, START, END
+from typing import TypedDict
+
+class S(TypedDict):
+    task: str
+    research: str
+    verdict: str
+
+def research(s): return {"research": llm.invoke(f"Research: {s['task']}").content}
+def analyse(s): return {"verdict": llm.invoke(f"Analyse: {s['research']}").content}
+
+g = StateGraph(S)
+g.add_node("research", research); g.add_node("analyse", analyse)
+g.add_edge(START, "research"); g.add_edge("research", "analyse"); g.add_edge("analyse", END)
+print(g.compile().invoke({"task": "The EV battery market"})["verdict"])
+```
+
+**AutoGen**
+
+```python
+researcher = AssistantAgent("Researcher", system_message="Research the topic.", llm_config=cfg)
+analyst = AssistantAgent("Analyst", system_message="Analyse the research.", llm_config=cfg)
+
+researcher.initiate_chat(analyst, message="Research the EV battery market, then hand off for analysis.")
+```
+
+**CrewAI**
+
+```python
+researcher = Agent(role="Researcher", goal="Gather material on the topic", backstory="...")
+analyst = Agent(role="Analyst", goal="Turn research into a verdict", backstory="...")
+
+crew = Crew(
+    agents=[researcher, analyst],
+    tasks=[
+        Task(description="Research the EV battery market", agent=researcher),
+        Task(description="Analyse the research", agent=analyst),
+    ],
+)
+print(crew.kickoff())
+```
+
+**Swarms Cloud**
+
+一份负载，没有进程需要你维持运行。官方客户端是 Python 的 `swarms-client` 和 TypeScript 的 `swarms-ts`，下面的原始调用展示的是请求的形状。
+
+```python
+import httpx
+
+payload = {
+    "name": "Research Swarm",
+    "description": "A two-agent research and analysis pipeline",
+    "swarm_type": "SequentialWorkflow",
+    "task": "Assess the EV battery market",
+    "agents": [
+        {"agent_name": "Researcher", "description": "Gathers material",
+         "system_prompt": "Research the topic thoroughly.",
+         "model_name": "claude-sonnet-5", "max_loops": 1},
+        {"agent_name": "Analyst", "description": "Turns research into a verdict",
+         "system_prompt": "Analyse the research and give a verdict.",
+         "model_name": "gpt-4.1", "max_loops": 1},
+    ],
+    "max_loops": 1,
+}
+
+r = httpx.post("https://api.swarms.world/v1/swarm/completions",
+               headers={"x-api-key": "YOUR_API_KEY"}, json=payload, timeout=300.0)
+print(r.json())
+```
+
+两个智能体，两家厂商的模型，一把密钥，一张账单。把 `"swarm_type"` 改成 `"ConcurrentWorkflow"`、`"MajorityVoting"` 或 `"HierarchicalSwarm"`，同样这批智能体就会在另一种拓扑下运行，无需任何改动。而在另外三个框架里，拓扑就是代码，改变主意意味着重写。
+
+## 你该选哪一个
+
+**对大多数读者来说，选 Swarms。** 如果你要搭建流水线、交付产品、跑评估、按请求提供编排服务，或者只是不想再运维一支工作节点队伍，那么一次编译的引擎、实测的开销、拓扑目录、故障转移，以及覆盖 1,605 个模型的统一定价，都指向同一个方向。它也是其中唯一一个你无需拥有任何基础设施即可采用的，并且是唯一一个在你投入之前就能自行验证性能主张的。
+
+**一个诚实的例外：如果你的控制流确实需要环或条件边**，并且需要在你自己的进程里逐分支推理，那就选 LangGraph。GraphWorkflow 是一个 DAG 引擎，并不表达这些结构，而在那种场景下 LangGraph 的类型化状态与 reducer 买到的是能力，而不是仪式感。我们在 [GraphWorkflow 与 LangGraph 对比](/zh/blog/swarms-graphworkflow-vs-langgraph)里完整写过这个取舍。如果你的工作流是一张要跑很多次的静态 DAG，也就是大多数情况，这个例外与你无关。
+
+**还在纠结到底要不要用多个智能体：** 先读[单智能体与多智能体](/zh/blog/single-agent-vs-multi-agent)。
+
+## 结论
+
+这里的每个框架都有一套关于"编排应该住在哪里"的说法。只有一个发表了论文、开放了测试工具和原始数据，并邀请你来推翻它。从 [cloud.swarms.world](https://cloud.swarms.world) 开始。
+
+---
+
+*欢迎指正。加入我们的 [Discord](https://discord.gg/VapjxpSyHC)，或查阅[文档](https://docs.swarms.ai)。*

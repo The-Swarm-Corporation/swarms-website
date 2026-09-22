@@ -1,0 +1,149 @@
+---
+title: "Migrating from LangGraph to Swarms: A Working Guide"
+description: "The measured case for moving an agent pipeline off LangGraph: a 7.0x geometric-mean speedup across 15 benchmark configurations, up to 62.5x on deep chains, and compiles 21.6x to 31.3x faster. Plus the concept-by-concept port guide, the same graph written in both frameworks, and practical notes on what needs rework."
+date: "2026-09-22"
+author: "Swarms Team"
+categories: ["Guide"]
+featured: false
+readTime: "5 min read"
+---
+
+# Migrating from LangGraph to Swarms: A Working Guide
+
+Most framework comparisons are argument. This one is measurement, and it was taken against LangGraph specifically.
+
+The [GraphWorkflow systems paper](/blog/graphworkflow-research-paper) benchmarks the Swarms graph execution engine head to head with LangGraph 1.0.4 across five topologies at 10 to 200 nodes, 15 topology and size configurations in total. On compiled graph execution, Swarms posts a **geometric-mean speedup of 7.0x**. On 200-node chains the gap reaches **62.5x**: 0.29 ms against 18.15 ms. Even on shallow wide graphs, where there is least room to win, it is **2.7x to 4x**. Graphs **compile 21.6x to 31.3x faster**, and the cold build-compile-execute path completes **7.9x faster**.
+
+Every number is a median of 9 samples with 95% confidence intervals. The full harness, the raw sample data, and the analysis pipeline are [published](https://github.com/The-Swarm-Corporation/GraphWorkflow-Paper/tree/main/benchmarks), so you can run the suite on your own hardware before you port a line of code. Every benchmark node is a no-op function, which means every microsecond measured is framework overhead and none of it is model latency.
+
+## Why the gap widens with depth
+
+The spread from 2.7x to 62.5x is not noise. It is the architecture showing through.
+
+LangGraph executes on a Pregel-style superstep loop with channel-based state, reducer functions, and checkpoint hooks consulted at every step. That machinery is re-derived on every run and charged to every node, whether or not your workflow uses cycles, conditional edges, or durable execution. The paper prices it at roughly 90 microseconds per superstep on a chain, and a single-coefficient per-node model fits LangGraph's entire benchmark grid at about 107 microseconds per node with an R-squared of 0.97. Cost scales with the number of steps, so it compounds with depth.
+
+Swarms compiles once. Entry and exit points are inferred from node degrees, topological generations are computed with Kahn's algorithm, adjacency maps are materialized in one pass, and a per-layer execution plan is frozen with every node pre-resolved. The run loop then sweeps a precomputed list, with singleton layers running inline on the calling thread instead of paying a queue handoff. Compiled artifacts are cached with explicit invalidation, so repeated runs pay compilation exactly once.
+
+Shallow graphs have few layers to amortize over, so the win is modest. Deep graphs have hundreds, and LangGraph pays its per-superstep tax on every one. The architecture predicts the benchmark, and the benchmark confirms the architecture.
+
+At a thousand executions of that 200-node chain, cumulative orchestration overhead is roughly 0.3 seconds for Swarms against 18.2 seconds for LangGraph. That is the shape of the saving: per request, at scale, and on cold starts.
+
+One gracious note before the port: LangGraph's explicit state machine is genuinely good when your pipeline is a tightly controlled branching machine and the routing, not the agents, is the interesting logic.
+
+## Concept mapping
+
+| LangGraph | Swarms |
+| --- | --- |
+| `StateGraph(State)` | The swarm payload itself: `name`, `description`, `swarm_type` |
+| Node (a Python function) | An entry in `agents`, an agent spec with a name, prompt and model |
+| Edge (`add_edge("a", "b")`) | Position in the `agents` list for `SequentialWorkflow`, or an explicit edge list in `GraphWorkflow` |
+| Conditional edge | No direct equivalent. Use a routing `swarm_type` such as `MultiAgentRouter`, `HierarchicalSwarm` or `auto` |
+| Entry point / `START` | The first agent in the list. No sentinel node |
+| `END` | The last agent in the list. No sentinel node |
+| State schema (`TypedDict`, reducers) | None. Each agent's output is passed to the next automatically |
+| `.compile()` | Server side. Nothing to call |
+| Checkpointer / thread persistence | No direct equivalent. Runs are recorded in `GET /v1/account/logs` and on the `/history` page |
+| `graph.invoke(...)` | `POST /v1/swarm/completions` with `x-api-key` |
+
+The short version: nodes and edges survive the port, state does not, because there is no shared state dictionary to design around.
+
+## The same graph, twice
+
+A small realistic pipeline: research feeds analysis, analysis feeds writing.
+
+In LangGraph you declare a state schema, write each step as a function that reads state and returns a partial update, register nodes and edges by string name, and compile.
+
+```python
+from typing import TypedDict
+from langgraph.graph import StateGraph, START, END
+
+class State(TypedDict):
+    task: str
+    research: str
+    analysis: str
+    report: str
+
+def research(state: State):
+    return {"research": llm.invoke(f"Research: {state['task']}").content}
+
+def analyze(state: State):
+    return {"analysis": llm.invoke(f"Analyze:\n{state['research']}").content}
+
+def write(state: State):
+    return {"report": llm.invoke(f"Write a brief from:\n{state['analysis']}").content}
+
+builder = StateGraph(State)
+builder.add_node("research", research)
+builder.add_node("analyze", analyze)
+builder.add_node("write", write)
+builder.add_edge(START, "research")
+builder.add_edge("research", "analyze")
+builder.add_edge("analyze", "write")
+builder.add_edge("write", END)
+
+graph = builder.compile()
+result = graph.invoke({"task": "Assess the EV battery market"})
+print(result["report"])
+```
+
+In Swarms the same graph is one request. The agents are the nodes, the order is the edges, and the LLM plumbing is gone.
+
+```python
+import httpx
+
+payload = {
+    "name": "Research Swarm",
+    "description": "Research, analysis and writing pipeline",
+    "swarm_type": "SequentialWorkflow",
+    "task": "Assess the EV battery market",
+    "agents": [
+        {"agent_name": "Researcher",
+         "description": "Gathers source material",
+         "system_prompt": "Research the given topic thoroughly.",
+         "model_name": "claude-sonnet-5", "max_loops": 1},
+        {"agent_name": "Analyst",
+         "description": "Draws conclusions from the research",
+         "system_prompt": "Analyze the research and draw conclusions.",
+         "model_name": "claude-sonnet-5", "max_loops": 1},
+        {"agent_name": "Writer",
+         "description": "Produces the final brief",
+         "system_prompt": "Write a final brief from the analysis.",
+         "model_name": "claude-sonnet-5", "max_loops": 1},
+    ],
+    "max_loops": 1,
+}
+
+response = httpx.post(
+    "https://api.swarms.world/v1/swarm/completions",
+    headers={"x-api-key": "YOUR_API_KEY"},
+    json=payload,
+    timeout=300.0,
+)
+print(response.json())
+```
+
+No state schema, no reducers, no `START` and `END`, no compile step, no `llm.invoke` per node, and nothing to host. If you prefer a typed client over raw HTTP, the official Python SDK is `pip install swarms-client`, and there are TypeScript, Go, Java and C# clients against the same endpoints. Any model id works, `claude-sonnet-5` or `gpt-4.1` alike, behind one key.
+
+In practice a port is: lift each node's prompt text into a `system_prompt`, name the agent after the node, drop the state plumbing, and pick a `swarm_type` that matches the topology. `SequentialWorkflow` for a chain, `ConcurrentWorkflow` for a fan out, `MajorityVoting` or `CouncilAsAJudge` when several agents grade the same input, `HierarchicalSwarm` when a manager assigns work.
+
+## Porting notes
+
+Four things need a decision rather than a translation. None is a blocker, but hitting one unprepared mid-port is how a migration stalls.
+
+**Conditional edges become routing swarms.** There is no per-edge predicate in the payload. Move the branch into an agent's prompt, or hand routing to a swarm type built for it: `MultiAgentRouter`, `HierarchicalSwarm`, or `auto` to let the platform pick. The routing decision becomes a model decision rather than a Python `if`.
+
+**Checkpointers and human pauses live in your application.** LangGraph's checkpointer gives resumable threads, rewind, and mid-graph interrupts. A swarm completion is a single call. Runs are recorded through `GET /v1/account/logs` and browsable per run on `/history`, which is an audit record rather than a resumable state store. For an approval step, split the pipeline into two calls with your own logic between them.
+
+**Non-LLM nodes move out or become tools.** A LangGraph node is any Python function, so people use them for database reads, parsers and validators. A Swarms node is an agent. Deterministic steps either sit in your own code around the call, or become tools the agent reaches for via `selected_tools` or an MCP server.
+
+**Cycles become loops or conversations.** Graph execution is built around directed acyclic graphs. For iterative refinement, raise `max_loops` on the agent that needs to revise its own work, or use a conversational architecture such as `GroupChat`.
+
+## Where to start
+
+Port one pipeline, not all of them. Pick the most linear one you have and rewrite it as a `SequentialWorkflow` payload. It is usually an afternoon.
+
+The fastest way to shape the graph first is the visual canvas at [cloud.swarms.world/workflow-builder](https://cloud.swarms.world/workflow-builder). Drop in agent nodes, drag the connections, set prompts and models in the config drawer, run it against production infrastructure, then open the Code panel to copy the exact request in Python, TypeScript, Go or cURL. New accounts get a free credit on signup, so the first port costs nothing to try. See [Inside the Swarms Cloud Workflow Builder](/blog/workflow-builder-swarms-cloud) for the full tour and [Swarms GraphWorkflow vs LangGraph](/blog/swarms-graphworkflow-vs-langgraph) for the side-by-side framework comparison.
+
+---
+
+*Have questions or feedback? Join our [Discord community](https://discord.gg/VapjxpSyHC) or check out the [documentation](https://docs.swarms.ai).*

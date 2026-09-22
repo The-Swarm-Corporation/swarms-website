@@ -1,0 +1,149 @@
+---
+title: "从 LangGraph 迁移到 Swarms：一份实操指南"
+description: "把智能体流水线从 LangGraph 迁出的实测理由：15 组基准配置上取得 7.0 倍几何平均加速，深链最高 62.5 倍，图编译快 21.6 到 31.3 倍。此外还有逐个概念的迁移对照、同一张图的两种写法，以及哪些部分需要重做的实操说明。"
+date: "2026-09-22"
+author: "Swarms 团队"
+categories: ["指南"]
+featured: false
+readTime: "5 分钟阅读"
+---
+
+# 从 LangGraph 迁移到 Swarms：一份实操指南
+
+大多数框架对比靠的是论证，这一篇靠的是测量，而且测量对象正是 LangGraph。
+
+[GraphWorkflow 系统论文](/zh/blog/graphworkflow-research-paper)把 Swarms 图执行引擎与 LangGraph 1.0.4 正面对比，覆盖 5 种拓扑、10 到 200 个节点，共 15 组拓扑与规模配置。在已编译图的执行上，Swarms 取得 **7.0 倍的几何平均加速**。在 200 节点链式图上差距达到 **62.5 倍**：0.29 毫秒对 18.15 毫秒。即使在最没有发挥空间的浅而宽的图上，也有 **2.7 到 4 倍**。图的**编译速度快 21.6 到 31.3 倍**，冷启动的构建-编译-执行全路径快 **7.9 倍**。
+
+每个数字都是 9 次采样的中位数并带 95% 置信区间。完整测试工具、原始采样数据和分析流程[均已公开](https://github.com/The-Swarm-Corporation/GraphWorkflow-Paper/tree/main/benchmarks)，因此你可以在动手迁移任何一行代码之前，先在自己的硬件上跑一遍整套测试。测试中的每个节点都是空操作函数，这意味着测到的每一微秒都是框架开销，其中没有任何模型延迟。
+
+## 为什么差距随深度扩大
+
+从 2.7 倍到 62.5 倍的跨度不是噪声，而是架构在显形。
+
+LangGraph 运行在 Pregel 风格的超步循环上，配合基于通道的状态、reducer 函数，以及每一步都会被查询的检查点钩子。这套机制在每次运行时重新推导，并摊到每个节点头上，无论你的工作流是否用到了环、条件边或持久化执行。论文把它在链式图上的成本定价为每个超步约 90 微秒，而一个单系数的按节点模型能以约每节点 107 微秒拟合 LangGraph 的整个测试网格，R 方达到 0.97。成本随步数增长，因此它会随深度累积。
+
+Swarms 只编译一次。入口与出口从节点度数推断，拓扑分层用 Kahn 算法计算，邻接表一次遍历物化，然后固化出一份逐层执行计划，其中每个节点都已预先解析。运行循环随后只是扫过一个预先算好的列表，单节点层在调用线程上就地执行，省去一次队列交接。编译产物带显式失效机制地缓存，因此重复运行只会付一次编译成本。
+
+浅图没有多少层可供摊销，收益因此有限。深图有上百层，而 LangGraph 要在每一层上缴纳它的超步税。架构预测了基准测试，而基准测试印证了架构。
+
+把那张 200 节点链式图跑一千次，累计编排开销大约是 Swarms 的 0.3 秒对 LangGraph 的 18.2 秒。这就是节省的形态：按请求、在规模上，以及在冷启动时。
+
+动手迁移之前先说句公道话：当你的流水线是一台受严格控制的分支机器，而真正有意思的逻辑在路由而不在智能体时，LangGraph 的显式状态机确实很好用。
+
+## 概念对照
+
+| LangGraph | Swarms |
+| --- | --- |
+| `StateGraph(State)` | 集群负载本身：`name`、`description`、`swarm_type` |
+| 节点（一个 Python 函数） | `agents` 中的一项，即带名称、提示词和模型的智能体定义 |
+| 边（`add_edge("a", "b")`） | `SequentialWorkflow` 中由 `agents` 列表的顺序决定，或在 `GraphWorkflow` 中用显式边列表 |
+| 条件边 | 没有直接对应物。改用路由型 `swarm_type`，例如 `MultiAgentRouter`、`HierarchicalSwarm` 或 `auto` |
+| 入口 / `START` | 列表中的第一个智能体，没有哨兵节点 |
+| `END` | 列表中的最后一个智能体，没有哨兵节点 |
+| 状态 schema（`TypedDict`、reducer） | 没有。每个智能体的输出会自动传给下一个 |
+| `.compile()` | 在服务端完成，无需调用 |
+| 检查点 / 线程持久化 | 没有直接对应物。运行记录在 `GET /v1/account/logs` 和 `/history` 页面 |
+| `graph.invoke(...)` | 带 `x-api-key` 的 `POST /v1/swarm/completions` |
+
+简而言之：节点和边能平移过来，状态不能，因为这里没有一个需要围绕它做设计的共享状态字典。
+
+## 同一张图的两种写法
+
+一条小而真实的流水线：研究喂给分析，分析喂给写作。
+
+在 LangGraph 里，你要声明状态 schema，把每一步写成读取状态并返回部分更新的函数，按字符串名注册节点和边，然后编译。
+
+```python
+from typing import TypedDict
+from langgraph.graph import StateGraph, START, END
+
+class State(TypedDict):
+    task: str
+    research: str
+    analysis: str
+    report: str
+
+def research(state: State):
+    return {"research": llm.invoke(f"Research: {state['task']}").content}
+
+def analyze(state: State):
+    return {"analysis": llm.invoke(f"Analyze:\n{state['research']}").content}
+
+def write(state: State):
+    return {"report": llm.invoke(f"Write a brief from:\n{state['analysis']}").content}
+
+builder = StateGraph(State)
+builder.add_node("research", research)
+builder.add_node("analyze", analyze)
+builder.add_node("write", write)
+builder.add_edge(START, "research")
+builder.add_edge("research", "analyze")
+builder.add_edge("analyze", "write")
+builder.add_edge("write", END)
+
+graph = builder.compile()
+result = graph.invoke({"task": "Assess the EV battery market"})
+print(result["report"])
+```
+
+在 Swarms 里，同一张图就是一个请求。智能体就是节点，顺序就是边，LLM 的胶水代码全部消失。
+
+```python
+import httpx
+
+payload = {
+    "name": "Research Swarm",
+    "description": "Research, analysis and writing pipeline",
+    "swarm_type": "SequentialWorkflow",
+    "task": "Assess the EV battery market",
+    "agents": [
+        {"agent_name": "Researcher",
+         "description": "Gathers source material",
+         "system_prompt": "Research the given topic thoroughly.",
+         "model_name": "claude-sonnet-5", "max_loops": 1},
+        {"agent_name": "Analyst",
+         "description": "Draws conclusions from the research",
+         "system_prompt": "Analyze the research and draw conclusions.",
+         "model_name": "claude-sonnet-5", "max_loops": 1},
+        {"agent_name": "Writer",
+         "description": "Produces the final brief",
+         "system_prompt": "Write a final brief from the analysis.",
+         "model_name": "claude-sonnet-5", "max_loops": 1},
+    ],
+    "max_loops": 1,
+}
+
+response = httpx.post(
+    "https://api.swarms.world/v1/swarm/completions",
+    headers={"x-api-key": "YOUR_API_KEY"},
+    json=payload,
+    timeout=300.0,
+)
+print(response.json())
+```
+
+没有状态 schema，没有 reducer，没有 `START` 和 `END`，没有编译步骤，没有每个节点里的 `llm.invoke`，也没有任何东西需要托管。如果你更想用带类型的客户端而不是裸 HTTP，官方 Python SDK 是 `pip install swarms-client`，同样的端点还有 TypeScript、Go、Java 和 C# 客户端。任何模型 id 都能用，`claude-sonnet-5` 和 `gpt-4.1` 一样，都在同一把密钥背后。
+
+实际操作中，一次迁移就是：把每个节点的提示词文本提到 `system_prompt` 里，用节点名给智能体命名，去掉状态相关的胶水代码，再挑一个与拓扑匹配的 `swarm_type`。链式用 `SequentialWorkflow`，扇出用 `ConcurrentWorkflow`，多个智能体给同一份输入打分时用 `MajorityVoting` 或 `CouncilAsAJudge`，需要管理者分派工作时用 `HierarchicalSwarm`。
+
+## 迁移注意事项
+
+有四件事需要做决定，而不是简单翻译。它们都不是拦路虎，但在迁移途中毫无准备地撞上其中一个，正是迁移停滞的常见原因。
+
+**条件边变成路由型集群。** 负载里没有按边设置的谓词。把分支逻辑移进某个智能体的提示词里，或者把路由交给为此而生的集群类型：`MultiAgentRouter`、`HierarchicalSwarm`，或让平台自选的 `auto`。路由决策从一个 Python `if` 变成一个模型决策。
+
+**检查点和人工暂停留在你的应用里。** LangGraph 的检查点提供可恢复的线程、回退和图中断。一次集群调用是单次请求。运行记录通过 `GET /v1/account/logs` 保存，并可在 `/history` 上逐次浏览，那是一份审计记录，而不是可恢复的状态存储。如果需要审批环节，就把流水线拆成两次调用，中间放你自己的逻辑。
+
+**非 LLM 节点要么挪出去，要么变成工具。** LangGraph 的节点可以是任意 Python 函数，因此人们会用它做数据库读取、解析和校验。Swarms 的节点是智能体。确定性的步骤要么放在调用之外你自己的代码里，要么通过 `selected_tools` 或 MCP 服务器变成智能体可以调用的工具。
+
+**环变成循环或对话。** 图执行是围绕有向无环图构建的。要做迭代式打磨，就提高那个需要修改自己产出的智能体的 `max_loops`，或者改用 `GroupChat` 这类会话式架构。
+
+## 从哪里开始
+
+先迁一条流水线，不要一次全迁。挑你手里最线性的那条，把它重写成一份 `SequentialWorkflow` 负载，通常一个下午就够了。
+
+想先把图的形状搭出来，最快的方式是 [cloud.swarms.world/workflow-builder](https://cloud.swarms.world/workflow-builder) 上的可视化画布。拖入智能体节点，连好线，在配置抽屉里设置提示词和模型，对着生产基础设施直接运行，然后打开 Code 面板，复制出 Python、TypeScript、Go 或 cURL 形式的确切请求。新账户注册即获免费额度，因此第一次迁移试起来没有成本。完整介绍见[深入 Swarms Cloud 工作流构建器](/zh/blog/workflow-builder-swarms-cloud)，框架层面的并排对比见 [Swarms GraphWorkflow 与 LangGraph 对比](/zh/blog/swarms-graphworkflow-vs-langgraph)。
+
+---
+
+*有问题或反馈？欢迎加入我们的 [Discord 社区](https://discord.gg/VapjxpSyHC)，或查阅[文档](https://docs.swarms.ai)。*

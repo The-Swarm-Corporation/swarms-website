@@ -1,0 +1,118 @@
+---
+title: "The Swarms Marketplace Is Faster: September Performance Update"
+description: "Today we are shipping a major speed update to the Swarms Marketplace. The home page shows listings 3.1× faster, a 494 KB download is gone from every page, and listing pages carry up to 44% less code. Live now at swarms.world."
+date: "2026-09-26"
+author: "Swarms Team"
+categories: ["Product"]
+readTime: "7 min read"
+featured: true
+image: "/marketplace_speedup_blog_banner.png"
+---
+
+# The Swarms Marketplace Is Faster: September Performance Update
+
+Today we are announcing a major performance update to the [Swarms Marketplace](https://swarms.world), live now for everyone.
+
+The home page shows its first listings **3.1× faster**. A **494 KB download** that ran on every page is gone. Agent, prompt, tool and bundle pages carry **22 to 31% less code**, and creator profiles **44% less**. Registry search makes **80% fewer requests** while you type, and prompt chat suggests starter questions **3.5× sooner**.
+
+All of it shipped over the last two weeks, from 12 to 26 September, and you do not need to change anything to get it. It is already running on swarms.world. Here is what we changed and how we measured it.
+
+## At a glance
+
+| What | Before | After |
+| --- | --- | --- |
+| Home page: first listings, stats and tokenized data | 2,098 ms | 669 ms (3.1× faster) |
+| Background search download on every page | 1.2 to 1.8 s and 494 KB | removed |
+| Agent, prompt and tool pages (JavaScript, compressed) | 773 to 781 kB | 600 to 603 kB (22 to 23% less) |
+| Bundle pages | 592 kB | 406 kB (31% less) |
+| Creator profiles | 703 kB | 393 kB (44% less) |
+| Publish page | 778 kB | 587 kB (25% less) |
+| Registry fetches while typing "research agent" | 15 | 3 |
+| Prompt chat starter questions | 10.3 s | about 2.9 s (3.5× faster) |
+
+## The home page shows listings 1.4 seconds sooner
+
+The home page asks the server for several things at once when it loads: the featured listings, the marketplace stats, tokenized products and a few others. Those requests travel together in one batch, and a batch comes back only when its slowest member finishes.
+
+One member of that batch was a leftover. An older "highest rated" section had been removed from the home page, but the query that fed it kept running on every visit. It read every listing and every review, ranked them, and returned six items that nothing displayed. On its own it took 1.2 to 1.9 seconds on the server, and because it shared a batch with everything else, the first cards on the home page waited for it.
+
+We deleted the query and its endpoint. The home page's first batch now returns in **669 ms instead of 2,098 ms**, so the first listings appear about **1.4 seconds sooner**, and the page makes 12 requests on load instead of 14. Removing the endpoint also means nobody can trigger that full scan from outside.
+
+## No more downloading the whole marketplace on every page
+
+The search box in the navigation bar used to prepare for a search the moment any page loaded. It downloaded every agent, prompt, tool, user and review, **494 KB taking 1.2 to 1.8 seconds**, then filtered that list in the browser as you typed. Most visitors never search, but every visitor paid for the download on every page.
+
+Search now runs on the server. Nothing loads until you type at least two characters. Each search returns about **3 KB in 0.3 to 0.5 seconds**, ranks exact name matches first, then prefix matches, then everything else, and tells you how many more results exist in each category.
+
+This also fixed a correctness problem. The old download stopped at 1,000 rows, so once the marketplace passed 1,000 agents, older agents and users could not be found through the navigation search at all. Every listing is searchable again.
+
+There is one tradeoff worth being open about. The old search filtered instantly once its download had finished. The new one waits a quarter of a second after you stop typing and then makes a small request, so a new search term takes about half a second to show results. Previous results stay on screen while the next ones load, and repeated searches come from cache.
+
+## Listing pages carry a lot less code
+
+Every agent, prompt, tool and bundle page downloads JavaScript before it becomes interactive. Three changes cut that amount substantially.
+
+**Code highlighting.** Listing pages highlight code samples, and the highlighter was shipping grammars for every programming language it supports in a single 218 kB file, loaded on every listing page. It now ships 23 common languages in a 35 kB file. Code in a language outside that set displays as plain monospace text.
+
+**Payments and tokenization load when you use them.** The purchase dialog and the tokenize action, along with the Solana libraries they depend on, used to load on every listing page and every marketplace card. They now load the first time someone clicks **Buy** or **Tokenize**. Nothing changes about how buying or tokenizing works.
+
+**The Ratings tab loads when you open it.** Listing pages never open on the Ratings tab, so its code now arrives the first time you click it.
+
+Together, measured as compressed JavaScript on production builds:
+
+| Page | Before | After |
+| --- | --- | --- |
+| Agent pages | 781 kB | about 603 kB |
+| Prompt pages | 781 kB | about 603 kB |
+| Tool pages | 773 kB | about 600 kB |
+| Bundle pages | 592 kB | 406 kB |
+| Creator profiles | 703 kB | 393 kB |
+| Publish page | 778 kB | 587 kB |
+
+Creator profiles saw the largest drop: **44%**.
+
+## Registry search waits for you to finish typing
+
+On the [registry](https://swarms.world/platform/registry), every keystroke in the search box used to refetch the registry (up to 1,000 listings per type), rewrite the page address and scroll the page back to the top. Typing "research agent" set off 15 full fetches.
+
+Search now runs 300 milliseconds after your last keystroke. The same phrase takes **3 fetches**, the page stops jumping to the top while you type, and results no longer arrive out of order. Clearing filters and the AI search mode still apply immediately.
+
+## Chat starter questions arrive in under 3 seconds
+
+When you open a prompt's chat with no messages yet, the marketplace suggests three starter questions tailored to that prompt. Those suggestions used to take about **10.3 seconds**, long enough that most people had already started typing.
+
+We benchmarked ten models on the real task and moved the starters to the fastest one that reliably returned three good questions, then trimmed the instructions it receives. Suggestions now arrive in about **2.9 seconds**, 3.5× faster. We re-checked quality across five very different prompts and all of them returned three specific, useful questions.
+
+## Retiring the floating assistant
+
+We also retired Yuki, the floating assistant that sat in the corner of most marketplace pages. Its launcher played about 2.1 MB of animated video on every page where it appeared, and on listing pages it fetched the full listing a second time. Removing it takes that weight off every page where it appeared. The product listing for the Yuki prompt remains available in the marketplace.
+
+## How we measured
+
+Each number above comes from the pull request that made the change. Engineers measured their change against the version before it on the same machine, using production builds for page weight and a headless browser for timings and request counts.
+
+These are controlled measurements, so the exact milliseconds you see will depend on your connection and device. The direction and rough size of each improvement hold, and none of the changes in this period was measured to make a page slower.
+
+## What is next
+
+Several more performance changes are in review now:
+
+- Registry listings loading their authors in the same request
+- Fewer requests on listing pages after they load
+- Profile pages reading less data, with search, tabs and paging handled on the server
+- Listing card images served at the size of the card instead of full resolution
+- Complete results for large queries that currently stop at 1,000 rows
+- A phone layout that puts registry listings on the first screen
+
+We will cover those when they ship.
+
+Try it at [swarms.world](https://swarms.world).
+
+## Links and resources
+
+| Resource | Link |
+| --- | --- |
+| Swarms Marketplace | [swarms.world](https://swarms.world) |
+| Registry | [swarms.world/platform/registry](https://swarms.world/platform/registry) |
+| Documentation | [docs.swarms.ai](https://docs.swarms.ai) |
+| Twitter/X | [@swarms_corp](https://x.com/swarms_corp) |

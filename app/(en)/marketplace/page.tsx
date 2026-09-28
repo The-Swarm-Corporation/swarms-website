@@ -1,20 +1,17 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import Image from "next/image"
 import { motion } from "framer-motion"
 import {
   ArrowRight,
   ArrowUpRight,
   Search,
-  DollarSign,
   FileText,
   Wrench,
   Plug,
   Sparkles,
   TrendingUp,
-  Lock,
-  Gift,
   ChevronDown,
   CheckCircle,
   Code,
@@ -25,6 +22,7 @@ import {
   Tag,
 } from "lucide-react"
 
+import { CardCarousel, type CarouselCardItem } from "@/components/card-carousel"
 import { Navigation } from "@/components/navigation"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -40,36 +38,62 @@ const stats = [
   { value: "26", label: "Public API endpoints" },
 ]
 
-const categories = [
+const categories: CarouselCardItem[] = [
   {
     icon: Bot,
     title: "Agents",
     description: "Executable code with its dependencies and required environment variables bundled in.",
     meta: "e.g. ETF Analysis BatchedGridWorkflow",
+    preview: ["compliance-checker/", "  main.py", "  requirements.txt", "  .env.example"],
   },
   {
     icon: FileText,
     title: "Prompts",
-    description: "Text-only instructions. No code needed — export to ChatGPT or Claude with one click.",
+    description: "Text-only instructions with no code needed. Export to ChatGPT or Claude with one click.",
     meta: "e.g. Medical Researcher System Prompt",
+    preview: ["# Medical Researcher", "", "You are a medical researcher.", "Cite every claim.", "Flag weak evidence."],
   },
   {
     icon: Wrench,
     title: "Tools",
     description: "Typed Python functions built to be pulled into your own agents as dependencies.",
     meta: "e.g. API connectors, data processors",
+    preview: ["def get_stock_price(", "    ticker: str,", ") -> float:", '    """Latest close price."""'],
   },
   {
     icon: Plug,
     title: "MCP Servers",
     description: "Model Context Protocol implementations that give any agent real tool access: search, scraping, docs.",
     meta: "e.g. Firecrawl, DeepWiki, Exa",
+    preview: ["{", '  "mcpServers": {', '    "firecrawl": { "url": "..." }', "  }", "}"],
   },
   {
     icon: Sparkles,
     title: "Skills",
     description: "Anthropic SKILL.md-format instruction packs. Drag a file onto the launch form and it fills itself in.",
     meta: "Named, reusable capabilities",
+    preview: ["---", "name: commit-messages", "description: Write commit", "  messages from staged diffs", "---"],
+  },
+]
+
+const mcpExamples = [
+  {
+    lang: "Claude Code",
+    file: "terminal",
+    code: `claude mcp add --transport http swarms https://swarms.world/mcp \\
+  --header "Authorization: Bearer $SWARMS_API_KEY"`,
+  },
+  {
+    lang: "Cursor",
+    file: ".cursor/mcp.json",
+    code: `{
+  "mcpServers": {
+    "swarms": {
+      "url": "https://swarms.world/mcp",
+      "headers": { "Authorization": "Bearer sk-..." }
+    }
+  }
+}`,
   },
 ]
 
@@ -84,54 +108,31 @@ const industries = [
   "Customer Support",
 ]
 
-const businessModels = [
+const businessModels: CarouselCardItem[] = [
   {
-    icon: DollarSign,
-    name: "Direct sale",
-    image: "/swarms_blog_fiat_cover.png",
-    mechanic: "One-time purchase. Buyer pays once, gets permanent access.",
-    rows: [
-      ["Platform fee", "10%, flat"],
-      ["You keep", "90% of every sale"],
-      ["Rails", "Card (Stripe) or crypto (SOL), chosen per listing"],
-      ["Listing fee", "None"],
-    ],
-    note: "No subscription tier, no sliding scale by volume or rating, no minimum published-item count before you can publish a paid listing.",
+    title: "Direct sale",
+    description: "One-time purchase. Buyer pays once, gets permanent access. Card or crypto, chosen per listing.",
+    stat: { value: "90%", label: "of every sale goes to you" },
   },
   {
-    icon: TrendingUp,
-    name: "Tokenization",
-    image: "/swarms_screener.png",
-    mechanic: "Launch as a tradeable token on Solana via a bonding curve. You bring the agent, not capital.",
-    rows: [
-      ["Standard trading fee", "1.0% per trade (0.5% you / 0.5% platform)"],
-      ["Frenzy Mode fee", "2.0% per trade (1.0% you / 1.0% platform)"],
-      ["Quote currency", "SOL or USDC, set at launch"],
-      ["Curve targets", "~$3,246 initial mcap → ~$46,468 migration"],
-    ],
-    note: "Prompts earn identically to agents. Tools cannot be tokenized — publish those as a direct sale instead.",
+    title: "Tokenization",
+    description: "Launch as a tradeable token on Solana via a bonding curve. You bring the agent, not capital.",
+    stat: { value: "0.5%", label: "of every trade goes to you" },
   },
   {
-    icon: Lock,
-    name: "Vault Mode",
-    image: "/vault_mode_blog_banner.png",
-    mechanic: "Gate access behind token ownership instead of a price.",
-    rows: [
-      ["Access mechanism", "Holding the token, not buying it"],
-      ["Compatible with pricing", "No — pick one or the other"],
-      ["Best for", "Recurring-access agents, not one-time use"],
-    ],
-    note: "You are choosing between selling access and gating access. A vaulted listing carries no purchase price at all.",
+    title: "Frenzy Mode",
+    description: "Launch your tokenized agent in Frenzy Mode and every trade pays a 2.0% fee, split evenly between you and the platform.",
+    stat: { value: "1%", label: "of every trade goes to you, 2x fees" },
   },
   {
-    icon: Gift,
-    name: "Free & open",
-    mechanic: "Publish free to build reach, ratings, and reputation before you ever charge.",
-    rows: [
-      ["Listing fee", "None, ever"],
-      ["Categories", "Agents, prompts, tools, MCP servers, skills"],
-    ],
-    note: "Every category can be listed for free. Most sellers publish free work first, then layer in paid listings once demand is proven.",
+    title: "Vault Mode",
+    description: "Gate access behind token ownership instead of a price. Holders get in, with no purchase needed.",
+    stat: { value: "Hold", label: "the token to unlock the listing" },
+  },
+  {
+    title: "Free & open",
+    description: "Publish free to build reach, ratings, and reputation before you ever charge.",
+    stat: { value: "$0", label: "to list, in every category" },
   },
 ]
 
@@ -165,8 +166,8 @@ agent.run("Review this vendor agreement for GDPR issues.")` },
 ]
 
 const apiExamples = [
-  { lang: "cURL", file: "openapi.spec.sh", code: `# The full API surface, generated from the live route code —
-# it cannot drift from what the API actually accepts.
+  { lang: "cURL", file: "openapi.spec.sh", code: `# The full API surface, generated from the live route code,
+# so it cannot drift from what the API actually accepts.
 curl https://swarms.world/openapi.json
 
 # Human- and agent-readable index of the same 26 endpoints,
@@ -284,7 +285,7 @@ const faqs = [
   {
     question: "What is Vault Mode?",
     answer:
-      "A launch-time option that turns your token into an access key: only holders can use the agent or prompt. It is mutually exclusive with setting a price — you choose selling access or gating access, not both.",
+      "A launch-time option that turns your token into an access key: only holders can use the agent or prompt. It is mutually exclusive with setting a price: you choose selling access or gating access, not both.",
   },
   {
     question: "Is there a public Marketplace API?",
@@ -300,25 +301,44 @@ const faqs = [
 
 export default function MarketplacePage() {
   const [openFaq, setOpenFaq] = useState<number | null>(0)
+  const heroVideoRef = useRef<HTMLVideoElement>(null)
+
+  // React does not always render the `muted` attribute, which some browsers need before
+  // they allow autoplay, so set it on the element and start playback directly.
+  useEffect(() => {
+    const video = heroVideoRef.current
+    if (!video) return
+    video.muted = true
+    video.play().catch(() => {})
+  }, [])
 
   return (
     <div className="min-h-screen bg-black text-white">
       <Navigation />
 
       <main className="pt-[64px] sm:pt-[80px] md:pt-[96px]">
-        {/* HERO */}
-        <section className="relative flex min-h-[80vh] items-center overflow-hidden border-b border-white/[0.08] bg-black">
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:72px_72px] [mask-image:radial-gradient(ellipse_75%_70%_at_50%_35%,black_25%,transparent_100%)]"
-          />
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute left-1/2 top-0 h-[480px] w-[880px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/[0.05] blur-3xl"
-          />
+        {/* HERO VIDEO: full width, scaled to fit the viewport below the nav without cropping */}
+        <section className="relative w-full overflow-hidden bg-black">
+          <div className="relative mx-auto aspect-[1920/1070] max-h-[calc(100svh-64px)] w-full sm:max-h-[calc(100svh-80px)] md:max-h-[calc(100svh-96px)]">
+            <video
+              ref={heroVideoRef}
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 h-full w-full object-contain"
+              src="/swarms_marketplace_ad_2.mp4"
+              poster="/swarms_marketplace_ad_2_poster.jpg"
+              autoPlay
+              muted
+              loop
+              playsInline
+              preload="auto"
+            />
+          </div>
+        </section>
 
+        {/* HERO TEXT */}
+        <section className="relative border-b border-white/[0.08] bg-black">
           <div className="container relative w-full px-4 sm:px-6 lg:px-8">
-            <div className="mx-auto flex max-w-4xl flex-col items-center py-20 text-center sm:py-24">
+            <div className="mx-auto flex max-w-4xl flex-col items-center pb-20 pt-10 text-center sm:pb-24 sm:pt-12">
               <motion.div
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -473,37 +493,16 @@ export default function MarketplacePage() {
         </section>
 
         {/* CATEGORIES */}
-        <section className="border-b border-white/[0.08] bg-black">
-          <div className="container px-4 py-16 sm:px-6 sm:py-24 lg:px-8 lg:py-32">
+        <section className="border-b border-white/[0.08] bg-black py-16 sm:py-24 lg:py-32">
+          <div className="container px-4 sm:px-6 lg:px-8">
             <SectionHeading
               eyebrow="What's on the marketplace"
-              title="Five kinds of components. One catalog."
-              description="Each type has a different shape, and each is a first-class, purchasable listing in its own right."
+              title="Five product types for sale."
+              description="Every listing on swarms.world is one of these five types, and each one can be published free or sold at a one-time price."
             />
-
-            <motion.div
-              className="mx-auto grid max-w-7xl grid-cols-1 gap-px overflow-hidden rounded-lg border border-white/[0.08] bg-white/[0.08] sm:grid-cols-2 lg:grid-cols-5"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-100px" }}
-              transition={{ duration: 0.7, delay: 0.1, ease }}
-            >
-              {categories.map((cat) => (
-                <div
-                  key={cat.title}
-                  className="group bg-black p-5 transition-colors duration-300 hover:bg-[#0a0a0a] sm:p-6"
-                >
-                  <cat.icon
-                    className="mb-4 h-5 w-5 text-white/50 transition-colors duration-300 group-hover:text-white"
-                    strokeWidth={1.5}
-                  />
-                  <h3 className="mb-2 text-base font-medium text-white">{cat.title}</h3>
-                  <p className="mb-3 text-sm font-normal leading-relaxed text-white/50">{cat.description}</p>
-                  <p className="font-mono text-[10px] uppercase tracking-[0.1em] text-white/30">{cat.meta}</p>
-                </div>
-              ))}
-            </motion.div>
           </div>
+
+          <CardCarousel label="Product types" items={categories} />
         </section>
 
         {/* DISCOVERY MECHANICS */}
@@ -570,7 +569,7 @@ export default function MarketplacePage() {
                   {
                     icon: Tag,
                     title: "Tags and ratings",
-                    text: "Creators tag every listing, and community upvotes drive the \"most popular\" sort — good work surfaces fast.",
+                    text: "Creators tag every listing, and community upvotes drive the \"most popular\" sort, so good work surfaces fast.",
                   },
                   {
                     icon: Globe,
@@ -611,65 +610,13 @@ export default function MarketplacePage() {
           </div>
         </section>
 
-        {/* BUSINESS MODELS */}
+        {/* MARKETPLACE MCP */}
         <section className="border-b border-white/[0.08] bg-black">
           <div className="container px-4 py-16 sm:px-6 sm:py-24 lg:px-8 lg:py-32">
             <SectionHeading
-              eyebrow="Business models"
-              title="Choose how you get paid."
-              description="Every model runs at the same flat, honest fee. Mix and match across your own catalog — the rail is chosen per listing, not per account."
-            />
-
-            <div className="mx-auto grid max-w-7xl grid-cols-1 gap-4 sm:gap-5 lg:grid-cols-2 lg:gap-6">
-              {businessModels.map((model, i) => (
-                <motion.div
-                  key={model.name}
-                  initial={{ opacity: 0, y: 24 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: "-100px" }}
-                  transition={{ duration: 0.5, delay: i * 0.06, ease }}
-                  className="flex flex-col overflow-hidden rounded-lg border border-white/[0.08] bg-black transition-colors duration-300 hover:bg-[#0a0a0a]"
-                >
-                  {model.image && (
-                    <div className="relative aspect-[16/9] w-full flex-shrink-0 overflow-hidden border-b border-white/[0.08] bg-[#0a0a0a]">
-                      <Image
-                        src={model.image}
-                        alt={`${model.name} on the Swarms Marketplace`}
-                        fill
-                        className="object-cover"
-                        loading="lazy"
-                      />
-                    </div>
-                  )}
-                  <div className="flex flex-1 flex-col p-6 sm:p-7 md:p-8">
-                    <model.icon className="mb-4 h-5 w-5 text-white/50" strokeWidth={1.5} />
-                    <h3 className="mb-2 text-xl font-semibold text-white">{model.name}</h3>
-                    <p className="mb-5 text-sm font-normal leading-relaxed text-white/55 sm:text-base">
-                      {model.mechanic}
-                    </p>
-                    <div className="mb-5 divide-y divide-white/[0.06] border-y border-white/[0.06]">
-                      {model.rows.map(([label, value]) => (
-                        <div key={label} className="flex items-center justify-between gap-4 py-2.5">
-                          <span className="text-xs text-white/40 sm:text-sm">{label}</span>
-                          <span className="text-right text-xs font-medium text-white/85 sm:text-sm">{value}</span>
-                        </div>
-                      ))}
-                    </div>
-                    <p className="text-xs leading-relaxed text-white/40 sm:text-sm">{model.note}</p>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* MARKETPLACE API */}
-        <section className="border-b border-white/[0.08] bg-black">
-          <div className="container px-4 py-16 sm:px-6 sm:py-24 lg:px-8 lg:py-32">
-            <SectionHeading
-              eyebrow="Marketplace API"
-              title="A spec that can't lie to you."
-              description="The marketplace publishes a self-generating OpenAPI 3.1 spec, built from the same route code and validators the live API runs — it cannot drift from what the API actually accepts."
+              eyebrow="Swarms Marketplace MCP"
+              title="Swarms Marketplace MCP"
+              description="swarms.world/mcp is a Model Context Protocol server. Connect Claude Code, Cursor, or any MCP client with your Swarms API key, and your agent can search 6,000+ agents, prompts, and tools, read free listings in full, and publish and manage its own."
             />
 
             <div className="mx-auto grid max-w-7xl items-start gap-10 lg:grid-cols-5 lg:gap-16">
@@ -681,8 +628,89 @@ export default function MarketplacePage() {
                 transition={{ duration: 0.7, ease }}
               >
                 {[
-                  { icon: Code, text: "swarms.world/openapi.json — the full spec, generated at build time from the actual route files." },
-                  { icon: FileText, text: "swarms.world/llms.txt — the same 26 endpoints, human- and agent-readable, cataloged by purpose." },
+                  { icon: Search, text: "Search the catalog by name, tag, category, use case, or price, then fetch any listing by id." },
+                  { icon: FileText, text: "Free agents come back with their runnable source, and free prompts with their full body." },
+                  { icon: Rocket, text: "Publish and edit your own agents and prompts, leave reviews, and publish bundles of up to fifty items." },
+                  { icon: Key, text: "Runs as the account that owns the API key, so an agent can act for you without a browser." },
+                ].map((item, i) => (
+                  <div key={i} className="flex items-start gap-3">
+                    <div className="mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border border-white/[0.08] bg-black">
+                      <item.icon className="h-4 w-4 text-white/50" strokeWidth={1.5} />
+                    </div>
+                    <p className="pt-1 text-sm font-normal leading-relaxed text-white/70 sm:text-base">
+                      {item.text}
+                    </p>
+                  </div>
+                ))}
+                <div className="flex flex-wrap gap-3 pt-3">
+                  <Button
+                    className="rounded-full bg-white text-sm font-medium text-black hover:bg-neutral-200"
+                    asChild
+                  >
+                    <a href="https://swarms.world/mcp" target="_blank" rel="noopener noreferrer">
+                      Open swarms.world/mcp
+                      <ArrowUpRight className="ml-2 h-4 w-4" />
+                    </a>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="rounded-full border-white/[0.14] bg-[#0a0a0a] text-sm font-medium text-white hover:border-white/30 hover:bg-white/[0.06] hover:text-white"
+                    asChild
+                  >
+                    <a href="/blog/swarms-marketplace-mcp-server">
+                      Read the setup guide
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </a>
+                  </Button>
+                </div>
+              </motion.div>
+
+              <motion.div
+                className="min-w-0 w-full lg:col-span-3"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-100px" }}
+                transition={{ duration: 0.7, delay: 0.1, ease }}
+              >
+                <CodeTabs examples={mcpExamples} />
+              </motion.div>
+            </div>
+          </div>
+        </section>
+
+        {/* BUSINESS MODELS */}
+        <section className="border-b border-white/[0.08] bg-black py-16 sm:py-24 lg:py-32">
+          <div className="container px-4 sm:px-6 lg:px-8">
+            <SectionHeading
+              eyebrow="Business models"
+              title="Choose how you get paid."
+              description="Every model runs at the same flat, honest fee. Mix and match across your own catalog: the rail is chosen per listing, not per account."
+            />
+          </div>
+
+          <CardCarousel label="Business models" items={businessModels} />
+        </section>
+
+        {/* MARKETPLACE API */}
+        <section className="border-b border-white/[0.08] bg-black">
+          <div className="container px-4 py-16 sm:px-6 sm:py-24 lg:px-8 lg:py-32">
+            <SectionHeading
+              eyebrow="Marketplace API"
+              title="Developer Integration"
+              description="The marketplace publishes a self-generating OpenAPI 3.1 spec, built from the same route code and validators the live API runs, so it cannot drift from what the API actually accepts."
+            />
+
+            <div className="mx-auto grid max-w-7xl items-start gap-10 lg:grid-cols-5 lg:gap-16">
+              <motion.div
+                className="space-y-3 lg:col-span-2"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-100px" }}
+                transition={{ duration: 0.7, ease }}
+              >
+                {[
+                  { icon: Code, text: "swarms.world/openapi.json: the full spec, generated at build time from the actual route files." },
+                  { icon: FileText, text: "swarms.world/llms.txt: the same 26 endpoints, human- and agent-readable, cataloged by purpose." },
                   { icon: CheckCircle, text: "Read endpoints (search, listing detail, catalogs) are public. No key required." },
                   { icon: Key, text: "Publishing and account endpoints require an API key from your platform dashboard." },
                 ].map((item, i) => (

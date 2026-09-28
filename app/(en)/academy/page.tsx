@@ -4,6 +4,7 @@ import Link from "next/link"
 import { motion } from "framer-motion"
 import { ArrowRight, ArrowUpRight, Code, GraduationCap, Layers, Sparkles } from "lucide-react"
 
+import { CardCarousel } from "@/components/card-carousel"
 import { Navigation } from "@/components/navigation"
 import { Button } from "@/components/ui/button"
 import { academyFaq } from "@/lib/academy/academy-faq"
@@ -18,6 +19,8 @@ type AcademyTrack = {
   href: string
   external: boolean
   meta: string
+  preview: string[]
+  featured?: boolean
   comingSoon?: boolean
 }
 
@@ -30,6 +33,15 @@ const tracks: AcademyTrack[] = [
     href: "/academy/swarms-api",
     external: false,
     meta: "4-part course · ~6 hrs",
+    preview: [
+      "POST /v1/swarm/completions",
+      "{",
+      '  "swarm_type": "SequentialWorkflow",',
+      '  "agents": [ ... ],',
+      '  "task": "Research EV batteries"',
+      "}",
+    ],
+    featured: true,
   },
   {
     title: "Swarms Marketplace",
@@ -39,6 +51,7 @@ const tracks: AcademyTrack[] = [
     href: "https://swarms.world",
     external: true,
     meta: "swarms.world",
+    preview: ["swarms.world", "", "agents    prompts", "tools     bundles", "", "publish · price · sell"],
     comingSoon: true,
   },
   {
@@ -49,6 +62,14 @@ const tracks: AcademyTrack[] = [
     href: "https://docs.swarms.world",
     external: true,
     meta: "pip install swarms",
+    preview: [
+      "$ pip install swarms",
+      "",
+      "from swarms import Agent",
+      "",
+      'agent = Agent(model_name="gpt-4.1")',
+      'agent.run("Plan a product launch")',
+    ],
     comingSoon: true,
   },
   {
@@ -59,34 +80,9 @@ const tracks: AcademyTrack[] = [
     href: "/products",
     external: false,
     meta: "Full curriculum",
+    preview: ["swarms-rs       Rust", "swarms chat     no-code", "simulations", "research papers", "enterprise"],
   },
 ]
-
-function TrackLink({
-  track,
-  children,
-  className,
-}: {
-  track: AcademyTrack
-  children: React.ReactNode
-  className?: string
-}) {
-  if (track.comingSoon) {
-    return <div className={className}>{children}</div>
-  }
-  if (track.external) {
-    return (
-      <a href={track.href} target="_blank" rel="noopener noreferrer" className={className}>
-        {children}
-      </a>
-    )
-  }
-  return (
-    <Link href={track.href} className={className}>
-      {children}
-    </Link>
-  )
-}
 
 export default function AcademyPage() {
   return (
@@ -175,8 +171,8 @@ export default function AcademyPage() {
         </section>
 
         {/* TRACKS */}
-        <section className="border-b border-white/[0.08] bg-black">
-          <div className="container px-4 py-16 sm:px-6 sm:py-24 lg:px-8 lg:py-32">
+        <section className="border-b border-white/[0.08] bg-black py-16 sm:py-24 lg:py-32">
+          <div className="container px-4 sm:px-6 lg:px-8">
             <motion.div
               className="mx-auto mb-10 max-w-7xl sm:mb-14"
               initial={{ opacity: 0, y: 20 }}
@@ -195,48 +191,22 @@ export default function AcademyPage() {
                 production patterns.
               </p>
             </motion.div>
-
-            <motion.div
-              className="mx-auto grid max-w-7xl grid-cols-1 gap-px overflow-hidden rounded-lg border border-white/[0.08] bg-white/[0.08] sm:grid-cols-2"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-100px" }}
-              transition={{ duration: 0.7, delay: 0.1, ease }}
-            >
-              {tracks.map((track) => (
-                <TrackLink
-                  key={track.title}
-                  track={track}
-                  className="group flex min-h-[240px] flex-col justify-between gap-6 bg-black p-5 transition-colors duration-300 hover:bg-[#0a0a0a] sm:p-8"
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <track.icon
-                      className="h-5 w-5 text-white/50 transition-colors duration-300 group-hover:text-white"
-                      strokeWidth={1.5}
-                    />
-                    {track.comingSoon ? (
-                      <span className="rounded-full border border-white/[0.14] bg-white/[0.03] px-3 py-1 font-mono text-[10px] font-medium uppercase tracking-[0.15em] text-white/50">
-                        Coming soon
-                      </span>
-                    ) : (
-                      <ArrowRight className="h-4 w-4 flex-shrink-0 text-white/30 transition-all duration-300 group-hover:translate-x-1 group-hover:text-white" />
-                    )}
-                  </div>
-                  <div>
-                    <h3 className="mb-2 text-base font-medium text-white sm:text-lg">
-                      {track.title}
-                    </h3>
-                    <p className="text-sm font-normal leading-relaxed text-white/50">
-                      {track.description}
-                    </p>
-                    <div className="mt-4 font-mono text-[11px] text-white/40 transition-colors group-hover:text-white/60">
-                      {track.comingSoon ? "Course coming soon" : track.meta}
-                    </div>
-                  </div>
-                </TrackLink>
-              ))}
-            </motion.div>
           </div>
+
+          <CardCarousel
+            label="Learning tracks"
+            items={tracks.map((track) => ({
+              title: track.title,
+              description: track.description,
+              icon: track.icon,
+              preview: track.preview,
+              wide: track.featured,
+              meta: track.comingSoon ? "Course coming soon" : track.meta,
+              badge: track.comingSoon ? "Coming soon" : undefined,
+              href: track.comingSoon ? undefined : track.href,
+              external: track.external,
+            }))}
+          />
         </section>
 
         {/* WHY SWARMS ACADEMY */}

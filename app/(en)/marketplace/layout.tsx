@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 import { siteConfig } from "@/app/metadata"
 
-const title = "Swarms Marketplace — Buy, Sell & Monetize AI Agents, Prompts, Tools, MCP Servers, and Skills"
+const title = "Swarms Marketplace: Buy, Sell & Monetize AI Agents, Prompts, Tools, MCP Servers, and Skills"
 const description =
   "Discover, buy, and sell AI agents, prompts, tools, MCP servers, and skills on the Swarms Marketplace at swarms.world. Publish for free, keep 90% of every sale, and choose how you get paid: one-time purchases, tokenized trading fees, or token-gated Vault Mode access. Built on a public API with a self-generating OpenAPI spec."
 const url = "https://www.swarms.ai/marketplace"

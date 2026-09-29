@@ -1,0 +1,143 @@
+---
+title: "Swarms 生态周报[9 月 20 日 - 9 月 27 日]：更快的 Marketplace、私有 GitHub 导入、Quick Launch 与五篇新指南"
+description: "本周 Swarms 生态：Swarms Marketplace 上线 100 多项性能改进，首页展示商品的速度提升 3.1 倍，创作者主页代码量减少 44%；私有 GitHub 仓库现在可以直接导入为商品；全新的 Quick Launch 页面只需一张简短表单即可让代币化智能体上线；Swarms Chat 开放了完整的智能体参数控制并覆盖 API 返回的全部模型；五篇新指南介绍了 Swarms Cloud，并将 Swarms 与 CrewAI、OpenAI Agents SDK、AutoGen 和 LangGraph 逐一对比。"
+date: "2026-09-27"
+author: "Kye Gomez"
+categories: ["公司"]
+readTime: "8 分钟阅读"
+featured: false
+---
+
+# Swarms 生态周报[9 月 20 日 - 9 月 27 日]：更快的 Marketplace、私有 GitHub 导入、Quick Launch 与五篇新指南
+
+本周的大部分工作都投入到了 Swarms Marketplace，而且同时照顾到买卖双方。对浏览者而言，为期两周的性能工作于 9 月 26 日正式发布：首页展示首批商品的速度提升 3.1 倍，过去每个页面都要下载的 494 KB 数据已被移除，商品页面的代码量最多减少 44%。对创作者而言，现在可以直接从私有 GitHub 仓库发布智能体，而全新的 Quick Launch 页面把发行代币化智能体简化成了一张简短的表单。
+
+Swarms Chat 可以让任意 Marketplace 提示词在真实模型上运行。经过几周的重构，它现在开放了完整的智能体参数控制，模型选择器覆盖 API 返回的每一个模型，并完成了完整的移动端适配。
+
+本周其余的工作放在了文档上。9 月 22 日上线了五篇新指南：一篇完整介绍 Swarms Cloud，另外四篇把 Swarms 与开发者最常拿来比较的几个框架逐一对比。五篇指南都有中文版本。
+
+## 更快的 Swarms Marketplace
+
+![Swarms Marketplace 九月性能更新](/marketplace_speedup_blog_banner.png)
+
+9 月 26 日公布的九月性能更新，汇总了 9 月 12 日至 9 月 26 日期间上线到 Marketplace 的 100 多项改动。你无需做任何调整，这些改进已经在 swarms.world 上运行。
+
+| 项目 | 之前 | 之后 |
+| --- | --- | --- |
+| 首页：首批商品、统计数据与代币化数据 | 2,098 毫秒 | 669 毫秒（快 3.1 倍） |
+| 导航栏搜索 | 每个页面下载 494 KB | 每次搜索约 3 KB |
+| 智能体、提示词与工具页面（压缩后的 JavaScript） | 773 至 781 kB | 600 至 603 kB |
+| 捆绑包页面 | 592 kB | 406 kB（减少 31%） |
+| 创作者主页 | 703 kB | 393 kB（减少 44%） |
+| 发布页面 | 778 kB | 587 kB（减少 25%） |
+| 输入 "research agent" 时的注册表请求次数 | 15 | 3 |
+| 提示词聊天的开场问题 | 10.3 秒 | 约 2.9 秒 |
+
+最大的一项提升来自删除代码。首页早先移除了一个"最高评分"板块，但为它提供数据的查询在每次访问时仍然照常运行：读取全部商品和全部评价，最后返回六个页面上根本不显示的条目。它与精选商品共用同一批请求，所以页面上的第一批卡片都要等它完成。删掉这个查询之后，首批商品的出现时间提前了约 1.4 秒。
+
+导航栏搜索过去会在任意页面加载时立即下载全部智能体、提示词、工具、用户和评价，再在浏览器里筛选。现在搜索在服务端运行，输入两个字符后才会发起，每次返回约 3 KB。它也重新能找到每一个商品了：旧的下载在 1,000 行处截断，因此当 Marketplace 的智能体超过 1,000 个之后，较早的那些就完全从导航搜索中消失了。
+
+商品页面通过三处改动变得更轻。代码高亮现在只打包 23 种常用语言，文件为 35 kB，此前是把全部语言打进一个 218 kB 的文件。支付和代币化代码及其依赖的 Solana 库，只在有人第一次点击 Buy 或 Tokenize 时才加载。Ratings 标签页也在打开时才加载。此外，悬浮助手 Yuki 已经下线，它过去会在大多数页面播放约 2.1 MB 的动画视频。
+
+**立即体验：**[swarms.world](https://swarms.world)
+
+**了解更多：**[swarms.ai/blog/marketplace-performance-update-september-2026](/zh/blog/marketplace-performance-update-september-2026)
+
+## 把私有 GitHub 仓库导入 Marketplace
+
+![把私有 GitHub 仓库导入 Swarms Marketplace](/private_githubs_banner.png)
+
+9 月 22 日公布：Marketplace 的导入工具现在可以读取私有 GitHub 仓库。在此之前它只支持公开仓库，这恰恰把它最想服务的人挡在了门外。打算收费出售的智能体通常放在私有仓库里，而为了导入把它公开，等于把商品免费摆在了自己的商品页旁边。
+
+操作步骤：
+
+1. 在 [swarms.world](https://swarms.world) 注册。
+2. 前往 [swarms.world/publish](https://swarms.world/publish)，选择 **Agent**，展开 **Import from GitHub**。
+3. 首次使用时，连接 GitHub，并在 GitHub 自己的安装页面上选择要共享的仓库。
+4. 选择一个仓库，表单会自动填入名称、描述与 README、主实现文件、编程语言、作为标签的仓库主题，以及从 `requirements.txt` 或 `pyproject.toml` 读取的依赖。
+5. 在底部选择商业模式：Paid、Tokenized，或带 Vault Mode 的 Tokenized。
+6. 发布。
+
+这项连接基于 GitHub App 构建，这决定了 Marketplace 能看到什么。它只能读取你选中的仓库，只拥有内容与元数据的只读权限，没有任何写入权限。它不保存 GitHub 令牌：每次导入都会签发一个仅限于你所选仓库的令牌，一小时后过期，且从不出现在浏览器中。你随时可以在 `github.com/settings/installations` 移除仓库或卸载应用。公开仓库仍然可以直接粘贴 URL 导入，无需连接。
+
+**发布智能体：**[swarms.world/publish](https://swarms.world/publish)
+
+**了解更多：**[swarms.ai/blog/import-private-github-repos](/zh/blog/import-private-github-repos)
+
+## 代币化智能体的 Quick Launch
+
+同样在 9 月 22 日，全新的 Quick Launch 页面让发布代币化智能体的速度提升了约十倍。在一个页面上填写智能体的名称、代币代码、交易对以及其他几项信息，点击发行，智能体就上线了。
+
+Swarms 是 Solana 上智能体资本市场的大本营，拥有超过 2,500 个代币化智能体与提示词，交易量达数千万美元。对于已经想清楚要发行什么的创作者，Quick Launch 是进入这个市场最短的路径。完整的发布表单 [swarms.world/publish](https://swarms.world/publish) 依然可用。
+
+想了解代币化智能体背后的逻辑，以及发行流程中的每一个决策，从接入方式到 Frenzy Mode、USDC 与 Vault Mode，请阅读[代币化你的智能体：完整指南](/zh/blog/complete-guide-tokenizing-your-agent)。
+
+**立即体验：**[swarms.world/quick-launch](https://swarms.world/quick-launch)
+
+## Swarms Chat 开放完整的智能体控制
+
+9 月 20 日发布的 Swarms Chat 更新，汇总了几周来在这一功能上的工作。Swarms Chat 可以让任意 Marketplace 提示词在真实模型上运行：打开一个提示词，选择 Chat，你就在与一个已经加载了该提示词作为系统提示词的模型对话。
+
+- **完整的智能体控制。** 设置对话框分为 Generation、Behaviour、Tools 和 Marketplace 四个标签页，开放了智能体补全端点接受的每一个参数，包括 temperature、top_p、最大 token 数、最大循环次数、推理强度与工具配置。设置按提示词分别保存，调整一个提示词不会影响另一个。
+- **全部模型。** 原先写死的下拉菜单被替换为可搜索的模型选择器，列出 Swarms API 返回的每一个模型，覆盖 GPT-5.4 及更新版本、Claude Sonnet 与 Opus 5、Kimi K3、GLM-5.3、DeepSeek、Qwen、MiniMax 以及 OpenRouter 模型目录。
+- **成本与重试。** 每条回复都会显示输出 token 数。重试会就地重新运行这一轮，换个模型会用另一个模型重新运行，继续生成则会接着被中断的回复往下写。
+- **对话开场白。** 团队在真实任务上对十个模型做了基准测试，现在针对当前提示词生成的三个开场问题约 2.9 秒即可送达，此前需要 10.3 秒。
+- **移动端。** 完整的响应式适配，页头在小屏幕上收起为返回按钮、模型名称和一个溢出菜单。
+
+这次更新还修复了两个会丢失数据的缺陷：附加四张图片时只有第一张被放进请求，以及传给提示框的错误对象可能导致页面崩溃。
+
+**立即体验：**在 [swarms.world](https://swarms.world) 打开任意提示词并选择 Chat
+
+**了解更多：**[swarms.ai/blog/swarms-chat-updates](/zh/blog/swarms-chat-updates)
+
+## 什么是 Swarms Cloud？
+
+![什么是 Swarms Cloud](/swarms_cloud_what_is.png)
+
+五篇新指南中的第一篇，完整介绍了 Swarms Cloud：位于 [cloud.swarms.world](https://cloud.swarms.world) 的托管控制平面，用一个账户和一把 API 密钥完成智能体团队的设计、运行、监控、计费与托管。
+
+它逐一介绍了平台的各个部分：一把密钥即可调用来自主流供应商的 2,000+ 模型，把智能体迁移到另一家供应商只需修改一行 `model_name`；16 种 swarm 架构；可视化与自动生成的智能体构建器；能把单个任务扩展到数千次调用的 Batch 与 Grid 运行器；每个智能体、每次调用都有自己的页面；加密的 Skills 库；托管的 MCP 服务器；以及基于 S2A 的缩容至零智能体托管。如果有人问 Swarms Cloud 是做什么的，把这一篇发给他们就够了。
+
+**了解更多：**[swarms.ai/blog/what-is-swarms-cloud](/zh/blog/what-is-swarms-cloud)
+
+## 四篇框架对比
+
+![编排性能实测：Swarms、LangGraph、AutoGen 与 CrewAI](/swarms_vs_others.png)
+
+另外四篇指南把 Swarms 与开发者最常拿来比较的几个框架逐一对比，每篇都附有两边都能运行的代码。
+
+- **[Swarms、AutoGen、LangGraph 与 CrewAI：2026 多智能体框架对比](/zh/blog/multi-agent-framework-comparison-2026)。** 这篇四方对比围绕该领域唯一公开且可复现的编排基准测试展开。Swarms GraphWorkflow 运行编译后的智能体图，在 15 种配置上相对 LangGraph 1.0.4 的几何平均加速为 7.0 倍，在深链上最高达 62.5 倍，原因在于它只在编译时确定一次执行顺序，而不必在每次运行时重新计算。
+- **[Swarms 与 CrewAI 对比](/zh/blog/swarms-vs-crewai)。** 先用两个框架分别实现同一条流水线，再介绍系统规模增长后 Swarms 额外提供的能力：覆盖 15+ 种结构、以参数形式切换的拓扑，编译式图引擎，只发送一份而非五十份 schema 的动态工具加载，作为构造函数参数的 MCP，以及可跨供应商为每个智能体单独选择模型。
+- **[OpenAI Agents SDK 与 Swarms 对比](/zh/blog/openai-agents-sdk-vs-swarms)。** 从模型接入、handoff、编排、故障切换、定价、工具到可观测性逐项对比，并附上在 Swarms 线上 API 实测的运行时间与成本。Swarms 还提供兼容 OpenAI 的端点，基于 OpenAI SDK 编写的代码只需修改两个字符串即可迁移。
+- **[从 LangGraph 迁移到 Swarms](/zh/blog/migrating-from-langgraph-to-swarms)。** 用 LangGraph 和 GraphWorkflow 分别实现十四种图模式，每种都配有示意图和可运行代码，涵盖流水线、扇出、map-reduce、多供应商评审团、辩论、门控路由等，另附概念对照表与迁移清单。
+
+五篇指南的中文版本均已上线，可在 [swarms.ai/zh/blog](/zh/blog) 阅读。
+
+## 结语
+
+本周的每一项改动都为某一类用户扫除了一个具体的障碍。买家得到了加载更快的 Marketplace 页面，以及能找到每一个商品的搜索。手握私有代码的创作者无需公开代码就能上架，要发行代币的创作者一张表单就能完成。试用提示词的人则得到了一个所有参数、所有模型都触手可及的聊天界面。
+
+这几篇指南为仍在挑选技术栈的开发者做了同样的事：说明 Swarms Cloud 是什么，以及 Swarms 与 CrewAI、OpenAI Agents SDK、AutoGen 和 LangGraph 相比如何，每一项对比都附有可运行的代码 🦾
+
+## 链接与资源
+
+| 资源 | 链接 |
+| --- | --- |
+| Marketplace 性能更新 | [swarms.ai/blog/marketplace-performance-update-september-2026](/zh/blog/marketplace-performance-update-september-2026) |
+| 私有 GitHub 导入 | [swarms.ai/blog/import-private-github-repos](/zh/blog/import-private-github-repos) |
+| 发布智能体 | [swarms.world/publish](https://swarms.world/publish) |
+| Quick Launch | [swarms.world/quick-launch](https://swarms.world/quick-launch) |
+| 代币化你的智能体：完整指南 | [swarms.ai/blog/complete-guide-tokenizing-your-agent](/zh/blog/complete-guide-tokenizing-your-agent) |
+| Swarms Chat 全部更新一览 | [swarms.ai/blog/swarms-chat-updates](/zh/blog/swarms-chat-updates) |
+| 什么是 Swarms Cloud？ | [swarms.ai/blog/what-is-swarms-cloud](/zh/blog/what-is-swarms-cloud) |
+| Swarms、AutoGen、LangGraph 与 CrewAI 对比 | [swarms.ai/blog/multi-agent-framework-comparison-2026](/zh/blog/multi-agent-framework-comparison-2026) |
+| Swarms 与 CrewAI 对比 | [swarms.ai/blog/swarms-vs-crewai](/zh/blog/swarms-vs-crewai) |
+| OpenAI Agents SDK 与 Swarms 对比 | [swarms.ai/blog/openai-agents-sdk-vs-swarms](/zh/blog/openai-agents-sdk-vs-swarms) |
+| 从 LangGraph 迁移到 Swarms | [swarms.ai/blog/migrating-from-langgraph-to-swarms](/zh/blog/migrating-from-langgraph-to-swarms) |
+| 中文博客 | [swarms.ai/zh/blog](/zh/blog) |
+| Swarms Marketplace | [swarms.world](https://swarms.world) |
+| 注册表 | [swarms.world/platform/registry](https://swarms.world/platform/registry) |
+| Swarms Cloud | [cloud.swarms.world](https://cloud.swarms.world) |
+| Swarms API 文档 | [docs.swarms.ai](https://docs.swarms.ai) |
+| GitHub 上的 Swarms 框架 | [github.com/kyegomez/swarms](https://github.com/kyegomez/swarms) |
+| Swarms 的 X 账号 | [x.com/swarms_corp](https://x.com/swarms_corp) |

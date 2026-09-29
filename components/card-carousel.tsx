@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { motion } from "framer-motion"
-import { ArrowRight, ChevronLeft, ChevronRight, type LucideIcon } from "lucide-react"
+import { ArrowRight, ArrowUpRight, ChevronLeft, ChevronRight, type LucideIcon } from "lucide-react"
 
 const ease: [number, number, number, number] = [0.22, 1, 0.36, 1]
 
@@ -22,6 +22,11 @@ export type CarouselCardItem = {
   badge?: string
   href?: string
   external?: boolean
+  /**
+   * External links shown as buttons under the caption, opening in a new tab. Use these instead
+   * of href when a card points to more than one place, since a linked card cannot contain links.
+   */
+  links?: { label: string; href: string }[]
   wide?: boolean
 }
 
@@ -189,6 +194,22 @@ export function CardCarousel({ items, label }: { items: CarouselCardItem[]; labe
                     <p className="mt-3 font-mono text-[11px] text-white/40 transition-colors group-hover:text-white/60">
                       {item.meta}
                     </p>
+                  )}
+                  {item.links && (
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {item.links.map((link) => (
+                        <a
+                          key={link.href}
+                          href={link.href}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.14] bg-white/[0.04] px-3 py-1.5 font-mono text-[11px] text-white/60 transition-colors hover:border-white/40 hover:text-white"
+                        >
+                          {link.label}
+                          <ArrowUpRight className="h-3 w-3" />
+                        </a>
+                      ))}
+                    </div>
                   )}
                 </div>
               )}

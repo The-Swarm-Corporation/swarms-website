@@ -23,6 +23,7 @@ import {
   Building,
   Network,
   Smartphone,
+  Layers,
 } from "lucide-react"
 import { SiDiscord, SiTelegram } from "react-icons/si"
 
@@ -67,6 +68,7 @@ export function Footer() {
               <ul className="space-y-1 sm:space-y-2">
                 {[
                   { name: "Products Overview", icon: Package, url: "/products" },
+                  { name: "The Stack", icon: Layers, url: "/stack" },
                   { name: "Simulations", icon: Network, url: "/simulations" },
                   { name: "Mobile App", icon: Smartphone, url: "/mobile" },
                   { name: "Swarms Python", icon: Github, url: "https://github.com/kyegomez/swarms" },

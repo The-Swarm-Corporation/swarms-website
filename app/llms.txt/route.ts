@@ -13,6 +13,7 @@ export function GET() {
 
   const staticPages: { path: string; title: string; description: string }[] = [
     { path: "/products", title: "Products", description: "The complete multi-agent stack: Swarms Python, Swarms API, Swarms Marketplace, Swarms RS, Swarms Chat, and enterprise deployments." },
+    { path: "/stack", title: "The Swarms Stack", description: "How the pieces fit: build agents with Swarms Python and Swarms Rust, deploy them with the Swarms API and Swarms Cloud, and sell them on the Swarms Marketplace." },
     { path: "/framework", title: "Swarms Framework", description: "The production-grade Python framework for multi-agent orchestration." },
     { path: "/api", title: "Swarms API", description: "Hosted multi-agent orchestration with 1,000+ models and 15+ swarm architectures behind one endpoint." },
     { path: "/pricing", title: "Pricing", description: "Plans and pricing for the Swarms platform." },

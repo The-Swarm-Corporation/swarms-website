@@ -20,10 +20,8 @@ const features: CarouselCardItem[] = [
       '  swarm_type="HierarchicalSwarm",',
       ")",
     ],
-    links: [
-      { label: "Framework docs", href: "https://docs.swarms.world/architectures/overview" },
-      { label: "API docs", href: "https://docs.swarms.ai/docs/documentation/multi-agent/available-architectures" },
-    ],
+    href: "https://docs.swarms.world/architectures/overview",
+    external: true,
     wide: true,
   },
   {
@@ -38,10 +36,8 @@ const features: CarouselCardItem[] = [
       '  flow="lead -> coder, tester",',
       ")",
     ],
-    links: [
-      { label: "Framework docs", href: "https://docs.swarms.world/architectures/agent-rearrange" },
-      { label: "API docs", href: "https://docs.swarms.ai/docs/documentation/multi-agent/agent_rearrange" },
-    ],
+    href: "https://docs.swarms.world/architectures/agent-rearrange",
+    external: true,
   },
   {
     title: "Ultra-Optimized Runtime",
@@ -54,10 +50,8 @@ const features: CarouselCardItem[] = [
       "deep chains  up to 62.5x",
       "compile      21.6x to 31.3x",
     ],
-    links: [
-      { label: "Framework docs", href: "https://docs.swarms.world/architectures/graph-workflow" },
-      { label: "API docs", href: "https://docs.swarms.ai/docs/documentation/multi-agent/graph_workflow" },
-    ],
+    href: "https://docs.swarms.ai/docs/documentation/multi-agent/graph_workflow",
+    external: true,
   },
   {
     title: "Multi-Agent Memory Systems",
@@ -71,10 +65,8 @@ const features: CarouselCardItem[] = [
       "  context_length=32000,",
       ")",
     ],
-    links: [
-      { label: "Framework docs", href: "https://docs.swarms.world/agents/agent-memory" },
-      { label: "API docs", href: "https://docs.swarms.ai/docs/examples/examples/conversation-history" },
-    ],
+    href: "https://docs.swarms.world/agents/agent-memory",
+    external: true,
   },
   {
     title: "Simulation Environments",
@@ -88,10 +80,8 @@ const features: CarouselCardItem[] = [
       "autonomous hospitals",
       "social algorithms",
     ],
-    links: [
-      { label: "Framework docs", href: "https://docs.swarms.world/architectures/social-algorithms" },
-      { label: "API docs", href: "https://docs.swarms.ai/docs/examples/examples/hospital-team" },
-    ],
+    href: "https://docs.swarms.world/architectures/social-algorithms",
+    external: true,
   },
   {
     title: "Enterprise Security & Compliance",
@@ -105,10 +95,8 @@ const features: CarouselCardItem[] = [
       "EU-US DPF      certified",
       "Swiss-US DPF   certified",
     ],
-    links: [
-      { label: "Framework docs", href: "https://docs.swarms.world/community/features" },
-      { label: "API docs", href: "https://docs.swarms.ai/docs/documentation/resources/security" },
-    ],
+    href: "https://docs.swarms.ai/docs/documentation/resources/security",
+    external: true,
   },
 ]
 

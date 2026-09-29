@@ -10,7 +10,7 @@ import { useReducedMotionSafe } from "./use-reduced-motion-safe"
 const C = Math.cos(Math.PI / 6)
 const S = 0.5
 const W = 240 // tier footprint, square
-const T = 18 // slab thickness
+const T = 16 // slab thickness
 const SPLIT = 10 // gap between the two blocks that share a tier
 const HALF = (W - SPLIT) / 2
 
@@ -24,11 +24,19 @@ type Block = { id: ProductId; job: Job; x0: number; x1: number }
 const BLOCKS: Block[] = [
   { id: "python", job: "build", x0: 0, x1: HALF },
   { id: "rust", job: "build", x0: W - HALF, x1: W },
-  { id: "api", job: "deploy", x0: 0, x1: HALF },
-  { id: "cloud", job: "deploy", x0: W - HALF, x1: W },
+  { id: "api", job: "deploy", x0: 0, x1: W },
+  { id: "cloud", job: "monitor", x0: 0, x1: W },
   { id: "marketplace", job: "monetize", x0: 0, x1: W },
 ]
-const TIERS: Job[] = ["build", "deploy", "monetize"]
+const TIERS: Job[] = ["build", "deploy", "monitor", "monetize"]
+const LAST = TIERS.length - 1 // the monetize tier; the loop rests one step after it
+
+// Telemetry bars printed on the Cloud slab, one per run. The series shifts
+// each time the agent passes through, so the chart updates as it watches.
+const BARS = 12
+function barSeries(offset: number) {
+  return Array.from({ length: BARS }, (_, i) => 10 + (((offset + i) * 37) % 29))
+}
 
 // Marketplace listing tiles, 5 x 4, in the top face's own coordinates.
 const TILE = 34
@@ -60,12 +68,15 @@ function poly(points: [number, number, number][]) {
 // plain 2D coordinates land flat on the slab.
 const TOP_FACE = `matrix(${C} ${S} ${-C} ${S} 0 ${-T})`
 
-// Where the agent cube sits for each step of the loop.
+// Where the agent cube sits for each step of the loop: on the Python or Rust
+// block, then front and center on the API and Cloud slabs (clear of their
+// labels and the telemetry bars), then onto a listing.
 function packetAnchor(step: number, cycle: number, elevation: (job: Job) => number) {
-  const right = cycle % 2 === 1
-  const cx = right ? W - HALF / 2 : HALF / 2
-  if (step === 0) return iso(cx, 196, T + elevation("build"))
-  if (step === 1) return iso(cx, 196, T + elevation("deploy"))
+  if (step === 0) {
+    const cx = cycle % 2 === 1 ? W - HALF / 2 : HALF / 2
+    return iso(cx, 196, T + elevation("build"))
+  }
+  if (step < LAST) return iso(140, 214, T + elevation(TIERS[step]))
   const tile = TILES[TILE_ORDER[landingIndex(cycle)]]
   return iso(tile.x + TILE / 2, tile.y + TILE / 2, T + elevation("monetize"))
 }
@@ -80,7 +91,7 @@ const CUBE_FACES = (() => {
   }
 })()
 
-const STEP_MS = [1500, 1500, 1700, 700]
+const STEP_MS = [1400, 1400, 1500, 1700, 700]
 
 export function StackDiagram({
   compact = false,
@@ -105,7 +116,7 @@ export function StackDiagram({
   const [step, setStep] = useState(0)
   const [cycle, setCycle] = useState(0)
 
-  const gap = compact ? 44 : exploded ? 98 : 78
+  const gap = compact ? 34 : exploded ? 80 : 62
   const elevation = (job: Job) => TIERS.indexOf(job) * (T + gap)
 
   const looping = !compact && !reduceMotion && assembled && inView && !hovered
@@ -119,7 +130,7 @@ export function StackDiagram({
   useEffect(() => {
     if (!looping) return
     const id = setTimeout(() => {
-      if (step === 3) {
+      if (step === LAST + 1) {
         setCycle((c) => c + 1)
         setStep(0)
       } else {
@@ -134,29 +145,31 @@ export function StackDiagram({
     ? highlight === "marketplace" ? PRELISTED + 3 : 0
     : reduceMotion
       ? PRELISTED + 3
-      : landingIndex(cycle) + (step >= 2 ? 1 : 0)
-  const landingTile = !reduceMotion && step >= 2 ? TILE_ORDER[landingIndex(cycle)] : -1
+      : landingIndex(cycle) + (step >= LAST ? 1 : 0)
+  const landingTile = !reduceMotion && step >= LAST ? TILE_ORDER[landingIndex(cycle)] : -1
   const listed = new Set(TILE_ORDER.slice(0, listedCount))
 
   const pathRight = cycle % 2 === 1
   const packetBlock: ProductId | null =
-    compact || reduceMotion || !assembled || hovered || step === 3
+    compact || reduceMotion || !assembled || hovered || step > LAST
       ? null
       : step === 0
         ? pathRight ? "rust" : "python"
-        : step === 1
-          ? pathRight ? "cloud" : "api"
-          : "marketplace"
+        : BLOCKS.find((b) => b.job === TIERS[step])!.id
+
+  const tier = Math.min(step, LAST)
+  const bars = barSeries(cycle + (!compact && !reduceMotion && step >= 2 ? 1 : 0))
+  const barsLive = compact ? highlight === "cloud" : packetBlock === "cloud"
 
   const focus = compact ? highlight ?? null : hovered
-  const [px, py] = packetAnchor(Math.min(step, 2), cycle, elevation)
+  const [px, py] = packetAnchor(tier, cycle, elevation)
 
-  const activeJob = hovered ? productById[hovered].job : TIERS[Math.min(step, 2)]
+  const activeJob = hovered ? productById[hovered].job : TIERS[tier]
   const caption = hovered
     ? { title: productById[hovered].name, text: productById[hovered].role }
-    : { title: JOBS[Math.min(step, 2)].label, text: JOBS[Math.min(step, 2)].caption }
+    : { title: JOBS[tier].label, text: JOBS[tier].caption }
 
-  const viewBox = compact ? "-214 -170 428 420" : "-222 -262 540 520"
+  const viewBox = compact ? "-214 -196 428 446" : "-222 -318 540 572"
 
   return (
     <div ref={ref} className={className}>
@@ -167,7 +180,7 @@ export function StackDiagram({
         aria-label={
           compact && highlight
             ? `${productById[highlight].name} highlighted in the Swarms stack`
-            : "The Swarms stack: Build with Python and Rust, Deploy with the API and Cloud, Monetize on the Marketplace"
+            : "The Swarms stack: Build with Python and Rust, Deploy with the API, Monitor with Cloud, Monetize on the Marketplace"
         }
         onMouseEnter={compact ? undefined : () => setExploded(true)}
         onMouseLeave={compact ? undefined : () => setExploded(false)}
@@ -233,6 +246,8 @@ export function StackDiagram({
                   active={!focus && packetBlock === block.id}
                   listed={listed}
                   landingTile={landingTile}
+                  bars={bars}
+                  barsLive={barsLive}
                   onHover={compact ? undefined : setHovered}
                   onSelect={compact ? undefined : onSelect}
                 />
@@ -333,6 +348,8 @@ function SlabBlock({
   active,
   listed,
   landingTile,
+  bars,
+  barsLive,
   onHover,
   onSelect,
 }: {
@@ -343,12 +360,15 @@ function SlabBlock({
   active: boolean
   listed: Set<number>
   landingTile: number
+  bars: number[]
+  barsLive: boolean
   onHover?: (id: ProductId | null) => void
   onSelect?: (id: ProductId) => void
 }) {
   const product = productById[block.id]
   const { x0, x1 } = block
   const isMarket = block.id === "marketplace"
+  const isCloud = block.id === "cloud"
   const interactive = !!onSelect
 
   const edge = focused
@@ -407,6 +427,27 @@ function SlabBlock({
       />
 
       <g transform={TOP_FACE} pointerEvents="none">
+        {/* Run telemetry: a flat bar chart along the slab's right edge, the
+            strip of this face the tier above leaves visible */}
+        {isCloud &&
+          bars.map((h, i) => {
+            const newest = i === bars.length - 1
+            return (
+              <motion.rect
+                key={i}
+                y={24 + i * 13}
+                height={7}
+                rx={1}
+                initial={false}
+                animate={{
+                  x: W - 10 - h,
+                  width: h,
+                  fill: newest && barsLive ? "#ffffff" : "rgba(255,255,255,0.28)",
+                }}
+                transition={{ duration: 0.45, ease }}
+              />
+            )
+          })}
         {isMarket &&
           TILES.map((tile, i) => {
             const isListed = listed.has(i)

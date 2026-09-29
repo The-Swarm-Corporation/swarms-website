@@ -3,7 +3,7 @@
 // links cannot drift between sections.
 
 export type ProductId = "python" | "rust" | "api" | "cloud" | "marketplace"
-export type Job = "build" | "deploy" | "monetize"
+export type Job = "build" | "deploy" | "monitor" | "monetize"
 
 export const JOBS: { id: Job; label: string; caption: string }[] = [
   {
@@ -14,7 +14,12 @@ export const JOBS: { id: Job; label: string; caption: string }[] = [
   {
     id: "deploy",
     label: "Deploy",
-    caption: "Serve it through the Swarms API and run it at scale on Swarms Cloud.",
+    caption: "Serve it through the Swarms API, from any language.",
+  },
+  {
+    id: "monitor",
+    label: "Monitor",
+    caption: "Watch every run in Swarms Cloud: logs, tokens, cost, and context use.",
   },
   {
     id: "monetize",
@@ -39,7 +44,7 @@ export type StackProduct = {
   docs: { label: string; href: string }
   artifact:
     | { kind: "code"; file: string; code: string }
-    | { kind: "grid" }
+    | { kind: "telemetry" }
     | { kind: "sale"; file: string; code: string }
 }
 
@@ -176,20 +181,20 @@ print(result["outputs"], result["usage"])`,
   },
   {
     id: "cloud",
-    job: "deploy",
+    job: "monitor",
     name: "Swarms Cloud",
     short: "Cloud",
     handle: "cloud.swarms.world",
-    role: "The control plane for your agents: design teams, run them at scale, trace every run, and host them.",
+    role: "The monitoring and telemetry layer. Every run your agents make, with its logs, tokens, cost, and context use.",
     facts: [
-      "Auto Agent Builder and a visual Workflow Builder",
-      "Batch runs one agent over 500 tasks; Grid runs every task against every agent",
-      "A page for every agent and every run, with tokens and cost",
-      "Encrypted Skills library, hosted MCP server, and scale-to-zero hosting (beta)",
+      "Searchable logs for every request, by agent, endpoint, ID, time, or task text",
+      "A page for every completion with the exact request, response, tokens, and cost",
+      "Per-agent activity, spend, and context-window use, run by run",
+      "Token usage by day, week, or month, with an end-of-month spend projection",
     ],
     primary: { label: "Open Swarms Cloud", href: "https://cloud.swarms.world" },
     docs: { label: "What is Swarms Cloud?", href: "/blog/what-is-swarms-cloud" },
-    artifact: { kind: "grid" },
+    artifact: { kind: "telemetry" },
   },
   {
     id: "marketplace",
@@ -242,19 +247,19 @@ export const NEEDS: Need[] = [
     job: "build",
     need: "Compose agents into teams",
     how: "Sequential, concurrent, hierarchical, and graph architectures in Python or Rust, or 16 of them over REST.",
-    covered: ["python", "rust", "api", "cloud"],
+    covered: ["python", "rust", "api"],
   },
   {
     job: "build",
     need: "Use any model provider",
     how: "A model is a string. Change model_name to switch providers; the API reaches 2,000+ models with one key.",
-    covered: ["python", "rust", "api", "cloud"],
+    covered: ["python", "rust", "api"],
   },
   {
     job: "build",
     need: "Give agents tools and MCP servers",
     how: "Attach functions or MCP servers in either framework or over the API, or buy them ready-made on the Marketplace.",
-    covered: ["python", "rust", "api", "cloud", "marketplace"],
+    covered: ["python", "rust", "api", "marketplace"],
   },
   {
     job: "build",
@@ -276,32 +281,50 @@ export const NEEDS: Need[] = [
   },
   {
     job: "deploy",
-    need: "Design a team without writing code",
-    how: "Describe the task to the Auto Agent Builder, or drag agents into a graph in the Workflow Builder.",
-    covered: ["cloud"],
+    need: "Run multi-agent teams without managing servers",
+    how: "Send agent configs and a task; the API runs the agents and the orchestration on hosted infrastructure.",
+    covered: ["api"],
   },
   {
     job: "deploy",
-    need: "Run one agent over hundreds of tasks",
-    how: "Batch endpoints take a list of requests; Cloud's Batch and Grid runners add progress, retries, and CSV export.",
+    need: "Run one agent over thousands of tasks",
+    how: "Batch endpoints take a list of complete requests and run them concurrently on the platform.",
+    covered: ["api"],
+  },
+  {
+    job: "deploy",
+    need: "Stream results as they are generated",
+    how: "Token-by-token streaming for low-latency interfaces and live progress on long runs.",
+    covered: ["api"],
+  },
+  {
+    job: "monitor",
+    need: "See the logs, payload, and response of every run",
+    how: "Search every request by agent, endpoint, ID, time, or task text, and open any completion to see exactly what was sent and returned.",
     covered: ["api", "cloud"],
   },
   {
-    job: "deploy",
-    need: "See tokens, cost, and logs for every run",
-    how: "Every response carries usage, and every completion gets its own page with the exact payload.",
+    job: "monitor",
+    need: "Track tokens and cost per agent",
+    how: "Every API response carries usage, Python agents keep their own token accounting, and Cloud totals it all per agent and per run.",
     covered: ["python", "api", "cloud"],
   },
   {
-    job: "deploy",
-    need: "Keep prompts and skills in one private library",
-    how: "The Skills library stores SKILL.md, markdown, and JSON, encrypted under a per-user key.",
+    job: "monitor",
+    need: "Catch agents about to run out of context",
+    how: "Each agent's page shows how much of the model's context window every run filled.",
     covered: ["cloud"],
   },
   {
-    job: "deploy",
-    need: "Host an agent that costs nothing while idle",
-    how: "S2A reads a GitHub repo, quotes the cost across clouds, and serves it behind an autoscaling HTTPS endpoint.",
+    job: "monitor",
+    need: "Forecast your monthly spend",
+    how: "Token Usage charts spend by day, week, or month and projects where the month will land.",
+    covered: ["cloud"],
+  },
+  {
+    job: "monitor",
+    need: "Check each agent's effective configuration",
+    how: "An agent's page lists all 34 configuration fields with the API's defaults filled in, including the ones you never set.",
     covered: ["cloud"],
   },
   {
@@ -333,5 +356,47 @@ export const NEEDS: Need[] = [
     need: "Reuse what others have published",
     how: "Load a marketplace prompt into an agent by ID, or connect the marketplace MCP server to Claude Code or Cursor.",
     covered: ["python", "marketplace"],
+  },
+]
+
+// Rendered as the FAQ section and as FAQPage structured data in layout.tsx,
+// so the visible answers and the ones search engines read are the same text.
+export const FAQS: { q: string; a: string; link?: { label: string; href: string } }[] = [
+  {
+    q: "What is the Swarms stack?",
+    a: "The Swarms stack is a set of five products that cover the full life of an AI agent. Swarms Python and Swarms Rust are open-source frameworks for building agents and multi-agent systems. The Swarms API deploys and runs them, Swarms Cloud monitors every run, and the Swarms Marketplace is where you sell them. The hosted products share one account and one API key.",
+  },
+  {
+    q: "Should I build my AI agents in Python or Rust?",
+    a: "Start with Swarms Python if you want the widest choice of multi-agent architectures, model providers, tools, and examples. Choose Swarms Rust for services where latency, memory use, and concurrency matter: it is memory-safe, has no garbage collector, and runs async on Tokio. Both support MCP servers and OpenAI-compatible model endpoints.",
+    link: { label: "Install Swarms", href: "/installation" },
+  },
+  {
+    q: "How do I deploy an AI agent with Swarms?",
+    a: "Send the agent's configuration and a task to the Swarms API at api.swarms.world, as plain REST from any language or through the SDKs for Python, TypeScript, Go, and Java. The API runs single agents, 16 multi-agent architectures, and batch jobs of thousands of tasks on hosted infrastructure, and returns token usage with every response.",
+    link: { label: "About the Swarms API", href: "/api" },
+  },
+  {
+    q: "How do I monitor AI agents in production?",
+    a: "Swarms Cloud logs every request your agents make through the Swarms API. Search runs by agent, endpoint, ID, time, or task text, open any completion to see its exact request, response, tokens, and cost, and track spend and context-window use per agent, with a projection of where the month's spend will land.",
+    link: { label: "What is Swarms Cloud?", href: "/blog/what-is-swarms-cloud" },
+  },
+  {
+    q: "Which models and multi-agent architectures does the Swarms API support?",
+    a: "One API key reaches 2,000+ models from providers including OpenAI, Anthropic, Google, xAI, DeepSeek, and Meta. The API offers 16 swarm architectures, among them sequential and concurrent workflows, hierarchical swarms, graph workflows, group chat, and mixture of agents. Switching models is a one-line change to model_name.",
+  },
+  {
+    q: "How do I make money from an AI agent?",
+    a: "Publish it on the Swarms Marketplace at swarms.world. Listing is free, and you keep 90% of every sale, whether the buyer pays by card through Stripe or in crypto. You can also launch the agent as a token on Solana and earn a share of every trade, or use Vault Mode to give access to token holders instead of charging a price.",
+    link: { label: "How the Marketplace works", href: "/marketplace" },
+  },
+  {
+    q: "What can I sell on the Swarms Marketplace?",
+    a: "Agents, prompts, tools, MCP servers, and skills. Agents ship as code with their dependencies, prompts are text-only instructions, tools are typed Python functions, MCP servers give other agents tool access, and skills are SKILL.md instruction packs. A Swarms Python agent can be published straight from code by setting publish_to_marketplace=True.",
+  },
+  {
+    q: "How much does it cost to get started?",
+    a: "Swarms Python and Swarms Rust are free and open source. Swarms Cloud starts on a Free plan where you pay only for usage, and new accounts get $5 in API credits. Pro ($19.99 a month) and Premium ($100 a month) raise limits and unlock more features, and every plan pays the same price per token.",
+    link: { label: "See pricing", href: "/pricing" },
   },
 ]

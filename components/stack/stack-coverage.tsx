@@ -28,11 +28,11 @@ export function StackCoverage({ onSelect }: { onSelect: (id: ProductId) => void 
           <div className="mb-8 flex flex-col gap-6 sm:mb-10 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-3xl">
               <h2 className="text-3xl font-semibold leading-[1.1] tracking-tighter text-white sm:text-4xl md:text-5xl">
-                Every need, and where it lives
+                Everything an AI agent team needs, mapped to the stack
               </h2>
               <p className="mt-5 max-w-2xl text-base font-normal leading-relaxed text-white/50 sm:text-lg">
-                {NEEDS.length} jobs every agent team runs into, mapped to the part of the stack that
-                handles each one. Open a row to see how.
+                {NEEDS.length} jobs that come up when you build, deploy, monitor, and sell agents, and
+                the part of the stack that handles each one. Open a row to see how.
               </p>
             </div>
 
@@ -155,39 +155,40 @@ export function StackCoverage({ onSelect }: { onSelect: (id: ProductId) => void 
                             )
                           })}
                         </button>
-                        <AnimatePresence initial={false}>
-                          {isOpen && (
-                            <motion.div
-                              id={panelId}
-                              initial={{ height: 0, opacity: 0 }}
-                              animate={{ height: "auto", opacity: 1 }}
-                              exit={{ height: 0, opacity: 0 }}
-                              transition={{ duration: 0.3, ease }}
-                              className="overflow-hidden"
-                            >
-                              <div className="px-3 pb-4 pl-[2.1rem] sm:px-5 sm:pl-[2.6rem]">
-                                <p className="max-w-2xl text-sm font-normal leading-relaxed text-white/55">
-                                  {need.how}
-                                </p>
-                                <div className="mt-3 flex flex-wrap gap-2">
-                                  {need.covered.map((id) => {
-                                    const p = PRODUCTS.find((x) => x.id === id)!
-                                    return (
-                                      <button
-                                        key={id}
-                                        type="button"
-                                        onClick={() => onSelect(id)}
-                                        className="rounded-full border border-white/[0.14] px-3 py-1 text-xs font-medium text-white/70 transition-colors hover:border-white/35 hover:text-white"
-                                      >
-                                        {p.name}
-                                      </button>
-                                    )
-                                  })}
-                                </div>
-                              </div>
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
+                        {/* Always rendered so every answer is in the page HTML;
+                            collapsed rows are zero-height and inert. */}
+                        <motion.div
+                          id={panelId}
+                          initial={false}
+                          animate={{ height: isOpen ? "auto" : 0, opacity: isOpen ? 1 : 0 }}
+                          transition={{ duration: 0.3, ease }}
+                          className="overflow-hidden"
+                          aria-hidden={!isOpen}
+                        >
+                          <div
+                            inert={!isOpen}
+                            className="px-3 pb-4 pl-[2.1rem] sm:px-5 sm:pl-[2.6rem]"
+                          >
+                            <p className="max-w-2xl text-sm font-normal leading-relaxed text-white/55">
+                              {need.how}
+                            </p>
+                            <div className="mt-3 flex flex-wrap gap-2">
+                              {need.covered.map((id) => {
+                                const p = PRODUCTS.find((x) => x.id === id)!
+                                return (
+                                  <button
+                                    key={id}
+                                    type="button"
+                                    onClick={() => onSelect(id)}
+                                    className="rounded-full border border-white/[0.14] px-3 py-1 text-xs font-medium text-white/70 transition-colors hover:border-white/35 hover:text-white"
+                                  >
+                                    {p.name}
+                                  </button>
+                                )
+                              })}
+                            </div>
+                          </div>
+                        </motion.div>
                       </div>
                     )
                   })}

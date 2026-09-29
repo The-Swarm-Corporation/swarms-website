@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react"
 
 import { useReducedMotionSafe } from "./use-reduced-motion-safe"
 
-type LineKind = "cmd" | "cont" | "code" | "add" | "out" | "ok" | "dim" | "progress" | "sale"
+type LineKind = "cmd" | "cont" | "code" | "add" | "out" | "ok" | "dim" | "log" | "sale"
 type Line = { kind: LineKind; text: string }
 
 const cmd = (text: string): Line => ({ kind: "cmd", text })
@@ -16,6 +16,7 @@ const add = (text: string): Line => ({ kind: "add", text })
 const out = (text: string): Line => ({ kind: "out", text })
 const ok = (text: string): Line => ({ kind: "ok", text })
 const dim = (text: string): Line => ({ kind: "dim", text })
+const log = (text: string): Line => ({ kind: "log", text })
 const sale = (text: string): Line => ({ kind: "sale", text })
 
 type Lang = "python" | "rust"
@@ -91,17 +92,20 @@ const STEPS: Step[] = [
     ],
   },
   {
-    id: "scale",
-    title: "Scale it",
-    body: "Run it over 500 tasks from Swarms Cloud, with a page, a payload, and a cost for every run.",
-    window: "cloud.swarms.world/batch",
+    id: "monitor",
+    title: "Monitor it",
+    body: "Watch every run in Swarms Cloud, with its logs, tokens, cost, and context use per agent.",
+    window: "cloud.swarms.world/history",
+    // Costs are gpt-4.1's rate ($2 in, $8 out per million tokens), and the
+    // totals follow from them: ~500 runs a day at ~$0.006 each.
     lines: [
-      dim("Batch"),
-      out("Agent    Research-Agent"),
-      out("Tasks    500 rows from papers.csv"),
-      { kind: "progress", text: "500" },
-      ok("500 of 500 complete, 0 failed"),
-      dim("Tokens and cost per run: cloud.swarms.world/history"),
+      dim("Completion logs for Research-Agent"),
+      log("14:02:11  200  1,050 tokens  $0.0059"),
+      log("14:02:15  200  1,222 tokens  $0.0067"),
+      log("14:02:19  200    987 tokens  $0.0055"),
+      ok("500 runs today, 0 failed, $3.02 spent"),
+      out("Peak context use: 0.12% of the window"),
+      dim("On track for $90.60 this month"),
     ],
   },
   {
@@ -122,6 +126,13 @@ const STEPS: Step[] = [
   },
 ]
 
+// Every transcript, so the ones not on screen can still ship in the HTML.
+const TRANSCRIPTS: { id: string; step: number; lang?: Lang; title: string; lines: Line[] }[] = [
+  { id: "build-python", step: 0, lang: "python", title: "Build it in Python", lines: BUILD.python },
+  { id: "build-rust", step: 0, lang: "rust", title: "Build it in Rust", lines: BUILD.rust },
+  ...STEPS.slice(1).map((s, i) => ({ id: s.id, step: i + 1, title: s.title, lines: s.lines })),
+]
+
 function linesFor(stepIndex: number, lang: Lang) {
   return stepIndex === 0 ? BUILD[lang] : STEPS[stepIndex].lines
 }
@@ -135,11 +146,10 @@ const DELAY: Record<LineKind, number> = {
   out: 70,
   ok: 240,
   dim: 320,
-  progress: 200,
+  log: 520,
   sale: 900,
 }
 const TYPE_MS = 22
-const PROGRESS_MS = 1800
 const DWELL_MS = 2600
 
 export function StackLifecycle() {
@@ -150,35 +160,39 @@ export function StackLifecycle() {
   const [step, setStep] = useState(0)
   const [lang, setLang] = useState<Lang>("python")
   const [autoplay, setAutoplay] = useState(true)
-  // Lines fully shown, characters typed on the current command, and the
-  // current progress bar's fill.
-  const [shown, setShown] = useState(0)
+  // Lines fully shown and characters typed on the current command. The
+  // server renders step 1 complete, so the transcript is in the page HTML; it
+  // restarts and types once scrolled into view.
+  const [shown, setShown] = useState(() => linesFor(0, "python").length)
   const [typed, setTyped] = useState(0)
-  const [progress, setProgress] = useState(0)
+  const [armed, setArmed] = useState(false)
 
   const lines = linesFor(step, lang)
   const complete = shown >= lines.length
-  const started = inView || reduceMotion
 
   function goTo(next: number, nextLang = lang) {
     setStep(next)
     setLang(nextLang)
     setShown(reduceMotion ? linesFor(next, nextLang).length : 0)
     setTyped(0)
-    setProgress(reduceMotion ? 1 : 0)
+    if (!reduceMotion) setArmed(true)
   }
+
+  useEffect(() => {
+    if (!inView || reduceMotion || armed) return
+    setArmed(true)
+    setShown(0)
+    setTyped(0)
+  }, [inView, reduceMotion, armed])
 
   // Reduced motion: every step renders complete, nothing types.
   useEffect(() => {
-    if (reduceMotion) {
-      setShown(lines.length)
-      setProgress(1)
-    }
+    if (reduceMotion) setShown(lines.length)
   }, [reduceMotion, lines.length])
 
   // The typing engine: one timer at a time, advancing a line or a character.
   useEffect(() => {
-    if (!started || reduceMotion || complete) return
+    if (!armed || reduceMotion || complete) return
     const line = lines[shown]
     let id: ReturnType<typeof setTimeout>
 
@@ -191,24 +205,18 @@ export function StackLifecycle() {
           setTyped(0)
         }, 220)
       }
-    } else if (line.kind === "progress") {
-      if (progress < 1) {
-        id = setTimeout(() => setProgress((p) => Math.min(1, p + 50 / PROGRESS_MS)), progress === 0 ? DELAY.progress : 50)
-      } else {
-        id = setTimeout(() => setShown((s) => s + 1), 150)
-      }
     } else {
       id = setTimeout(() => setShown((s) => s + 1), DELAY[line.kind])
     }
     return () => clearTimeout(id)
-  }, [started, reduceMotion, complete, lines, shown, typed, progress])
+  }, [armed, reduceMotion, complete, lines, shown, typed])
 
   // Autoplay moves on to the next step after a pause, and stops at the end.
   useEffect(() => {
-    if (!complete || !autoplay || reduceMotion || step === STEPS.length - 1) return
+    if (!armed || !complete || !autoplay || reduceMotion || step === STEPS.length - 1) return
     const id = setTimeout(() => goTo(step + 1), DWELL_MS)
     return () => clearTimeout(id)
-  }, [complete, autoplay, reduceMotion, step])
+  }, [armed, complete, autoplay, reduceMotion, step])
 
   const atEnd = complete && step === STEPS.length - 1
 
@@ -218,10 +226,11 @@ export function StackLifecycle() {
         <div ref={ref} className="mx-auto max-w-7xl">
           <div className="mb-10 max-w-3xl sm:mb-14">
             <h2 className="text-3xl font-semibold leading-[1.1] tracking-tighter text-white sm:text-4xl md:text-5xl">
-              One agent, from first line to first sale
+              Take one AI agent from first line of code to first sale
             </h2>
             <p className="mt-5 max-w-2xl text-base font-normal leading-relaxed text-white/50 sm:text-lg">
-              The same research agent carried through every layer. Watch it run, or pick a step.
+              The same research agent built, deployed, monitored, and sold on Swarms. Watch it run,
+              or pick a step.
             </p>
           </div>
 
@@ -346,14 +355,12 @@ export function StackLifecycle() {
                 >
                   {lines.slice(0, Math.min(shown + 1, lines.length)).map((line, i) => {
                     const current = i === shown
-                    if (current && !started) return null
-                    if (current && line.kind !== "cmd" && line.kind !== "progress") return null
+                    if (current && line.kind !== "cmd") return null
                     return (
                       <TerminalLine
                         key={`${step}-${lang}-${i}`}
                         line={line}
                         text={current && line.kind === "cmd" ? line.text.slice(0, typed) : line.text}
-                        progress={line.kind === "progress" ? (current ? progress : 1) : 0}
                         caret={current}
                       />
                     )
@@ -362,6 +369,21 @@ export function StackLifecycle() {
                     <span aria-hidden="true" className="inline-block h-[1.1em] w-[0.55em] translate-y-[0.2em] animate-pulse bg-white/60" />
                   )}
                 </div>
+              </div>
+
+              {/* The transcripts not on screen, present in the HTML for search
+                  engines and hidden like inactive tabs. */}
+              <div hidden>
+                {TRANSCRIPTS.filter(
+                  (t) => !(t.step === step && (t.step !== 0 || t.lang === lang))
+                ).map((t) => (
+                  <div key={t.id}>
+                    <p>{t.title}</p>
+                    {t.lines.map((line, i) => (
+                      <TerminalLine key={i} line={line} text={line.text} caret={false} />
+                    ))}
+                  </div>
+                ))}
               </div>
             </div>
           </div>
@@ -374,12 +396,10 @@ export function StackLifecycle() {
 function TerminalLine({
   line,
   text,
-  progress,
   caret,
 }: {
   line: Line
   text: string
-  progress: number
   caret: boolean
 }) {
   switch (line.kind) {
@@ -415,19 +435,7 @@ function TerminalLine({
       return <div className="text-white/35">{text}</div>
     case "sale":
       return <div className="font-semibold text-red-400">{text}</div>
-    case "progress": {
-      const total = Number(line.text)
-      const cells = 24
-      const filled = Math.round(progress * cells)
-      return (
-        <div className="text-white/70">
-          <span className="text-white">{"█".repeat(filled)}</span>
-          <span className="text-white/15">{"█".repeat(cells - filled)}</span>
-          <span className="ml-3 tabular-nums">
-            {Math.round(progress * total)} / {total}
-          </span>
-        </div>
-      )
-    }
+    case "log":
+      return <div className="text-white/75">{text}</div>
   }
 }

@@ -1,10 +1,11 @@
 import type React from "react"
 import type { Metadata } from "next"
 import { siteConfig } from "@/app/metadata"
+import { FAQS } from "@/components/stack/stack-data"
 
-const title = "The Swarms Stack: Build, Deploy, and Monetize AI Agents"
+const title = "The Swarms Stack: Build, Deploy, Monitor, and Sell AI Agents"
 const description =
-  "Build agents with Swarms Python and Swarms Rust, deploy them with the Swarms API and Swarms Cloud, and sell them on the Swarms Marketplace. One stack of agent infrastructure, from first line of code to first sale."
+  "Build AI agents with Swarms Python and Rust, deploy them with the Swarms API, monitor them in Swarms Cloud, and sell them on the Swarms Marketplace."
 const url = "https://www.swarms.ai/stack"
 
 export const metadata: Metadata = {
@@ -12,21 +13,37 @@ export const metadata: Metadata = {
   description,
   keywords: [
     "swarms stack",
+    "ai agent infrastructure",
     "agent infrastructure",
-    "ai agent stack",
+    "ai agent platform",
     "build ai agents",
     "deploy ai agents",
     "monetize ai agents",
     "sell ai agents",
+    "multi-agent framework",
+    "multi-agent orchestration",
+    "multi-agent systems",
+    "python ai agents",
+    "rust ai agents",
+    "ai agent framework",
+    "ai agent api",
+    "agent deployment",
+    "monitor ai agents",
+    "ai agent monitoring",
+    "ai agent observability",
+    "agent telemetry",
+    "llm observability",
+    "agent logs",
+    "token usage tracking",
+    "agent marketplace",
+    "sell prompts",
+    "mcp servers",
     "swarms python",
     "swarms rust",
     "swarms-rs",
     "swarms api",
     "swarms cloud",
     "swarms marketplace",
-    "multi-agent framework",
-    "agent hosting",
-    "agent marketplace",
   ],
   alternates: { canonical: url },
   openGraph: {
@@ -35,15 +52,6 @@ export const metadata: Metadata = {
     title,
     description,
     siteName: siteConfig.name,
-    images: [
-      {
-        url: "/seo_image.jpg",
-        width: 1200,
-        height: 630,
-        alt: "The Swarms Stack: build, deploy, and monetize AI agents",
-        type: "image/jpeg",
-      },
-    ],
   },
   twitter: {
     card: "summary_large_image",
@@ -51,14 +59,6 @@ export const metadata: Metadata = {
     description,
     creator: "@swarms_corp",
     site: "@swarms_corp",
-    images: [
-      {
-        url: "/seo_image.jpg",
-        width: 1200,
-        height: 630,
-        alt: "The Swarms Stack: build, deploy, and monetize AI agents",
-      },
-    ],
   },
   robots: {
     index: true,
@@ -121,7 +121,7 @@ const stackJsonLd = {
         applicationCategory: "DeveloperApplication",
         operatingSystem: "Web",
         url: "https://cloud.swarms.world",
-        description: "The control plane for designing, running, tracing, and hosting agents.",
+        description: "Monitoring and telemetry for AI agents: logs, tokens, cost, and context use for every run.",
       },
       {
         "@type": "WebSite",
@@ -134,12 +134,39 @@ const stackJsonLd = {
   },
 }
 
+const faqJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: FAQS.map((faq) => ({
+    "@type": "Question",
+    name: faq.q,
+    acceptedAnswer: { "@type": "Answer", text: faq.a },
+  })),
+}
+
+const breadcrumbJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: [
+    { "@type": "ListItem", position: 1, name: "Home", item: siteConfig.url },
+    { "@type": "ListItem", position: 2, name: "The Swarms Stack", item: url },
+  ],
+}
+
 export default function StackLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(stackJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
       {children}
     </>

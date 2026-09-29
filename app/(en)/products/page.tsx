@@ -476,6 +476,16 @@ export default function ProductsPage() {
                 </ProductLink>
               ))}
             </motion.div>
+
+            <div className="mx-auto mt-6 max-w-7xl">
+              <Link
+                href="/stack"
+                className="group inline-flex items-center gap-1.5 text-sm font-medium text-white/70 transition-colors hover:text-white"
+              >
+                See how the products work together as one AI agent stack
+                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+              </Link>
+            </div>
           </div>
         </section>
 

@@ -48,12 +48,12 @@ function StackHero({ onSelect }: { onSelect: (id: ProductId) => void }) {
           <div>
             <motion.h1
               className="max-w-xl font-semibold leading-[1.02] tracking-tighter text-white"
-              style={{ fontSize: "clamp(2.5rem, 5.6vw, 4.6rem)" }}
+              style={{ fontSize: "clamp(2.4rem, 5vw, 4.1rem)" }}
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, ease }}
             >
-              One stack to build, deploy, and sell agents
+              One stack to build, deploy, monitor, and sell AI&nbsp;agents
             </motion.h1>
 
             <motion.p
@@ -62,8 +62,9 @@ function StackHero({ onSelect }: { onSelect: (id: ProductId) => void }) {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, delay: 0.08, ease }}
             >
-              Write agents in Python or Rust. Run them through the Swarms API and manage them in
-              Swarms Cloud. Sell them on the Swarms Marketplace and keep 90% of every sale.
+              Write AI agents in Swarms Python or Swarms Rust. Deploy them through the Swarms API,
+              monitor every run in Swarms Cloud, and sell them on the Swarms Marketplace, keeping
+              90% of every sale.
             </motion.p>
 
             <motion.div

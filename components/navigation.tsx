@@ -267,7 +267,7 @@ export function Navigation() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <span className="text-sm font-semibold text-white block">The Stack</span>
-                        <p className="text-xs text-neutral-400 mt-0.5">Build, deploy, and monetize</p>
+                        <p className="text-xs text-neutral-400 mt-0.5">Build, deploy, monitor, and sell</p>
                       </div>
                     </Link>
                     <Link href="/agenthq" className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative">

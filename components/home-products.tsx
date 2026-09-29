@@ -160,6 +160,13 @@ export function HomeProducts() {
             Frameworks, interfaces, and cloud services to help you build your own
             multi-agent systems.
           </p>
+          <Link
+            href="/stack"
+            className="group mt-6 inline-flex items-center gap-1.5 text-sm font-medium text-white/70 transition-colors hover:text-white"
+          >
+            See how the Swarms stack fits together
+            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+          </Link>
         </motion.div>
 
         <div className="mx-auto max-w-7xl">

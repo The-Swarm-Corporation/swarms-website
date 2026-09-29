@@ -1,7 +1,7 @@
 "use client"
 
-import { motion, useInView } from "framer-motion"
-import { ArrowRight, ArrowUpRight, Check, RotateCcw, Star } from "lucide-react"
+import { AnimatePresence, motion, useInView } from "framer-motion"
+import { ArrowRight, ArrowUpRight, Star } from "lucide-react"
 import Link from "next/link"
 import { useEffect, useRef, useState, type ReactNode } from "react"
 
@@ -27,17 +27,27 @@ export function StackExplorer({
 }) {
   const stars = useGithubStars()
 
+  // Every panel is rendered into the page HTML (inactive ones hidden) so all
+  // five products are readable without clicking. The entrance animation only
+  // plays after the selection changes, never on the server-rendered first view.
+  const [switched, setSwitched] = useState(false)
+  const firstValue = useRef(value)
+  useEffect(() => {
+    if (value !== firstValue.current) setSwitched(true)
+  }, [value])
+
   return (
     <section id="layers" className="border-b border-white/[0.08] bg-black">
       <div className="container px-4 py-16 sm:px-6 sm:py-24 lg:px-8 lg:py-28">
         <div className="mx-auto max-w-7xl">
           <div className="mb-10 max-w-3xl sm:mb-14">
             <h2 className="text-3xl font-semibold leading-[1.1] tracking-tighter text-white sm:text-4xl md:text-5xl">
-              What each layer does
+              AI agent infrastructure, layer by layer
             </h2>
             <p className="mt-5 max-w-2xl text-base font-normal leading-relaxed text-white/50 sm:text-lg">
-              Start with the piece you need today. Each one works on its own, and each one hands
-              off to the next when your agent outgrows it.
+              Open-source frameworks to build agents, a hosted API to run them, telemetry to watch
+              them, and a marketplace to sell them. Start with the piece you need today; each one
+              hands off to the next when your agent outgrows it.
             </p>
           </div>
 
@@ -79,10 +89,13 @@ export function StackExplorer({
               <TabsContent
                 key={product.id}
                 value={product.id}
-                className="mt-0 min-w-0 ring-offset-black focus-visible:ring-white/40"
+                forceMount
+                className="mt-0 min-w-0 ring-offset-black focus-visible:ring-white/40 data-[state=inactive]:hidden"
               >
                 <ProductPanel
+                  key={value === product.id ? "active" : "inactive"}
                   product={product}
+                  animateIn={switched}
                   starCount={product.github ? stars[product.github] : undefined}
                 />
               </TabsContent>
@@ -94,12 +107,20 @@ export function StackExplorer({
   )
 }
 
-function ProductPanel({ product, starCount }: { product: StackProduct; starCount?: number }) {
+function ProductPanel({
+  product,
+  animateIn,
+  starCount,
+}: {
+  product: StackProduct
+  animateIn: boolean
+  starCount?: number
+}) {
   const job = JOBS.find((j) => j.id === product.job)!
 
   return (
     <motion.div
-      initial={{ opacity: 0, x: 12 }}
+      initial={animateIn ? { opacity: 0, x: 12 } : false}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.35, ease }}
       className="grid gap-8 overflow-hidden rounded-lg border border-white/[0.08] bg-[#0a0a0a] p-5 sm:p-8 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] xl:gap-10"
@@ -171,8 +192,8 @@ function ProductPanel({ product, starCount }: { product: StackProduct; starCount
       </div>
 
       <div className="min-w-0">
-        {product.artifact.kind === "grid" ? (
-          <CloudGrid />
+        {product.artifact.kind === "telemetry" ? (
+          <CloudTelemetry />
         ) : (
           <>
             <CodePanel file={product.artifact.file} code={product.artifact.code} />
@@ -253,160 +274,187 @@ function SaleSplit() {
   )
 }
 
-const GRID_AGENTS = ["Analyst", "Skeptic", "Editor", "Auditor"]
-const GRID_TASKS = [
-  "Summarize the 10-K",
-  "Flag risky clauses",
-  "Check the numbers",
-  "Draft the memo",
-  "List open questions",
-  "Rewrite for execs",
+type Run = {
+  agent: string
+  model: "gpt-4.1" | "gpt-4.1-mini"
+  input: number
+  output: number
+  ok: boolean
+}
+
+// Per-million-token prices, so every cost in the demo is what that run
+// would actually cost.
+const PRICE: Record<Run["model"], [number, number]> = {
+  "gpt-4.1": [2, 8],
+  "gpt-4.1-mini": [0.4, 1.6],
+}
+const CONTEXT_WINDOW = 1_047_576
+
+const RUNS: Run[] = [
+  { agent: "Research-Agent", model: "gpt-4.1", input: 412, output: 638, ok: true },
+  { agent: "Triage-Agent", model: "gpt-4.1-mini", input: 230, output: 95, ok: true },
+  { agent: "Writer-Agent", model: "gpt-4.1", input: 1840, output: 1210, ok: true },
+  { agent: "Triage-Agent", model: "gpt-4.1-mini", input: 0, output: 0, ok: false },
+  { agent: "Research-Agent", model: "gpt-4.1", input: 520, output: 702, ok: true },
+  { agent: "Writer-Agent", model: "gpt-4.1", input: 2010, output: 1344, ok: true },
+  { agent: "Triage-Agent", model: "gpt-4.1-mini", input: 198, output: 88, ok: true },
 ]
-const CELL_COUNT = GRID_AGENTS.length * GRID_TASKS.length
 
-// Deterministic "random" timings so every run fills the grid the same
-// believable, uneven way.
-const CELL_TIMING = Array.from({ length: CELL_COUNT }, (_, i) => ({
-  start: 200 + ((i * 7) % CELL_COUNT) * 70,
-  duration: 450 + ((i * 53) % 9) * 110,
-}))
+const VISIBLE_RUNS = 5
+const RUN_EVERY_MS = 2200
+const MAX_RUNS = 200
 
-type CellState = 0 | 1 | 2 // queued, running, done
+const runAt = (id: number) => RUNS[id % RUNS.length]
+const costOf = (r: Run) => (r.input * PRICE[r.model][0] + r.output * PRICE[r.model][1]) / 1e6
+const runTime = (id: number) => {
+  const t = 14 * 3600 + 2 * 60 + 5 + id * 4 + ((id * 7) % 3)
+  const pad = (n: number) => String(n).padStart(2, "0")
+  return `${pad(Math.floor(t / 3600))}:${pad(Math.floor(t / 60) % 60)}:${pad(t % 60)}`
+}
+const runRef = (id: number) => `agent-${((id + 11) * 2654435761 >>> 0).toString(16).slice(0, 6)}`
 
-// A miniature of Swarms Cloud's Grid runner: every task against every agent.
-function CloudGrid() {
+// A miniature of Swarms Cloud's completion logs: runs stream in while the
+// panel is on screen, and any run opens to show what Cloud records about it.
+function CloudTelemetry() {
   const reduceMotion = useReducedMotionSafe()
   const ref = useRef<HTMLDivElement>(null)
-  const inView = useInView(ref, { once: true, margin: "-60px" })
-  const [cells, setCells] = useState<CellState[]>(() => Array(CELL_COUNT).fill(0))
-  const [run, setRun] = useState(0)
+  const inView = useInView(ref, { margin: "-60px" })
+  const [nextId, setNextId] = useState(VISIBLE_RUNS)
+  const [selected, setSelected] = useState(VISIBLE_RUNS - 1)
+  const [paused, setPaused] = useState(false)
+
+  const live = inView && !reduceMotion && !paused && nextId < MAX_RUNS
 
   useEffect(() => {
-    if (!inView) return
-    if (reduceMotion) {
-      setCells(Array(CELL_COUNT).fill(2))
-      return
-    }
-    setCells(Array(CELL_COUNT).fill(0))
-    const set = (i: number, state: CellState) =>
-      setCells((prev) => {
-        const next = [...prev]
-        next[i] = state
-        return next
-      })
-    const timers = CELL_TIMING.flatMap(({ start, duration }, i) => [
-      setTimeout(() => set(i, 1), start),
-      setTimeout(() => set(i, 2), start + duration),
-    ])
-    return () => timers.forEach(clearTimeout)
-  }, [inView, run, reduceMotion])
+    if (!live) return
+    const id = setTimeout(() => setNextId((n) => n + 1), RUN_EVERY_MS)
+    return () => clearTimeout(id)
+  }, [live, nextId])
 
-  const done = cells.filter((c) => c === 2).length
-  const running = cells.filter((c) => c === 1).length
+  const ids = Array.from({ length: Math.min(VISIBLE_RUNS, nextId) }, (_, i) => nextId - 1 - i)
+  const all = Array.from({ length: nextId }, (_, id) => runAt(id))
+  const totals = {
+    runs: 482 + nextId,
+    tokens: 611_240 + all.reduce((sum, r) => sum + r.input + r.output, 0),
+    spend: 3.08 + all.reduce((sum, r) => sum + costOf(r), 0),
+  }
+  const detail = runAt(selected)
 
   return (
-    <div ref={ref} className="overflow-hidden rounded-lg border border-white/[0.08] bg-black">
+    <div
+      ref={ref}
+      className="overflow-hidden rounded-lg border border-white/[0.08] bg-black"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+    >
       <div className="flex items-center gap-3 border-b border-white/[0.08] px-4 py-3">
-        <span className="font-mono text-[11px] font-normal text-white/40">
-          cloud.swarms.world/grid
+        <span className="truncate font-mono text-[11px] font-normal text-white/40">
+          cloud.swarms.world/history
         </span>
-        <button
-          type="button"
-          onClick={() => setRun((r) => r + 1)}
-          disabled={done < CELL_COUNT}
-          className="ml-auto inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-[11px] font-medium text-white/50 transition-colors hover:text-white disabled:pointer-events-none disabled:opacity-30"
-        >
-          <RotateCcw className="h-3 w-3" />
-          Run again
-        </button>
+        <span className="ml-auto inline-flex items-center gap-1.5 text-[11px] font-medium text-white/50">
+          <span
+            aria-hidden="true"
+            className={`h-1.5 w-1.5 rounded-full ${live ? "animate-pulse bg-white" : "bg-white/30"}`}
+          />
+          {live ? "Live" : "Paused"}
+        </span>
       </div>
 
-      <div className="p-4 sm:p-5">
-        <div className="flex items-baseline justify-between gap-4">
-          <p className="text-sm font-semibold text-white">
-            {GRID_TASKS.length} tasks, {GRID_AGENTS.length} agents
-          </p>
-          <p className="text-xs font-normal tabular-nums text-white/50" aria-live="polite">
-            {done} of {CELL_COUNT} done{running > 0 ? `, ${running} running` : ""}
-          </p>
-        </div>
+      <dl className="grid grid-cols-3 divide-x divide-white/[0.06] border-b border-white/[0.08]">
+        {[
+          { label: "Runs today", value: totals.runs.toLocaleString("en-US") },
+          { label: "Tokens", value: totals.tokens.toLocaleString("en-US") },
+          { label: "Spend", value: `$${totals.spend.toFixed(2)}` },
+        ].map((stat) => (
+          <div key={stat.label} className="px-4 py-3">
+            <dt className="text-[11px] font-normal text-white/40">{stat.label}</dt>
+            <dd className="mt-0.5 text-sm font-semibold tabular-nums text-white sm:text-base">
+              {stat.value}
+            </dd>
+          </div>
+        ))}
+      </dl>
 
-        <div className="mt-4 overflow-x-auto">
-          <table className="w-full min-w-[320px] border-separate border-spacing-1.5 text-left">
-            <thead>
-              <tr>
-                <th className="sr-only">Task</th>
-                {GRID_AGENTS.map((agent) => (
-                  <th
-                    key={agent}
-                    scope="col"
-                    className="px-1 pb-1 text-center text-[11px] font-medium text-white/45"
-                  >
-                    {agent}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {GRID_TASKS.map((task, row) => (
-                <tr key={task}>
-                  <th
-                    scope="row"
-                    className="whitespace-nowrap pr-2 text-[11px] font-normal text-white/55 sm:text-xs"
-                  >
-                    {task}
-                  </th>
-                  {GRID_AGENTS.map((agent, col) => {
-                    const state = cells[row * GRID_AGENTS.length + col]
-                    return (
-                      <td key={agent} className="p-0">
-                        <div
-                          className={`relative flex h-7 items-center justify-center overflow-hidden rounded-[3px] border transition-colors duration-300 ${
-                            state === 2
-                              ? "border-white/25 bg-white/[0.12]"
-                              : state === 1
-                                ? "border-white/40 bg-white/[0.06]"
-                                : "border-white/[0.08] bg-transparent"
-                          }`}
-                          role="img"
-                          aria-label={`${task}, ${agent}: ${
-                            state === 2 ? "done" : state === 1 ? "running" : "queued"
-                          }`}
-                        >
-                          {state === 2 && (
-                            <motion.span
-                              aria-hidden="true"
-                              initial={{ opacity: 0, scale: 0.6 }}
-                              animate={{ opacity: 1, scale: 1 }}
-                              transition={{ duration: 0.25 }}
-                            >
-                              <Check className="h-3.5 w-3.5 text-white/80" strokeWidth={2.5} />
-                            </motion.span>
-                          )}
-                          {state === 1 && (
-                            <motion.span
-                              aria-hidden="true"
-                              className="absolute inset-y-0 w-1/2 bg-gradient-to-r from-transparent via-white/25 to-transparent"
-                              initial={{ x: "-100%" }}
-                              animate={{ x: "200%" }}
-                              transition={{ duration: 0.9, repeat: Infinity, ease: "linear" }}
-                            />
-                          )}
-                        </div>
-                      </td>
-                    )
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      <div className="px-2 pt-2 sm:px-3">
+        <div className="grid grid-cols-[4.5rem_minmax(0,1fr)_3.5rem_4rem_0.75rem] gap-2 px-2 pb-1.5 text-[11px] font-medium text-white/35">
+          <span>Time</span>
+          <span>Agent</span>
+          <span className="text-right">Tokens</span>
+          <span className="text-right">Cost</span>
+          <span className="sr-only">Status</span>
         </div>
-
-        <p className="mt-4 text-xs font-normal leading-relaxed text-white/40">
-          Each cell is a completion with its own page, payload, tokens, and cost. Batch runs one
-          agent over up to 500 tasks the same way.
-        </p>
+        <div>
+          <AnimatePresence initial={false} mode="popLayout">
+            {ids.map((id) => {
+              const run = runAt(id)
+              const active = id === selected
+              return (
+                <motion.button
+                  key={id}
+                  type="button"
+                  layout
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.35, ease }}
+                  onClick={() => setSelected(id)}
+                  aria-pressed={active}
+                  className={`grid w-full grid-cols-[4.5rem_minmax(0,1fr)_3.5rem_4rem_0.75rem] items-center gap-2 rounded px-2 py-2 text-left text-xs transition-colors ${
+                    active ? "bg-white/[0.07] text-white" : "text-white/65 hover:bg-white/[0.03]"
+                  }`}
+                >
+                  <span className="font-mono text-[11px] text-white/40">{runTime(id)}</span>
+                  <span className="truncate font-medium">{run.agent}</span>
+                  <span className="text-right tabular-nums">
+                    {run.ok ? (run.input + run.output).toLocaleString("en-US") : "0"}
+                  </span>
+                  <span className="text-right tabular-nums">
+                    {run.ok ? `$${costOf(run).toFixed(4)}` : "$0"}
+                  </span>
+                  <span
+                    className={`h-1.5 w-1.5 justify-self-end rounded-full ${run.ok ? "bg-white/60" : "bg-red-400"}`}
+                    aria-label={run.ok ? "Succeeded" : "Failed"}
+                    role="img"
+                  />
+                </motion.button>
+              )
+            })}
+          </AnimatePresence>
+        </div>
       </div>
+
+      <div className="m-3 rounded-md border border-white/[0.08] bg-[#0a0a0a] p-4">
+        <div className="flex items-baseline justify-between gap-3">
+          <p className="text-sm font-semibold text-white">{detail.agent}</p>
+          <p className="font-mono text-[11px] text-white/40">{runRef(selected)}</p>
+        </div>
+        <dl className="mt-3 grid grid-cols-2 gap-x-6 gap-y-2 text-xs sm:grid-cols-3">
+          {[
+            ["Model", detail.model],
+            ["Input tokens", detail.input.toLocaleString("en-US")],
+            ["Output tokens", detail.output.toLocaleString("en-US")],
+            ["Cost", `$${costOf(detail).toFixed(4)}`],
+            ["Context used", `${(((detail.input + detail.output) / CONTEXT_WINDOW) * 100).toFixed(2)}%`],
+            ["Status", detail.ok ? "Succeeded" : "429, rate limited"],
+          ].map(([label, value]) => (
+            <div key={label} className="min-w-0">
+              <dt className="text-white/40">{label}</dt>
+              <dd
+                className={`mt-0.5 truncate font-medium tabular-nums ${
+                  label === "Status" && !detail.ok ? "text-red-400" : "text-white/85"
+                }`}
+              >
+                {value}
+              </dd>
+            </div>
+          ))}
+        </dl>
+      </div>
+
+      <p className="px-4 pb-4 text-xs font-normal leading-relaxed text-white/40">
+        Every request your agents make through the Swarms API lands here. Select a run to see what
+        Cloud records about it.
+      </p>
     </div>
   )
 }

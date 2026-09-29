@@ -1,0 +1,574 @@
+---
+title: "Swarms Rust v0.3.0：OpenRouter、按名称调用任意模型、子智能体与交接"
+description: "swarms-rs 0.3.0 与 swarms-macro 0.2.0 已发布到 crates.io：OpenRouter 提供商、用一个字符串即可选择任意提供商的 AnyModel、子智能体、交接、类型化的工具输出、适用于所有提供商的路由器、对当前 Claude 模型的完整支持，以及针对死锁、静默失败和错误工具 schema 的修复。"
+date: "2026-09-29"
+author: "Swarms 团队"
+categories: ["产品", "工程"]
+readTime: "16 分钟阅读"
+featured: false
+image: "/swarms_rust_v0.3.png"
+---
+
+# Swarms Rust v0.3.0：OpenRouter、按名称调用任意模型、子智能体与交接
+
+[swarms-rs 0.3.0](https://crates.io/crates/swarms-rs) 和 [swarms-macro 0.2.0](https://crates.io/crates/swarms-macro) 已在 crates.io 上发布。这是 Rust 框架迄今为止规模最大的一次发布。它新增了两种调用模型的方式（一个 OpenRouter 提供商，以及根据模型名称选择提供商的 `AnyModel`），让智能体可以把工作委派给子智能体，或把任务交接给另一个智能体，提供了可以从记忆中读回的类型化工具结果，还带来了一长串修复。
+
+这些修复和新功能同样重要。如果你还在使用 0.2.1，请尽快升级：它的 Anthropic 提供商默认使用一个已下线的模型，而且无法解析当前 Claude 模型的回复；即使每一次模型调用都失败，`run()` 仍然返回 `Ok`；还有好几个工作流可能死锁。这些问题在 0.3.0 中全部得到修复，我们在对整个代码库的全面审查中发现的其他大部分 bug 也一并修复了。
+
+本文介绍如何升级、附带前后代码对比的破坏性变更、每个新功能及其示例、完整的修复列表，以及可以直接运行的新示例。
+
+## 重点内容
+
+- **OpenRouter 提供商。** 一个 API 密钥即可使用来自 Anthropic、OpenAI、Google、Meta、Mistral、DeepSeek、xAI 等厂商的模型，并且沿用与其他所有提供商相同的智能体和工作流 API。
+- **`AnyModel`。** 用一个字符串选择提供商，例如 `"anthropic/claude-opus-5-5"`、`"openai/gpt-5.5"` 或 `"google/gemini-3.8-flash"`。切换提供商只需修改一行。
+- **子智能体与交接。** 协调者可以像调用工具一样调用另一个智能体，然后继续工作；也可以把任务连同目前为止的对话一起转交给一个专家智能体，由它完成任务。
+- **类型化的工具输出。** 每一次工具调用都会连同名称、参数和 JSON 结果一起存入智能体的记忆，工作流可以把结果按 Rust 类型读回。
+- **当前的 Claude 模型可以正常使用。** Anthropic 提供商默认使用 `claude-opus-5-5`，能够处理 thinking 块，会报告拒答，并且不再拒收有效的回复。
+- **可靠性。** 批量执行器、`run_multiple_tasks` 和并发运行中的死锁都已消除，失败会如实报告而不再被隐藏，graph、rearrange、router 和 batch 工作流都能返回正确的结果。
+
+## 获取更新
+
+把新版本加入你的 `Cargo.toml`：
+
+```toml
+[dependencies]
+swarms-rs = "0.3.0"
+tokio = { version = "1", features = ["full"] }
+anyhow = "1"
+
+# Only needed if you define tools with #[tool]
+swarms-macro = "0.2.0"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+schemars = "0.8"
+thiserror = "2"
+```
+
+或者使用 cargo：
+
+```bash
+cargo add swarms-rs@0.3
+cargo add tokio --features full
+cargo add anyhow
+
+# Only needed if you define tools with #[tool]
+cargo add swarms-macro@0.2 serde --features serde/derive
+cargo add serde_json thiserror schemars@0.8
+```
+
+两个 crate 现在都要求 **Rust 1.88** 或更高版本。如果 `cargo build` 提示编译器版本过旧，请运行 `rustup update stable`。
+
+`#[tool]` 生成的代码会直接引用 `serde`、`serde_json` 和 `schemars`，因此定义了工具的项目需要把这三者都列为自己的依赖。`schemars` 必须是 0.8，也就是 swarms-rs 所使用的版本。
+
+然后为你使用的提供商设置密钥：
+
+```bash
+export OPENROUTER_API_KEY="sk-or-..."   # OpenRouter
+export ANTHROPIC_API_KEY="sk-ant-..."   # Anthropic
+export OPENAI_API_KEY="sk-..."          # OpenAI
+export DEEPSEEK_API_KEY="sk-..."        # DeepSeek
+```
+
+## 破坏性变更
+
+0.3.0 是一个包含破坏性变更的版本。下面列出所有可能需要你修改代码的地方。
+
+### `temperature` 变为可选，默认不设置
+
+`AgentConfig::temperature` 现在是 `Option<f64>`，默认值为 `None`，也就是交由提供商决定。当前的 Claude 模型和 OpenAI 的推理模型会拒绝任何显式设置的 temperature，而 0.2.1 在每个请求中都会发送 0.7，因此对这些模型的每一次调用都会失败。
+
+构建器方法没有变化，`.temperature(0.3)` 依然可用。读取这个字段的代码需要做一点小改动：
+
+```rust
+// 0.2.x
+let t: f64 = config.temperature;
+
+// 0.3.0
+if let Some(t) = config.temperature {
+    println!("temperature: {t}");
+}
+```
+
+只对接受 temperature 的模型设置它。
+
+### `Content` 和 `ChatResponse` 新增变体
+
+工具调用轮次现在存储为 `Content::ToolCalls`；当一条回复同时包含文本和工具调用时，`SwarmsAgent::chat` 会返回 `ChatResponse::TextWithToolCalls`。只列出了旧变体的 `match` 需要再加一个分支：
+
+```rust
+use swarms_rs::structs::conversation::Content;
+
+match &message.content {
+    Content::Text(text) => println!("{text}"),
+    Content::ToolCalls { text, outputs, .. } => {
+        if let Some(text) = text {
+            println!("{text}");
+        }
+        for output in outputs {
+            println!("{} returned {}", output.name, output.result);
+        }
+    }
+}
+```
+
+工具调用轮次的文本形式保持不变，因此 `to_string()`、文本导出以及发送给模型的历史记录都与之前完全一致。
+
+### `AgentRearrange::add_agent` 返回 `Result`
+
+向已有的 `AgentRearrange` 添加智能体时，如果同名智能体已经注册，现在会返回 `AgentRearrangeError::DuplicateAgentNames`，而 0.2.1 会静默地替换掉原来的智能体。构建器上的 `add_agent` 没有变化。
+
+```rust
+// 0.2.x
+rearrange.add_agent(agent);
+
+// 0.3.0
+rearrange.add_agent(agent)?;
+```
+
+传给构建器的重复名称也不会再被丢弃：`validate_flow` 和每一次运行都会报告它们。
+
+### `SwarmRouterConfig` 对模型泛型化
+
+路由器过去只接受使用 OpenAI 提供商的智能体。现在它的配置可以接受任何模型上的智能体。`SwarmRouterConfig::default()` 仍然为 OpenAI 智能体构建配置，因此现有代码无需修改即可编译。对于其他提供商，请从 `SwarmRouterConfig::with_agents(agents)` 开始，参见下文“新功能”部分的路由器示例。
+
+### swarms-macro 0.2.0 中 `#[tool]` 的 schema 变化
+
+工具现在会生成准确的 JSON schema，这会改变模型看到的内容：
+
+- `Option<T>` 参数使用 `T` 的类型，并且不再是必填项。在 0.1.x 中，它们的类型被标为 `"object"` 并被标记为必填，这破坏了内置的 `task_evaluator` 工具，导致智能体永远无法提前结束任务。
+- 整数参数的类型是 `"integer"`，不再是 `"number"`，并且新增了对 `usize`、`isize`、`i128`、`u128` 和 `char` 的支持。
+- 提供商不接受的工具名称（超出 1 到 64 个字母、数字、`_` 或 `-` 范围的名称）现在会在编译时报错，不会再让每一次请求都返回 400。
+
+原始标识符（如 `r#type`）、`mut` 参数、`std::result::Result` 返回类型以及带连字符的工具名称现在都能正常工作。
+
+### 行为变化
+
+- 当第一轮循环的每一次尝试都失败时，`run()` 会返回错误，而不再把任务文本当作答案返回。如果后续某一轮失败，智能体会停止并返回已有的结果。重试之间会退避等待，`retry_attempts(0)` 仍然会调用一次模型。
+- 当所有智能体都失败时，`ConcurrentWorkflow::run` 会返回错误；当没有任何一项成功时，`AgentBatchExecutor::execute_batch` 会返回错误。部分成功时仍然返回 `Ok`。
+- Anthropic 的默认模型是 `claude-opus-5-5`。`claude-3-5-sonnet-20241022` 以及旧文档中的其他 Claude 3 模型 ID 都已被 Anthropic 下线。
+- 当 `metadata_output_dir` 为空时，`ConcurrentWorkflow` 不再把元数据文件写入当前目录。
+
+## 新功能
+
+### OpenRouter 提供商
+
+[OpenRouter](https://openrouter.ai) 通过一个兼容 OpenAI 的 API 和一个密钥，提供来自大多数主流实验室的模型。`OpenRouter` 实现了与其他提供商相同的 `Model` trait，因此可以配合工具、MCP 服务器以及所有多智能体结构使用。
+
+```rust
+use swarms_rs::llm::provider::openrouter::OpenRouter;
+use swarms_rs::structs::agent::Agent;
+
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    // Reads OPENROUTER_API_KEY
+    let agent = OpenRouter::from_env_with_model("anthropic/claude-opus-5.5")
+        .with_app_name("my-app") // optional: credit your app on openrouter.ai
+        .agent_builder()
+        .agent_name("Researcher")
+        .system_prompt("You are a concise research assistant.")
+        .build();
+
+    let answer = agent.run("What is a vector database?".to_string()).await?;
+    println!("{answer}");
+    Ok(())
+}
+```
+
+你可以使用 [openrouter.ai/models](https://openrouter.ai/models) 上的任意模型 ID，也可以保留默认值 `openrouter/auto`，让 OpenRouter 为每个提示词自动选择模型。
+
+| 变量 | 是否必需 | 用途 |
+|------|----------|------|
+| `OPENROUTER_API_KEY` | 是 | 你的 OpenRouter 密钥 |
+| `OPENROUTER_API_BASE` | 否 | 覆盖 API 基础地址（默认为 `https://openrouter.ai/api/v1`） |
+| `OPENROUTER_APP_URL`、`OPENROUTER_APP_NAME` | 否 | 在 openrouter.ai 的排行榜上为你的应用署名 |
+
+### 按模型名称选择任意提供商
+
+`AnyModel::from_model_name` 会根据名称选择提供商，并从环境变量中读取该提供商的 API 密钥。更换提供商只需修改一个字符串：
+
+```rust
+use swarms_rs::llm::provider::any::AnyModel;
+use swarms_rs::structs::agent::Agent;
+
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    for name in [
+        "anthropic/claude-opus-5-5",
+        "openai/gpt-5.5",
+        "google/gemini-3.8-flash",
+    ] {
+        let agent = AnyModel::from_model_name(name)?
+            .agent_builder()
+            .system_prompt("Answer in one sentence.")
+            .build();
+
+        let answer = agent.run("What does Rust's borrow checker do?".to_string()).await?;
+        println!("{name}: {answer}");
+    }
+    Ok(())
+}
+```
+
+| 模型名称 | 提供商 | API 密钥 |
+|----------|--------|----------|
+| `openai/...`，或不带前缀的 `gpt-*`、`o1*`、`o3*`、`o4*` | OpenAI | `OPENAI_API_KEY` |
+| `anthropic/...`，或不带前缀的 `claude-*` | Anthropic | `ANTHROPIC_API_KEY` |
+| `deepseek/...`，或不带前缀的 `deepseek-*` | DeepSeek | `DEEPSEEK_API_KEY` |
+| `openrouter/...`，或任何其他 `vendor/model`（Google、Meta、Mistral 等） | OpenRouter | `OPENROUTER_API_KEY` |
+
+未知的名称或缺失的密钥会以可处理的 `ModelNameError` 返回，而不会引发 panic。工具调用在每个提供商上的用法都完全相同。
+
+### 子智能体与交接
+
+现在智能体之间有两种协作方式，都在构建器上配置：
+
+- **子智能体**（`add_sub_agent`）用于委派。父智能体像调用工具一样调用子智能体，拿回它的答案，然后继续工作。
+- **交接**（`add_handoff`）用于转移控制权。父智能体发起交接后，目标智能体会带着任务、父智能体传递过来的上下文以及目前为止的对话开始运行，它的答案就成为父智能体的结果。
+
+```rust
+use swarms_rs::llm::provider::openrouter::OpenRouter;
+use swarms_rs::structs::agent::Agent;
+
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    let client = OpenRouter::from_env_with_model("anthropic/claude-opus-5.5");
+
+    // Sub-agent: the coordinator calls it like a tool and uses its answer.
+    let researcher = client
+        .agent_builder()
+        .agent_name("Researcher")
+        .description("Looks up facts and returns a short, sourced summary")
+        .system_prompt("You are a researcher. Answer with concise facts only.")
+        .build();
+
+    // Handoff target: once the coordinator transfers to it, it finishes the task.
+    let writer = client
+        .agent_builder()
+        .agent_name("Writer")
+        .description("Writes the final, polished answer for the user")
+        .system_prompt("Using the context and conversation you are given, write the final answer.")
+        .build();
+
+    let coordinator = client
+        .agent_builder()
+        .agent_name("Coordinator")
+        .system_prompt(
+            "Delegate fact-finding to the Researcher, then transfer to the Writer \
+             with the facts as context so it can write the answer.",
+        )
+        .add_sub_agent(researcher)
+        .add_handoff(writer)
+        .max_loops(4)
+        .build();
+
+    let output = coordinator
+        .run("Why did Rust adopt async/await instead of green threads?".to_string())
+        .await?;
+    println!("{output}");
+    Ok(())
+}
+```
+
+这些工具以智能体的名称命名：上面的协调者会拿到 `delegate_to_Researcher` 和 `transfer_to_Writer` 两个工具，名称会经过清理，以符合提供商的要求。智能体的 `description` 会成为工具的描述，所以要把它写给模型看。如果模型在一轮中调用了多个交接，只有第一个会执行。如果交接失败，控制权仍在父智能体手中，它会看到错误信息。
+
+### 类型化的工具输出
+
+工具结果过去只以格式化文本的形式保存。现在它们会连同名称、参数和 JSON 结果一起存储，`result_as::<T>()` 可以把结果还原为工具的返回类型：
+
+```rust
+use swarms_macro::tool;
+use swarms_rs::llm::provider::openrouter::OpenRouter;
+use swarms_rs::structs::agent::Agent;
+
+#[derive(Debug, thiserror::Error)]
+#[error("math error")]
+pub struct MathError;
+
+#[tool(description = "Multiply two numbers")]
+fn multiply(a: f64, b: f64) -> Result<f64, MathError> {
+    Ok(a * b)
+}
+
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    let agent = OpenRouter::from_env_with_model("openai/gpt-5.5")
+        .agent_builder()
+        .system_prompt("Use the multiply tool for arithmetic.")
+        .add_tool(Multiply)
+        .build();
+
+    let task = "What is 17 times 23?";
+    agent.run(task.to_string()).await?;
+
+    if let Some(conversation) = agent.conversation(task) {
+        for output in conversation.tool_outputs() {
+            if output.name == "multiply" {
+                let product: f64 = output.result_as()?;
+                println!("multiply({}) = {product}", output.args);
+            }
+        }
+    }
+    Ok(())
+}
+```
+
+`SwarmsAgent::conversation(task)` 返回智能体针对某个任务的记忆副本，`AgentConversation::tool_outputs()` 会遍历其中的每一次工具调用，包括委派和交接。
+
+### 路由器支持所有提供商
+
+`SwarmRouter` 现在可以接受任何模型上的智能体。用 `with_agents` 构建配置，选择 swarm 类型，然后运行：
+
+```rust
+use swarms_rs::llm::provider::openrouter::OpenRouter;
+use swarms_rs::structs::swarms_router::{SwarmRouter, SwarmRouterConfig, SwarmType};
+
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    let client = OpenRouter::from_env();
+    let agents = ["anthropic/claude-opus-5.5", "google/gemini-3.8-flash"]
+        .into_iter()
+        .map(|model| {
+            client
+                .clone()
+                .set_model(model)
+                .agent_builder()
+                .agent_name(model)
+                .system_prompt("Give one concrete recommendation.")
+                .build()
+        })
+        .collect();
+
+    let mut config = SwarmRouterConfig::with_agents(agents);
+    config.swarm_type = SwarmType::ConcurrentWorkflow;
+    config.rules = Some("Keep every answer under 100 words.".to_string());
+
+    let router = SwarmRouter::new_with_config(config)?;
+    let conversation = router.run("How should a small team version its API?").await?;
+    println!("{conversation}");
+    Ok(())
+}
+```
+
+同一个路由器中的所有智能体使用同一种模型类型。如果要在一个路由器中混用多个提供商，请把每个智能体都构建在 `AnyModel` 上。
+
+### 对话可以通过 JSON 完整往返
+
+`AgentConversation::load_json` 可以恢复用 `to_json` 保存的历史记录，`import_from_file` 也接受这种 JSON。文本导出可能会误读包含 `Name(User): ...` 这类行的消息正文，而工作流中智能体的输出经常包含这样的行，所以凡是打算之后再加载回来的内容，都请使用 JSON：
+
+```rust
+use swarms_rs::structs::conversation::{AgentConversation, Role};
+
+fn main() -> anyhow::Result<()> {
+    let mut conversation = AgentConversation::new("notes".to_string());
+    conversation.add(Role::User("Alice".to_string()), "Hello".to_string());
+
+    let json = conversation.to_json()?;
+
+    let mut restored = AgentConversation::new("notes".to_string());
+    restored.load_json(&json)?;
+    assert_eq!(restored.to_string(), conversation.to_string());
+    Ok(())
+}
+```
+
+## 修复
+
+### 智能体循环
+
+- 同一条回复中跟在文本块之后的工具调用会被忽略。Claude 通常会在调用工具之前先写一句话，因此在 Claude 上，工具（包括 `task_evaluator`）实际上从未运行过。
+- 与工具调用一起发送的文本会被丢弃，因此一个先给出答案、再用 `task_evaluator` 标记“Complete”的回复，运行结束时只剩下工具日志。
+- 当每一次模型调用都失败时，`run()` 会返回不带答案的 `Ok`，并且 `retry_attempts(0)` 从不调用模型。
+- `run_multiple_tasks` 在有两个或更多任务时会死锁。现在它会并发运行这些任务，并按任务顺序返回结果。
+- 智能体记忆上的锁在模型调用期间一直被持有，这可能导致同一个智能体的并发运行出现死锁。
+- 与 `task_evaluator` 一起调用的工具，其结果会从记忆中丢失。
+- 使用 `disable_concurrent_tool_call()` 时，一个失败的工具会中止整批调用，并重新运行已经成功的工具。现在错误会作为该工具的结果报告给模型。
+- 规划之后，第一个请求以计划（一条助手轮次）结尾，当前的 Claude 模型会把它视为预填充（prefill）而拒绝。
+- 自动保存的文件名会在智能体名称的第一个点号处被截断，因此 `gpt-4.1-agent` 会把每个任务都保存到同一个 `gpt-4.json` 中。
+- 重复注册同一个工具名称时，会向提供商发送重复的定义。
+
+### Anthropic
+
+- 默认模型已被下线，文档中列出的也全是已下线的模型。
+- 包含 thinking 块的回复（当前 Claude 模型会返回这种块）无法解析。
+- 一项统计引号字符数量的检查，会拒收包含转义引号的有效回复，例如 `55" wide`。
+- `tool_result` 块使用了错误的字段名。
+- 只包含工具结果或图片的提示词会被静默丢弃。
+- 拒答过去会以空回复的形式返回，并被重试三次。现在它是一个包含拒答类别的错误，被 `max_tokens` 截断的工具调用也不会再被执行。
+- `ANTHROPIC_BASE_URL` 末尾的斜杠会导致所有请求失败，空的响应体会掩盖 HTTP 状态码。
+
+### OpenAI 及兼容 API
+
+- 无效的工具调用参数和拒答会引发 panic，而不是返回错误。
+- 与工具调用一起发送的文本会被丢弃；对于在普通回复中也发送 `"tool_calls": []` 的服务器（vLLM 等），会得到空响应。
+- 来自代理和部分兼容服务器的非 JSON 错误响应体会被直接丢掉。
+- 在 api.openai.com 上，现在发送的是 `max_completion_tokens` 而不是 `max_tokens`，因为推理模型会拒绝后者。
+- Base64 图片以 data URL 的形式发送，`set_system_prompt` 也能正常生效。
+
+### 工作流
+
+- `AgentBatchExecutor` 在有两个或更多智能体时会死锁，并且每个任务只保留一个智能体的结果。
+- `SwarmRouter` 的 `AgentRearrange` 模式从未真正运行过任何东西，还会把规则应用两次。
+- 图工作流在 `remove_agent` 之后进行环检测时会 panic；当某个父节点未触发时会跳过汇合节点；可能把同一个汇合节点运行两次；并且不会记录超时。
+- `AgentRearrange` 返回的并发结果顺序错乱；并发数为 0 时会挂起；批大小为 0 时会 panic；在并行分组之后会产生错误的输出；还会静默丢弃重名的智能体。
+- `ConcurrentWorkflow` 永远无法把同一个任务运行两次。
+
+### 工具、MCP、持久化与日志
+
+- 除了上面提到的 schema 修复之外，`Option<SearchArgs>` 这类参数不再与 `#[tool]` 生成的结构体冲突，工具 future 上的 `Sync` 约束也已移除，因此工具可以 await 另一个智能体。
+- MCP 工具结果以换行符连接，错误会报告其文本内容，图片会以概要描述代替，不再以 base64 的形式发送给模型。
+- `append_to_file` 会执行 flush，因此写入后立即读取也能看到数据。日志文件会自动创建所在目录，并以换行符结束每一条记录。
+- 对话导入不再 panic。
+- 导出的日志宏可以在不依赖 `log` 的 crate 中编译，`init_logger` 可以被调用两次，智能体的错误日志也能到达 `env_logger`。
+
+## 性能与依赖
+
+- 智能体 ID 使用 `uuid` 的 `fast-rng`：生成一个 ID 的耗时从 931 ns 降到 37 ns，构建一个智能体的速度提升约 21%，从 3.9 µs 降到 3.1 µs。
+- 库只启用它实际用到的 tokio 功能，不再启用 `full`，因此下游构建需要编译的代码更少。
+- 未使用的 `url`、`tokio-rustls` 和 `webpki-roots` 依赖已移除，`dotenv` 和 `tracing-subscriber` 移到了 dev-dependencies，`tabled` 也不再引入一个会被未来 Rust 版本拒绝的过程宏 crate。
+
+## 新示例
+
+仓库中新增了五个示例，全部基于 OpenRouter。克隆仓库即可运行：
+
+```bash
+git clone https://github.com/The-Swarm-Corporation/swarms-rs
+cd swarms-rs
+export OPENROUTER_API_KEY="sk-or-..."
+cargo run --example openrouter_model_panel
+```
+
+| 示例 | 展示内容 |
+|------|----------|
+| `openrouter_agent` | 单个智能体；设置 `OPENROUTER_MODEL` 来选择模型 |
+| `openrouter_tools` | 带有两个 `#[tool]` 函数的智能体，分别用于获取当前时间和转换温度 |
+| `openrouter_model_panel` | 来自 Anthropic、OpenAI、Google 和 DeepSeek 的模型并行回答同一个问题 |
+| `openrouter_pipeline` | 调研、撰写和编辑，每个阶段使用不同提供商的模型 |
+| `sub_agents_and_handoffs` | 一个协调者，把工作委派给研究员，再交接给写作者 |
+
+模型小组是一个 `ConcurrentWorkflow`，每个模型对应一个智能体，全部共用一个 OpenRouter 客户端。把 `OPENROUTER_PANEL_MODELS` 设置为逗号分隔的列表，即可更换小组中的模型：
+
+```rust
+use swarms_rs::llm::provider::openrouter::OpenRouter;
+use swarms_rs::structs::agent::Agent;
+use swarms_rs::structs::concurrent_workflow::ConcurrentWorkflow;
+
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    let client = OpenRouter::from_env();
+    let models = ["anthropic/claude-opus-5.5", "openai/gpt-5.5", "google/gemini-3.8-flash"];
+
+    let agents: Vec<Box<dyn Agent>> = models
+        .iter()
+        .map(|model| {
+            Box::new(
+                client
+                    .clone()
+                    .set_model(*model)
+                    .agent_builder()
+                    .agent_name(*model)
+                    .system_prompt("Answer in at most three sentences and commit to a position.")
+                    .build(),
+            ) as Box<dyn Agent>
+        })
+        .collect();
+
+    let workflow = ConcurrentWorkflow::builder()
+        .name("ModelPanel")
+        .agents(agents)
+        .build();
+
+    let result = workflow
+        .run("Should a new backend service start as a monolith or as microservices?")
+        .await?;
+    for message in &result.history {
+        println!("── {} ──\n{}\n", message.role, message.content);
+    }
+    Ok(())
+}
+```
+
+流水线在一个 `SequentialWorkflow` 中串联三个智能体：一个速度快、支持长上下文的模型收集事实，一个写作能力强的模型撰写初稿，再由另一个模型家族的模型进行编辑，这样能发现不同类型的错误。每个阶段的模型都可以通过 `OPENROUTER_RESEARCH_MODEL`、`OPENROUTER_WRITER_MODEL` 和 `OPENROUTER_EDITOR_MODEL` 更换：
+
+```rust
+use swarms_rs::llm::provider::openrouter::OpenRouter;
+use swarms_rs::structs::agent::Agent;
+use swarms_rs::structs::sequential_workflow::SequentialWorkflow;
+
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    let client = OpenRouter::from_env();
+    let stage = |model: &str, name: &str, prompt: &str| -> Box<dyn Agent> {
+        Box::new(
+            client
+                .clone()
+                .set_model(model)
+                .agent_builder()
+                .agent_name(name)
+                .system_prompt(prompt)
+                .build(),
+        )
+    };
+
+    let workflow = SequentialWorkflow::builder()
+        .name("OpenRouterPipeline")
+        .agents(vec![
+            stage("google/gemini-3.8-flash", "Researcher", "List the key facts as bullet points."),
+            stage("anthropic/claude-opus-5.5", "Writer", "Turn the notes into a 300-word article."),
+            stage("openai/gpt-5.5", "Editor", "Fix errors and return only the final article."),
+        ])
+        .build();
+
+    let result = workflow.run("How Rust's borrow checker prevents data races").await?;
+    if let Some(article) = result.history.last() {
+        println!("{}", article.content);
+    }
+    Ok(())
+}
+```
+
+仓库中原本就有、但从未在 Cargo 中注册的十个示例现在也能运行了，包括 `graph_workflow`、`sequential_workflow`、`concurrent_workflow_run`、`agent_rearrange_example`、`batch_executor_example`、`tool` 和 `mcp_tool`。这些示例读取的是 `DEEPSEEK_API_KEY` 和 `DEEPSEEK_BASE_URL`。
+
+## 文档
+
+三份新指南覆盖了此前没有文档的 API：
+
+- [对话与记忆](https://github.com/The-Swarm-Corporation/swarms-rs/blob/main/docs/conversation.md)：`AgentConversation`、智能体记忆、类型化的工具结果，以及导入与导出。
+- [持久化](https://github.com/The-Swarm-Corporation/swarms-rs/blob/main/docs/persistence.md)：保存、加载、压缩、日志，以及框架会在哪些位置写入文件。
+- [批量执行与 swarm 路由器](https://github.com/The-Swarm-Corporation/swarms-rs/blob/main/docs/batch_and_router.md)：`AgentBatchExecutor`、`SwarmRouter`、它们的配置以及各自的返回内容。
+
+[README](https://github.com/The-Swarm-Corporation/swarms-rs) 新增了 OpenRouter、`AnyModel` 以及子智能体与交接的章节，其中的每一段 Rust 代码片段都能通过编译。
+
+## 测试
+
+测试套件共有 409 个测试。在 0.2.1 上，这套测试无法跑完：它会在批量执行器的测试中死锁。本次发布的大多数修复都附带了回归测试，提供商相关的测试运行在本地 mock 服务器上，因此不需要任何 API 密钥。
+
+## 本次发布关闭的 Issue
+
+- [#17](https://github.com/The-Swarm-Corporation/swarms-rs/issues/17) 以类型安全的方式将 ToolCallOutput 结果存入智能体对话
+- [#44](https://github.com/The-Swarm-Corporation/swarms-rs/issues/44) 在 Agent 中实现所有模型提供商
+- [#45](https://github.com/The-Swarm-Corporation/swarms-rs/issues/45) 在智能体中加入 Anthropic 模型支持
+- [#49](https://github.com/The-Swarm-Corporation/swarms-rs/issues/49) 智能体初始化期间的内存分配效率问题
+- [#55](https://github.com/The-Swarm-Corporation/swarms-rs/issues/55) 集成 OpenRouter LLM
+- [#56](https://github.com/The-Swarm-Corporation/swarms-rs/issues/56) 使用 hyper 库实现 Anthropic 提供商
+- [#87](https://github.com/The-Swarm-Corporation/swarms-rs/issues/87) 集成子智能体支持
+- [#88](https://github.com/The-Swarm-Corporation/swarms-rs/issues/88) 实现智能体交接
+- [#96](https://github.com/The-Swarm-Corporation/swarms-rs/issues/96)、[#97](https://github.com/The-Swarm-Corporation/swarms-rs/issues/97) 为对话与记忆 API 编写文档
+- [#98](https://github.com/The-Swarm-Corporation/swarms-rs/issues/98) 添加持久化工具指南
+- [#99](https://github.com/The-Swarm-Corporation/swarms-rs/issues/99) 覆盖批量执行器与 swarm 路由器 API
+- [#101](https://github.com/The-Swarm-Corporation/swarms-rs/issues/101) binance-tools 示例因 rmcp 而无法运行
+
+感谢 Tails、ZackBradshaw 和 Jangidyogesh12 提交的报告，其中好几项改动正是由这些报告促成的。
+
+## 我们正在招聘：Swarms Rust 的首席维护者与团队
+
+我们正在为 swarms-rs 招聘一位首席维护者，以及一支与其共同管理和发展这个框架的团队。
+
+**[Rust 团队负责人](/hiring/rust-team-lead)** 将端到端地负责整个框架：技术方向、路线图和版本发布、审查贡献，以及招募和指导 Rust 团队。我们也在招聘 **[Rust 工程师](/hiring/rust-engineer)**，加入这个团队构建高性能的智能体基础设施。
+
+所有开发岗位都要求你在申请之前，先在 Swarms 的 GitHub 上提交 3 个 PR 或 3 个新 issue，[swarms-rs 的 issue 列表](https://github.com/The-Swarm-Corporation/swarms-rs/issues)就是很好的切入点。所有开放职位请见 [swarms.ai/hiring](/hiring)。
+
+## 链接
+
+- [crates.io 上的 swarms-rs](https://crates.io/crates/swarms-rs) 和 [crates.io 上的 swarms-macro](https://crates.io/crates/swarms-macro)
+- [docs.rs 上的 API 文档](https://docs.rs/swarms-rs)
+- [GitHub 上的源代码](https://github.com/The-Swarm-Corporation/swarms-rs)

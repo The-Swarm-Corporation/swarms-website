@@ -1,0 +1,574 @@
+---
+title: "Swarms Rust v0.3.0: OpenRouter, Any Model by Name, Sub-Agents and Handoffs"
+description: "swarms-rs 0.3.0 and swarms-macro 0.2.0 are on crates.io: an OpenRouter provider, AnyModel for choosing any provider with one string, sub-agents, handoffs, typed tool outputs, a router that works with every provider, working support for current Claude models, and fixes for deadlocks, silent failures and broken tool schemas."
+date: "2026-09-29"
+author: "Swarms Team"
+categories: ["Product", "Engineering"]
+readTime: "16 min read"
+featured: false
+image: "/swarms_rust_v0.3.png"
+---
+
+# Swarms Rust v0.3.0: OpenRouter, Any Model by Name, Sub-Agents and Handoffs
+
+[swarms-rs 0.3.0](https://crates.io/crates/swarms-rs) and [swarms-macro 0.2.0](https://crates.io/crates/swarms-macro) are out on crates.io. This is the largest release of the Rust framework so far. It adds two new ways to reach models (an OpenRouter provider, and `AnyModel`, which picks the provider from a model name), agents that can delegate to sub-agents or hand a task to another agent, typed tool results you can read back from memory, and a long list of fixes.
+
+The fixes matter as much as the features. If you are on 0.2.1, upgrade: its Anthropic provider defaults to a retired model and can't parse replies from current Claude models, `run()` returns `Ok` even when every model call failed, and several workflows can deadlock. All of that is fixed in 0.3.0, along with most of the other bugs we found in a full review of the codebase.
+
+This post covers how to upgrade, the breaking changes with before and after code, each new feature with an example, the full list of fixes, and the new examples you can run.
+
+## Highlights
+
+- **OpenRouter provider.** One API key for models from Anthropic, OpenAI, Google, Meta, Mistral, DeepSeek, xAI and more, through the same agent and workflow APIs as every other provider.
+- **`AnyModel`.** Choose a provider with a string such as `"anthropic/claude-opus-5-5"`, `"openai/gpt-5.5"` or `"google/gemini-3.8-flash"`. Switching providers is a one-line change.
+- **Sub-agents and handoffs.** A coordinator can call another agent like a tool and keep going, or transfer the task, with the conversation so far, to a specialist who finishes it.
+- **Typed tool outputs.** Every tool call is stored in the agent's memory with its name, arguments and JSON result, so workflows can read results back as Rust types.
+- **Current Claude models work.** The Anthropic provider defaults to `claude-opus-5-5`, handles thinking blocks, reports refusals, and no longer rejects valid replies.
+- **Reliability.** The deadlocks in the batch executor, `run_multiple_tasks` and concurrent runs are gone, failures are reported instead of hidden, and the graph, rearrange, router and batch workflows return correct results.
+
+## Get the update
+
+Add the new versions to your `Cargo.toml`:
+
+```toml
+[dependencies]
+swarms-rs = "0.3.0"
+tokio = { version = "1", features = ["full"] }
+anyhow = "1"
+
+# Only needed if you define tools with #[tool]
+swarms-macro = "0.2.0"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+schemars = "0.8"
+thiserror = "2"
+```
+
+Or with cargo:
+
+```bash
+cargo add swarms-rs@0.3
+cargo add tokio --features full
+cargo add anyhow
+
+# Only needed if you define tools with #[tool]
+cargo add swarms-macro@0.2 serde --features serde/derive
+cargo add serde_json thiserror schemars@0.8
+```
+
+Both crates now require **Rust 1.88** or newer. If `cargo build` reports an older compiler, run `rustup update stable`.
+
+The code that `#[tool]` generates refers to `serde`, `serde_json` and `schemars` directly, so a project that defines tools needs all three as its own dependencies. `schemars` has to be 0.8, the version swarms-rs uses.
+
+Then set the key for the provider you use:
+
+```bash
+export OPENROUTER_API_KEY="sk-or-..."   # OpenRouter
+export ANTHROPIC_API_KEY="sk-ant-..."   # Anthropic
+export OPENAI_API_KEY="sk-..."          # OpenAI
+export DEEPSEEK_API_KEY="sk-..."        # DeepSeek
+```
+
+## Breaking changes
+
+0.3.0 is a breaking release. Here is everything that can require a change in your code.
+
+### `temperature` is optional and unset by default
+
+`AgentConfig::temperature` is now `Option<f64>` and defaults to `None`, which leaves the choice to the provider. Current Claude models and OpenAI's reasoning models reject any explicit temperature, and 0.2.1 sent 0.7 on every request, so every call to those models failed.
+
+The builder method is unchanged, so `.temperature(0.3)` still works. Code that reads the field needs a small edit:
+
+```rust
+// 0.2.x
+let t: f64 = config.temperature;
+
+// 0.3.0
+if let Some(t) = config.temperature {
+    println!("temperature: {t}");
+}
+```
+
+Only set a temperature for models that accept one.
+
+### New variants on `Content` and `ChatResponse`
+
+Tool-call turns are now stored as `Content::ToolCalls`, and `SwarmsAgent::chat` returns `ChatResponse::TextWithToolCalls` when a reply contains both text and tool calls. A `match` that listed only the old variants needs another arm:
+
+```rust
+use swarms_rs::structs::conversation::Content;
+
+match &message.content {
+    Content::Text(text) => println!("{text}"),
+    Content::ToolCalls { text, outputs, .. } => {
+        if let Some(text) = text {
+            println!("{text}");
+        }
+        for output in outputs {
+            println!("{} returned {}", output.name, output.result);
+        }
+    }
+}
+```
+
+The text form of a tool-call turn is unchanged, so `to_string()`, text exports and the history sent to models read exactly as before.
+
+### `AgentRearrange::add_agent` returns a `Result`
+
+Adding an agent to an existing `AgentRearrange` now returns `AgentRearrangeError::DuplicateAgentNames` if an agent with that name is already registered, where 0.2.1 silently replaced it. The builder's `add_agent` is unchanged.
+
+```rust
+// 0.2.x
+rearrange.add_agent(agent);
+
+// 0.3.0
+rearrange.add_agent(agent)?;
+```
+
+Duplicate names passed to the builder are no longer dropped either: `validate_flow` and every run report them.
+
+### `SwarmRouterConfig` is generic over the model
+
+The router used to accept only agents on the OpenAI provider. The config now takes agents on any model. `SwarmRouterConfig::default()` still builds a config for OpenAI agents, so existing code compiles unchanged. For other providers, start from `SwarmRouterConfig::with_agents(agents)`, as in the router example under New features.
+
+### `#[tool]` schema changes in swarms-macro 0.2.0
+
+Tools now get accurate JSON schemas, which changes what models see:
+
+- `Option<T>` arguments use the type of `T` and are no longer required. In 0.1.x they were typed `"object"` and marked required, which broke the built-in `task_evaluator` tool, so agents could never finish a task early.
+- Integer arguments are `"integer"` rather than `"number"`, and `usize`, `isize`, `i128`, `u128` and `char` are supported.
+- Tool names that providers reject (anything outside 1 to 64 letters, digits, `_` or `-`) are compile errors instead of a 400 on every request.
+
+Raw identifiers such as `r#type`, `mut` parameters, `std::result::Result` return types and hyphenated tool names now work.
+
+### Behavior changes
+
+- `run()` returns an error when the first loop fails every attempt, instead of returning the task text as if it were an answer. If a later loop fails, the agent stops and returns what it has. Retries back off between attempts, and `retry_attempts(0)` still makes one call.
+- `ConcurrentWorkflow::run` returns an error when every agent fails, and `AgentBatchExecutor::execute_batch` returns one when nothing succeeds at all. Partial success still returns `Ok`.
+- The Anthropic default model is `claude-opus-5-5`. `claude-3-5-sonnet-20241022` and the other Claude 3 model IDs from the old docs have been retired by Anthropic.
+- `ConcurrentWorkflow` no longer writes metadata files into the current directory when `metadata_output_dir` is empty.
+
+## New features
+
+### OpenRouter provider
+
+[OpenRouter](https://openrouter.ai) serves models from most major labs behind one OpenAI-compatible API and one key. `OpenRouter` implements the same `Model` trait as the other providers, so it works with tools, MCP servers and every multi-agent structure.
+
+```rust
+use swarms_rs::llm::provider::openrouter::OpenRouter;
+use swarms_rs::structs::agent::Agent;
+
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    // Reads OPENROUTER_API_KEY
+    let agent = OpenRouter::from_env_with_model("anthropic/claude-opus-5.5")
+        .with_app_name("my-app") // optional: credit your app on openrouter.ai
+        .agent_builder()
+        .agent_name("Researcher")
+        .system_prompt("You are a concise research assistant.")
+        .build();
+
+    let answer = agent.run("What is a vector database?".to_string()).await?;
+    println!("{answer}");
+    Ok(())
+}
+```
+
+Use any model ID from [openrouter.ai/models](https://openrouter.ai/models), or keep the default, `openrouter/auto`, and let OpenRouter choose a model for each prompt.
+
+| Variable | Required | Purpose |
+|----------|----------|---------|
+| `OPENROUTER_API_KEY` | Yes | Your OpenRouter key |
+| `OPENROUTER_API_BASE` | No | Override the API base (default `https://openrouter.ai/api/v1`) |
+| `OPENROUTER_APP_URL`, `OPENROUTER_APP_NAME` | No | Credit your app on openrouter.ai rankings |
+
+### Any provider by model name
+
+`AnyModel::from_model_name` picks the provider from the name and reads that provider's API key from the environment. Changing providers is a change to one string:
+
+```rust
+use swarms_rs::llm::provider::any::AnyModel;
+use swarms_rs::structs::agent::Agent;
+
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    for name in [
+        "anthropic/claude-opus-5-5",
+        "openai/gpt-5.5",
+        "google/gemini-3.8-flash",
+    ] {
+        let agent = AnyModel::from_model_name(name)?
+            .agent_builder()
+            .system_prompt("Answer in one sentence.")
+            .build();
+
+        let answer = agent.run("What does Rust's borrow checker do?".to_string()).await?;
+        println!("{name}: {answer}");
+    }
+    Ok(())
+}
+```
+
+| Model name | Provider | API key |
+|------------|----------|---------|
+| `openai/...`, or a bare `gpt-*`, `o1*`, `o3*`, `o4*` | OpenAI | `OPENAI_API_KEY` |
+| `anthropic/...`, or a bare `claude-*` | Anthropic | `ANTHROPIC_API_KEY` |
+| `deepseek/...`, or a bare `deepseek-*` | DeepSeek | `DEEPSEEK_API_KEY` |
+| `openrouter/...`, or any other `vendor/model` (Google, Meta, Mistral, ...) | OpenRouter | `OPENROUTER_API_KEY` |
+
+An unknown name or a missing key comes back as a `ModelNameError` you can handle, rather than a panic. Tool calling works the same way on every provider.
+
+### Sub-agents and handoffs
+
+There are now two ways for agents to work together, both set up on the builder:
+
+- **Sub-agents** (`add_sub_agent`) delegate. The parent calls the sub-agent like a tool, gets its answer back, and keeps working.
+- **Handoffs** (`add_handoff`) transfer control. When the parent hands off, the target agent runs with the task, any context the parent passed along, and the conversation so far, and its answer becomes the parent's result.
+
+```rust
+use swarms_rs::llm::provider::openrouter::OpenRouter;
+use swarms_rs::structs::agent::Agent;
+
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    let client = OpenRouter::from_env_with_model("anthropic/claude-opus-5.5");
+
+    // Sub-agent: the coordinator calls it like a tool and uses its answer.
+    let researcher = client
+        .agent_builder()
+        .agent_name("Researcher")
+        .description("Looks up facts and returns a short, sourced summary")
+        .system_prompt("You are a researcher. Answer with concise facts only.")
+        .build();
+
+    // Handoff target: once the coordinator transfers to it, it finishes the task.
+    let writer = client
+        .agent_builder()
+        .agent_name("Writer")
+        .description("Writes the final, polished answer for the user")
+        .system_prompt("Using the context and conversation you are given, write the final answer.")
+        .build();
+
+    let coordinator = client
+        .agent_builder()
+        .agent_name("Coordinator")
+        .system_prompt(
+            "Delegate fact-finding to the Researcher, then transfer to the Writer \
+             with the facts as context so it can write the answer.",
+        )
+        .add_sub_agent(researcher)
+        .add_handoff(writer)
+        .max_loops(4)
+        .build();
+
+    let output = coordinator
+        .run("Why did Rust adopt async/await instead of green threads?".to_string())
+        .await?;
+    println!("{output}");
+    Ok(())
+}
+```
+
+The tools are named after the agents: the coordinator above is offered `delegate_to_Researcher` and `transfer_to_Writer`, with names cleaned up to fit what providers accept. The agent's `description` becomes the tool's description, so write it for the model. If the model calls several handoffs in one turn, only the first runs. If a handoff fails, the parent keeps control and sees the error.
+
+### Typed tool outputs
+
+Tool results used to be kept only as formatted text. They are now stored with their name, arguments and JSON result, and `result_as::<T>()` turns a result back into the tool's return type:
+
+```rust
+use swarms_macro::tool;
+use swarms_rs::llm::provider::openrouter::OpenRouter;
+use swarms_rs::structs::agent::Agent;
+
+#[derive(Debug, thiserror::Error)]
+#[error("math error")]
+pub struct MathError;
+
+#[tool(description = "Multiply two numbers")]
+fn multiply(a: f64, b: f64) -> Result<f64, MathError> {
+    Ok(a * b)
+}
+
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    let agent = OpenRouter::from_env_with_model("openai/gpt-5.5")
+        .agent_builder()
+        .system_prompt("Use the multiply tool for arithmetic.")
+        .add_tool(Multiply)
+        .build();
+
+    let task = "What is 17 times 23?";
+    agent.run(task.to_string()).await?;
+
+    if let Some(conversation) = agent.conversation(task) {
+        for output in conversation.tool_outputs() {
+            if output.name == "multiply" {
+                let product: f64 = output.result_as()?;
+                println!("multiply({}) = {product}", output.args);
+            }
+        }
+    }
+    Ok(())
+}
+```
+
+`SwarmsAgent::conversation(task)` returns a copy of the agent's memory for a task, and `AgentConversation::tool_outputs()` iterates over every tool call in it, including delegations and handoffs.
+
+### The router works with every provider
+
+`SwarmRouter` now takes agents on any model. Build the config with `with_agents`, pick the swarm type, and run:
+
+```rust
+use swarms_rs::llm::provider::openrouter::OpenRouter;
+use swarms_rs::structs::swarms_router::{SwarmRouter, SwarmRouterConfig, SwarmType};
+
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    let client = OpenRouter::from_env();
+    let agents = ["anthropic/claude-opus-5.5", "google/gemini-3.8-flash"]
+        .into_iter()
+        .map(|model| {
+            client
+                .clone()
+                .set_model(model)
+                .agent_builder()
+                .agent_name(model)
+                .system_prompt("Give one concrete recommendation.")
+                .build()
+        })
+        .collect();
+
+    let mut config = SwarmRouterConfig::with_agents(agents);
+    config.swarm_type = SwarmType::ConcurrentWorkflow;
+    config.rules = Some("Keep every answer under 100 words.".to_string());
+
+    let router = SwarmRouter::new_with_config(config)?;
+    let conversation = router.run("How should a small team version its API?").await?;
+    println!("{conversation}");
+    Ok(())
+}
+```
+
+Every agent in one router uses the same model type. To mix providers in a single router, build each agent on `AnyModel`.
+
+### Conversations round-trip through JSON
+
+`AgentConversation::load_json` restores a history saved with `to_json`, and `import_from_file` also accepts that JSON. The text export can misread message bodies that contain lines like `Name(User): ...`, which agent outputs in workflows often do, so use JSON for anything you plan to load back:
+
+```rust
+use swarms_rs::structs::conversation::{AgentConversation, Role};
+
+fn main() -> anyhow::Result<()> {
+    let mut conversation = AgentConversation::new("notes".to_string());
+    conversation.add(Role::User("Alice".to_string()), "Hello".to_string());
+
+    let json = conversation.to_json()?;
+
+    let mut restored = AgentConversation::new("notes".to_string());
+    restored.load_json(&json)?;
+    assert_eq!(restored.to_string(), conversation.to_string());
+    Ok(())
+}
+```
+
+## Fixes
+
+### Agent loop
+
+- Tool calls that followed a text block in the same reply were ignored. Claude usually writes a sentence before calling a tool, so with Claude, tools (including `task_evaluator`) effectively never ran.
+- Text sent together with a tool call was dropped, so an answer followed by `task_evaluator` "Complete" ended the run with only the tool log.
+- `run()` returned `Ok` with no answer when every model call failed, and `retry_attempts(0)` never called the model.
+- `run_multiple_tasks` deadlocked with two or more tasks. It now runs them concurrently and returns results in task order.
+- A lock on the agent's memory was held across the model call, which could deadlock concurrent runs of the same agent.
+- Results from tools called alongside `task_evaluator` were dropped from memory.
+- With `disable_concurrent_tool_call()`, one failing tool aborted the batch and re-ran the tools that had already succeeded. Errors are now reported to the model as that tool's result.
+- After planning, the first request ended on the plan (an assistant turn), which current Claude models reject as a prefill.
+- Autosave file names were cut at the first dot in the agent's name, so `gpt-4.1-agent` saved every task to the same `gpt-4.json`.
+- Registering the same tool name twice sent duplicate definitions to the provider.
+
+### Anthropic
+
+- The default model had been retired, and the docs listed only retired models.
+- Replies containing a thinking block, which current Claude models return, failed to parse.
+- A check that counted quote characters rejected valid replies containing an escaped quote, such as `55" wide`.
+- `tool_result` blocks used the wrong field name.
+- Prompts made only of tool results or images were silently dropped.
+- Refusals came back as an empty reply that was retried three times. They are now an error that includes the refusal category, and a tool call cut off by `max_tokens` is no longer run.
+- A trailing slash in `ANTHROPIC_BASE_URL` broke every request, and an empty response body hid the HTTP status.
+
+### OpenAI and compatible APIs
+
+- Invalid tool-call arguments and refusals panicked instead of returning an error.
+- Text sent together with tool calls was dropped, and servers that send `"tool_calls": []` on plain replies (vLLM and others) produced empty responses.
+- Error bodies that aren't JSON, from proxies and some compatible servers, were thrown away.
+- On api.openai.com, `max_completion_tokens` is sent instead of `max_tokens`, which reasoning models reject.
+- Base64 images are sent as data URLs, and `set_system_prompt` takes effect.
+
+### Workflows
+
+- `AgentBatchExecutor` deadlocked with two or more agents and kept only one agent's result per task.
+- `SwarmRouter`'s `AgentRearrange` mode never ran anything, and it applied rules twice.
+- Graph workflows panicked on the cycle check after `remove_agent`, skipped join nodes when one parent didn't fire, could run a join node twice, and didn't record timeouts.
+- `AgentRearrange` returned concurrent results out of order, hung on a concurrency of 0, panicked on a batch size of 0, produced the wrong output after parallel groups, and silently dropped agents with duplicate names.
+- `ConcurrentWorkflow` could never run the same task twice.
+
+### Tools, MCP, persistence and logging
+
+- Beyond the schema fixes above, arguments such as `Option<SearchArgs>` no longer collide with the struct `#[tool]` generates, and the `Sync` bound on tool futures is gone, so a tool can await another agent.
+- MCP tool results are joined with newlines, errors report their text, and images are summarized instead of being sent to the model as base64.
+- `append_to_file` flushes, so a read right after a write sees the data. Log files create their directory and end each entry with a newline.
+- Conversation import no longer panics.
+- The exported logging macros compile in crates that don't depend on `log`, `init_logger` can be called twice, and the agent's error logs reach `env_logger`.
+
+## Performance and dependencies
+
+- Agent IDs use `uuid`'s `fast-rng`: generating one went from 931 ns to 37 ns, and building an agent is about 21% faster, from 3.9 µs to 3.1 µs.
+- The library enables only the tokio features it uses instead of `full`, so downstream builds compile less.
+- The unused `url`, `tokio-rustls` and `webpki-roots` dependencies are gone, `dotenv` and `tracing-subscriber` moved to dev-dependencies, and `tabled` no longer pulls in a proc-macro crate that future Rust versions will reject.
+
+## New examples
+
+The repository has five new examples, all on OpenRouter. Clone it to run them:
+
+```bash
+git clone https://github.com/The-Swarm-Corporation/swarms-rs
+cd swarms-rs
+export OPENROUTER_API_KEY="sk-or-..."
+cargo run --example openrouter_model_panel
+```
+
+| Example | What it shows |
+|---------|---------------|
+| `openrouter_agent` | A single agent; set `OPENROUTER_MODEL` to choose the model |
+| `openrouter_tools` | An agent with two `#[tool]` functions, for the current time and for temperature conversion |
+| `openrouter_model_panel` | Models from Anthropic, OpenAI, Google and DeepSeek answer the same question in parallel |
+| `openrouter_pipeline` | Research, write and edit, with a different provider's model at each stage |
+| `sub_agents_and_handoffs` | A coordinator that delegates to a researcher and hands off to a writer |
+
+The model panel is a `ConcurrentWorkflow` with one agent per model, all on one OpenRouter client. Set `OPENROUTER_PANEL_MODELS` to a comma-separated list to change the panel:
+
+```rust
+use swarms_rs::llm::provider::openrouter::OpenRouter;
+use swarms_rs::structs::agent::Agent;
+use swarms_rs::structs::concurrent_workflow::ConcurrentWorkflow;
+
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    let client = OpenRouter::from_env();
+    let models = ["anthropic/claude-opus-5.5", "openai/gpt-5.5", "google/gemini-3.8-flash"];
+
+    let agents: Vec<Box<dyn Agent>> = models
+        .iter()
+        .map(|model| {
+            Box::new(
+                client
+                    .clone()
+                    .set_model(*model)
+                    .agent_builder()
+                    .agent_name(*model)
+                    .system_prompt("Answer in at most three sentences and commit to a position.")
+                    .build(),
+            ) as Box<dyn Agent>
+        })
+        .collect();
+
+    let workflow = ConcurrentWorkflow::builder()
+        .name("ModelPanel")
+        .agents(agents)
+        .build();
+
+    let result = workflow
+        .run("Should a new backend service start as a monolith or as microservices?")
+        .await?;
+    for message in &result.history {
+        println!("── {} ──\n{}\n", message.role, message.content);
+    }
+    Ok(())
+}
+```
+
+The pipeline chains three agents in a `SequentialWorkflow`: a fast, long-context model gathers the facts, a strong writer drafts, and a model from a different family edits, which catches different mistakes. Each stage's model can be changed with `OPENROUTER_RESEARCH_MODEL`, `OPENROUTER_WRITER_MODEL` and `OPENROUTER_EDITOR_MODEL`:
+
+```rust
+use swarms_rs::llm::provider::openrouter::OpenRouter;
+use swarms_rs::structs::agent::Agent;
+use swarms_rs::structs::sequential_workflow::SequentialWorkflow;
+
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    let client = OpenRouter::from_env();
+    let stage = |model: &str, name: &str, prompt: &str| -> Box<dyn Agent> {
+        Box::new(
+            client
+                .clone()
+                .set_model(model)
+                .agent_builder()
+                .agent_name(name)
+                .system_prompt(prompt)
+                .build(),
+        )
+    };
+
+    let workflow = SequentialWorkflow::builder()
+        .name("OpenRouterPipeline")
+        .agents(vec![
+            stage("google/gemini-3.8-flash", "Researcher", "List the key facts as bullet points."),
+            stage("anthropic/claude-opus-5.5", "Writer", "Turn the notes into a 300-word article."),
+            stage("openai/gpt-5.5", "Editor", "Fix errors and return only the final article."),
+        ])
+        .build();
+
+    let result = workflow.run("How Rust's borrow checker prevents data races").await?;
+    if let Some(article) = result.history.last() {
+        println!("{}", article.content);
+    }
+    Ok(())
+}
+```
+
+Ten examples that were in the repository but never registered with Cargo also run now, including `graph_workflow`, `sequential_workflow`, `concurrent_workflow_run`, `agent_rearrange_example`, `batch_executor_example`, `tool` and `mcp_tool`. Those read `DEEPSEEK_API_KEY` and `DEEPSEEK_BASE_URL`.
+
+## Documentation
+
+Three new guides cover APIs that had no docs:
+
+- [Conversations and memory](https://github.com/The-Swarm-Corporation/swarms-rs/blob/main/docs/conversation.md): `AgentConversation`, agent memory, typed tool results, and import and export.
+- [Persistence](https://github.com/The-Swarm-Corporation/swarms-rs/blob/main/docs/persistence.md): saving, loading, compression, logging, and where the framework writes files.
+- [Batch execution and the swarm router](https://github.com/The-Swarm-Corporation/swarms-rs/blob/main/docs/batch_and_router.md): `AgentBatchExecutor`, `SwarmRouter`, their configs and what each returns.
+
+The [README](https://github.com/The-Swarm-Corporation/swarms-rs) has new sections for OpenRouter, `AnyModel`, and sub-agents and handoffs, and every Rust snippet in it compiles.
+
+## Tests
+
+The suite has 409 tests. On 0.2.1 it couldn't finish: it deadlocked in the batch executor tests. Most fixes in this release come with a regression test, and the provider tests run against local mock servers, so they need no API keys.
+
+## Issues closed in this release
+
+- [#17](https://github.com/The-Swarm-Corporation/swarms-rs/issues/17) Store ToolCallOutput results in agent conversation with type safety
+- [#44](https://github.com/The-Swarm-Corporation/swarms-rs/issues/44) Implement all model providers in the Agent
+- [#45](https://github.com/The-Swarm-Corporation/swarms-rs/issues/45) Add Anthropic model support in agents
+- [#49](https://github.com/The-Swarm-Corporation/swarms-rs/issues/49) Memory allocation inefficiencies during agent initialization
+- [#55](https://github.com/The-Swarm-Corporation/swarms-rs/issues/55) Integrate OpenRouter LLM
+- [#56](https://github.com/The-Swarm-Corporation/swarms-rs/issues/56) Implement Anthropic provider with the hyper library
+- [#87](https://github.com/The-Swarm-Corporation/swarms-rs/issues/87) Integrate sub-agents support
+- [#88](https://github.com/The-Swarm-Corporation/swarms-rs/issues/88) Implement agent handoffs
+- [#96](https://github.com/The-Swarm-Corporation/swarms-rs/issues/96), [#97](https://github.com/The-Swarm-Corporation/swarms-rs/issues/97) Document conversation and memory APIs
+- [#98](https://github.com/The-Swarm-Corporation/swarms-rs/issues/98) Add a persistence utility guide
+- [#99](https://github.com/The-Swarm-Corporation/swarms-rs/issues/99) Cover the batch executor and swarm router APIs
+- [#101](https://github.com/The-Swarm-Corporation/swarms-rs/issues/101) binance-tools example broken by rmcp
+
+Thanks to Tails, ZackBradshaw and Jangidyogesh12 for the reports that shaped several of these.
+
+## We're hiring: a lead maintainer and a team for Swarms Rust
+
+We're hiring a lead maintainer for swarms-rs, and a team to manage and grow it with them.
+
+The **[Rust Team Lead](/hiring/rust-team-lead)** owns the framework end to end: its technical direction, roadmap and releases, reviewing contributions, and recruiting and mentoring the Rust team. We're also hiring **[Rust Engineers](/hiring/rust-engineer)** to build high-performance agent infrastructure on that team.
+
+All developer roles ask for 3 PRs or 3 new issues on the Swarms GitHub before you apply, and the [swarms-rs issue tracker](https://github.com/The-Swarm-Corporation/swarms-rs/issues) is a good place to start. See every open role at [swarms.ai/hiring](/hiring).
+
+## Links
+
+- [swarms-rs on crates.io](https://crates.io/crates/swarms-rs) and [swarms-macro on crates.io](https://crates.io/crates/swarms-macro)
+- [API documentation on docs.rs](https://docs.rs/swarms-rs)
+- [Source on GitHub](https://github.com/The-Swarm-Corporation/swarms-rs)

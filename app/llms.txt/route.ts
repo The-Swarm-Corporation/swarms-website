@@ -53,6 +53,7 @@ export function GET() {
     "",
     "- [Swarms API Docs](https://docs.swarms.ai): Full API reference, guides, and examples. Serves its own llms.txt at https://docs.swarms.ai/llms.txt.",
     "- [Swarms Framework Docs](https://docs.swarms.world): Python framework documentation and quickstart.",
+    "- [Swarms CLI](https://docs.swarms.world/cli): Install with `pip install swarms`. Command-line interface for managing agents, swarms, workflows, and deployments.",
     "- [Swarms Marketplace](https://swarms.world): Discover, buy, and sell AI agents, prompts, and tools.",
     "- [GitHub](https://github.com/kyegomez/swarms): The open-source Swarms framework repository.",
     "",

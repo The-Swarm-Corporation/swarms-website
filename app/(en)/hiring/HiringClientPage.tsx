@@ -4,13 +4,10 @@ import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import {
-  MapPin,
   ArrowRight,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  Briefcase,
-  Clock,
   Search,
   X,
   Github,
@@ -28,13 +25,69 @@ import {
 
 const ease: [number, number, number, number] = [0.22, 1, 0.36, 1]
 
-const PAGE_SIZE = 6
+// Each page of the roles grid shows exactly this many rows of cards, so the
+// page size follows the column count at the current breakpoint.
+const ROWS_PER_PAGE = 3
+
+// Mirrors the grid's responsive classes: sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4
+const GRID_BREAKPOINTS = [
+  { query: '(min-width: 1280px)', columns: 4 },
+  { query: '(min-width: 1024px)', columns: 3 },
+  { query: '(min-width: 640px)', columns: 2 },
+]
+
+function useGridColumns() {
+  const [columns, setColumns] = useState(4)
+
+  useEffect(() => {
+    const mediaQueries = GRID_BREAKPOINTS.map((b) => window.matchMedia(b.query))
+    const update = () => {
+      const match = mediaQueries.findIndex((mq) => mq.matches)
+      setColumns(match === -1 ? 1 : GRID_BREAKPOINTS[match].columns)
+    }
+    update()
+    mediaQueries.forEach((mq) => mq.addEventListener('change', update))
+    return () => mediaQueries.forEach((mq) => mq.removeEventListener('change', update))
+  }, [])
+
+  return columns
+}
+
+const values = [
+  {
+    title: 'Mission First',
+    description:
+      'Focus relentlessly on the objective: building and understanding large scale multi-agent systems that do economically useful work.',
+  },
+  {
+    title: 'Move Fast',
+    description:
+      'Favor rapid iteration, decisive action, and learning through real-world testing rather than waiting for perfect certainty.',
+  },
+  {
+    title: 'First-Principles Thinking',
+    description:
+      'Question assumptions, reduce problems to fundamentals, and find solutions from the ground up.',
+  },
+  {
+    title: 'Own the Outcome',
+    description:
+      'Take responsibility for the result, solve problems across organizational boundaries, and hold a high bar for execution.',
+  },
+  {
+    title: 'Build What Others Say Is Impossible',
+    description:
+      'Pursue ambitious technical goals, embrace difficult problems, and refuse to let conventional constraints define what can be achieved.',
+  },
+]
 
 const HiringClientPage = () => {
   const [activeDepartment, setActiveDepartment] = useState<Department>('All')
   const [departmentDropdownOpen, setDepartmentDropdownOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
-  const [currentPage, setCurrentPage] = useState(1)
+  const [page, setPage] = useState(1)
+  const columns = useGridColumns()
+  const pageSize = columns * ROWS_PER_PAGE
 
   const filteredPositions = useMemo(() => {
     const query = searchQuery.trim().toLowerCase()
@@ -53,20 +106,23 @@ const HiringClientPage = () => {
     })
   }, [activeDepartment, searchQuery])
 
-  const totalPages = Math.max(1, Math.ceil(filteredPositions.length / PAGE_SIZE))
+  const totalPages = Math.max(1, Math.ceil(filteredPositions.length / pageSize))
 
-  // Keep the current page in range whenever the filters change.
+  // Go back to the first page whenever the filters change.
   useEffect(() => {
-    setCurrentPage(1)
+    setPage(1)
   }, [activeDepartment, searchQuery])
 
-  const pagedPositions = useMemo(() => {
-    const start = (currentPage - 1) * PAGE_SIZE
-    return filteredPositions.slice(start, start + PAGE_SIZE)
-  }, [filteredPositions, currentPage])
+  // Resizing changes the page size, which can leave the stored page out of range.
+  const currentPage = Math.min(page, totalPages)
 
-  const rangeStart = filteredPositions.length === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1
-  const rangeEnd = Math.min(currentPage * PAGE_SIZE, filteredPositions.length)
+  const pagedPositions = useMemo(() => {
+    const start = (currentPage - 1) * pageSize
+    return filteredPositions.slice(start, start + pageSize)
+  }, [filteredPositions, currentPage, pageSize])
+
+  const rangeStart = filteredPositions.length === 0 ? 0 : (currentPage - 1) * pageSize + 1
+  const rangeEnd = Math.min(currentPage * pageSize, filteredPositions.length)
 
   const clearFilters = () => {
     setSearchQuery('')
@@ -163,8 +219,10 @@ const HiringClientPage = () => {
               Who we&apos;re looking for
             </h2>
             <p className="mt-8 text-base font-normal leading-relaxed text-white/50 sm:text-lg">
-              Every developer role at Swarms starts with your open source
-              work. Before you apply, we look for:
+              We&apos;re looking to hire the world&apos;s best agentic and AI
+              talent to work on agent infrastructure that hundreds of
+              thousands of companies and people use every day. Before you
+              apply, we look for:
             </p>
 
             <ul className="mx-auto mt-8 flex max-w-xl flex-col gap-3 text-left">
@@ -207,191 +265,219 @@ const HiringClientPage = () => {
         </div>
       </section>
 
+      {/* Values Section */}
+      <section className="border-b border-white/[0.08] bg-black">
+        <div className="container px-4 py-16 sm:px-6 sm:py-24 lg:px-8 lg:py-32">
+          <div className="mx-auto max-w-7xl">
+            <motion.div
+              className="mb-10 sm:mb-14"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.7, ease }}
+            >
+              <p className="mb-5 font-mono text-[11px] font-medium uppercase tracking-[0.2em] text-white/40">
+                Our Values
+              </p>
+              <h2 className="text-3xl font-semibold leading-[1.1] tracking-tighter text-white sm:text-4xl md:text-5xl">
+                What we value
+              </h2>
+            </motion.div>
+
+            <div className="divide-y divide-white/[0.08] border-y border-white/[0.08]">
+              {values.map((value, index) => (
+                <motion.div
+                  key={value.title}
+                  className="grid grid-cols-1 gap-3 py-8 md:grid-cols-[80px_minmax(0,1fr)_minmax(0,1.4fr)] md:items-baseline md:gap-8 md:py-10"
+                  initial={{ opacity: 0, y: 16 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: "-50px" }}
+                  transition={{ duration: 0.5, delay: index * 0.05, ease }}
+                >
+                  <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-white/30">
+                    {String(index + 1).padStart(2, '0')}
+                  </span>
+                  <h3 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl">
+                    {value.title}
+                  </h3>
+                  <p className="text-base font-normal leading-relaxed text-white/50 sm:text-lg">
+                    {value.description}
+                  </p>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Positions Section */}
       <section className="border-b border-white/[0.08] bg-black">
         <div className="container px-4 py-16 sm:px-6 sm:py-24 lg:px-8 lg:py-32">
-          <motion.div
-            className="mx-auto mb-10 max-w-3xl text-center sm:mb-14"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 0.7, ease }}
-          >
-            <p className="mb-5 font-mono text-[11px] font-medium uppercase tracking-[0.2em] text-white/40">
-              Open Roles
-            </p>
-            <h2 className="text-3xl font-semibold leading-[1.1] tracking-tighter text-white sm:text-4xl md:text-5xl">
-              Find your place
-            </h2>
-          </motion.div>
+          <div className="mx-auto max-w-7xl">
+            {/* Header with search at the top of the section */}
+            <motion.div
+              className="mb-8 flex flex-col gap-6 sm:mb-10 md:flex-row md:items-end md:justify-between"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.7, ease }}
+            >
+              <div>
+                <p className="mb-5 font-mono text-[11px] font-medium uppercase tracking-[0.2em] text-white/40">
+                  Open Roles
+                </p>
+                <h2 className="text-3xl font-semibold leading-[1.1] tracking-tighter text-white sm:text-4xl md:text-5xl">
+                  Open Roles
+                </h2>
+              </div>
 
-          {/* Filters */}
-          <div className="mx-auto mb-6 flex max-w-3xl flex-col gap-4 sm:flex-row sm:items-center">
-            {/* Search bar */}
-            <div className="relative w-full flex-1">
-              <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-white/40" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search roles by title, department, or location..."
-                aria-label="Search roles"
-                className="w-full rounded-full border border-white/[0.14] bg-[#0a0a0a] py-2.5 pl-11 pr-10 text-sm text-white placeholder:text-white/40 transition-colors focus:border-white/30 focus:outline-none"
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery('')}
-                  aria-label="Clear search"
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-white/40 transition-colors hover:text-white"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              )}
-            </div>
-
-            <div className="relative flex-shrink-0">
-              <button
-                onClick={() => setDepartmentDropdownOpen(!departmentDropdownOpen)}
-                className="flex w-full items-center justify-between gap-2 rounded-full border border-white/[0.14] bg-[#0a0a0a] px-5 py-2.5 text-white transition-colors hover:border-white/30 hover:bg-white/[0.06] sm:w-auto"
-              >
-                <span className="text-sm font-medium">{activeDepartment}</span>
-                <ChevronDown className={`h-4 w-4 text-white/40 transition-transform ${departmentDropdownOpen ? 'rotate-180' : ''}`} />
-              </button>
-
-              {departmentDropdownOpen && (
-                <div className="absolute left-0 top-full z-10 mt-2 min-w-[180px] overflow-hidden rounded-lg border border-white/[0.08] bg-[#0a0a0a] p-1.5 shadow-2xl shadow-black/50">
-                  {departments.map((dept) => (
+              <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center md:max-w-xl">
+                {/* Search bar */}
+                <div className="relative w-full flex-1">
+                  <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-white/40" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search roles"
+                    aria-label="Search roles"
+                    className="w-full rounded-full border border-white/[0.14] bg-[#0a0a0a] py-2.5 pl-11 pr-10 text-sm text-white placeholder:text-white/40 transition-colors focus:border-white/30 focus:outline-none"
+                  />
+                  {searchQuery && (
                     <button
-                      key={dept}
-                      onClick={() => {
-                        setActiveDepartment(dept)
-                        setDepartmentDropdownOpen(false)
-                      }}
-                      className={`w-full rounded-md px-4 py-2 text-left text-sm transition-colors ${
-                        activeDepartment === dept ? 'bg-white/[0.08] text-white' : 'text-white/50 hover:bg-white/[0.06] hover:text-white'
-                      }`}
+                      onClick={() => setSearchQuery('')}
+                      aria-label="Clear search"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-white/40 transition-colors hover:text-white"
                     >
-                      {dept}
+                      <X className="h-4 w-4" />
                     </button>
-                  ))}
+                  )}
                 </div>
-              )}
-            </div>
-          </div>
 
-          {/* Results count */}
-          {filteredPositions.length > 0 && (
-            <p className="mb-6 text-center text-sm text-white/40">
-              Showing {rangeStart}–{rangeEnd} of {filteredPositions.length} {filteredPositions.length === 1 ? 'role' : 'roles'}
-            </p>
-          )}
+                <div className="relative flex-shrink-0">
+                  <button
+                    onClick={() => setDepartmentDropdownOpen(!departmentDropdownOpen)}
+                    className="flex w-full items-center justify-between gap-2 rounded-full border border-white/[0.14] bg-[#0a0a0a] px-5 py-2.5 text-white transition-colors hover:border-white/30 hover:bg-white/[0.06] sm:w-auto"
+                  >
+                    <span className="text-sm font-medium">{activeDepartment}</span>
+                    <ChevronDown className={`h-4 w-4 text-white/40 transition-transform ${departmentDropdownOpen ? 'rotate-180' : ''}`} />
+                  </button>
 
-          {/* Positions List */}
-          <div className="mx-auto flex max-w-3xl flex-col gap-3">
-            {pagedPositions.map((position, index) => {
-              const PositionIcon = position.icon
-              return (
+                  {departmentDropdownOpen && (
+                    <div className="absolute left-0 top-full z-20 mt-2 min-w-[200px] overflow-hidden rounded-lg border border-white/[0.08] bg-[#0a0a0a] p-1.5 shadow-2xl shadow-black/50 sm:left-auto sm:right-0">
+                      {departments.map((dept) => (
+                        <button
+                          key={dept}
+                          onClick={() => {
+                            setActiveDepartment(dept)
+                            setDepartmentDropdownOpen(false)
+                          }}
+                          className={`w-full rounded-md px-4 py-2 text-left text-sm transition-colors ${
+                            activeDepartment === dept ? 'bg-white/[0.08] text-white' : 'text-white/50 hover:bg-white/[0.06] hover:text-white'
+                          }`}
+                        >
+                          {dept}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Results count */}
+            {filteredPositions.length > 0 && (
+              <p className="mb-4 font-mono text-[11px] uppercase tracking-[0.15em] text-white/40">
+                Showing {rangeStart}–{rangeEnd} of {filteredPositions.length} {filteredPositions.length === 1 ? 'role' : 'roles'}
+              </p>
+            )}
+
+            {/* Positions grid: 3 rows per page, 3 or 4 cards per row on desktop */}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {pagedPositions.map((position, index) => (
                 <motion.div
                   key={position.slug}
+                  className="h-full"
                   initial={{ opacity: 0, y: 16 }}
                   whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: "-100px" }}
-                  transition={{ duration: 0.5, delay: index * 0.05, ease }}
+                  viewport={{ once: true, margin: "-50px" }}
+                  transition={{ duration: 0.5, delay: (index % columns) * 0.05, ease }}
                 >
                   <Link
                     href={`/hiring/${position.slug}`}
-                    className="group relative flex items-center gap-5 rounded-lg border border-white/[0.08] bg-black p-5 transition-colors duration-300 hover:bg-[#0a0a0a]"
+                    className="group flex h-full min-h-[140px] flex-col justify-between gap-8 rounded-[28px] bg-[#141414] p-7 transition-all duration-500 ease-out hover:scale-[1.02] hover:bg-[#1a1a1a] hover:shadow-2xl hover:shadow-black/60 sm:min-h-[200px] sm:p-8"
                   >
-                    <div className="flex-shrink-0 rounded-lg border border-white/[0.08] bg-[#0a0a0a] p-3 transition-colors duration-300 group-hover:border-white/20">
-                      <PositionIcon className="h-5 w-5 text-white/50 transition-colors duration-300 group-hover:text-white" strokeWidth={1.5} />
-                    </div>
+                    <h3 className="text-2xl font-semibold leading-tight tracking-tight text-white">
+                      {position.title}
+                    </h3>
 
-                    <div className="min-w-0 flex-1">
-                      <h3 className="mb-1 text-lg font-semibold text-white">
-                        {position.title}
-                      </h3>
-                      <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-sm text-white/50">
-                        <span className="flex items-center gap-1.5">
-                          <Briefcase className="h-3.5 w-3.5 text-white/30" />
-                          {position.department}
-                        </span>
-                        <span className="flex items-center gap-1.5">
-                          <Clock className="h-3.5 w-3.5 text-white/30" />
-                          {position.type}
-                        </span>
-                        <span className="flex items-center gap-1.5">
-                          <MapPin className="h-3.5 w-3.5 text-white/30" />
-                          {position.location}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-shrink-0 items-center gap-2 text-white/40 transition-colors duration-300 group-hover:text-white">
-                      <span className="hidden text-sm font-medium opacity-0 transition-opacity duration-300 group-hover:opacity-100 sm:inline">
-                        Apply
-                      </span>
-                      <ArrowRight className="h-5 w-5 transition-transform duration-300 group-hover:translate-x-1" />
-                    </div>
+                    <span className="flex h-9 w-9 items-center justify-center self-end rounded-full bg-white/[0.1] text-white transition-colors duration-300 group-hover:bg-white group-hover:text-black">
+                      <ChevronRight className="h-4 w-4" strokeWidth={2.5} />
+                    </span>
                   </Link>
                 </motion.div>
-              )
-            })}
-          </div>
+              ))}
+            </div>
 
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="mt-10 flex items-center justify-center gap-2">
-              <button
-                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-                aria-label="Previous page"
-                className="flex items-center gap-1 rounded-full border border-white/[0.14] bg-[#0a0a0a] px-4 py-2 text-sm text-white transition-colors hover:border-white/30 hover:bg-white/[0.06] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-white/[0.14] disabled:hover:bg-[#0a0a0a]"
-              >
-                <ChevronLeft className="h-4 w-4" />
-                <span className="hidden sm:inline">Previous</span>
-              </button>
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="mt-10 flex items-center justify-center gap-2">
+                <button
+                  onClick={() => setPage(Math.max(1, currentPage - 1))}
+                  disabled={currentPage === 1}
+                  aria-label="Previous page"
+                  className="flex items-center gap-1 rounded-full border border-white/[0.14] bg-[#0a0a0a] px-4 py-2 text-sm text-white transition-colors hover:border-white/30 hover:bg-white/[0.06] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-white/[0.14] disabled:hover:bg-[#0a0a0a]"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  <span className="hidden sm:inline">Previous</span>
+                </button>
 
-              <div className="flex items-center gap-1.5">
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                  <button
-                    key={page}
-                    onClick={() => setCurrentPage(page)}
-                    aria-label={`Page ${page}`}
-                    aria-current={currentPage === page ? 'page' : undefined}
-                    className={`h-9 w-9 rounded-full text-sm font-medium transition-colors ${
-                      currentPage === page
-                        ? 'bg-white text-black'
-                        : 'border border-white/[0.14] bg-[#0a0a0a] text-white/50 hover:border-white/30 hover:text-white'
-                    }`}
-                  >
-                    {page}
-                  </button>
-                ))}
+                <span className="px-2 text-sm text-white/50 sm:hidden">
+                  {currentPage} / {totalPages}
+                </span>
+
+                <div className="hidden items-center gap-1.5 sm:flex">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNumber) => (
+                    <button
+                      key={pageNumber}
+                      onClick={() => setPage(pageNumber)}
+                      aria-label={`Page ${pageNumber}`}
+                      aria-current={currentPage === pageNumber ? 'page' : undefined}
+                      className={`h-9 w-9 rounded-full text-sm font-medium transition-colors ${
+                        currentPage === pageNumber
+                          ? 'bg-white text-black'
+                          : 'border border-white/[0.14] bg-[#0a0a0a] text-white/50 hover:border-white/30 hover:text-white'
+                      }`}
+                    >
+                      {pageNumber}
+                    </button>
+                  ))}
+                </div>
+
+                <button
+                  onClick={() => setPage(Math.min(totalPages, currentPage + 1))}
+                  disabled={currentPage === totalPages}
+                  aria-label="Next page"
+                  className="flex items-center gap-1 rounded-full border border-white/[0.14] bg-[#0a0a0a] px-4 py-2 text-sm text-white transition-colors hover:border-white/30 hover:bg-white/[0.06] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-white/[0.14] disabled:hover:bg-[#0a0a0a]"
+                >
+                  <span className="hidden sm:inline">Next</span>
+                  <ChevronRight className="h-4 w-4" />
+                </button>
               </div>
+            )}
 
-              <button
-                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                disabled={currentPage === totalPages}
-                aria-label="Next page"
-                className="flex items-center gap-1 rounded-full border border-white/[0.14] bg-[#0a0a0a] px-4 py-2 text-sm text-white transition-colors hover:border-white/30 hover:bg-white/[0.06] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-white/[0.14] disabled:hover:bg-[#0a0a0a]"
-              >
-                <span className="hidden sm:inline">Next</span>
-                <ChevronRight className="h-4 w-4" />
-              </button>
-            </div>
-          )}
-
-          {filteredPositions.length === 0 && (
-            <div className="py-16 text-center text-white/50">
-              <p>No roles match your search.</p>
-              <button
-                onClick={clearFilters}
-                className="mt-4 text-white transition-colors hover:text-white/70"
-              >
-                Clear filters
-              </button>
-            </div>
-          )}
+            {filteredPositions.length === 0 && (
+              <div className="rounded-lg border border-white/[0.08] py-16 text-center text-white/50">
+                <p>No roles match your search.</p>
+                <button
+                  onClick={clearFilters}
+                  className="mt-4 text-white transition-colors hover:text-white/70"
+                >
+                  Clear filters
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </section>
 

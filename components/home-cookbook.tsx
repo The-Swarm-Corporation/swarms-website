@@ -71,7 +71,7 @@ export function HomeCookbook() {
             Cookbook
           </p>
           <h2 className="max-w-3xl text-3xl font-semibold leading-[1.1] tracking-tighter text-white sm:text-4xl md:text-5xl">
-            Templates and recipes.
+            Templates and recipes
           </h2>
           <p className="mt-5 max-w-2xl text-base font-normal leading-relaxed text-white/50 sm:text-lg">
             Curated examples, templates, implementation guides, and API

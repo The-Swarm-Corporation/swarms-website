@@ -16,7 +16,7 @@ const ease: [number, number, number, number] = [0.22, 1, 0.36, 1]
 const LABELS = {
   en: {
     eyebrow: "Newsletter",
-    heading: "Get the latest from Swarms.",
+    heading: "Get the latest from Swarms",
     sub: "Build with Swarms Cloud or discover agents in the Marketplace. Sign up and get $5 in free API credits.",
     placeholder: "Enter your email address",
     emailAria: "Email address",

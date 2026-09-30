@@ -49,7 +49,7 @@ export function HomeEnterpriseInfrastructure() {
                 Built for Production
               </p>
               <h2 className="text-3xl font-semibold leading-[1.1] tracking-tighter text-white sm:text-4xl md:text-5xl">
-                Enterprise-grade infrastructure.
+                Enterprise-grade infrastructure
               </h2>
               <p className="max-w-xl text-base font-normal leading-relaxed text-white/50 sm:text-lg">
                 Global availability, compliance certifications, and custom

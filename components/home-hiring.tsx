@@ -34,7 +34,7 @@ export function HomeHiring() {
               We&apos;re Hiring
             </p>
             <h2 className="max-w-3xl text-3xl font-semibold leading-[1.1] tracking-tighter text-white sm:text-4xl md:text-5xl">
-              Build autonomous corporations with us.
+              Join the Swarms team
             </h2>
             <p className="mt-5 max-w-2xl text-base font-normal leading-relaxed text-white/50 sm:text-lg">
               We&apos;re hiring researchers and engineers to build the

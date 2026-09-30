@@ -59,7 +59,7 @@ export function HomeFeatures() {
             Capabilities
           </p>
           <h2 className="max-w-3xl text-3xl font-semibold leading-[1.1] tracking-tighter text-white sm:text-4xl md:text-5xl">
-            Everything you need to ship agents.
+            Everything you need to ship agents
           </h2>
           <p className="mt-5 max-w-2xl text-base font-normal leading-relaxed text-white/50 sm:text-lg">
             Pioneered infrastructure for multi-agent collaboration: communication

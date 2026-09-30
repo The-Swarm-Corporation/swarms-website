@@ -50,7 +50,7 @@ export function HomeCommunity() {
               Community
             </p>
             <h2 className="max-w-3xl text-3xl font-semibold leading-[1.1] tracking-tighter text-white sm:text-4xl md:text-5xl">
-              Join the swarm.
+              Join the Swarms community
             </h2>
             <p className="mt-5 max-w-2xl text-base font-normal leading-relaxed text-white/50 sm:text-lg">
               Join thousands of engineers building multi-agent systems together:

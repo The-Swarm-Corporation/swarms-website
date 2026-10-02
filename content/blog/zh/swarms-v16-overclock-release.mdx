@@ -1,0 +1,1030 @@
+---
+title: "Swarms v16「Overclock」：Token 计量、决策模型、MCP 部署，以及每次运行都从干净状态开始"
+description: "Swarms v16（代号 Overclock）的完整技术更新日志。每个智能体和 swarm 现在都会报告自己的花费；新的 DecisionModel 把来自 TypeSafe 和 Cloudflare 的带类型、经过校准的决策带进任何工作流；MCPDeployer 把智能体作为带认证的 MCP 服务器对外提供；TreeOfThoughts 正式加入；十几个结构不再把上一个任务的对话泄漏到下一个任务里；失败的 LLM 调用终于会抛出异常；工具处理从 agent.py 移入 ToolManager，让一次工具轮次最多快 65 倍。2026 年 9 月 1 日到 10 月 2 日之间的每一项新特性、每一处改进、每一个缺陷修复，逐日记录。"
+date: "2026-10-02"
+author: "Kye Gomez"
+categories: ["工程", "产品"]
+readTime: "45 分钟阅读"
+featured: true
+image: "/swarms_overclock_banner_blog.png"
+---
+
+# Swarms v16「Overclock」
+
+Overclock 是四周半的工作成果：**2026 年 9 月 1 日至 10 月 2 日之间的 114 次提交**，涉及 228 个文件，**+18,984 / −4,585 行**。其中写进 `tests/` 的行数（+6,540）比写进 `swarms/` 本身的（+6,409 / −3,803）还多。测试函数从 762 个增加到 944 个。
+
+Zena（v14）让框架变得可观测。Akira（v15）让它变得诚实。Overclock 让它**可计量，而且更快**。
+
+这个版本贯穿着五条主线。
+
+第一条是**成本**。在 Overclock 之前，`Agent` 没有任何办法告诉你一次运行花了多少钱。provider 在每次补全时都会返回精确的 token 计数，而框架把它们丢掉了。现在 `agent.usage` 会报告 provider 计费的输入、输出、缓存和推理 token。`SwarmRouter`、`GraphWorkflow` 和 `HeavySwarm` 会把它们运行过的每个智能体的用量加总，包括不在你的智能体列表里的主管、聚合器和评审。`agent.input_tokens` 会在你发送之前告诉你*下一次*请求有多大。此前报告为零的流式运行，现在也会被计入。
+
+第二条是**隔离**。Akira 把每个结构都转换成了带类型的对话轮次。Overclock 往下又挖了一层：大多数结构只在 `__init__` 里构建一次 `Conversation`，之后从不重置，所以**在同一个实例上第二次调用 `run()`，会把上一个任务的对话记录当作上下文送出去**，而每个批处理入口复用的恰恰是同一个实例。十二个结构得到了修复，另外还有三个在多个线程间共用一个 `Agent` 的结构，以及两个按完成顺序收集结果的结构。
+
+第三条是**让失败浮出水面**。当一次 LLM 调用把所有重试都用完时，`Agent.run()` 返回的是一个空字符串或者提示词本身，没有任何错误，`fallback_models` 也从来没有被尝试过。现在它会抛出 `AgentLLMError`。失败的工具不再被算到 provider 头上、再让模型重跑一遍。`HierarchicalSwarm` 里主管彻底宕机时，不再被报告为成功。mcp 2.x 下的 MCP 工具错误，也不再被报告为成功。这些情况全都返回了一个看似合理的值，而不是一个错误。
+
+第四条是**新能力**：用于从 TypeSafe 的 Jev 和 Cloudflare 的 Clef 获得带类型、经过校准的决策的 `DecisionModel`；能把任何智能体或 swarm 作为带认证的 MCP 服务器对外提供的 `MCPDeployer`；`TreeOfThoughts`；`SwarmRouter(fallback_swarms=...)`；用 `messages` 预置对话；从多个目录加载技能；以及自主运行环境中新增的 `glob` 工具。
+
+第五条是**速度**，这也是这个版本名字的由来。工具处理从 `agent.py` 移入了新的 `ToolManager`（`agent.py` 从 4,566 行降到 3,227 行），上下文压缩器也不再在每个循环里对整段历史做分词。**一次工具轮次在短对话上大约快 5 倍，在长对话上大约快 65 倍。**
+
+这篇文章会把这些全部讲清楚。先讲新特性和改进，然后是整个版本**逐日、逐个提交**的完整记录。
+
+---
+
+## 获取更新
+
+```bash
+# pip
+pip install -U swarms
+
+# uv
+uv pip install -U swarms
+
+# uv, in a project managed by uv
+uv add swarms --upgrade
+
+# poetry
+poetry add swarms@latest
+
+# pdm
+pdm update swarms
+```
+
+如果你需要可复现的安装，就固定版本：
+
+```bash
+pip install "swarms==16.0.0"
+uv pip install "swarms==16.0.0"
+```
+
+确认你装到的版本。`swarms.__version__` 是这个版本新增的：
+
+```bash
+python -c "import swarms; print(swarms.__version__)"
+```
+
+**如果你是从 v15 升级上来的，请先阅读下方的「破坏性变更」一节。** 有三个默认值变了（`temperature`、`dynamic_tools` 和 `MCPConnection.transport`），失败的 LLM 调用现在会抛出异常而不是正常返回，而工具相关的方法从 `Agent` 移到了 `agent.tool_manager` 上。
+
+---
+
+## 新特性
+
+### Token 计量：`agent.usage`、`router.usage` 与 `agent.input_tokens`
+
+**这是 Overclock 的头号能力。** provider 在每次补全时都会返回精确的 token 计数，LiteLLM 也会把各家 provider 的计数统一成同一种形状。在这个版本之前，这些数字都被丢弃了，所以你根本没法问一个智能体一次运行花了多少。
+
+```python
+from swarms import Agent
+
+agent = Agent(agent_name="Analyst", model_name="gpt-5.4", max_loops=1)
+
+agent.input_tokens   # size of the next request: system prompt, memory, tool schemas
+agent.run("Summarise the latest FOMC statement in three bullets.")
+
+agent.usage
+# {'input_tokens': 1204, 'output_tokens': 87, 'cached_tokens': 1024,
+#  'reasoning_tokens': 0, 'total_tokens': 1291}
+```
+
+`usage` 是这个智能体发出过的每一次 LLM 调用的累计值，也包括每个循环都会发起的工具总结调用。`cached_tokens` 是输入中由 provider 的提示词缓存提供的部分，`reasoning_tokens` 是推理模型在输出中用于思考的部分。这个属性返回的是一份副本，调用方无法破坏累计总数。在一次运行前后各取一份快照，就能把这次运行的花费从这个智能体的累计总数中单独分离出来。
+
+`input_tokens` 回答的是另一个问题：这个智能体的下一次请求会有多大。它用智能体自己的 `model_name` 调用 `count_tokens` 来计数，所以分词器与模型一致。它统计系统提示词、整个 `short_memory` 以及所有工具 schema，而且不花费任何 API 调用。
+
+第一版合入之后，又补上了三个缺口（[#2190](https://github.com/kyegomez/swarms/pull/2190)）：
+
+- **流式运行报告为零。** 一个流在你不主动要求的情况下不会携带用量信息。包装器现在会发送 `stream_options={"include_usage": True}`，并记录 provider 末尾那个只含用量的数据块。
+- **推理 token 是不可见的。** 在该 PR 的示例中，一次回复的 23 个输出 token 里有 11 个是推理 token。现在它们会被单独报告。
+- **OpenAI 推理时代的模型会拒绝请求。** `o1`/`o3`/`o4` 和 `gpt-5` 系列拒收 `max_tokens`，要求使用 `max_completion_tokens`，而 `drop_params` 帮不上忙，因为 litellm 把这两个键都列为受支持。包装器现在会给每个模型发送它接受的那个键。
+
+同样的形状在上一层同样适用，适用于每一个拥有智能体的结构：
+
+```python
+from swarms import Agent, SwarmRouter
+
+agents = [
+    Agent(agent_name="Researcher", model_name="gpt-5.4-mini", max_loops=1),
+    Agent(agent_name="Writer", model_name="gpt-5.4-mini", max_loops=1),
+]
+router = SwarmRouter(agents=agents, swarm_type="HierarchicalSwarm")
+router.run("Write a one-page brief on HBM supply constraints.")
+
+router.usage   # summed over every agent the swarm ran, director included
+```
+
+`router.usage`（[#2160](https://github.com/kyegomez/swarms/pull/2160)）会把你的智能体，**以及**构建出来的 swarm 自己持有的任何智能体加起来：`HierarchicalSwarm` 的主管、`MixtureOfAgents` 的聚合器、评审。它们不在 `router.agents` 里，但它们的花费属于这次运行。智能体按对象身份去重，所以同时出现在两处的智能体只计一次。
+
+`GraphWorkflow.usage`（[#2365](https://github.com/kyegomez/swarms/pull/2365)）会在整张图（包括子图）中把智能体只收集一次，所以支撑两个节点的智能体只计一次。`HeavySwarm.usage`（[#2366](https://github.com/kyegomez/swarms/pull/2366)）还会计入问题生成阶段，这一步运行在一个裸的 `LiteLLM` 上而不是 `Agent` 上，因此此前不在任何一个 `Agent.usage` 里。可运行的演示在 `examples/single_agent/utils/agent_usage.py` 和 `examples/multi_agent/swarm_router/swarm_router_usage.py`。
+
+---
+
+### `DecisionModel`：来自 TypeSafe 和 Cloudflare 的带类型、经过校准的决策
+
+一种新的模型加入了框架。决策模型不生成文本。它针对一个状态回答带类型的问题，并给出经过校准的概率，所以你的代码既可以根据答案分支，也可以根据模型有多确定来分支。
+
+| 问题类型 | 问的是什么 | 返回 |
+|---|---|---|
+| Choice | 从一组选项中选一个 | `choice`、`probabilities`、`confidence` |
+| Score | 按有序的等级打分 | `score`、`legend`、`probabilities`、`confidence` |
+| Noul | 这个陈述是真的吗？ | `noul`，取值 0 到 1 |
+
+```python
+from swarms import DecisionModel, get_decision_models
+
+model = DecisionModel()                    # TypeSafe Jev, reads TYPESAFE_API_KEY
+clef = DecisionModel(model_name="clef")    # Cloudflare Workers AI
+
+result = model.run(
+    state={"message": "Checkout has been failing for every customer for an hour."},
+    questions={
+        "team": {
+            "type": "choice",
+            "instructions": "Which team should handle this?",
+            "criteria": {"billing": "Payments", "technical": "Outages and errors"},
+        },
+        "urgent": {"type": "noul", "instructions": "Is this urgent?"},
+    },
+)
+
+answers = result["answers"]
+if answers["team"]["confidence"] < 0.5:
+    print("Send to a human.")
+print(answers["team"]["choice"], answers["urgent"]["noul"])
+
+get_decision_models()
+# ['jev-latest', 'jev-preview', 'jev-1.13.0', 'clef', 'clef-flash']
+```
+
+所有问题都在一次请求中得到回答，所以一个路由器、一个护栏和一个打分器加起来只花一次调用。默认使用 TypeSafe 的 `jev-latest`。切换到 Cloudflare 的 Clef 只需要换一个模型名：以 `clef` 开头的名字会路由到 Workers AI，从环境变量或 `.env` 中读取 `CLOUDFLARE_ACCOUNT_ID` 和 `CLOUDFLARE_AUTH_TOKEN`，并拆掉 Workers AI 的 `result` 外层封装，所以无论用哪家，你拿到的响应形状都一样。当某个 provider 的凭据已设置时，`get_decision_models()` 会把内置的名字与该 provider 的实时模型列表合并。
+
+它提供单问题的便捷方法（`choice`、`score`、`noul`）、异步的 `arun`、遵守 `retry-after` 的带退避重试，以及两端的校验：问题在发送之前就会被校验，而且每个问题都必须拿回一个与自身类型一致的答案。其他 provider 可以通过 `base_url`、`endpoint` 和 `api_key_env` 接入，或者通过重写 `build_headers`、`build_payload` 和 `parse_response` 接入。这个客户端直接用 `httpx` 调用 HTTP API，所以没有新增依赖。
+
+`examples/decision_models/` 中附带了九个示例，包括：把决策模型作为 `HierarchicalSwarm` 的主管、一个只把候选短名单交给 LLM 智能体的 500 份简历筛选漏斗、一个为模型组合打分的校准评审、一个在不再出现新论点时就叫停的辩论裁判，以及加在 `GroupChat` 上的护栏（[#2416](https://github.com/kyegomez/swarms/pull/2416)）。
+
+---
+
+### `MCPDeployer`：把任何智能体或 swarm 作为带认证的 MCP 服务器对外提供
+
+Swarms 能消费 MCP 服务器，但很难把自己*作为*一个 MCP 服务器。`MCPDeployer` 会把一个或多个智能体、swarm 或可调用对象变成一个前面带着认证层的 MCP 服务器。
+
+```python
+from swarms import Agent, MCPDeployer
+
+agent = Agent(agent_name="Researcher", model_name="gpt-5.4", max_loops=1)
+MCPDeployer(agent, api_keys=["sk-local-dev"], port=8000).run()
+```
+
+另一个智能体可以像连接任何 MCP 服务器一样连接它：
+
+```python
+from swarms import Agent, MCPConnection
+
+client = Agent(
+    agent_name="Client",
+    model_name="gpt-5.4",
+    max_loops=1,
+    mcp_url=MCPConnection(url="http://127.0.0.1:8000/mcp", api_key="sk-local-dev"),
+)
+```
+
+第一个参数可以是一个目标、一个列表，或者一个从工具名映射到目标的字典。目标可以是一个 `Agent`、任何带 `run()` 方法的结构（`SequentialWorkflow`、`SwarmRouter`……），或者一个普通的可调用对象。每个目标都会成为一个独立的 MCP 工具，带有 `(task, img)` 形式的 schema。认证是分层的：自定义的 `auth` 可调用对象、用于 OAuth 的 `token_verifier`，或者静态的 `api_keys` / `api_key_env`，另外还有 `allow_anonymous` 和 `public_paths` 用于需要它们的场景。重复的名字和无法提供服务的条目会在构造时就报错，而不是等到第一次调用时（[#2219](https://github.com/kyegomez/swarms/pull/2219)）。
+
+`timeout=` 现在真的会让一个阻塞的目标超时了（[#2374](https://github.com/kyegomez/swarms/pull/2374)）。`anyio.to_thread.run_sync` 默认会屏蔽对等待的取消，所以截止时间到了，等待却无视了它，迟到的结果被当作成功返回。示例在 `examples/mcp/mcp_deployer/`，两份 README 也都新增了「把智能体作为 MCP 服务器对外提供」一节。
+
+---
+
+### `TreeOfThoughts`：用搜索代替一次性作答
+
+[Tree of Thoughts](https://arxiv.org/abs/2305.10601)（Yao 等，2023）的一个实现加入了 `swarms.agents`。它不是一次性给出答案，而是构建一棵由部分解组成的树，并在树上搜索。
+
+```python
+from swarms import TreeOfThoughts
+
+agent = TreeOfThoughts(
+    model_name="gpt-5.4",
+    search_algorithm="bfs",          # or "dfs", with backtracking
+    generation_strategy="propose",   # or "sample", one call per candidate
+    evaluation_strategy="value",     # or "vote", compare candidates
+    thought_description="One arithmetic operation on two remaining numbers.",
+    evaluation_criteria="Can the numbers left still reach exactly 24?",
+)
+answer = agent.run("Use 4, 9, 10 and 13, each once, with + - * / to make 24.")
+
+agent.last_result.steps   # the best path; .root is the whole tree
+agent.usage               # tokens across every call the search made
+```
+
+四个步骤循环往复：生成 `num_thoughts` 个候选的下一步；给每个候选打 0 到 1 的分，并剪掉低于 `value_threshold` 的；以宽度为 `breadth` 的束做广度优先搜索，或者带回溯地做深度优先搜索；最后从最佳路径写出最终答案。`max_expansions` 为成本设了上限。
+
+每一次模型输出都是一次按 Pydantic schema 校验的函数调用，并且内联了 `$ref`，因为在字段带有嵌套 `$ref` 的情况下，Claude Haiku 4.5 会自己发明字段名，导致每一次生成调用都校验失败。每一次调用都运行在一个全新的、无状态的 `Agent` 上，所以各次评估永远看不到彼此的上下文，而同一深度上的调用会并发执行。提示词中没有任何与具体任务相关的内容：`thought_description` 和 `evaluation_criteria` 负责让搜索适配某个领域（[#2379](https://github.com/kyegomez/swarms/pull/2379)）。
+
+---
+
+### `SwarmRouter(fallback_swarms=...)`：一种架构失败时，尝试下一种
+
+`SwarmRouter` 以前只运行一种 swarm 类型。如果它抛出异常，这次运行就结束了；一个想要「`HierarchicalSwarm` 失败后改用 `SequentialWorkflow`」的调用方，只能构建两个路由器，再手写重试逻辑。
+
+```python
+from swarms import SwarmRouter
+
+router = SwarmRouter(
+    agents=agents,
+    swarm_type="HierarchicalSwarm",
+    fallback_swarms=["SequentialWorkflow", "ConcurrentWorkflow"],  # tried in order
+)
+result = router.run(task)
+
+router.active_swarm_type   # which swarm actually served the run
+router.fallback_attempts   # [{"swarm_type": ..., "error": ...}] for each that failed
+```
+
+如果主类型在构造期间**或** `run()` 期间抛出异常，下一个类型会用同样的智能体和配置构建，并接收同样的输入。第一个成功完成的胜出。如果所有类型都失败，会抛出最后一个错误，并附上每次尝试的记录（[#2157](https://github.com/kyegomez/swarms/pull/2157)）。
+
+---
+
+### 用 `messages` 预置一段对话
+
+`Agent` 和 `Conversation` 现在都接受一个聊天格式的消息列表，既可以在构造时传入，也可以在每次调用时传入。
+
+```python
+from swarms import Agent
+
+agent = Agent(
+    agent_name="Helios-Agent",
+    model_name="gpt-5.4-mini",
+    max_loops=1,
+    messages=[
+        {"role": "user", "content": "My project is called Helios."},
+        {"role": "assistant", "content": "Noted: Helios."},
+    ],
+)
+agent.run("What is my project called?")
+
+# Or per call: the turns are recorded AND sent as the transcript this task continues.
+agent.run("Which number was larger?", messages=[
+    {"role": "user", "content": "First number: 41."},
+    {"role": "user", "content": "Second number: 57."},
+])
+```
+
+构造时传入的 `messages` 会被预置进 `short_memory`，并在每次运行时重新发送。每次调用传入的 `messages` 会保留其中工具调用的形状，而不会被压平进记忆，而 `max_loops="auto"` 路径也会用它们来预置自主循环的对话记录。同一个 PR 还修复了两个会留下多余文件的默认行为：构造 `Agent` 不再创建一个空的 `./conversations` 目录；未命名的 `Conversation` 会得到一个唯一的 `conversation-<8 位十六进制>` 名字，而不是进程里所有匿名对话共用 `conversation-test`（[#2296](https://github.com/kyegomez/swarms/pull/2296)）。
+
+---
+
+### 自主运行环境：`glob`、迭代预算，以及能真正动手的子智能体
+
+`max_loops="auto"` 新增了一个工具和三个可调参数，若干已有工具的行为也变得正常了。
+
+```python
+from swarms import Agent
+
+agent = Agent(
+    agent_name="Researcher",
+    model_name="gpt-5.4",
+    max_loops="auto",
+    max_planning_attempts=3,     # default 5
+    max_subtask_iterations=40,   # default 100: the ceiling on execution-phase LLM calls
+    max_subtask_loops=10,        # default 20
+)
+```
+
+- **迭代预算成为构造参数**（[#2230](https://github.com/kyegomez/swarms/pull/2230)）。它们原本是直接在循环里读取的模块常量。`max_subtask_iterations` 是限定一次运行成本的那个数字，因为执行阶段的每一次调用都会重新发送对话记录，而它此前无法按智能体单独设置。三个参数都不设置的智能体，行为与以前完全一致。
+- **`glob(pattern, path="")`**（[#2179](https://github.com/kyegomez/swarms/pull/2179)）按模式在工作区下查找文件，最新的排在最前。在它之前，模型只能搜索文件内容、列出单个目录，而它的变通办法都很糟糕：`run_bash("find ...")` 是相对于进程工作目录而不是工作区解析的，`list_directory` 则每一层目录都要来回一次。
+- **子智能体可以真正动手了**（[#2138](https://github.com/kyegomez/swarms/pull/2138)）。`create_sub_agent` 以前创建的子智能体没有工具、`max_loops=1`，所以委派只是一次无状态的 LLM 调用，能力严格低于父智能体直接去问。现在它们会拿到父智能体的工具，以及一个有限的循环预算，有限是为了让一个自主的父智能体无法递归地生出自主的子智能体。
+- **工具输出按 token 而不是字符截断**（[#2140](https://github.com/kyegomez/swarms/pull/2140)、[#2150](https://github.com/kyegomez/swarms/pull/2150)）。`read_file` 和 `run_bash` 以前返回完整的输出：一个 2 MB 的日志就是一个 2 MB 的工具结果，并在这次运行剩下的每一次调用中被重新发送。三个会产生输出的工具现在都会截断在智能体上下文窗口的四分之一，用智能体自己的分词器计量，并告诉模型截掉了什么。
+- **上下文压缩在 auto 模式下生效了**（[#2110](https://github.com/kyegomez/swarms/pull/2110)）。`context_compression=True` 恰恰在每次迭代都重新发送整段历史的那个模式下是失效的。它现在会在子任务迭代之间运行，也就是每一个工具调用都已拿到结果的那个时间点，并且压缩的是循环真正发送的对话记录，而不是它在 `short_memory` 里的镜像。
+- **超长的 bash 写文件命令会被引导到 `create_file`**（[#2259](https://github.com/kyegomez/swarms/pull/2259)）。在一次真实的 HeavySwarm 运行中，工作智能体花了将近十分钟反复尝试用 heredoc 写文件，被 512 字符的限制拒绝时没有任何提示，于是每次都把文件写得更小一点。
+
+---
+
+### 从多个目录加载技能，以及真正送达模型的技能
+
+```python
+from swarms import Agent
+
+agent = Agent(
+    agent_name="Analyst",
+    model_name="gpt-5.4",
+    skills_dir=["./team_skills", "./my_skills"],   # one path or a list
+)
+```
+
+`skills_dir` 接受一个列表，按顺序读取（[#2395](https://github.com/kyegomez/swarms/pull/2395)）。以前传入列表会在第一次加载时抛出 `TypeError`，所以团队、个人和任务的技能必须先复制到同一个文件夹里。
+
+更重要的是，**技能现在终于能送达模型了**（[#2396](https://github.com/kyegomez/swarms/pull/2396)）。`handle_skills` 会在 `run()` 期间把选中的技能追加到 `agent.system_prompt` 上，但在那个时候 LLM 客户端早已把系统提示词复制进了它自己的消息列表，而对话记录的构建又会跳过系统行。请求发出去时不带技能，而每次运行又会在 `system_prompt` 上再追加一份。现在选中的技能会随每一次 LLM 调用一起发送，`system_prompt` 保持不变。
+
+---
+
+### `check_models`，以及各自独立成模块的三种通信模式
+
+`swarms/structs/check_models.py` 列出 litellm 已知的每一个模型名，再加上 OpenRouter 的实时目录，并做去重（[#2217](https://github.com/kyegomez/swarms/pull/2217)）：
+
+```python
+from swarms import get_available_models, is_model_available, model_count
+
+report = get_available_models(exclude_keywords=["preview"])
+report["count"], report["models"][:3]
+is_model_available("gpt-5.4")
+```
+
+对 OpenRouter 的拉取会缓存五分钟，拉取失败时会记录一条警告并返回 litellm 的列表，而不是抛出异常。该 PR 的实时检查找到了 2,392 个模型，其中 441 个来自 OpenRouter。
+
+`various_alt_swarms.py` 里装着三个毫不相干、也没有任何地方导出的类，还重复了 `swarming_architectures.py` 中的两个函数。现在它被拆成了每种模式一个模块，每个模块里是一个函数和包在它外面的一个类（[#2216](https://github.com/kyegomez/swarms/pull/2216)）：
+
+```python
+from swarms import one_to_one, OneToThree, broadcast
+
+one_to_one(sender=analyst, receiver=reviewer, task="Draft and review the memo.", max_loops=2)
+OneToThree(sender=lead, receivers=[a, b, c]).run("Split this research plan.")
+# broadcast(sender, agents, task) is async; Broadcast(...).run() is the sync form
+```
+
+---
+
+### 一些较小的新增
+
+- **`swarms.__version__`**（[#2129](https://github.com/kyegomez/swarms/pull/2129)），从已安装包的元数据读取，而不是手工维护一个字面量，并且在第一次访问时才解析。此前 Docker 冒烟测试会在完好的安装上报告失败，因为这个属性根本不存在。
+- **又有五个结构有了 OpenTelemetry span**：`SelfMoASeq`、`ModelRouter`、`SocialAlgorithms`、`AutoSwarmBuilder` 和 `SpreadSheetSwarm`（[#2233](https://github.com/kyegomez/swarms/pull/2233)–[#2238](https://github.com/kyegomez/swarms/pull/2238)）。`ModelRouter` 也不再把追踪链路弄断：它的普通线程池没有把追踪上下文带进工作线程。另外 `SequentialWorkflow.run` 又会发出 span 了，此前一个装饰器包错了方法（[#2244](https://github.com/kyegomez/swarms/pull/2244)）。
+- **一份简体中文 README**（[#2218](https://github.com/kyegomez/swarms/pull/2218)），其中每一个代码块都与英文版逐字节一致。
+- **AgentSH**（[#2354](https://github.com/kyegomez/swarms/pull/2354)），一个单文件实现的、没有编排者的自组织多智能体运行环境：工作智能体通过一个类 Git 的共享工作区、一个消息通道和共享上下文来协作。
+- **通过 Swarms API 使用 GPT-6 Astra**，单智能体和 `MixtureOfAgents` 两个示例，只需要 `requests` 和一个 `SWARMS_API_KEY`（[#2199](https://github.com/kyegomez/swarms/pull/2199)）。
+- **WARP git 消息格式**（`[TYPE][Function/FileName][Short Description]`）现在是提交、PR 标题和 issue 的必需格式，写进了 `CONTRIBUTING.md`、`CLAUDE.md` 和两份 README（[#2221](https://github.com/kyegomez/swarms/pull/2221)）。
+
+---
+
+## 改进
+
+### 每次运行都从干净状态开始
+
+大多数多智能体结构都只在 `__init__` 里构建一次 `Conversation`，之后从不重置。在同一个实例上第二次调用 `run()`，会把上一个任务的对话记录当作上下文送出去，而每个批处理入口都只是在同一个实例上循环调用 `self.run`。所以 `batched_run(["task A", "task B"])` 在回答任务 B 时带着任务 A 的上下文，并在 B 的结果里返回了 A 的轮次。
+
+没有任何报错。每个任务都被计费、也都运行了。**交还给调用方的东西是错的，而智能体被一个毫不相干的任务左右了。**
+
+| 结构 | 泄漏了什么 | PR |
+|---|---|---|
+| `AdvisorSwarm`、`LLMCouncil`、`RoundRobinSwarm`、`DebateWithJudge`、`AuctionSwarm` 以及另外四个 | 每次顺序复用时，上一个任务的对话 | [#2176](https://github.com/kyegomez/swarms/pull/2176) |
+| `HierarchicalSwarm` | 批处理中的每个任务共用一个对话**和**一个投递游标 | [#2177](https://github.com/kyegomez/swarms/pull/2177) |
+| `ConcurrentWorkflow.batch_run` | 第 N 个结果里带着第 1 到 N−1 个任务 | [#2147](https://github.com/kyegomez/swarms/pull/2147) |
+| `ConcurrentWorkflow.run` | 第二次运行同时返回两个任务；在 `output_type="dict"` 下两次结果是同一个活的列表，所以第一个调用方拿到的结果会在事后继续变长 | [#2332](https://github.com/kyegomez/swarms/pull/2332) |
+| `GroupChat` | 每个智能体对任务 B 的发言意愿都受到了任务 A 的影响 | [#2309](https://github.com/kyegomez/swarms/pull/2309) |
+| `ReasoningDuo` | 两个智能体在回答当前任务时，同时被问着上一个任务 | [#2311](https://github.com/kyegomez/swarms/pull/2311) |
+| `SequentialWorkflow.run_concurrent` | N 个线程重置并写入同一个共享的 `AgentRearrange` 对话记录 | [#2227](https://github.com/kyegomez/swarms/pull/2227) |
+| `MajorityVoting.run_concurrently` | 共识智能体拿到的是另一个任务的投票 | [#2229](https://github.com/kyegomez/swarms/pull/2229) |
+
+并发的情况会让每个任务运行在一个浅拷贝上，这样 `run` 自己的重置就会给每个任务一份独立的 `Conversation`。之所以不做深拷贝，是因为 `copy.deepcopy(Agent)` 会抛出异常。
+
+另外还有两个结构破坏了它们的方法所依赖的独立性：
+
+- **`SelfConsistencyAgent`**（[#2320](https://github.com/kyegomez/swarms/pull/2320)）只构建了一个推理 `Agent`，然后把它提交了 `num_samples` 次，所以第 3 个样本的提示词里带着第 1 和第 2 个样本的答案。**自洽性是对相互独立的多次抽样取多数，而这里根本没有独立的抽样可供投票。** 现在每个样本都有自己的智能体。
+- **`Agent.run(n=...)`**（[#2327](https://github.com/kyegomez/swarms/pull/2327)）在重新进入 `run()` 时只传了任务本身，所以在 `n=2` 时，一次视觉调用描述的是一张模型根本没收到的图片。
+
+---
+
+### 失败会浮出水面，而不是返回一个看似合理的值
+
+| 缺陷 | 之前 | 之后 | PR |
+|---|---|---|---|
+| LLM 调用用完了所有重试 | `run()` 返回 `""` 或提示词；`fallback_models` 从未被尝试 | 抛出 `AgentLLMError`；先依次尝试每个回退模型；记忆会回滚，任务不会被重复 | [#2418](https://github.com/kyegomez/swarms/pull/2418) |
+| 一个工具用完了它的重试 | 被生成阶段的处理器捕获，记成 LLM 错误，并让**模型**重跑 `retry_attempts` 次 | 记录为一个模型能读到、能绕开的工具错误 | [#2148](https://github.com/kyegomez/swarms/pull/2148) |
+| 一批失败的工具调用 | 在 `execute_tools` 内部重试，*外层*又重试一遍：默认跑 6 次，连已经成功的工具也重跑 | 每次 `tool_retry_attempts` 尝试只跑一批。对有副作用的工具很重要 | [#2351](https://github.com/kyegomez/swarms/pull/2351) |
+| 一个带工具的智能体用纯文本作答 | 记录一条 `"[] (empty list)"`，并再发一次 LLM 调用去总结它；`output_type="final"` 返回的是这个总结 | 什么都不记录；答案仍是最后一条消息 | [#2361](https://github.com/kyegomez/swarms/pull/2361) |
+| `HierarchicalSwarm` 的主管在每个循环都宕机 | `step()` 吞掉了错误，所以 `run()` 返回一份对话记录，以及若干条为什么也没运行的循环写下的「已完成」标记 | 错误会传到 `run()` | [#1886](https://github.com/kyegomez/swarms/pull/1886) |
+| mcp 2.x 下 MCP 工具失败 | `getattr(result, "isError", False)` 总是返回默认值：**每一次失败的 MCP 调用都被报告为成功** | 读取 `is_error`；`structured_content` 和 OAuth `timeout` 的改名也一并修复 | [#2128](https://github.com/kyegomez/swarms/pull/2128) |
+| `CronJob` 任务失败 | 在下一个一秒的节拍就重跑：一个每小时的任务一小时调用约 3,600 次，错误预算几秒钟就耗尽 | 等到下一个间隔；空闲的节拍不再重置错误计数 | [#2376](https://github.com/kyegomez/swarms/pull/2376) |
+| `ModelRouter` | **每个**任务都抛出 `AttributeError`：直接从一个 JSON 字符串上读字段 | 先解析成 `ModelOutput` | [#2378](https://github.com/kyegomez/swarms/pull/2378) |
+| `batch_agent_execution` | 每次调用都抛异常，结果还不按智能体顺序返回 | 可以正常工作，且按顺序返回 | [#2123](https://github.com/kyegomez/swarms/pull/2123) |
+
+---
+
+### 带类型的对话轮次覆盖了最后几个钉子户
+
+Akira 把十六个结构转换成了带类型的对话轮次。Overclock 完成了剩下的清单，所以现在每个聚合器、评审和综合智能体看到的都是「谁说了什么」的独立轮次，而不是压平成一整段的字符串：
+
+- **`MixtureOfAgents`** 会给每一份贡献标上它所在的层，例如 `Analyst (layer 2/3)`。在默认的三层、三个工作智能体下，聚合器此前收到的是九份贡献，每个名字三份，彼此无法区分（[#2124](https://github.com/kyegomez/swarms/pull/2124)）。
+- **`PlannerWorkerSwarm` 的周期评审**在第二个周期会把自己上一次的裁决当作匿名文本读到（[#2181](https://github.com/kyegomez/swarms/pull/2181)）。
+- **`AdvisorSwarm`**（[#2188](https://github.com/kyegomez/swarms/pull/2188)）、**`HeavySwarm` 的综合智能体**，它此前收到的是被压进一条消息的十五位专家（[#2189](https://github.com/kyegomez/swarms/pull/2189)）、**`aggregate()`**（[#2182](https://github.com/kyegomez/swarms/pull/2182)），以及 **`CouncilAsAJudge` 的聚合器**（[#2275](https://github.com/kyegomez/swarms/pull/2275)）。
+
+另外有三个结构不再把一个智能体的整段对话记录当作它的答案记录下来，这正是 Akira 在别处修复过的那个超线性增长的缺陷。在 `RoundRobinSwarm` 上，该 PR 测得两个智能体跑两轮时，记录的轮次长度依次为 335 → 641 → 1,634 → 3,612 个字符（[#2325](https://github.com/kyegomez/swarms/pull/2325)）。`ConcurrentWorkflow`（[#2334](https://github.com/kyegomez/swarms/pull/2334)）和 `aggregate()` 也以同样的方式修复。
+
+---
+
+### 结果按你提交的顺序返回
+
+`ConcurrentWorkflow` 有两条执行路径，它们对顺序的处理并不一致：仪表盘路径按位置把结果对回智能体，而 `_run` 用的是 `as_completed`。**一个显示用的开关改变了你拿到的数据。** 三个智能体分别打桩为 0.30 秒、0.20 秒和 0.05 秒时，`show_dashboard=False` 返回的顺序恰好完全相反（[#2318](https://github.com/kyegomez/swarms/pull/2318)）。`Conversation.add_multiple` 也有同样的按完成顺序的问题，而且在任何少于四个 CPU 的机器上都会直接崩溃，因为 `int(os.cpu_count() * 0.25)` 在一到三个核心上等于 0（[#2210](https://github.com/kyegomez/swarms/pull/2210)）。
+
+---
+
+### `Conversation` 保留该保留的，其余一概不留
+
+- **`dict-all-except-first` 丢掉了一个智能体的答案**（[#1884](https://github.com/kyegomez/swarms/pull/1884)）。它切的是 `[2:]`，假设每段历史都以 `[System, User]` 开头。swarm 的对话没有系统行，所以在 `ConcurrentWorkflow` 上（这是它的默认输出类型），进去三个智能体，出来两个答案。字符串版本也有同样的差一错误（[#2133](https://github.com/kyegomez/swarms/pull/2133)）。
+- **恢复的对话每重启一次就多一份系统提示词**（[#2382](https://github.com/kyegomez/swarms/pull/2382)），而在 `autosave=True` 下，每份多出来的副本都会被立刻写回磁盘。
+- **不再有 `~/.swarms/conversations`**（[#2371](https://github.com/kyegomez/swarms/pull/2371)）。每次构造都会创建它，却从来没有任何东西往里写，而在只读的 `$HOME` 下，`Agent()` 会直接报错。保存位置仍然是 `./conversations/`。
+
+---
+
+### 提示词知道现在几点了
+
+`AGENT_SYSTEM_PROMPT_3`（每个 `Agent` 的默认系统提示词）和自主循环的提示词都是模块级的 f-string，所以 `get_time()` 只在导入时运行一次。**一个长时间运行的进程里，每个智能体被告知的都是进程启动时的时间**（[#2134](https://github.com/kyegomez/swarms/pull/2134)、[#2242](https://github.com/kyegomez/swarms/pull/2242)）。默认提示词还被冻结了两次，因为它同时被用作参数默认值。现在两者都在构建智能体时生成。
+
+---
+
+### `HeavySwarm` 的每个变体都能用了
+
+在真实测试图片支持时，暴露出了三个缺陷（[#2149](https://github.com/kyegomez/swarms/pull/2149)、[#2258](https://github.com/kyegomez/swarms/pull/2258)）：
+
+- **`variant="default"`（构造函数的默认值）会崩溃**，在问题生成阶段抛出 `UnboundLocalError`。
+- **`variant="medium"` 交给工作智能体的是空问题**，因为拆解器输出的是一组键，而工作智能体读取的是另一组。
+- **问题拆解器看不到图片**，所以每个工作智能体回答的，都是由一个在猜图片内容的东西写出来的问题。Akira 把图片送到了工作智能体手里；Overclock 把它送到了决定问它们什么问题的那一步。
+
+---
+
+### 流式与交互模式
+
+- **流式运行的 `max_loops="auto"` 智能体跳过了规划**（[#2339](https://github.com/kyegomez/swarms/pull/2339)），在没有自主工具、也没有整数上限的情况下一直调用模型，直到出现停止标记为止。`run_stream` 现在会经由 `run()` 路由。
+- **`interactive=True` 从未发送追问**（[#2336](https://github.com/kyegomez/swarms/pull/2336)）。追问进入了 `short_memory` 和保存的历史，看起来像是发出去了，而模型却在重新回答上一轮对话。
+- **`SwarmRouter(task)` 和 `router.batch_run()` 会抛异常**，除了一种之外的每一种 swarm 类型都会，因为它们总是转发 `imgs=None`（[#2340](https://github.com/kyegomez/swarms/pull/2340)）。
+
+---
+
+### 性能
+
+- **一次工具轮次：短对话上约 770 µs → 约 162 µs，300 条消息时 18.2 ms → 0.28 ms。** 每个循环都会重建历史字符串，并对它完整地分词两次，这大约占一次工具轮次的 78%，并且随对话增长而增长。一个 token 永远不会短于一个字节，所以 UTF-8 大小低于阈值的历史，以 token 计也不可能超过阈值；`should_compress` 现在会先做这个检查，只有在接近上限时才去数 token（[#2425](https://github.com/kyegomez/swarms/pull/2425)）。
+- **`agent.py`：4,566 → 3,227 行。** 工具执行、重试、解析、MCP、交接和动态工具都移入了 `ToolManager`，它在每个智能体上构建一次，与 `LLMManager` 并列。`_run` 中那段 140 行的工具分发代码，现在只是一次调用。
+- **更少的重复发送上下文。** 按 token 截断工具输出、在 auto 模式下运行压缩，两者都削减了后续每次调用都要重新发送的历史。
+
+---
+
+### 接口面收缩
+
+移除的内容包括：artifact API（559 行）、`xml` 输出类型及其有缺陷的 `xml_utils.py`（它会把每个嵌套字典用它的标签包两次）、`swarm_autosave.py`（379 行，其中的名称清洗函数已经与 `WorkspaceManager` 的那份分道扬镳）、`various_alt_swarms.py`、一个未使用的 schema，以及四个没有任何引用的函数。`swarms/` 下的每一个多行注释块，共 40 个文件中的 118 个，都被压缩成了一行（[#2180](https://github.com/kyegomez/swarms/pull/2180)）。完整清单见下方的「破坏性变更」一节。
+
+---
+
+## 破坏性变更（Breaking Changes）
+
+升级之前请先阅读本节。
+
+| 移除或迁移的内容 | 说明 |
+|---|---|
+| `Agent` 上的工具方法 | 迁移到了 `agent.tool_manager`（[#2425](https://github.com/kyegomez/swarms/pull/2425)）：`execute_tools`、`tool_execution_retry`、`parse_llm_output`、`add_mcp_tools_to_memory`、`mcp_tool_handling`、`handoff_task_tool`、`get_agent_registry`、动态工具相关的辅助方法以及函数调用的显示。部分私有名称去掉了下划线（`_handoff_task_tool` → `handoff_task_tool`，`_tool_search_tool` → `tool_search_tool`）。`add_tool`、`add_tools`、`remove_tool`、`remove_tools` 和 `mcp_enabled` 仍然留在 `Agent` 上。 |
+| `Agent.parse_done_token`、`Agent.get_all_selected_tools` | 已移除。请直接调用 `get_autonomous_loop_tool_names()`。 |
+| `from swarms import Artifact` 与 `swarms.artifacts` | 已移除（[#2132](https://github.com/kyegomez/swarms/pull/2132)）。完整的智能体异常体系改为从 `swarms.structs.agent` 重新导出。 |
+| `output_type="xml"`、`swarms/utils/xml_utils.py` | 已移除（[#2356](https://github.com/kyegomez/swarms/pull/2356)）。请使用 `"json"` 或 `"yaml"`。 |
+| `LLMCouncil.run(query=...)` | 这个别名没有了；签名是 `run(task)`（[#2355](https://github.com/kyegomez/swarms/pull/2355)）。提示词构建函数移到了 `swarms/prompts/llm_council_prompts.py`，并被重新导入，所以旧的导入方式仍然可用。 |
+| `AUTONOMOUS_AGENT_SYSTEM_PROMPT` | 现在是一个函数 `autonomous_agent_system_prompt()`，这样它的时间行才是当前时间（[#2242](https://github.com/kyegomez/swarms/pull/2242)）。 |
+| `swarms/utils/swarm_autosave.py` | 已删除（[#2394](https://github.com/kyegomez/swarms/pull/2394)）。请使用 `WorkspaceManager`。 |
+| `swarms/structs/various_alt_swarms.py` | 拆分为 `one_to_one.py`、`broadcast.py` 和 `one_to_three.py`（[#2216](https://github.com/kyegomez/swarms/pull/2216)）。没有任何地方导出过它。 |
+| `HierarchicalOrderRearrange` | 未使用的 schema，已从 `hs_schemas.py` 中移除（[#2368](https://github.com/kyegomez/swarms/pull/2368)）。未导出。 |
+| `query_ragent`、`find_multiple_agents_by_name`、`track_history`、`coordinate_workflow` | 没有任何调用点，已移除（[#2264](https://github.com/kyegomez/swarms/pull/2264)）。 |
+
+**默认值和行为的变化：**
+
+| 变化 | 你需要做什么 |
+|---|---|
+| **失败的 LLM 调用会抛出 `AgentLLMError`**，发生在重试和回退模型都用完之后（[#2418](https://github.com/kyegomez/swarms/pull/2418)） | 原本把失败的运行当作正常返回来处理的代码，现在会收到一个异常。请捕获 `AgentLLMError`，或者设置 `fallback_models`。 |
+| **`temperature` 默认为 `None`**（原为 `0.5`），在 `Agent` 和 `LiteLLM` 上都是如此，并且只在设置时才发送（[#2393](https://github.com/kyegomez/swarms/pull/2393)） | 当前的 Claude 模型会以 HTTP 400 拒绝一个默认配置智能体的第一次调用。如果你依赖 0.5，请显式设置；否则你会得到 provider 的默认值，通常是 1.0。 |
+| **`dynamic_tools` 默认为 `False`**（在 v15 中为 `True`） | 传入 `dynamic_tools=True`，即可继续把工具 schema 放在 `tool_search` 背后。 |
+| **`MCPConnection.transport` 默认为 `"auto"`**（原为 `"streamable_http"`）（[#2419](https://github.com/kyegomez/swarms/pull/2419)） | `/sse` URL 现在会像文档说的那样通过 SSE 连接。显式指定的 transport 仍然优先。 |
+| **技能能送达模型了**（[#2396](https://github.com/kyegomez/swarms/pull/2396)） | 设置了 `skills_dir` 的智能体现在真的会发送它们的技能，这可能改变输出和成本。`system_prompt` 不再被修改。 |
+| **在未设置 `judge_agent_model_name` 时，`CouncilAsAJudge` 的评审运行在 `model_name` 上**，并且 `random_model_name` 默认为 `False`（[#2353](https://github.com/kyegomez/swarms/pull/2353)） | 评审此前一直悄悄地运行在 `gpt-5.4` 上，无论你配置的是什么，都向 OpenAI 计费。 |
+| **`aggregate()` 默认使用 `claude-sonnet-5`**（[#2297](https://github.com/kyegomez/swarms/pull/2297)） | 原来的默认值 `claude-3-sonnet-20240229` 已经退役，所以每一次没有显式指定模型的调用都会失败。 |
+| **各个结构会在每次运行时重置自己的对话**，并发路径会为每个任务克隆实例 | 如果你依赖运行之间的延续，请自己持有那个 `Conversation`。 |
+
+---
+
+# 完整更新日志，逐日记录
+
+每一个提交，按顺序排列。
+
+---
+
+## 9 月 1 日，星期二
+
+**`dd5e30d`** · [#2124](https://github.com/kyegomez/swarms/pull/2124) · **fix(mixture-of-agents)：给每一份贡献标上所在的层**
+
+`MixtureOfAgents` 会把同一组工作智能体运行 `layers` 轮，然后让聚合器做综合。每一份贡献只以工作智能体的名字记录，所以在默认的 `layers=3` 和三个工作智能体下，**聚合器收到的是九份贡献，每个名字三份，彼此无法区分**。第一轮的初稿和后面的改进读起来一模一样。现在当轮数多于一轮时，发言者标签会带上轮次，例如 `Analyst (layer 2/3)`。`layers=1` 不受影响，工作智能体的内容逐字节不变。该 PR 还记录了两种看起来对、实际不管用的做法，其中包括一条 `System` 标记行，它根本到不了聚合器那里。
+
+---
+
+## 9 月 2 日，星期三
+
+**`efe1b3b`** · [#2108](https://github.com/kyegomez/swarms/pull/2108) · **build(deps)：更新 mcp 依赖要求** — Dependabot 放宽了 `mcp` 的版本限制，允许 2.x 系列。
+
+**`95cd129`** · [#2110](https://github.com/kyegomez/swarms/pull/2110) · **fix(autonomous-loop)：在子任务迭代之间运行 ContextCompressor**
+
+`max_loops="auto"` 会直接分派到自主循环，而它从不进入那个唯一调用了 `maybe_compress` 的 `_run()` 循环。所以 `context_compression=True` **恰恰在每次迭代都重新发送整段历史的那个模式下是失效的**，长时间的自主运行会因为上下文长度错误而失败，而不是被压缩（issue #1962，标记为 P0）。issue 中建议的单行修复并不管用：压缩器度量的是 `short_memory`，而循环发送的是它的 `Transcript`，`short_memory` 只是后者的镜像。现在压缩会在每次子任务迭代开始时运行，也就是每一个工具调用都已拿到结果的那个时间点，并把对话记录重建为一个摘要块加上重新下发的子任务提示词。
+
+**`9f37b18`** · [#2111](https://github.com/kyegomez/swarms/pull/2111) · **test(groupchat)：用离线 pytest 覆盖替换无法被收集的测试套件**
+
+`test_groupchat.py` 中的每个测试都需要一个名为 `report` 的 fixture，而它在任何地方都不存在，所以**五个测试全都在收集阶段报错**，`GroupChat` 发布时没有任何能用的测试覆盖。即便能被收集，它们也需要实时调用 `gpt-4`。重写后的测试用脚本化的智能体驱动真实的调度循环：没有模型、没有密钥、没有网络。
+
+**`399b743`** · [#2128](https://github.com/kyegomez/swarms/pull/2128) · **fix(mcp)：恢复与 mcp 2.x 的兼容**
+
+2.x SDK 重命名了一些属性，而 `mcp_manager.py` 中有三处仍在用 1.x 的名字读取，其中两处使用了带默认值的 `getattr`，所以是静默失败的。`CallToolResult.isError` 变成了 `is_error`，这意味着**每一次失败的 MCP 工具调用都被当作成功报告给了智能体**。`structuredContent` 以同样的方式变成了 `structured_content`。第三处 `OAuthClientProvider(timeout=...)` 会大声地抛出 `TypeError`，现在由已有的 `MCP_IS_V2` 标志控制。
+
+**`7a6eeeb`** · [#2129](https://github.com/kyegomez/swarms/pull/2129) · **feat(package)：暴露 swarms.__version__**
+
+`swarms.__version__` 会抛出 `AttributeError`，而 Docker 冒烟测试读取了它两次，所以在每一个完好的安装上都报告失败。版本号通过 `importlib.metadata` 从已安装的元数据读取，因此不会与 `pyproject.toml` 产生偏差，并且在第一次访问时才解析，因为扫描 dist-info 大约要花 0.44 毫秒（该 PR 实测）。
+
+**`6d5bc5a`** · [#2132](https://github.com/kyegomez/swarms/pull/2132) · **refactor：移除 artifact API 并暴露错误类型** — 删除了未被使用的 `swarms/artifacts` 包、它的根导出以及它的测试（559 行），并从 `swarms.structs.agent` 重新导出完整的智能体异常体系，保持对象身份不变。
+
+**`8db8662`** · [#2133](https://github.com/kyegomez/swarms/pull/2133) · **fix(conversation)：return_all_except_first_string 丢掉的是两条消息，而不是一条**
+
+字符串版本切的是 `[2:]`，而列表版本切的是 `[1:]`，尽管两者都承诺「除第一条之外的所有消息」。两者是并列的输出类型（`str-all-except-first` 和 `dict-all-except-first`），所以在两者之间选择，悄悄改变的是内容，而不只是格式。`SwarmRouter` 使用的是字符串版本，所以它的运行返回的对话记录里少了第一个智能体的贡献。
+
+**`afc38cc`** · [#2134](https://github.com/kyegomez/swarms/pull/2134) · **fix(prompts)：每次调用时渲染 AGENT_SYSTEM_PROMPT_3 的时间行**
+
+每个 `Agent` 的默认系统提示词是一个模块级的 f-string，所以它的时间戳在导入时就固定了。它被冻结了两次：常量在导入时构建，而 `Agent.__init__` 又把它用作参数默认值，Python 同样只会计算一次。现在默认值是 `None`，在 `__init__` 中通过新增的 `build_agent_system_prompt()` 解析。
+
+**`6fee42f`** · **refactor：移除 artifact API 并暴露错误类型** — 对上面那个 PR 在 `agent.py` 中的两行补充。
+
+**`f57053c`** · **fix：修复若干小的兼容性问题** — 对 `agent.py`、litellm 包装器和根目录示例做了小幅调整。
+
+---
+
+## 9 月 3 日，星期四
+
+**`eeb54f4`** · [#2141](https://github.com/kyegomez/swarms/pull/2141) · **fix(groupchat)：降低发言决策中的沉默偏好**
+
+聊天室在一条消息之后就结束了。决策提示词一开头就写着「默认是沉默，大多数消息都不值得你回复」，要求智能体在分数低于 0.5 时返回空消息，并把第一轮之后的任何回复都描述成凑热闹。由于 `_select_speaker` 会丢弃空回复，任何低于 0.5 的用户 `threshold` 都无法生效（issue #2060 报告 `threshold=0.15` 毫无作用）。现在提示词使用连续的 0 到 1 打分档位，并且总是返回一条消息，把决定权交给阈值。
+
+**`e701af2`** · **test(structs)：让 AgentRearrange 测试与列表存储保持一致** — #2139 背后的直接提交。
+
+**`da1e5b6`** · [#2139](https://github.com/kyegomez/swarms/pull/2139) · **test(structs)：让 AgentRearrange 测试与列表存储保持一致** — 测试改为从基于列表的集合中断言智能体名称，并通过公开的 `remove_agent` 移除智能体。
+
+**`6d9e61d`** · [#2142](https://github.com/kyegomez/swarms/pull/2142) · **docs(prompts)：扩充 groupchat 的决策指引** — 为参与决策的提示词提供了更完整的评估框架和校准过的打分指引，保留 `respond(score, message)` 这一约定。
+
+**`0854b49`** · [#2143](https://github.com/kyegomez/swarms/pull/2143) · **style：按 black 的要求格式化 test_agent_rearrange 中的生成器表达式** — `lint` 在 `master` 本身上就是失败的。它是唯一一个能把真正的破坏与背景噪声区分开来的检查，而只要它在 master 上是红的，每一个打开的 PR 上也都是红的。
+
+**`96eb15f`** · [#2144](https://github.com/kyegomez/swarms/pull/2144) · **test(agent-rearrange)：打桩该模块真正使用的执行器**
+
+有三个测试打桩的是 `agent_rearrange.ThreadPoolExecutor`，而自从 #2078 切换到 `ContextThreadPoolExecutor` 之后，这个模块就不再绑定这个名字了，所以 `mock.patch` 在测试主体运行之前就失败了。从那以后它们在 `master` 上一直失败，而**它们要保护的那个保证，也就是有上限的批处理并发，一直没有任何能用的覆盖**。
+
+**`60e192b`** · [#2140](https://github.com/kyegomez/swarms/pull/2140) · **fix(autonomous-loop)：截断 read_file 和 run_bash 的输出**
+
+`grep` 会把输出截断在 64 KB；`read_file` 返回整个文件，`run_bash` 返回完整的 stdout 和 stderr。循环每次迭代都会重新发送历史，所以一个超大的结果会在剩下的每一次调用中都被付费一次，**一次倒霉的读取就能终结整次运行**，而模型收不到任何「有内容被截掉」的信号。这个截断现在被提升为一个共享的 `truncate_tool_output`，三个工具都使用它。
+
+---
+
+## 9 月 4 日，星期五
+
+**`072e6d5`** · [#2151](https://github.com/kyegomez/swarms/pull/2151) · **docs(skill)：更正 SKILL.md 中 reasoning_effort 的默认值** — 面向智能体的参考文档写的是 `"medium"`；`Agent` 的默认值其实是 `None`。
+
+**`2128735`** · [#2150](https://github.com/kyegomez/swarms/pull/2150) · **fix(autonomous-loop)：按 token 预算而不是字符数截断工具输出**
+
+65,536 个字符的上限与模型能容纳多少毫无关系：16k 窗口和 128k 窗口截的是同一刀。字符也不是 token 的好替代品，因为两者的比例在普通文本、压缩过的 JSON、base64 和非拉丁文字之间波动很大。现在预算是智能体上下文窗口的 `TOOL_OUTPUT_CONTEXT_SHARE = 0.25`，用智能体自己的模型调用 `count_tokens` 来计量；在不知道窗口大小时为 4,096 个 token。
+
+**`4b18dd3`** · [#2157](https://github.com/kyegomez/swarms/pull/2157) · **feat(swarm-router)：fallback_swarms 在一种 swarm 类型失败时尝试下一种**
+
+一个有序的 swarm 类型列表，在主类型于构造或 `run()` 期间失败时依次尝试。每个回退类型都用同样的智能体和配置构建，并接收同样的输入。`router.active_swarm_type` 报告实际完成这次运行的是哪一种，`router.fallback_attempts` 记录每一次失败。详见上文「新特性」。
+
+**`e00781a`** · [#2158](https://github.com/kyegomez/swarms/pull/2158) · **feat(agent)：agent.usage 报告 provider 的 token 计数**
+
+`LiteLLM` 在每次补全后通过新增的 `usage_from_response()` 记录 `response.usage`，一个钩子把它转交给所属的 `Agent`，而 `agent.usage` 返回累计总数的一份副本：输入、输出、缓存和总 token。此前 provider 的计数在每次调用时都被丢弃了。
+
+---
+
+## 9 月 5 日，星期六
+
+**`5353d03`** · [#2160](https://github.com/kyegomez/swarms/pull/2160) · **feat(swarm-router)：router.usage 对 swarm 中各智能体的 token 用量求和**
+
+对配置的智能体，以及构建出来的 swarm 自己持有的任何智能体（主管、聚合器、评审）的 `Agent.usage` 求和。后者通过在每个缓存的 swarm 的属性上向下遍历一层来找到，并按对象身份去重。大约 30 行。
+
+**`c3521f3`** · [#2161](https://github.com/kyegomez/swarms/pull/2161) · **docs(examples)：agent.usage 和 router.usage 的演示** — 为 `agent.usage` 提供单次调用、带工具的三轮循环以及前后快照的演示，为 `router.usage` 提供 `SequentialWorkflow` 和 `HierarchicalSwarm` 的演示，在后者中，路由器总数与各工作智能体之和的差值，就是主管的花费。
+
+**`2501af6`** · [#2179](https://github.com/kyegomez/swarms/pull/2179) · **feat(autonomous-loop)：新增按模式查找文件的 glob 工具**
+
+`glob(pattern, path="")` 在工作区下递归匹配，最新的排在最前，返回相对于根目录的路径。在它之前，要找到测试文件，只能用 `run_bash("find ...")`（可能被拦截列表拒绝，而且相对于进程工作目录而不是工作区解析），或者每一层目录调用一次 `list_directory`。关闭 #1983。
+
+**`06bafb0`** · [#2176](https://github.com/kyegomez/swarms/pull/2176) · **fix(multi-agent)：每个任务都从一个空的共享对话开始**
+
+九个结构只在 `__init__` 里构建 `Conversation` 且从不重置，所以第二次 `run()` 会把上一个任务的历史当作上下文送出去，而它们每一个都带有一个复用同一实例的批处理入口：`advisor_swarm`、`llm_council`、`round_robin`、`debate_with_judge`、`auction_swarm` 以及另外四个。现在每个任务都从一个空对话开始。同一个 issue 中的两个跨线程竞争需要不同的修复方式，已单独处理。
+
+**`224b6ca`** · [#2171](https://github.com/kyegomez/swarms/pull/2171) · **docs(examples)：修正错误的文件名和一个失效的目录锚点** — 两份示例 README 指向了不存在的文件和章节。
+
+**`64d9854`** · [#2177](https://github.com/kyegomez/swarms/pull/2177) · **fix(hierarchical-swarm)：按任务重置对话和投递游标**
+
+`init_swarm()` 只在 `__init__` 里构建一次对话和 `_delivered` 游标，而 `batched_run` 只是对 `run` 的循环，所以任务 2 被追加到了任务 1 的对话记录和游标之上。现在两者都会按任务重置。原 issue 中较大的那一半，也就是流式路径重新发送完整对话记录的问题，在 v15 移除了那第二套循环实现之后已经不复存在。
+
+**`e77b879`** · [#2148](https://github.com/kyegomez/swarms/pull/2148) · **fix(agent)：不再把失败的工具当作 provider 失败**
+
+`AgentToolExecutionError` 是在一个 `try` 里抛出的，而这个 `try` 的处理器会为生成错误捕获 `Exception`，所以一个用完了重试的工具会被记成 `Agent.llm_error`，并且**模型被重跑了 `retry_attempts` 次**（该 PR 实测），最后这次运行以把责任归咎于 provider 而告终。现在工具失败会被刷进对话记录、报告为工具错误并写入 `short_memory`，智能体会退出重试循环但不会退出这次运行，这样模型就能读到工具失败了，并尝试别的办法。
+
+**`37c4990`** · [#2145](https://github.com/kyegomez/swarms/pull/2145) · **fix(docstring-parser)：保留缩进，让换行的 Args 行不再吞掉后面的内容**
+
+解析器先把每一行都去掉首尾空白，然后再通过检查行首是否有空白来判断哪一行是续行，而去掉空白之后这个条件永远不可能成立。所以第一个换行的参数描述就结束了整个 Args 段：**那个参数只保留了第一行，而它之后的每一个参数都被丢弃了**。这些描述会成为工具 schema 的描述，也就是交给模型的东西。
+
+---
+
+## 9 月 6 日，星期日
+
+**`19f40d6`** · [#2138](https://github.com/kyegomez/swarms/pull/2138) · **fix(autonomous-loop)：给子智能体父智能体的工具和一个循环预算**
+
+`create_sub_agent` 以前创建的子智能体没有 `tools`，并且 `max_loops=1`：一次无状态的 LLM 调用，既不能读文件，也不能运行命令，**能力严格低于父智能体直接去问这个问题**，还多花一次来回。现在子智能体会拿到父智能体的工具，以及一个固定的、有限的循环预算，这样一个自主的父智能体就无法递归地生出自主的子智能体，而 `print_on` 也会跟随父智能体，不再与它自己的注释自相矛盾。issue #1973。
+
+**`0cfc579`** · [#2180](https://github.com/kyegomez/swarms/pull/2180) · **style：把 swarms/ 下的多行注释压缩为一行** — 40 个文件中的 118 个注释块，每块两到八行，都被精简成了代码自己说不出来的那一件事。没有代码改动。
+
+**`414d44d`** · [#2169](https://github.com/kyegomez/swarms/pull/2169) · **docs(examples)：修复 cli README 中的 16 个失效链接** — 在 `examples/cli/` 内部以仓库根目录风格写的链接，解析时多了一层目录。
+
+**`02a6cf3`** · [#2181](https://github.com/kyegomez/swarms/pull/2181) · **fix(planner-worker)：给周期评审带类型的对话轮次，而不是压平的一整段**
+
+评审的任务是把 `conversation.get_str()` 粘进一个字符串里构建的，而评审又会把自己的裁决记录进同一个对话，所以在第二个周期，**它会把自己上一次的裁决当作匿名文本**混在其他人的内容里读到。现在它收到的是带类型的对话轮次。
+
+---
+
+## 9 月 7 日，星期一
+
+**`be097de`** · [#2172](https://github.com/kyegomez/swarms/pull/2172) · **chore：版本升级到 15.0.1** — 一个补丁版本，包含 `agent.usage`、`router.usage`、`fallback_swarms` 以及按 token 预算截断的工具输出。
+
+**`602a642`** · [#2188](https://github.com/kyegomez/swarms/pull/2188) · **fix(advisor)：以对话轮次发送共享对话，并记录答案**
+
+Advisor 和 Executor 都通过插入整段共享对话来构建提示词，又都记录进同一个对话，所以从第二轮开始，它们都会把自己之前的输出当作匿名文本读到。现在两者收到的都是带类型的对话轮次，并且各自记录的是答案，而不是对话记录。
+
+**`796e645`** · [#2190](https://github.com/kyegomez/swarms/pull/2190) · **feat(usage)：统计流式运行和推理 token，并向 OpenAI 发送它接受的键**
+
+一个以流式运行 `gpt-6-astra` 智能体并读取 `agent.usage` 的脚本，暴露出了三个缺口。流不携带用量，所以报告为零；包装器现在会请求 `include_usage`，并记录末尾的用量数据块。推理 token 被合并进了输出，现在会单独报告。OpenAI 推理时代的模型会直接拒收 `max_tokens`；包装器现在会对 `o1`/`o3`/`o4` 和 `gpt-5` 系列发送 `max_completion_tokens`。
+
+**`444cfc8`** · [#2189](https://github.com/kyegomez/swarms/pull/2189) · **fix(heavy-swarm)：以对话轮次把对话发送给综合智能体**
+
+三个综合提示词都插入了 `return_history_as_string()`。heavy 变体会让十五位专家写进同一个对话，所以**综合智能体收到的是被压成一条用户消息的全部十五位专家**。现在它收到的是带类型的对话轮次。这关闭了 issue #2053 的最后一行。
+
+---
+
+## 9 月 8 日，星期二
+
+**`31f9363`** · [#2195](https://github.com/kyegomez/swarms/pull/2195) · **feat(agent)：agent.input_tokens，下一次请求的大小**
+
+`usage` 报告的是一次调用之后 provider 计费了多少。`input_tokens` 报告的是这个智能体即将发送多少：系统提示词、`short_memory` 和工具 schema，用智能体自己的模型来计数。在 `usage` 旁边加了十二行。
+
+**`7b709c9`** · [#2199](https://github.com/kyegomez/swarms/pull/2199) · **docs(examples)：通过 Swarms API 使用 gpt-6-astra，版本升级到 15.0.2** — 托管 API 上的单智能体和 `MixtureOfAgents` 示例，只需要 `requests` 和一个 `SWARMS_API_KEY`，外加 15.0.2 的版本升级。
+
+**`862d5e4`** · [#2204](https://github.com/kyegomez/swarms/pull/2204) · **docs(examples)：在 gpt-6-astra 示例中打印完整的 Swarms API 响应** — 这样读者看到的就是 API 返回的确切形状。
+
+---
+
+## 9 月 9 日，星期三
+
+**`fe24c2c`** · [#2210](https://github.com/kyegomez/swarms/pull/2210) · **fix(conversation)：add_multiple 不再在少于四个 CPU 的机器上崩溃**
+
+`max_workers = int(os.cpu_count() * 0.25)` 在一个、两个和三个核心上都等于 0，而 `ThreadPoolExecutor(max_workers=0)` 会在追加任何一条消息之前就抛出异常。**`add_multiple_messages` 在任何报告三个或更少核心的容器或 CI 运行器上都无法使用**；它在笔记本电脑上能用，这就是它被发布出去的原因。同样这六行还会按完成顺序而不是输入顺序追加消息。两者都已修复。
+
+**`2d8588a`** · [#2147](https://github.com/kyegomez/swarms/pull/2147) · **fix(concurrent-workflow)：让每个批处理任务运行在自己的对话中**
+
+`ConcurrentWorkflow` 只在 `__init__` 里构建一个 `Conversation`，所以 `batch_run` 返回的第 N 个任务的结果里还带着第 1 到 N−1 个任务。在默认输出类型下，这个切片随每个任务变长；在 `output_type="dict"` 下，每个结果都是同一个对象。现在每个批处理任务都运行在自己的对话中。
+
+**`c9b1e15`** · [#1886](https://github.com/kyegomez/swarms/pull/1886) · **fix(hierarchical)：不再把主管彻底宕机报告为成功**
+
+`step()` 记录完异常就返回 `None`，所以 `run()` 里的处理器根本到达不了。一个失败的 step 会推进循环计数，为一个什么也没运行的循环写下 `--- Loop N/M completed ---` 标记，把 `None` 当作上一轮结果喂给下一个循环，并且**即便主管在每个循环都失败，`run()` 也会返回一份对话记录而不抛出任何异常**。现在错误会传到 `run()`。
+
+**`d2df7bb`** · [#2216](https://github.com/kyegomez/swarms/pull/2216) · **refactor(structs)：把 various_alt_swarms 拆分为 one_to_one、broadcast 和 one_to_three**
+
+`various_alt_swarms.py` 里装着三个毫不相干、也没有任何地方导出的类，还重复了 `swarming_architectures.py` 中的两个函数。现在每种模式都有自己的模块，一个函数加上一个包装它的类，所以每种模式只有一份实现。这些类的构造函数保留了原来的签名。关闭 #1831。
+
+**`1fbb283`** · [#2217](https://github.com/kyegomez/swarms/pull/2217) · **feat(structs)：新增 check_models，以及 one_to_one、broadcast 和 one_to_three 的示例文件夹**
+
+`get_available_models()` 列出 litellm 已知的每一个模型，再加上带 `openrouter/` 前缀的 OpenRouter 实时目录，并做去重，支持 `exclude_keywords` 过滤、一个共享的五分钟缓存和一个异步版本。`is_model_available()` 和 `model_count()` 构建在它之上。拉取失败时会记录一条警告、返回 litellm 的列表，并且仍然设置缓存过期时间，让一个挂掉的端点每个 TTL 只重试一次。
+
+---
+
+## 9 月 10 日，星期四
+
+**`e4f5309`** · [#2218](https://github.com/kyegomez/swarms/pull/2218) · **docs：新增简体中文 README，并从英文版链接过去** — 完整翻译，21 个实际代码块与英文版逐字节一致，56 个 URL 全部保留。
+
+**`7c15873`** · [#2219](https://github.com/kyegomez/swarms/pull/2219) · **feat(structs)：MCPDeployer 把智能体和 swarm 作为带认证的 MCP 服务器对外提供**
+
+1,632 行。一个目标、一个列表，或者一个从工具名映射到目标的字典，每个都作为一个独立的 MCP 工具对外提供，带有 `(task, img)` 形式的 schema，前面是分层的认证栈：自定义的 `auth` 可调用对象、OAuth 的 `token_verifier`，或者来自列表或环境变量的静态 API 密钥。详见上文「新特性」。
+
+**`f9459e1`** · **docs(readme)：展示如何用 MCPDeployer 对外提供一个智能体，并链接示例**
+
+**`186d9a7`** · [#2221](https://github.com/kyegomez/swarms/pull/2221) · **docs(CONTRIBUTING)：要求提交、PR 和 issue 使用 WARP git 消息格式** — `[TYPE][Function/FileName][Short Description]`，写进了 `CONTRIBUTING.md`、`CLAUDE.md` 和两份 README，每一处都链接到 Swarms Marketplace 上的完整规范。
+
+**`90897d9`** · [#2220](https://github.com/kyegomez/swarms/pull/2220) · **docs(readme-zh)：在中文 README 中加入 MCPDeployer 一节**
+
+---
+
+## 9 月 11 日，星期五
+
+**`e8e2800`** · [#2234](https://github.com/kyegomez/swarms/pull/2234) · **feat(`SelfMoASeq`)：新增 OpenTelemetry 的初始化和运行 span** — 一次运行会扇出成 `num_samples` 次提议调用再加上若干次聚合，此前没有任何东西把它们串起来，也没有把它们的延迟归到这次运行名下。
+
+**`1e0a7eb`** · [#2233](https://github.com/kyegomez/swarms/pull/2233) · **feat(`ModelRouter`)：追踪运行，并把追踪上下文带进它的线程池**
+
+`concurrent_run()` 使用的是普通的 `ThreadPoolExecutor`，它不会把 OpenTelemetry 上下文带进工作线程，所以在线程里被追踪的任何东西都与调用方脱节了。**这破坏的是已经接入追踪的调用方的链路，而不只是这个类自己的。** 现在它使用 `ContextThreadPoolExecutor`，并且 `run()` 会发出一个 span。
+
+**`6fbeaaa`** · [#2232](https://github.com/kyegomez/swarms/pull/2232) · **fix(`Agent._generate_final_summary`)：让 `complete_task` 这条路径像另外两条一样按 `output_type` 塑形**
+
+三个出口中有两个返回按 `output_type` 格式化的历史；而 `complete_task` 这个出口，也就是一次正常的成功运行所走的那条，返回的是一个原始字符串。所以在 `max_loops="auto"` 下，**`agent.run()` 返回值的形状，取决于模型碰巧有没有调用这个工具**。现在三个出口保持一致。
+
+---
+
+## 9 月 12 日，星期六
+
+**`3e0eb1e`** · [#2242](https://github.com/kyegomez/swarms/pull/2242) · **fix(`autonomous_agent_system_prompt`)：在调用时构建自主提示词，让它的时间行是当前时间** — `AUTONOMOUS_AGENT_SYSTEM_PROMPT` 变成了函数 `autonomous_agent_system_prompt()`，长时间运行的进程里的智能体不再被告知进程启动时的时间。
+
+**`c295722`** · [#2238](https://github.com/kyegomez/swarms/pull/2238) · **feat(`SocialAlgorithms`)：新增 OpenTelemetry 的初始化和运行 span**
+
+**`687bdd8`** · [#2237](https://github.com/kyegomez/swarms/pull/2237) · **feat(`AutoSwarmBuilder`)：追踪构建阶段，使它与委派出去的运行共享同一条链路** — 委派给 `SwarmRouter` 的运行本来就有追踪，但生成智能体规格的构建阶段没有，所以一次操作显示为一段没有追踪的构建，加上一段单独起根的运行。这让用户对这个类真正关心的问题，也就是决定 swarm 花了多久、运行 swarm 又花了多久，很难回答。
+
+**`6a7c6f2`** · [#1884](https://github.com/kyegomez/swarms/pull/1884) · **fix(conversation)：不再让 all-except-first 丢掉一个智能体的答案**
+
+`return_all_except_first` 切的是 `[2:]`，假设每段历史都以 `[System, User]` 开头。`Agent` 只在有系统提示词时才添加系统行，而 swarm 构建的对话根本没有系统行，所以在 swarm 上，**这个切片吃掉的是第一个智能体的答案**。`dict-all-except-first` 是 `ConcurrentWorkflow` 的默认输出类型：进去三个智能体，出来两个答案。
+
+**`1038b1f`** · [#2244](https://github.com/kyegomez/swarms/pull/2244) · **fix(`SequentialWorkflow.run`)：把 `trace_run` 装饰器放回 `run` 上**
+
+v15 的一个提交在 `@trace_run(...)` 和 `run` 之间插入了一个辅助方法，所以这个装饰器一直包着的是那个辅助方法。顺序运行没有任务属性，出错的成员会让 span 保持 `OK`，而一个双智能体的工作流会分裂成两条链路。六行代码挪回原位。
+
+**`9326afd`** · [#2236](https://github.com/kyegomez/swarms/pull/2236) · **feat(`SpreadSheetSwarm`)：新增 OpenTelemetry 的初始化和运行 span** — 加在 `run()` 和 `run_from_config()` 上。智能体的 span 本来就存在；缺的是描述这次运行的那个父 span。
+
+---
+
+## 9 月 13 日，星期日
+
+**`810924a`** · [#2227](https://github.com/kyegomez/swarms/pull/2227) · **fix(`SequentialWorkflow.run_concurrent`)：让每个任务运行在自己的克隆上，而不是共享的 `AgentRearrange` 上**
+
+N 个线程运行同一个 `AgentRearrange` 实例，而它的 `_run` 会重置并追加 `self.conversation`。后一个任务的重置会在运行中途丢掉前一个任务的轮次，智能体会把其他任务的轮次当作上下文读到，每个结果都是它所在线程结束那一刻共享对象里的大杂烩。上面两个方法之外的 `run_batched` 早就按任务克隆了；这是最后一个还在用共享实例的调用方。
+
+**`1b8b65d`** · [#2149](https://github.com/kyegomez/swarms/pull/2149) · **fix(heavy-swarm)：让问题拆解器看到图片**
+
+`execute_question_generation` 只接收任务本身，所以给它一张图表时，拆解器会去猜图表里有什么，再根据猜测写出四个或十五个问题，而**这些问题就是每个工作智能体要回答的问题**。v15 把图片送到了工作智能体手里；可它们回答的，仍然是由一个看不到图片的东西写出来的问题。现在 `img` 会被传入问题生成以及两个公开的问题辅助方法。
+
+**`21e357e`** · [#2258](https://github.com/kyegomez/swarms/pull/2258) · **fix(`HeavySwarm.execute_question_generation`)：给每个变体自己的拆解器，并去掉硬编码的采样参数**
+
+在真实测试 #2149 时发现。`variant="default"`（构造函数的默认值）会落空到 `prompt` 未绑定的分支，**并以 `UnboundLocalError` 崩溃**。medium 变体的拆解器输出的是 `research_question`…`verification_question`，而它的工作智能体读取的是 `harper_question`…`lucas_question`，所以**每一次 medium 运行交给三个工作智能体的都是空问题**。现在每个变体都有自己的提示词和 schema，硬编码的采样参数也去掉了。
+
+**`3b2138a`** · [#2259](https://github.com/kyegomez/swarms/pull/2259) · **fix(`_check_bash_command`)：把超长的 bash 写文件命令引导到 `create_file`，而不只是拒绝它们**
+
+在一次 HeavySwarm medium 运行中，自主工作智能体花了将近十分钟反复尝试 heredoc 写文件，被 512 字符的限制拒绝时只得到一句「Command exceeds maximum allowed length」，于是每次都把文件写得更小一点：先是 `rec.json`，然后是 `FINAL_REPORT.md`，再然后是 `summary.txt`。现在拒绝信息会点名 `create_file` 和 `update_file`，`run_bash` 的描述也一开始就说明要用文件工具来写文件。允许做什么并没有改变。
+
+**`9f51ebc`** · [#2260](https://github.com/kyegomez/swarms/pull/2260) · **docs(`CLAUDE.md`)：注释只写一行；不写多行注释块**
+
+---
+
+## 9 月 14 日，星期一
+
+**`6d34275`** · [#2282](https://github.com/kyegomez/swarms/pull/2282) · **test(`TestHeavySwarm`)：让问题生成的桩函数接受 `img`** — 自 #2149 起 `run()` 会传入它，所以只接受一个参数的假函数在 `run` 内部抛出异常，两个遥测测试用例都失败了。
+
+**`fa8d5cf`** · [#2275](https://github.com/kyegomez/swarms/pull/2275) · **fix(`CouncilAsAJudge.run`)：以带类型的对话轮次把各维度的理由发送给聚合器**
+
+每个维度评审的理由都被压平进一个手工拼接、带着 `--- DIM ANALYSIS ---` 标题的字符串里，所以聚合器无法把六位评审与自己的文字区分开来，而且请求也没有可供提示词缓存使用的稳定前缀。每位评审的理由本来就以它自己的名字记录了下来，所以聚合器现在通过 `messages_for`/`split_last_turn` 接收它们。
+
+**`2d08054`** · [#2264](https://github.com/kyegomez/swarms/pull/2264) · **chore(swarms/structs)：删除四个没有任何引用的函数，并为保留下来的访问器补上测试**
+
+对十二个被标记为无引用的函数逐一做了保留或删除的明确决定，每个都以裸字符串重新 grep 过。两个是误报，保留；一个早已不存在；五个被保留并补上了行为测试；四个被删除：`query_ragent`、`find_multiple_agents_by_name`、`track_history`，以及 `coordinate_workflow` 和它的两个私有辅助函数。
+
+---
+
+## 9 月 16 日，星期三
+
+**`49afdb9`** · [#2296](https://github.com/kyegomez/swarms/pull/2296) · **feat(`Agent`/`Conversation`)：用 messages 预置对话，并修复未命名对话的默认行为**
+
+两个构造函数和 `run()` 上都有了 `messages=`。构造时的轮次被预置进记忆；每次调用时的轮次会被记录，并作为该任务所延续的带类型对话记录发送出去，所以工具调用的形状得以保留。另外：构造 `Agent` 不再创建一个空的 `./conversations`，未命名的 `Conversation` 会得到一个唯一的 `conversation-<8 位十六进制>` 名字，而不是所有匿名对话共用 `conversation-test`。顺带还修复了一个每次运行都往仓库里写文件的测试。
+
+**`d70ff3b`** · **15.0.3** — 版本升级。
+
+**`f35cef1`** · [#2291](https://github.com/kyegomez/swarms/pull/2291) · **fix(cli)：在帮助文本中写明 heavy-swarm 真实的默认模型**
+
+两个参数解析出来都是 `gpt-5.4`，而四处帮助文本却宣称是 `gpt-4o-mini`，所以一个读了 `--help`、为了用便宜模型而省略这个参数的用户，用上的是昂贵的那个。**默认值现在放在一个常量里，同时提供给函数签名的默认值、argparse 的默认值和每一处帮助文本**，文字和取值不会再次出现偏差。
+
+**`6372df2`** · [#2229](https://github.com/kyegomez/swarms/pull/2229) · **fix(`MajorityVoting.run_concurrently`)：让每个任务运行在自己的克隆上，而不是共享的实例上**
+
+`run` 一开始就会替换 `self.conversation`，所以多个线程运行同一个实例时，每个线程都会替换掉其他线程正用到一半的对话，**共识智能体拿到的是另一个任务的投票**。现在每个任务都运行在一个浅拷贝上。之所以不做深拷贝，是因为 `copy.deepcopy(Agent)` 会抛出异常。
+
+**`e2313b5`** · [#2123](https://github.com/kyegomez/swarms/pull/2123) · **fix(`batch_agent_execution`)：不再每次调用都抛异常，并按智能体顺序返回结果**
+
+它**在任何输入上都不可能成功**。文档写明的两参数调用会把 `None` 传给 `zip`，而传入 `imgs` 时又会把一个三元组解包到两个名字上。触发哪一个缺陷，只取决于有没有传入 `imgs`。这个公开函数和它附带的示例都是坏的。结果还是按完成顺序返回的。
+
+**`54b4c2c`** · [#2182](https://github.com/kyegomez/swarms/pull/2182) · **fix(`aggregate`)：记录每个工作智能体的轮次，而不是压平整段对话**
+
+聚合器的提示词插入了 `conversation.get_str()`，而每个工作智能体被记录的是它的整段对话记录，而不是它的答案。两者在同样的八行代码里一并修复。
+
+**`a4366d8`** · **improve：改进 batch agent 文件** — 在上面的修复之后对 `batch_agent_execution.py` 做了一轮精简，删 29 行、增 13 行。
+
+**`6bdb2ac`** · [#2297](https://github.com/kyegomez/swarms/pull/2297) · **fix(`aggregate`)：让聚合器指向一个仍在服务的模型，并新增可运行的示例**
+
+默认的 `aggregator_model_name="anthropic/claude-3-sonnet-20240229"` 已经退役，所以**每一次没有自己指定聚合器模型的调用都会以 `NotFoundError` 失败**，附带的示例也不例外。现在默认值是 `claude-sonnet-5`，去掉了硬编码的 `max_tokens=4000`，让模型自己的输出上限生效，`temperature`/`top_p` 也不再设置。
+
+**`9ae3b8c`** · [#2230](https://github.com/kyegomez/swarms/pull/2230) · **feat(`Agent.__init__`)：让自主循环的三个迭代预算成为构造参数**
+
+`max_planning_attempts`（5）、`max_subtask_iterations`（100）和 `max_subtask_loops`（20）原本是直接在循环里读取的模块常量。`max_subtask_iterations` 限定了一次运行在执行阶段的 LLM 调用次数，而每一次调用都会重新发送对话记录，所以它就是那个封顶成本的数字，此前却无法按智能体设置。默认值不变。关闭 #1752。
+
+**`807bf54`** · **fix(`Agent.__init__`)：把 `dynamic_tools` 的默认值改为 `False`** — 工具 schema 会被直接发送，除非你用 `dynamic_tools=True` 主动开启延迟加载。详见上文「破坏性变更」。
+
+**`a7cc265`** · **chore(examples)：把根目录下的两个示例脚本移入示例目录树**
+
+---
+
+## 9 月 18 日，星期五
+
+**`3009364`** · [#2309](https://github.com/kyegomez/swarms/pull/2309) · **fix(`GroupChat._run_async`)：每次运行都从一个空对话开始**
+
+在现存的 21 个批处理实现中（它们都使用共享的 `batched_run` 辅助函数），这是最糟糕的一份拷贝。这个辅助函数会复用实例，对于每一个在 `run` 中会重置对话的同类来说都是安全的，而 `GroupChat` 恰恰是不重置的那一个。第二次运行会把第一次运行的对话记录也一并返回，并且**每个智能体对任务 B 的发言意愿，都受到了毫不相干的任务 A 的影响**。
+
+---
+
+## 9 月 21 日，星期一
+
+**`c43388c`** · [#2318](https://github.com/kyegomez/swarms/pull/2318) · **fix(`ConcurrentWorkflow._run`)：按智能体顺序而不是完成顺序收集结果**
+
+仪表盘路径按位置把 future 对回智能体；`_run` 用的是 `as_completed`。所以**一个显示用的开关改变了调用方拿到的数据**：三个智能体分别打桩为 0.30 秒、0.20 秒和 0.05 秒时，关掉仪表盘返回的顺序恰好完全相反。共享的 `run_agents_concurrently` 辅助函数早就承诺按输入顺序返回，它自己的 docstring 里写了三次。
+
+**`04c8e97`** · [#2320](https://github.com/kyegomez/swarms/pull/2320) · **fix(`SelfConsistencyAgent.run`)：给每个样本自己的推理智能体**
+
+同一个推理 `Agent` 被提交了 `num_samples` 次，所以每个样本的提示词里都带着已经完成的那些样本的答案：样本 2 看到了 `ANSWER_1`，样本 3 两个都看到了（该 PR 实测）。**自洽性是对相互独立的多次抽样取多数，而这里根本没有独立的抽样可供投票。**
+
+---
+
+## 9 月 22 日，星期二
+
+**`5ca698f`** · [#2325](https://github.com/kyegomez/swarms/pull/2325) · **fix(`RoundRobinSwarm._execute_agent`)：记录每个智能体的答案，而不是它的整段对话记录**
+
+`Agent.run` 默认返回智能体的整段对话，而这段内容被当作该智能体的轮次写进了共享对话，于是嵌套不断叠加。两个智能体、两轮，该 PR 实测：记录的轮次长度依次为 335、641、1,634 和 3,612 个字符，而 `run()` 返回的是最后那段 3,612 个字符的大块文本，而不是一个答案。现在它记录的是 `agent_answer(...)`，与 `AgentRearrange` 和 `MajorityVoting` 早已采用的做法一致。
+
+**`9bfe8f9`** · [#2327](https://github.com/kyegomez/swarms/pull/2327) · **fix(`Agent.run`)：把所有输入都传给 n 个样本中的每一个**
+
+`n > 1` 的分支在重新进入 `run()` 时只传了任务本身，丢掉了 `img`、`imgs`、`streaming_callback`、`messages`、`*args` 和 `**kwargs`。**一次 `n=2` 的视觉调用，描述的是一张模型根本没收到的图片**，而且看不出任何东西丢了。现在每个样本都做与单样本分支相同的那次 `_run` 调用。
+
+---
+
+## 9 月 23 日，星期三
+
+**`ad4f69a`** · [#2340](https://github.com/kyegomez/swarms/pull/2340) · **fix(`SwarmRouter.__call__`)：只在给出时才转发 `imgs`，而不是转发 `imgs=None`**
+
+`__call__` 和 `batch_run` 总是把 `imgs=imgs` 塞进 `run()` 的 kwargs，而只有 `SequentialWorkflow` 能容忍这个多出来的关键字参数。**`router(task)` 和 `router.batch_run(tasks)` 在其他每一种 swarm 类型上都会抛异常**，而 `router.run(task)` 却能正常工作。
+
+**`e0c8c94`** · [#2339](https://github.com/kyegomez/swarms/pull/2339) · **fix(`Agent.run_stream`)：让流式运行经由 `run` 路由，使 `max_loops="auto"` 进入自主循环**
+
+流式工作线程调用的是 `_run`，比把 `"auto"` 智能体送进自主循环的那个分支低一层。所以一个流式运行的自主智能体会跳过规划，在没有自主工具、**也没有整数上限**的情况下一直循环，直到出现停止标记为止。现在两个流式工作线程都调用 `run()`，而它本来就会转发 `streaming_callback`。
+
+---
+
+## 9 月 24 日，星期四
+
+**`ed3736b`** · [#2336](https://github.com/kyegomez/swarms/pull/2336) · **fix(`Agent._run`)：把交互模式下的追问发送给模型**
+
+自从 v15 改为从对话记录构建请求之后，交互分支的追问只进入了 `short_memory`。下一次调用重新发送的是以智能体自己的回复结尾的上一轮对话，于是**模型回答了一个根本没人问过的问题**，而保存的历史又让它看起来像是追问已经发出去了。
+
+**`8965b1f`** · [#2353](https://github.com/kyegomez/swarms/pull/2353) · **fix(`CouncilAsAJudge._create_judges`)：在未设置 `judge_agent_model_name` 时，让评审运行在 `model_name` 上**
+
+`judge_agent_model_name` 默认为 `None`，所以每位评审都回落到 `Agent` 的默认值 `gpt-5.4`，评审团自己的 `model_name` 从未被读取，`SwarmRouter` 的 `council_judge_model_name` 也被一并丢弃。**无论调用方配置的是什么，评审都在向 OpenAI 计费。** 现在评审使用 `judge_agent_model_name or model_name`，并且 `random_model_name` 默认为 `False`，因为它原来的默认值会先把调用方的模型替换成一个随机模型。
+
+**`d6a904d`** · [#2355](https://github.com/kyegomez/swarms/pull/2355) · **refactor(`LLMCouncil`)：把提示词移到 swarms/prompts，简化日志，并去掉 `query` 别名** — 七个提示词构建函数原样（逐字节一致）移到了 `swarms/prompts/llm_council_prompts.py`；带 emoji 的横幅变成了五条一行的 `loguru` 消息，只在 `verbose=True` 时显示；`run(task=None, query=None)` 变成了 `run(task)`。
+
+**`7a22d86`** · [#2356](https://github.com/kyegomez/swarms/pull/2356) · **refactor(`history_output_formatter`)：移除 `xml` 输出类型和 `swarms/utils/xml_utils.py`**
+
+`dict_to_xml` 无法单独删除，因为 `xml` 输出类型依赖它。它本身也是错的：它会把每个嵌套字典用它的标签包两次，所以 `{"person": {"name": "John"}}` 会生成 `<person><person>…</person></person>`，与它自己的 docstring 相矛盾。整条 XML 路径都被移除了。
+
+---
+
+## 9 月 25 日，星期五
+
+**`fbbd542`** · [#2361](https://github.com/kyegomez/swarms/pull/2361) · **fix(`Agent.execute_tools`)：当回复中没有工具调用时，什么也不记录**
+
+一个带工具却用纯文本作答的智能体（这是最常见的情况）仍然会记录一条内容为 `"[] (empty list)"` 的 `Tool Executor` 消息，并且在默认的 `tool_call_summary=True` 下，**再发起一次 LLM 调用去总结这个空结果**，并以它自己的名字记录下来。答案不再是最后一条消息，所以 `output_type="final"` 和 `agent_answer()` 返回的是那段总结。现在一次空的解析什么都不记录，也不发起任何调用。
+
+**`54cab0e`** · [#2334](https://github.com/kyegomez/swarms/pull/2334) · **fix(`ConcurrentWorkflow._run`)：记录每个智能体的答案，而不是它的整段对话记录** — 一个 `max_loops > 1` 的智能体会连同它的循环控制提示词和中间草稿一起被记录，所以同一个智能体会因为运行它的结构不同而给出不同的结果。
+
+**`4220022`** · [#2332](https://github.com/kyegomez/swarms/pull/2332) · **fix(`ConcurrentWorkflow.run`)：每次运行都以一个全新的对话开始**
+
+#2147 只修复了 `batch_run`。第二次 `run()` 仍会返回第一个任务的消息，而在 `output_type="dict"` 下，两次调用返回的是同一个活的列表，所以**第一个调用方拿到的结果会在事后继续变长**：在该 PR 的复现中，运行 2 结束后，运行 1 的结果里有六条消息。
+
+**`54ab195`** · [#2365](https://github.com/kyegomez/swarms/pull/2365) · **feat(`GraphWorkflow.usage`)：对每个节点和子图的 token 用量求和** — 在整棵树中把智能体只收集一次，所以支撑两个节点、或者同时出现在图和其子图中的智能体只计一次。`SwarmRouter.usage` 填补不了这个空缺，因为 `GraphWorkflow.nodes` 是一个装着包装对象的字典。
+
+**`1aa081b`** · [#2366](https://github.com/kyegomez/swarms/pull/2366) · **feat(`HeavySwarm.usage`)：追踪问题生成阶段和每个智能体的 token** — 问题生成运行在一个每次调用时新建、用完即丢的裸 `LiteLLM` 上，所以**它的 token 被计了费，却没有在任何地方被统计**。现在 swarm 会向它传入一个 `usage_hook`，并把它的总数加到各智能体的总和上。
+
+---
+
+## 9 月 26 日，星期六
+
+**`24bec17`** · [#2368](https://github.com/kyegomez/swarms/pull/2368) · **chore(`HierarchicalOrderRearrange`)：从 hs_schemas.py 中删除未使用的 schema** — 这是一个基于流程的主管设计的遗留物，那个设计从未真正接入。
+
+---
+
+## 9 月 28 日，星期一
+
+**`b231980`** · [#2376](https://github.com/kyegomez/swarms/pull/2376) · **fix(`CronJob._run_job`)：记录一次失败的执行，并等待下一个间隔**
+
+`schedule` 只在任务返回之后才推进 `next_run`，而 `_run_job` 会重新抛出每一次失败，所以一个失败的任务会一直处于到期状态，并在调度器下一个一秒的节拍再次运行。在 `interval="1hour"` 下，那就是**一小时大约 3,600 次调用**，而 `max_consecutive_errors=5` 会在五秒后放弃，而不是五个间隔之后。空闲的节拍还会重置错误计数。现在失败会在任务内部被记录，任务会等待它的间隔。
+
+**`5585057`** · [#2379](https://github.com/kyegomez/swarms/pull/2379) · **feat(`TreeOfThoughts`)：新增一个以函数调用作为输出的 Tree of Thoughts 推理智能体**
+
+2,311 行，包含测试、位于 `swarms/prompts/tree_of_thoughts_prompts.py` 的提示词以及示例。支持 BFS 和 DFS 搜索、`propose` 和 `sample` 两种生成方式、`value` 和 `vote` 两种评估方式，每次输出都是一次经过校验的函数调用，每次调用都在一个全新的无状态智能体上运行。详见上文「新特性」。
+
+**`e703472`** · [#2371](https://github.com/kyegomez/swarms/pull/2371) · **fix(`Conversation.setup`)：不再在每次构造时创建 `~/.swarms/conversations`**
+
+每个 `Agent` 都持有一个 `Conversation`，而每次构造都会创建 `~/.swarms/conversations`，并在那里寻找一个没有任何东西会写出的格式的文件。保存位置是 `./conversations/`。所以构造任何一个智能体都会在 `$HOME` 里留下一个空目录，而**在只读的 `$HOME` 下，`Agent()` 会抛出 `PermissionError`**。
+
+**`6dae80c`** · [#2374](https://github.com/kyegomez/swarms/pull/2374) · **fix(`MCPDeployer._call`)：对阻塞型目标强制执行正数超时**
+
+`run_sync` 默认会屏蔽对等待的取消，除非传入 `abandon_on_cancel=True`，所以截止时间到了，调用返回的却是目标迟到的结果，并被当作成功。现在调用方会收到 `TimeoutError`，并作为工具错误返回给 MCP 客户端。Python 无法杀死一个线程，所以工作线程会在后台跑完，其结果被丢弃。
+
+**`49769bc`** · [#2378](https://github.com/kyegomez/swarms/pull/2378) · **fix(`ModelRouter.step`)：先把路由回复解析成 `ModelOutput`，再读取它的字段**
+
+**`ModelRouter` 在每一个任务上都失败。** `step` 直接从路由回复上读取 `.model` 和 `.provider`，而这个回复是模型生成的 JSON 字符串，而不是一个 `ModelOutput`，所以在任何被选中的模型运行之前，每一个入口都会抛出 `AttributeError`。
+
+**`4e4a9b0`** · [#2354](https://github.com/kyegomez/swarms/pull/2354) · **feat(examples/guides/agentsh_implementation)：新增 AgentSH 自组织多智能体运行环境示例** — 没有编排者：N 个相同的工作智能体运行「收集 → 认领 → 行动 → 校验 → 合并」的循环，并通过一个带有每个工作智能体私有分支和冲突标记的类 Git `SharedWorkspace`、一个 `MessageInterface` 以及共享上下文来协作。
+
+---
+
+## 9 月 29 日，星期二
+
+**`9baf9ab`** · [#2382](https://github.com/kyegomez/swarms/pull/2382) · **fix(`Conversation.__init__`)：只在没有恢复任何历史时才预置系统提示词和规则**
+
+一个命名的对话会先恢复它保存的历史，然后再次追加 `system_prompt`、`rules` 和 `custom_rules_prompt`。在 `autosave=True` 下，多出来的那份副本会被立刻写回，所以**每重启一次就多一条系统消息**。现在只有在加载之后历史仍然为空时才会预置。
+
+**`9f760a3`** · [#2311](https://github.com/kyegomez/swarms/pull/2311) · **fix(`ReasoningDuo.run`)：每次运行都从一个空对话开始** — 与 `GroupChat` 同样的缺陷：两个智能体都是根据这段对话来构建提示词的，所以它们在回答当前任务时，同时被问着上一个任务。
+
+**`dbe4ec2`** · [#2351](https://github.com/kyegomez/swarms/pull/2351) · **fix(`Agent.execute_tools`)：每次 `tool_retry_attempts` 尝试只运行一批工具调用**
+
+`execute_tools` 在 `tool_execution_retry` 之上还有自己隐藏的一层重试，所以一个失败的工具会运行 `2 × tool_retry_attempts` 次，默认 6 次，即便 `tool_retry_attempts=1` 也会运行 2 次。这层重试覆盖的是整批调用，所以**同一批中已经成功的工具每次都会再运行一遍**。对于有副作用的工具来说，这意味着重复执行真实世界中的操作。
+
+**`5185db3`** · [#2383](https://github.com/kyegomez/swarms/pull/2383) · **docs(`ENV_TIPS`)：把关于存储位置的提示指向 `./conversations` 和 `WORKSPACE_DIR`，而不是 `~/.swarms`** — Swarms 放在 `~/.swarms/` 下的唯一东西是 MCP 的 OAuth token 缓存。
+
+---
+
+## 9 月 30 日，星期三
+
+**`1a722cc`** · [#2393](https://github.com/kyegomez/swarms/pull/2393) · **fix(llm)：把 temperature 的默认值改为 None，让 Claude 模型不再返回 400**
+
+`Agent` 和 `LiteLLM` 的默认值是 `temperature=0.5`，并且总是发送它，所以当前的 Claude 模型（包括 Claude Sonnet 5.5）**会拒绝一个默认配置智能体的第一次调用**，返回 `HTTP 400: temperature is deprecated for this model`。现在默认值是 `None`，并且只在设置时才发送，就像 `top_p` 原本的处理方式一样。从未设置它的调用方会得到 provider 的默认值。
+
+**`22f4d6b`** · [#2394](https://github.com/kyegomez/swarms/pull/2394) · **refactor(`swarm_autosave.py`)：删除这个模块，并把它唯一的调用方迁移到 `WorkspaceManager`**
+
+它的名称清洗函数已经与 `WorkspaceManager` 的那份分道扬镳：`"..."` 会变成 `""` 而不是 `"unnamed"`，所以工作区目录可能被命名为 `-<时间戳>`，而一个整数名字会直接抛出异常。`swarms/` 下已经没有任何地方导入它，所以这个模块被删除，它唯一的示例调用方也迁移了过去。移除了 379 行。
+
+**`8dcc1d0`** · [#2395](https://github.com/kyegomez/swarms/pull/2395) · **feat(`SkillsManager`)：在构造时从多个目录加载技能** — `SkillsManager` 和 `DynamicSkillsLoader` 接受一个路径或一个列表，按顺序读取，统一经过一个共享的 `load_skill_dirs`。`Agent(skills_dir=[...])` 无需修改 `agent.py` 就能工作。
+
+**`03c1706`** · [#2396](https://github.com/kyegomez/swarms/pull/2396) · **fix(`Agent.handle_skills`)：随每一次 LLM 调用发送选中的技能，而不是追加到 `system_prompt` 上**
+
+**智能体的技能从未送达模型。** 它们是在 LLM 客户端已经复制了 `system_prompt` 之后才被追加上去的，而对话记录的构建又会跳过系统行，所以请求发出去时不带技能，而每次运行又会在 `system_prompt` 上再加一份。现在选中的技能会随每一次调用一起发送：当调用带有 `messages` 时作为一条系统消息，否则放在任务前面。
+
+---
+
+## 10 月 1 日，星期四
+
+**`c5e71b8`** · [#2416](https://github.com/kyegomez/swarms/pull/2416) · **feat(`DecisionModel`)：新增一个支持 TypeSafe Jev 和 Cloudflare Clef 的决策模型客户端**
+
+带类型、经过校准的决策：在一次请求中针对一个状态提出 Choice、Score 和 Noul 问题。默认使用 TypeSafe 的 `jev-latest`，按模型名使用 Cloudflare 的 `clef` 和 `clef-flash`，`get_decision_models()` 提供实时列表，附带 87 个离线测试和九个示例。详见上文「新特性」。
+
+---
+
+## 10 月 2 日，星期五
+
+**`88d528b`** · [#2418](https://github.com/kyegomez/swarms/pull/2418) · **fix(`Agent._run`)：重试用尽后抛出 `AgentLLMError`**
+
+当一次 LLM 调用把所有重试都用完时，`_run` 会跳出循环并返回格式化后的历史，所以 **`run()` 返回的是 `""` 或提示词，没有任何错误**，而由于什么都没有抛出，它的回退处理从未运行，**`fallback_models` 也从未被尝试**。现在它会基于最后一个 provider 错误抛出 `AgentLLMError`，`run()` 会依次尝试每一个回退模型，并且失败的那次尝试加入记忆的轮次会先被移除，这样回退模型就不会看到两遍任务。
+
+**`cfe56ae`** · [#2425](https://github.com/kyegomez/swarms/pull/2425) · **refactor(`ToolManager`)：把工具处理移出 agent.py，并不再在每个循环里重新分词历史**
+
+两个提交。所有工具处理都移入了 `ToolManager`（`swarms/agents/tool_manager.py`），在每个智能体上构建一次：执行与重试、解析、MCP、交接、动态工具和显示。`agent.py` 从 4,566 行降到 3,227 行，`_run` 中那段 140 行的工具分发代码变成了一次调用。随后，在对话离上下文窗口还远的时候，压缩器不再在每个循环里对整段历史分词两次，而这原本大约占一次工具轮次的 78%：**短对话上每次工具轮次约 770 µs → 约 162 µs，300 条消息时 18.2 ms → 0.28 ms**。该 PR 针对真实的 OpenAI 和 Anthropic 模型运行了 16 个工具调用场景。迁移走的方法需要通过 `agent.tool_manager` 访问；详见上文「破坏性变更」。
+
+**`fe99004`** · [#2419](https://github.com/kyegomez/swarms/pull/2419) · **fix(`MCPConnection.transport`)：默认使用 `auto`，让 `/sse` URL 通过 SSE 连接**
+
+默认值原本是 `"streamable_http"`，而只有当 transport 为 `"auto"` 时才会根据 URL 自动检测，所以**一个 `/sse` URL 会被用 streamable-HTTP 客户端去连接**，除非调用方记得传入 `transport="auto"`，这与 `Agent` 的 docstring 和文档中的 MCP 示例相矛盾。只改了一行。显式指定的 transport 仍然优先。关闭 #2412 及其重复报告 #2406。
+
+---
+
+## 数字概览
+
+| | |
+|---|---|
+| 提交数 | **114** |
+| 变更文件数 | **228** |
+| 行数 | **+18,984 / −4,585** |
+| `swarms/` | 87 个文件，+6,409 / −3,803 |
+| `tests/` | 45 个文件，+6,540 / −610，新增 14 个测试文件 |
+| 测试函数 | 762 → 944 |
+| 新增示例文件 | 58 |
+| 新增模块 | 10 个：`tool_manager`、`tree_of_thoughts`、`decision_model`、`mcp_deployer`、`check_models`、`one_to_one`、`one_to_three`、`broadcast`，以及两个提示词模块 |
+| 移除的模块 | `swarms/artifacts/`、`various_alt_swarms`、`swarm_autosave`、`xml_utils` |
+| `agent.py` | 4,566 → 3,227 行 |
+| 期间发布的补丁版本 | 15.0.1、15.0.2、15.0.3 |
+
+Ayaan Gazali 是这个版本按提交数计算的头号贡献者，共 47 次提交，其中 36 次是修复，这篇文章中大部分关于隔离、带类型对话轮次以及让失败浮出水面的工作都出自他们之手，每个 PR 都附有在 `master` 上的复现和前后对比的测量。Steve-Dusty 的九个 PR 带来了 `glob` 工具、迭代预算、`GraphWorkflow.usage` 和 `HeavySwarm.usage`，以及 MCP transport 的修复。ShryukGrandhi 修复了 `CronJob`、`MCPDeployer` 的超时和 `ModelRouter`；Raunit Thakur 让上下文压缩在 auto 模式下生效，并给 `GroupChat` 补上了真正的测试；Prince Thummar、陈志谦（simpleqt）、feizhuzheng 和 inchang-ing 各自贡献了用户能切身感受到的修复，其中最后一位修复的 `temperature` 默认值，正是此前让每一个新的 Claude 智能体都无法工作的那个问题。
+
+---
+
+## 升级须知
+
+1. **捕获 `AgentLLMError`，或者配置 `fallback_models`。** 一次所有 LLM 调用都失败的运行，现在会抛出异常，而不是返回一个空字符串或提示词。这是最有可能在现有代码中浮现出来的变化，其中也包括那些过去会把失败智能体的任务文本记录为它的答案的 swarm。
+2. **如果你依赖 0.5，请显式设置 `temperature`。** 不设置现在意味着使用 provider 的默认值，通常是 1.0。
+3. **如果你依赖延迟加载的工具 schema，请设置 `dynamic_tools=True`。** v15 默认开启了延迟加载；v16 默认关闭。
+4. **更新对已迁移工具方法的调用。** `agent.execute_tools(...)` 现在是 `agent.tool_manager.execute_tools(...)`，其他迁移走的方法同理。为工具总结模型打桩 `swarms.structs.agent.LiteLLM` 的测试，应改为打桩 `swarms.agents.tool_manager.LiteLLM`。
+5. **替换 `output_type="xml"`**、`LLMCouncil.run(query=...)`，以及对 `swarms.artifacts`、`swarm_autosave` 和 `AUTONOMOUS_AGENT_SYSTEM_PROMPT` 的导入。
+6. **预期技能会改变行为。** 如果你配置了 `skills_dir`，你的技能现在真的会送达模型，这可能改变答案和 token 计数。
+7. **检查你的 MCP transport。** `/sse` URL 现在默认通过 SSE 连接。如果你显式传入了 `transport="streamable_http"`，则没有任何变化。
+8. **用上新的计数器。** `agent.usage` 和 `router.usage` 可以取代你原本手工做的 token 统计。
+
+---
+
+## 接下来
+
+未解决的问题都明确写了下来，而不是暗示一下了事：
+
+- **`GroupChat` 需要一个公开的「发布前」钩子。** `examples/decision_models/` 中的护栏示例重写了私有的 `_select_speaker`，因为只守住 `_post` 仍然会把原始回复传给下一轮发言竞价。`GroupChat` 的智能体还需要设置 `output_type="final"`，否则每一次竞价都会被解析为空，聊天会以一条把矛头指向模型名或 API 密钥的警告结束（[#2416](https://github.com/kyegomez/swarms/pull/2416)）。
+- **推理路径仍会强制设置采样参数。** #2393 修复了默认路径；litellm 包装器中的推理分支和 Anthropic 思考模式约束，留待单独决定。
+- **#1840 中关于 `Conversation` 的条目。** 在 #2210 修复了崩溃和顺序问题之后，该 issue 的第 1 和第 2 项仍未解决。
+- **`SocialAlgorithms` 的超时。** `SIGALRM` 超时路径仍在单独处理中（#2109）。
+- **阻塞型 `MCPDeployer` 目标的取消。** 超时的目标现在会返回 `TimeoutError`，但它的工作线程会在后台跑完，因为 Python 无法杀死一个线程。
+- **Clef 的实时覆盖。** `DecisionModel` 的 Cloudflare 路径是根据 Cloudflare 的模型文档和输出 schema 构建的，并有模拟测试覆盖；它还没有在 Workers AI 上真实运行过。
+
+---
+
+**了解更多：** [文档](https://docs.swarms.world) · [GitHub](https://github.com/kyegomez/swarms) · [示例](https://github.com/kyegomez/swarms/tree/master/examples) · [Discord](https://discord.gg/jM3Z6M9uMq)

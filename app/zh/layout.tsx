@@ -91,7 +91,7 @@ interface ZhRootLayoutProps {
 
 export default function ZhRootLayout({ children }: ZhRootLayoutProps) {
   return (
-    <html lang="zh-Hans" suppressHydrationWarning className="dark smooth-scroll" style={{ colorScheme: "dark" }}>
+    <html lang="zh-Hans" suppressHydrationWarning className="dark smooth-scroll" data-scroll-behavior="smooth" style={{ colorScheme: "dark" }}>
       <head>
         <link rel="preconnect" href="https://www.swarms.ai" />
         <link rel="dns-prefetch" href="https://www.swarms.ai" />

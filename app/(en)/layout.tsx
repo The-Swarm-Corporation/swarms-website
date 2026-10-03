@@ -102,7 +102,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
   // avoids the blocking theme script next-themes injects (and React's
   // client-render script warning) with no flash of unstyled content.
   return (
-    <html lang="en" suppressHydrationWarning className="dark smooth-scroll" style={{ colorScheme: "dark" }}>
+    <html lang="en" suppressHydrationWarning className="dark smooth-scroll" data-scroll-behavior="smooth" style={{ colorScheme: "dark" }}>
       <head>
         {/* Performance: help the browser establish early connections to frequently used origins */}
         <link rel="preconnect" href="https://www.swarms.ai" />

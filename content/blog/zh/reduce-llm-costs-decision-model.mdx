@@ -1,0 +1,613 @@
+---
+title: "把 LLM 成本降低 10 倍：先用决策模型做筛选"
+description: "降低 LLM 成本的做法：用决策模型筛选每一条数据，只把前 5% 交给 LLM 智能体。附可运行的 Swarms 代码，以及实测的成本与耗时。"
+date: "2026-10-03"
+author: "Swarms 团队"
+categories: ["指南", "工程"]
+readTime: "10 分钟阅读"
+image: "/reduce_llm_costs_decision_model.png"
+featured: false
+---
+
+# 把 LLM 成本降低 10 倍：先用决策模型做筛选
+
+在高吞吐量的流水线里，降低 LLM 成本最快的办法，是不再把每一条数据都发给 LLM。大多数对销售线索、工单、文档或申请做分诊的流水线，把大部分 token 花在了筛选这一步：逐条阅读，只为判断它值不值得进一步处理。这一步其实是一组带类型的问题，而不是写作任务。本指南会把这一步交给**决策模型**，也就是 Swarms 的 `DecisionModel`：它对每一条数据用一次廉价的请求回答一组带类型的问题，而 LLM 智能体只留给少数通过筛选的数据。在我们的实测中，用决策模型筛选的单条成本，比我们能写出的最便宜的 LLM 筛选器**低 10.1 倍**，响应速度约快 3 倍。
+
+本文的每一个数字，都来自 2026 年 10 月 3 日在 Swarms 16 上运行下面的代码。凡是根据实测样本外推出来的数字，文中都会注明。
+
+## 筛选漏斗模式
+
+这个模式分四个阶段，只有最后一个阶段用到 LLM：
+
+1. **对每一条数据提出带类型的问题。** 决策模型用一次请求回答关于一条数据的 Choice（从选项中选一个）、Score（按有序等级打分）和 Noul（某个陈述为真的概率）问题，返回的是校准过的概率，而不是一段文字。
+2. **在代码里组合答案。** 权重、硬性门槛和阈值都写在你的 Python 里，你可以阅读、测试和修改它们，不需要重新调任何提示词。
+3. **保留排名最靠前的几个百分点。** 按组合分数排序，然后截断。
+4. **把入围名单交给 LLM 智能体做深度工作。** 调研、撰写、多步推理：这些才是 LLM 真正擅长的工作，用在值得投入的数据上。
+
+成本之所以能降下来，原因在价格表里。TypeSafe 的 `jev-latest` 是 `DecisionModel` 的默认模型，在 Swarms 内置价格表中的价格是每百万输入 token 0.042 美元，输出为 0。`gpt-5.4-mini` 在 litellm 的价格表中是每百万输入 token 0.75 美元、每百万输出 token 4.50 美元。决策模型不是更小的 LLM，而是另一种返回数字的模型，所以你只为读取数据付费，不为写出内容付费。如果想先了解什么是决策模型、它和 LLM 分类器有什么区别，请阅读[什么是决策模型？](/zh/blog/what-is-a-decision-model)。本文讲的是如何用它削减账单。
+
+下面的例子为一款数据流水线监控产品筛选主动咨询的销售线索。同样的结构也适用于支持工单、内容审核队列、文档录入和研究资料分诊。仓库里还有一个更长的版本，筛选 500 份合成简历：[`examples/decision_models/decision_screening_funnel.py`](https://github.com/kyegomez/swarms/blob/master/examples/decision_models/decision_screening_funnel.py)。
+
+## 安装
+
+```bash
+pip install -U swarms
+# or
+uv pip install -U swarms
+```
+
+示例需要两个密钥：LLM 智能体使用的 OpenAI 密钥，以及决策模型使用的 TypeSafe 密钥。
+
+```bash
+export OPENAI_API_KEY="sk-..."
+export TYPESAFE_API_KEY="..."
+```
+
+也可以把两者写进工作目录下的 `.env` 文件，Swarms 在导入时会自动加载。然后检查版本：
+
+```bash
+python -c "import swarms; print(swarms.__version__)"
+```
+
+`DecisionModel` 需要 Swarms 16 或更高版本。它的价格表和按请求计价（`calculate_cost`，由 [#2431](https://github.com/kyegomez/swarms/pull/2431) 加入）包含在已发布到 PyPI 的 16.0.1 中。
+
+## 第 1 步：一次请求，三个带类型的答案
+
+在搭建漏斗之前，先看看决策模型返回什么。创建 `first_call.py`：
+
+```python
+from swarms import DecisionModel
+
+# Reads TYPESAFE_API_KEY and calls TypeSafe's jev-latest by default.
+model = DecisionModel()
+
+result = model.run(
+    state={
+        "ideal_customer": "Data teams at companies with 200 to 5,000 employees",
+        "lead": {
+            "employees": 900,
+            "contact_role": "Head of Data Platform",
+            "message": "Our dbt models broke three times last month. Can we see a demo next week?",
+        },
+    },
+    questions={
+        "request": {
+            "type": "choice",
+            "instructions": "What is the `lead` asking for?",
+            "criteria": {
+                "evaluation": "A demo, a trial, pricing or a vendor evaluation",
+                "question": "A product or technical question",
+                "other": "Anything else",
+            },
+        },
+        "fit": {
+            "type": "score",
+            "instructions": "How well does the `lead` match the `ideal_customer`?",
+            "criteria": ["Not a fit", "Partial fit", "Strong fit"],
+        },
+        "decision_maker": {
+            "type": "noul",
+            "instructions": "The contact leads or manages a data team.",
+        },
+    },
+)
+
+answers = result["answers"]
+print(answers["request"]["choice"], answers["request"]["confidence"])
+print(answers["fit"]["score"], answers["fit"]["probabilities"])
+print(answers["decision_maker"]["noul"])
+print(result["usage"], model.calculate_cost(result["usage"])["total_cost"])
+```
+
+```bash
+python first_call.py
+```
+
+我们得到的输出：
+
+```
+evaluation 1.0
+1.99 {'0': 0.0, '1': 0.01, '2': 0.99}
+0.94
+{'input_tokens': 476, 'output_tokens': 70} 1.9992e-05
+```
+
+三个问题，一次请求，千分之二美分。Choice 答案附带置信度，Noul 答案是一个概率，Score 是一个浮点数：1.99 是按概率加权后的等级，正因为如此，分数可以直接排序而不会出现并列。`calculate_cost(result["usage"])` 计算一次响应的价格；不带参数调用时，它计算该模型发出的所有请求的总价，漏斗用的就是这种方式。[token 与成本追踪指南](/zh/blog/track-llm-token-usage-cost-python)介绍了智能体和 swarm 上同样的计量方式。
+
+## 第 2 步：定义筛选
+
+筛选本身就是数据：一份理想客户画像、四个问题和一组权重。把它放在单独的模块里，漏斗脚本和测量脚本就会用完全相同的问题来筛选。创建 `leads.py`：
+
+```python
+import random
+
+IDEAL_CUSTOMER = {
+    "product": "Monitoring and alerting for data pipelines (Airflow, dbt, Spark)",
+    "best_fit": [
+        "Company with 200 to 5,000 employees",
+        "Runs its own data pipelines in production",
+        "Contact leads or manages a data or platform team",
+        "Based in North America or Europe",
+    ],
+}
+
+QUESTIONS = {
+    "request": {
+        "type": "choice",
+        "instructions": "What is the `lead` asking for?",
+        "criteria": {
+            "evaluation": "A demo, a trial, pricing or a vendor evaluation",
+            "question": "A product or technical question",
+            "pitch": "Selling us a service, or looking for a job",
+            "other": "Students, unsubscribes, spam and anything else",
+        },
+    },
+    "fit": {
+        "type": "score",
+        "instructions": "How well does the company in the `lead` match the `ideal_customer`?",
+        "criteria": [
+            "Not a fit",
+            "Weak fit",
+            "Partial fit",
+            "Strong fit",
+            "Ideal customer",
+        ],
+    },
+    "intent": {
+        "type": "noul",
+        "instructions": "The `lead` describes a concrete pipeline problem or a buying timeline.",
+    },
+    "decision_maker": {
+        "type": "noul",
+        "instructions": "The contact in the `lead` leads or manages a data or platform team.",
+    },
+}
+
+WEIGHTS = {"fit": 0.45, "intent": 0.30, "decision_maker": 0.25}
+
+MESSAGES = [
+    ("We run about 400 Airflow DAGs and silent failures keep reaching our dashboards. We want a tool in place this quarter.", 3),
+    ("Our dbt models broke three times last month before anyone noticed. Can we see a demo next week?", 3),
+    ("We are evaluating pipeline monitoring vendors for a Q3 rollout across 12 Spark jobs. What does pricing look like at our size?", 3),
+    ("How do you compare to the alerting we already get from Datadog?", 8),
+    ("Do you support Dagster, or only Airflow?", 8),
+    ("Saw your talk at a meetup. Interested, but no timeline yet.", 8),
+    ("I'm a student writing a thesis on data quality. Is there a free license?", 10),
+    ("We are an SEO agency and can get your site to page one of Google.", 12),
+    ("Are you hiring data engineers? My resume is attached.", 10),
+    ("Please remove me from your mailing list.", 10),
+    ("Just browsing.", 12),
+]
+ROLES = [
+    "VP of Data",
+    "Head of Data Platform",
+    "Data Engineering Manager",
+    "Senior Data Engineer",
+    "Analytics Engineer",
+    "Founder",
+    "Marketing Coordinator",
+    "Recruiter",
+    "Student",
+]
+INDUSTRIES = [
+    "Fintech",
+    "E-commerce",
+    "Healthcare",
+    "Logistics",
+    "Media",
+    "SaaS",
+    "Marketing agency",
+    "University",
+]
+COUNTRIES = [
+    "United States",
+    "Germany",
+    "United Kingdom",
+    "Canada",
+    "Netherlands",
+    "Brazil",
+    "India",
+    "Australia",
+]
+EMPLOYEES = [8, 25, 60, 150, 400, 900, 2500, 8000, 30000]
+
+
+def make_leads(count: int, seed: int = 7) -> list:
+    """
+    Generate synthetic inbound leads, most of them poor fits.
+
+    Args:
+        count: Number of leads.
+        seed: Random seed, so every run screens the same pool.
+
+    Returns:
+        Lead dictionaries.
+    """
+    rng = random.Random(seed)
+    messages, weights = zip(*MESSAGES)
+    return [
+        {
+            "id": f"L{index:04d}",
+            "company_industry": rng.choice(INDUSTRIES),
+            "employees": rng.choice(EMPLOYEES),
+            "country": rng.choice(COUNTRIES),
+            "contact_role": rng.choice(ROLES),
+            "message": rng.choices(messages, weights)[0],
+        }
+        for index in range(count)
+    ]
+
+
+def lead_score(answers: dict) -> float:
+    """
+    Combine the decision model's answers into one score.
+
+    Args:
+        answers: Answers keyed by question id.
+
+    Returns:
+        A score from 0 to 1, or 0 when the lead is not a buyer.
+    """
+    if answers["request"]["choice"] in ("pitch", "other"):
+        return 0.0
+    fit_levels = len(QUESTIONS["fit"]["criteria"]) - 1
+    values = {
+        "fit": answers["fit"]["score"] / fit_levels,
+        "intent": answers["intent"]["noul"],
+        "decision_maker": answers["decision_maker"]["noul"],
+    }
+    return sum(WEIGHTS[key] * values[key] for key in WEIGHTS)
+```
+
+这个文件里有三个值得照搬的决定。
+
+**问题要具体、可核对。** “联系人领导或管理一个数据或平台团队”是一个模型可以对照数据去核实的陈述。“这是一条好线索吗？”则不是；它把标准藏了起来，你之后就没法调整这些标准。
+
+**门槛写在代码里，而不是作为一个问题的权重。** 一条公司画像完美的供应商推销，得分应该是 0，而不是 0.7。当 Choice 答案是 `pitch` 或 `other` 时，`lead_score` 直接返回 0，只有在其他情况下才应用权重。
+
+**权重由你决定。** 匹配度占 45%，意向占 30%，职级占 25%。如果销售团队告诉你意向比公司规模更重要，你只需要改一个数字然后重跑。不用改提示词，也不用重新验证输出解析。
+
+`make_leads` 用固定的随机种子生成一个合成线索池，所以每次运行都筛选同样的 200 条线索；大约七分之一带有明确的购买信息，而同时具备合适公司和合适联系人的要少得多。
+
+## 第 3 步：筛选全部数据，只对入围名单做推理
+
+现在是漏斗本身。决策模型以每次 20 个并发请求筛选全部 200 条线索，然后由 `gpt-5.4` 智能体为前 5% 写一份客户简报和一封首次回复。创建 `screen.py`：
+
+```python
+import asyncio
+import json
+import math
+import time
+
+import litellm
+
+from swarms import Agent, DecisionModel, run_agents_with_different_tasks
+
+from leads import IDEAL_CUSTOMER, QUESTIONS, lead_score, make_leads
+
+NUM_LEADS = 200
+SHORTLIST_SHARE = 0.05
+DEEP_WORK_MODEL = "gpt-5.4"
+
+
+async def screen_all(model: DecisionModel, leads: list) -> list:
+    """
+    Screen every lead with the decision model, 20 requests at a time.
+
+    Args:
+        model: Decision model that answers the screening questions.
+        leads: Leads to screen.
+
+    Returns:
+        One result per lead with its score and latency.
+    """
+    limit = asyncio.Semaphore(20)
+
+    async def screen(lead: dict) -> dict:
+        async with limit:
+            started = time.perf_counter()
+            response = await model.arun(
+                state={"ideal_customer": IDEAL_CUSTOMER, "lead": lead},
+                questions=QUESTIONS,
+            )
+            return {
+                "lead": lead,
+                "score": lead_score(response["answers"]),
+                "seconds": time.perf_counter() - started,
+            }
+
+    return await asyncio.gather(*(screen(lead) for lead in leads))
+
+
+def llm_cost(model_name: str, usage: dict) -> float:
+    """
+    Price an agent's token usage with litellm's price table.
+
+    Args:
+        model_name: Model the agent ran on.
+        usage: The agent's usage dictionary.
+
+    Returns:
+        Cost in US dollars.
+    """
+    prompt_cost, completion_cost = litellm.cost_per_token(
+        model=model_name,
+        prompt_tokens=usage["input_tokens"],
+        completion_tokens=usage["output_tokens"],
+    )
+    return prompt_cost + completion_cost
+
+
+leads = make_leads(NUM_LEADS)
+model = DecisionModel()
+
+started = time.perf_counter()
+screened = asyncio.run(screen_all(model, leads))
+screen_wall = time.perf_counter() - started
+screen_cost = model.calculate_cost()
+
+shortlist_size = math.ceil(NUM_LEADS * SHORTLIST_SHARE)
+shortlist = sorted(screened, key=lambda r: r["score"], reverse=True)[
+    :shortlist_size
+]
+
+print(f"Screened {NUM_LEADS} leads in {screen_wall:.1f} s")
+print(
+    f"  {screen_cost['input_tokens']} input tokens, "
+    f"${screen_cost['total_cost']:.5f} total, "
+    f"${screen_cost['total_cost'] / NUM_LEADS:.7f} per lead"
+)
+print(
+    f"  {sum(r['seconds'] for r in screened) / NUM_LEADS:.2f} s per request"
+)
+print(f"\nTop 5 of the {shortlist_size}-lead shortlist:")
+for result in shortlist[:5]:
+    lead = result["lead"]
+    print(
+        f"  {result['score']:.2f}  {lead['contact_role']}, "
+        f"{lead['employees']} employees, {lead['country']}: "
+        f"{lead['message'][:50]}..."
+    )
+
+writers = [
+    Agent(
+        agent_name=f"Account-Executive-{r['lead']['id']}",
+        system_prompt=(
+            "You are an account executive. For the lead you are given, write "
+            "a three-bullet account brief (why they fit, what to ask, what "
+            "could block the deal), then a short first reply that refers to "
+            "their message."
+        ),
+        model_name=DEEP_WORK_MODEL,
+        max_loops=1,
+        output_type="final",
+        print_on=False,
+    )
+    for r in shortlist
+]
+started = time.perf_counter()
+briefs = run_agents_with_different_tasks(
+    [
+        (
+            writer,
+            f"Ideal customer: {json.dumps(IDEAL_CUSTOMER)}\n\n"
+            f"Lead: {json.dumps(r['lead'])}",
+        )
+        for writer, r in zip(writers, shortlist)
+    ]
+)
+deep_wall = time.perf_counter() - started
+deep_cost = sum(llm_cost(DEEP_WORK_MODEL, w.usage) for w in writers)
+
+print(
+    f"\nDeep work on {shortlist_size} leads with {DEEP_WORK_MODEL}: "
+    f"{deep_wall:.1f} s, ${deep_cost:.4f}, "
+    f"${deep_cost / shortlist_size:.4f} per lead"
+)
+print(
+    f"Pipeline total: ${screen_cost['total_cost'] + deep_cost:.4f} "
+    f"for {NUM_LEADS} leads"
+)
+print(f"\nBrief for {shortlist[0]['lead']['id']}:\n\n{briefs[0]}")
+```
+
+```bash
+python screen.py
+```
+
+我们的运行结果（简报在第一条要点之后截断）：
+
+```
+Screened 200 leads in 5.3 s
+  127791 input tokens, $0.00537 total, $0.0000268 per lead
+  0.46 s per request
+
+Top 5 of the 10-lead shortlist:
+  0.98  VP of Data, 400 employees, United States: We run about 400 Airflow DAGs and silent failures ...
+  0.98  VP of Data, 2500 employees, United Kingdom: We are evaluating pipeline monitoring vendors for ...
+  0.95  Data Engineering Manager, 2500 employees, United States: We run about 400 Airflow DAGs and silent failures ...
+  0.88  Senior Data Engineer, 400 employees, Germany: Our dbt models broke three times last month before...
+  0.88  Senior Data Engineer, 900 employees, Germany: We are evaluating pipeline monitoring vendors for ...
+
+Deep work on 10 leads with gpt-5.4: 6.4 s, $0.0473, $0.0047 per lead
+Pipeline total: $0.0527 for 200 leads
+
+Brief for L0082:
+
+- **Why they fit:** Strong ICP match: 400 employees, US-based fintech, and the contact is a **VP of Data**. They run a meaningful production footprint with **~400 Airflow DAGs**, and the pain is exactly what we solve: **silent pipeline failures reaching dashboards**.
+```
+
+这份入围名单正是销售负责人会亲手挑出来的：具体的流水线痛点、明确的采购时间表、数据团队的负责人、规模合适的公司。筛选全部 200 条线索只花了半美分。有几个实现细节很重要：
+
+- **每条数据一次请求，所有问题一起问。** 四个问题只需要一次往返，而不是四次。这就是为什么增加问题时单条价格基本不变；你只为多出来的问题文本支付输入 token。
+- **用信号量配合 `arun`。** `DecisionModel.arun` 是 `run` 的异步版本。信号量把并发上限设为 20，客户端会对限流和过载（408、429、500、502、503、504、529）进行带退避的重试，并遵守 `retry-after`。
+- **每条入围线索用一个全新的单轮智能体。** `output_type="final"` 只返回答案，`print_on=False` 让日志里不出现面板，而独立的智能体可以避免一条线索的上下文混进另一条。`run_agents_with_different_tasks` 会并发运行它们。
+- **成本来自 usage，而不是估算。** `model.calculate_cost()` 把 provider 报告的 token 数在全部 200 次请求上求和；每个智能体的 `usage` 则用 litellm 的价格表计价。
+
+## 第 4 步：在同样的线索上测量 LLM 筛选器
+
+成本倍数是否可信，取决于它的基线。公平的比较不是“决策模型对比一个写长文的智能体”，而是决策模型对比你真正会上线的最便宜的 LLM 筛选器：`gpt-5.4-mini`、简短的系统提示词、同样的四个问题、只输出 JSON。我们还测量了团队经常会走到的那个变体：让筛选器为每个答案附上一句理由。创建 `compare.py`：
+
+```python
+import json
+import random
+import time
+
+import litellm
+
+from swarms import Agent, DecisionModel
+
+from leads import IDEAL_CUSTOMER, QUESTIONS, make_leads
+
+SAMPLE_SIZE = 3
+SCREEN_MODEL = "gpt-5.4-mini"
+
+JSON_PROMPT = (
+    "You screen inbound sales leads against an ideal customer profile. "
+    "Reply with JSON only: "
+    '{"request": "evaluation" | "question" | "pitch" | "other", '
+    '"fit": 0-4 (0 not a fit, 4 ideal customer), '
+    '"intent": 0-1 (the lead describes a concrete pipeline problem or buying timeline), '
+    '"decision_maker": 0-1 (the contact leads or manages a data or platform team)}'
+)
+SCREENERS = {
+    "LLM, JSON only": JSON_PROMPT,
+    "LLM, JSON with reasons": JSON_PROMPT
+    + ' Add a "reasons" field with one sentence per answer.',
+}
+
+sample = random.Random(1).sample(make_leads(200), SAMPLE_SIZE)
+results = {}
+
+model = DecisionModel()
+seconds = []
+for lead in sample:
+    started = time.perf_counter()
+    model.run(
+        state={"ideal_customer": IDEAL_CUSTOMER, "lead": lead},
+        questions=QUESTIONS,
+    )
+    seconds.append(time.perf_counter() - started)
+results[f"Decision model ({model.model_name})"] = (
+    model.calculate_cost()["total_cost"],
+    sum(seconds),
+)
+
+for name, system_prompt in SCREENERS.items():
+    cost, seconds = 0.0, 0.0
+    for lead in sample:
+        # A fresh agent per lead keeps earlier leads out of the context.
+        screener = Agent(
+            agent_name="Screener",
+            system_prompt=system_prompt,
+            model_name=SCREEN_MODEL,
+            max_loops=1,
+            output_type="final",
+            print_on=False,
+        )
+        started = time.perf_counter()
+        screener.run(
+            f"Ideal customer: {json.dumps(IDEAL_CUSTOMER)}\n\n"
+            f"Lead: {json.dumps(lead)}"
+        )
+        seconds += time.perf_counter() - started
+        prompt_cost, completion_cost = litellm.cost_per_token(
+            model=SCREEN_MODEL,
+            prompt_tokens=screener.usage["input_tokens"],
+            completion_tokens=screener.usage["output_tokens"],
+        )
+        cost += prompt_cost + completion_cost
+    results[f"{name} ({SCREEN_MODEL})"] = (cost, seconds)
+
+baseline_cost = results[f"Decision model ({model.model_name})"][0]
+print(f"Per lead, measured on {SAMPLE_SIZE} leads:")
+for name, (cost, seconds) in results.items():
+    per_lead = cost / SAMPLE_SIZE
+    print(
+        f"  {name:<40} ${per_lead:.7f}  {seconds / SAMPLE_SIZE:.2f} s  "
+        f"{cost / baseline_cost:5.1f}x cost  "
+        f"${per_lead * 100_000:,.2f} per 100k leads"
+    )
+```
+
+```bash
+python compare.py
+```
+
+我们的运行结果：
+
+```
+Per lead, measured on 3 leads:
+  Decision model (jev-latest)              $0.0000269  0.20 s    1.0x cost  $2.69 per 100k leads
+  LLM, JSON only (gpt-5.4-mini)            $0.0002710  0.66 s   10.1x cost  $27.10 per 100k leads
+  LLM, JSON with reasons (gpt-5.4-mini)    $0.0006168  0.91 s   22.9x cost  $61.67 per 100k leads
+```
+
+三条线索是一个很小的样本，这是为了让测试保持便宜；想要更精确的估计，就调大 `SAMPLE_SIZE`。有两点说明这些数字是稳定的。决策模型在样本上的单条成本（0.0000269 美元）与 200 条线索那次运行（0.0000268 美元）一致；而 LLM 筛选器的输入是固定的提示词加一条简短的线索，JSON 输出的长度也几乎不变。这里的延迟是顺序测得的，一次一个请求；第 3 步中每次请求 0.46 秒，是决策模型在 20 路并发下的数字。
+
+倍数来自输出。只输出 JSON 的筛选器，答案只有几十个 token，但 `gpt-5.4-mini` 的输出 token 价格是输入 token 的六倍，而它的输入价格本身就已经是决策模型的约 18 倍。让筛选器解释自己的判断，差距就会扩大到两倍以上，达到 22.9 倍。
+
+## 决策模型能把 LLM 成本降低多少：实测与外推
+
+下面是整条流水线在我们实际运行的规模下的成本，以及外推到 100,000 条线索的结果。实测数字来自上面的运行。外推数字是把实测的单条成本乘以数据条数。
+
+| 流水线 | 200 条线索 | 100,000 条线索（外推） |
+|---|---|---|
+| 决策模型筛选全部，`gpt-5.4` 智能体处理前 5% | **$0.0527**（实测） | $2.69 + $23.65 = **$26.34** |
+| `gpt-5.4-mini` 筛选全部（JSON），智能体处理前 5% | $0.0542（外推）+ $0.0473（实测）= $0.1015 | $27.10 + $23.65 = $50.75 |
+| 不筛选：`gpt-5.4` 智能体处理每一条线索 | $0.95（由 10 条外推） | $473 |
+
+这张表可以从三个方向读。
+
+**仅看筛选：便宜 10.1 倍。** 这是决策模型所替代的阶段，也是本文标题里的倍数。如果对比会写理由的筛选器，则是 22.9 倍。
+
+**整条漏斗：比不做漏斗便宜约 18 倍。** 把每条线索都交给 `gpt-5.4` 智能体，200 条线索要花 0.95 美元；漏斗只花了 0.0527 美元。大部分节省来自截断到 5%，而决策模型让这次截断几乎不花钱：筛选只占漏斗账单的 10%。
+
+**筛选变便宜之后，深度工作就成了主要开销。** 在我们的运行中，10 次智能体调用花了 0.0473 美元，200 次筛选请求花了 0.0054 美元。LLM 成本优化的下一个杠杆不再是筛选，而是 `SHORTLIST_SHARE`：入围比例每降低一个百分点，省下的钱就超过整个筛选阶段的花费。
+
+耗时也呈现同样的形态。决策模型顺序处理时每条线索 0.20 秒，`gpt-5.4-mini` 筛选器则是 0.66 秒；筛选全部 200 条线索的实际耗时为 5.3 秒。
+
+本文的实际测试，包括上面所有运行，总共花费约 0.06 美元。
+
+## 什么时候不适合用筛选漏斗
+
+这个模式的前提是：数据量大，值得深度处理的只占一小部分，而且问题能写得清楚。只要其中任何一条不成立，用它的理由也就不成立了。
+
+- **数据量小。** 每月 1,000 条数据时，只输出 JSON 的 LLM 筛选器大约花 0.27 美元（根据我们的单条数字外推）。为了省下两毛多钱，再接入一个 provider 和一个密钥并不值得。
+- **大多数数据都能通过。** 如果一半的数据都需要深度处理，智能体会占据账单的大头，筛选省下的钱几乎可以忽略。只有当入围名单只占几个百分点时，漏斗才划算。
+- **判断标准本身就是代码。** 员工人数区间、国家列表和日期窗口应该写在 `if` 语句里，既免费又准确。决策模型应该用在需要阅读才能做出的判断上：意向、语气、相关性、从职位名称推断职级。
+- **判断需要外部知识或多个步骤。** 决策模型只回答关于你所提供的状态的问题。如果判断需要一次搜索、一次工具调用或一串推理，这条数据就需要交给智能体。
+- **你需要为每一条数据给出书面理由。** 决策模型返回的是概率，而不是解释。如果业务要求一份文字形式的审计记录，你付的就是表里 22.9 倍的那一行。
+- **漏掉一条数据代价很高，或者决策关乎具体的人。** 前 5% 的截断会悄无声息地丢掉 95% 的数据。对于招聘、信贷、医疗或法律方面的筛选，请把分数当作供人工审核的排序，定期抽查被拒的数据，并确认你所在的司法辖区对自动化决策有什么要求。[多智能体系统的失效模式](/zh/blog/multi-agent-system-failure-modes)讲述了一个阶段的无声错误流入下一个阶段时会出什么问题。
+
+我们在本文中也没有用标注数据测量筛选的准确率；上面的入围名单只是一次合理性检查，而不是评估。在替换生产环境中的筛选之前，请在几百条你已经标注过的数据上同时运行两种筛选器，比较各自的入围名单。
+
+## 接下来
+
+漏斗只是更大一类结构中的一种形态；[智能体编排模式](/zh/blog/agent-orchestration-patterns)介绍了其他形态，而决策模型可以作为路由器或评判者嵌入其中的大多数。随 `DecisionModel` 一起发布的完整内容，包括可直接替换的 Cloudflare Clef provider，以及 `examples/decision_models/` 中的其他示例，请参阅 [Swarms v16「Overclock」发布说明](/zh/blog/swarms-v16-overclock-release)。
+
+## 常见问题
+
+### 如何在不降低质量的前提下降低 LLM 成本？
+
+找到那个让 LLM 逐条阅读数据、只为做出一个判断的步骤，把它换成一个以带类型的值回答同样问题的决策模型。通过筛选的数据仍然交给 LLM。然后直接检查质量：在切换之前，用两种筛选器处理已标注的数据，比较它们的入围名单。
+
+### 决策模型每次请求要花多少钱？
+
+在 Swarms 内置价格表中，`jev-latest` 的价格是每百万输入 token 0.042 美元，输出为 0。我们的线索加上四个问题，平均每次请求约 640 个输入 token，花费 0.0000268 美元。`DecisionModel.calculate_cost()` 会根据 provider 报告的 usage 返回精确数字。
+
+### 决策模型和 LLM 分类器有什么区别？
+
+LLM 分类器生成一段文字，你再把它解析成标签。决策模型直接返回标签，附带概率和置信度，并且不对输出收费。[什么是决策模型？](/zh/blog/what-is-a-decision-model)对两者的区别有深入的解释。
+
+### 可以用 Cloudflare 代替 TypeSafe 吗？
+
+可以。`DecisionModel(model_name="clef")` 或 `model_name="clef-flash"` 会路由到 Cloudflare Workers AI，需要 `CLOUDFLARE_ACCOUNT_ID` 和 `CLOUDFLARE_AUTH_TOKEN`。内置价格分别是每百万输入 token 0.24 美元和 0.09 美元。我们在本文中没有运行 Clef，所以上面的测量结果只适用于 `jev-latest`。
+
+### 廉价的 AI 分类对生产环境来说够准确吗？
+
+这取决于你的问题和你的数据，没有任何公开基准能替你回答。具体、可核对的问题比什么都管用。在你自己的已标注数据上测量，设置一个置信度阈值，把没把握的答案交给人工或智能体，并抽查被筛选拒绝的数据。
+
+---
+
+*有问题或反馈？欢迎加入我们的 [Discord 社区](https://discord.gg/VapjxpSyHC)，或查阅[文档](https://docs.swarms.ai)。*

@@ -1,0 +1,1092 @@
+---
+title: "Swarms x TypeSafe：如何在 Swarms 框架和 API 中使用决策模型"
+description: "Swarms 决策模型完整指南。向 TypeSafe 的 Jev 和 Cloudflare 的 Clef 提出类型化问题并获得校准后的概率，对比和集成多个模型，把它们接入智能体和集群，并通过 Swarms API 或 TypeSafe SDK 调用。"
+date: "2026-10-03"
+author: "Swarms 团队"
+categories: ["指南", "工程"]
+readTime: "10 分钟阅读"
+image: "/swarms_x_typesafe.png"
+featured: false
+---
+
+# Swarms x TypeSafe：如何在 Swarms 框架和 API 中使用决策模型
+
+一个智能体系统每天做的大部分事情，其实是大量的小决策。这张工单该交给哪个智能体？这条回复可以发布吗？任务完成了吗？这条消息是垃圾信息吗？团队通常再调用一次大模型来回答这些问题：写提示词、生成文本、解析文本，然后祈祷格式不出错。
+
+决策模型直接回答这些问题。你给决策模型一个 **state**（文本、JSON 对象或列表）和一组类型化的 **questions**，它在一次请求中为每个可能的答案返回概率。TypeSafe 把这称为 System One 模型：快速、低成本、类型化的判断，与大模型擅长的慢速 System Two 推理互为补充。
+
+Swarms 现在在开源框架和 Swarms API 中都支持决策模型：
+
+- **TypeSafe 的 Jev**（`jev-latest`、`jev-preview`、`jev-1.13.0`），每百万输入 token 0.042 美元，输出 token 免费。
+- **Cloudflare 的 Clef**（`clef`，一个 27B 多模态模型；`clef-flash`，一个更快的 9B 模型），运行在 Workers AI 上。
+
+本指南从第一个问题讲起，一直到路由智能体、审核智能体输出、集成多个决策模型，以及通过 Swarms API 用普通 HTTP 或官方 TypeSafe SDK 调用这一切。下面每段代码在发布前都实际运行过，展示的输出都是真实结果。
+
+## 决策模型返回什么
+
+一共有三种问题类型，可以在一次请求中自由混用：
+
+| 类型 | 回答什么 | 返回内容 |
+|---|---|---|
+| `choice` | 这些选项中哪个适用？ | `choice`、每个选项的 `probabilities`、`confidence` |
+| `score` | 它在一个有序量表上处于什么位置？ | `score`（按概率加权的等级，可以落在两个等级之间）、`legend`、`probabilities`、`confidence` |
+| `noul` | 这个是/否陈述成立吗？ | `noul`，0 到 1 之间的概率 |
+
+因为每个答案都带有概率，如何处理不确定性由你决定。置信度 0.98 的选择可以自动化处理，置信度 0.40 的选择可以交给人工或第二个模型。你永远不需要解析自由文本，答案也永远不会是你没有提供的选项。
+
+## 第一部分：在 Swarms 框架中使用决策模型
+
+### 安装并设置密钥
+
+决策模型支持从 `swarms` 16.0.1 开始提供：
+
+```bash
+pip install -U "swarms>=16.0.1"
+```
+
+把你要用的服务商密钥加到 `.env` 文件中，Swarms 会自动读取：
+
+```bash
+TYPESAFE_API_KEY="your-typesafe-key"        # Jev models
+CLOUDFLARE_ACCOUNT_ID="your-account-id"     # Clef models
+CLOUDFLARE_AUTH_TOKEN="your-workers-ai-token"
+```
+
+只需要配置你打算调用的服务商的密钥。模型名称决定服务商：以 `jev` 开头的发往 TypeSafe，以 `clef` 开头的发往 Cloudflare Workers AI。
+
+### 第一个决策
+
+`DecisionModel` 为每种问题类型提供了一个辅助方法。每个辅助方法发送一次请求并返回一个答案：
+
+```python
+from swarms import DecisionModel
+
+# Uses TypeSafe's jev-latest and reads TYPESAFE_API_KEY from the environment or .env.
+model = DecisionModel()
+
+ticket = "I was charged twice for my March invoice and need one of the charges refunded today."
+
+urgent = model.noul(ticket, "The customer needs this resolved today.")
+team = model.choice(
+    ticket,
+    "Which team should handle this ticket?",
+    {
+        "billing": "Payments, refunds and invoices",
+        "technical": "Bugs, outages and API errors",
+        "sales": "Pricing and plan questions",
+    },
+)
+frustration = model.score(
+    ticket,
+    "How frustrated is the customer?",
+    ["Calm", "Frustrated", "Angry"],
+)
+
+print(f"Urgent: {urgent:.2f}")
+print(f"Team: {team['choice']} (confidence {team['confidence']:.2f})")
+print(f"Team probabilities: {team['probabilities']}")
+print(f"Frustration: {frustration['score']:.2f} on a 0 to 2 scale")
+```
+
+```text
+Urgent: 0.96
+Team: billing (confidence 1.00)
+Team probabilities: {'sales': 0.0, 'billing': 1.0, 'technical': 0.0}
+Frustration: 0.87 on a 0 to 2 scale
+```
+
+### 在一次请求中提出所有问题
+
+辅助方法很方便，但你最常用的会是 `run()`。它只发送一次 state，附带任意数量的命名问题，并按你起的名字返回每个答案。这比每个问题单独请求更快也更便宜，因为 state 只处理一次：
+
+```python
+from swarms import DecisionModel
+
+model = DecisionModel(model_name="jev-latest")
+
+response = model.run(
+    state={
+        "subject": "Checkout is down",
+        "message": "Checkout has failed for every customer for the last hour. We are losing sales!",
+        "customer_plan": "enterprise",
+    },
+    questions={
+        "team": {
+            "type": "choice",
+            "instructions": "Which team should handle this ticket?",
+            "criteria": {
+                "billing": "Payments, refunds and invoices",
+                "technical": "Bugs, outages and API errors",
+                "sales": None,
+            },
+        },
+        "frustration": {
+            "type": "score",
+            "instructions": "How frustrated is the customer?",
+            "criteria": ["Calm", "Frustrated", "Angry"],
+        },
+        "urgent": {
+            "type": "noul",
+            "instructions": "Is this request urgent?",
+            "criteria": {"true": "Customers are blocked right now"},
+        },
+    },
+)
+
+answers = response["answers"]
+print(f"Answered by {response['model']}")
+print(f"Team: {answers['team']['choice']} {answers['team']['probabilities']}")
+print(f"Frustration: {answers['frustration']['score']:.2f} {answers['frustration']['probabilities']}")
+print(f"Urgent: {answers['urgent']['noul']:.2f}")
+print(f"Usage: {response['usage']}")
+print(f"Cost: ${model.calculate_cost(response['usage'])['total_cost']:.7f}")
+```
+
+```text
+Answered by jev-1.13.0
+Team: technical {'billing': 0.03, 'sales': 0.0, 'technical': 0.97}
+Frustration: 1.53 {'0': 0.0, '1': 0.47, '2': 0.53}
+Urgent: 0.97
+Usage: {'input_tokens': 434, 'output_tokens': 70}
+Cost: $0.0000182
+```
+
+有几点值得注意：
+
+- 响应中的 `model` 是实际作答的版本。`jev-latest` 和 `jev-preview` 是别名，在撰写本文时都指向 `jev-1.13.0`。
+- `choice` 的选项可以带描述，也可以用 `None` 只按名称判断（上面的 `"sales": None`）。
+- 1.53 分落在“Frustrated”（1）和“Angry”（2）之间，因为模型在两者之间是 47/53 的分布。需要完整信息时请看 `probabilities`。
+- 三个答案的成本不到千分之二美分。
+
+### 查看所有模型及价格
+
+`get_decision_models()` 列出所有决策模型，并从每个已设置密钥的服务商实时获取列表。`get_decision_model_prices()` 返回它们的价格，单位是每百万 token 的美元。Cloudflare 通过 API 公布价格，因此设置了 Cloudflare 密钥后，Clef 的价格会实时获取：
+
+```python
+from swarms import get_decision_model_prices, get_decision_models
+
+prices = get_decision_model_prices()
+for name in get_decision_models():
+    price = prices.get(name)
+    if price:
+        print(f"{name:<12} ${price['input']}/1M input, ${price['output']}/1M output")
+    else:
+        print(f"{name:<12} price not published")
+```
+
+```text
+jev-latest   $0.042/1M input, $0.0/1M output
+jev-preview  $0.042/1M input, $0.0/1M output
+jev-1.13.0   $0.042/1M input, $0.0/1M output
+clef         $0.24/1M input, $0.0/1M output
+clef-flash   $0.09/1M input, $0.0/1M output
+```
+
+### 跟踪用量和成本
+
+每个 `DecisionModel` 都会累计服务商报告的输入和输出 token，涵盖 `run()`、`arun()` 和各个辅助方法：
+
+```python
+model = DecisionModel(model_name="jev-latest")
+model.run(state, questions)
+model.noul(state, "Is this urgent?")
+
+model.usage             # {"input_tokens": ..., "output_tokens": ...} summed over both calls
+model.get_price()       # {"input": 0.042, "output": 0.0}, US dollars per million tokens
+model.calculate_cost()  # input and output tokens, their cost, and total_cost for everything so far
+model.calculate_cost(response["usage"])  # the cost of one response
+```
+
+### 并发运行成千上万个决策
+
+`arun()` 是 `run()` 的异步版本。配合 `asyncio.gather` 和用于限制并发的信号量，你可以用一个客户端处理一大批请求：
+
+```python
+import asyncio
+
+from swarms import DecisionModel
+
+QUESTIONS = {
+    "spam": {"type": "noul", "instructions": "This message is spam or a scam."},
+    "language": {
+        "type": "choice",
+        "instructions": "What language is the message written in?",
+        "criteria": {"english": None, "spanish": None, "french": None, "other": None},
+    },
+}
+
+messages = [
+    "Congratulations! You won a $500 gift card, click here to claim it.",
+    "Hola, ¿pueden ayudarme a cambiar mi contraseña?",
+    "Bonjour, ma facture de septembre est incorrecte.",
+    "Can someone look at the failing deploy on staging?",
+] * 5
+
+
+async def main():
+    model = DecisionModel()
+    limit = asyncio.Semaphore(10)
+
+    async def check(message: str) -> dict:
+        async with limit:
+            response = await model.arun(message, QUESTIONS)
+            return response["answers"]
+
+    results = await asyncio.gather(*(check(m) for m in messages))
+    spam = sum(r["spam"]["noul"] > 0.5 for r in results)
+    print(f"Checked {len(results)} messages, {spam} flagged as spam")
+    print(f"First four languages: {[r['language']['choice'] for r in results[:4]]}")
+    cost = model.calculate_cost()
+    print(f"Total: {cost['input_tokens']} input tokens, ${cost['total_cost']:.6f}")
+
+
+asyncio.run(main())
+```
+
+```text
+Checked 20 messages, 5 flagged as spam
+First four languages: ['english', 'spanish', 'french', 'english']
+Total: 6645 input tokens, $0.000279
+```
+
+二十条消息，每条两个问题，总成本不到百分之三美分。
+
+## 第二部分：同时使用多个决策模型
+
+Swarms 以相同方式对待每个决策模型，所以切换模型只需改一个词，同时运行多个模型只需一个循环。本节介绍三种模式：对比模型、集成模型，以及从低成本模型逐级升级到第二意见。
+
+### 在同一输入上对比模型
+
+下面的代码把同样的问题发给你有密钥的每个模型，其余的跳过：
+
+```python
+from swarms import DecisionModel, get_decision_models
+
+review = "The battery lasts two days, but the strap broke after a week and support never replied."
+questions = {
+    "sentiment": {
+        "type": "choice",
+        "instructions": "What is the overall sentiment of this review?",
+        "criteria": {"positive": None, "mixed": None, "negative": None},
+    },
+    "refund_risk": {
+        "type": "noul",
+        "instructions": "The customer is likely to ask for a refund.",
+    },
+}
+
+for name in get_decision_models():
+    try:
+        model = DecisionModel(model_name=name)
+    except ValueError as error:
+        print(f"{name:<12} skipped: {error}")
+        continue
+
+    response = model.run(review, questions)
+    answers = response["answers"]
+    cost = model.calculate_cost(response["usage"])["total_cost"]
+    print(
+        f"{name:<12} -> {response['model']:<11} "
+        f"sentiment {answers['sentiment']['choice']:<8} "
+        f"({answers['sentiment']['confidence']:.2f}) "
+        f"refund risk {answers['refund_risk']['noul']:.2f}  ${cost:.7f}"
+    )
+```
+
+```text
+jev-latest   -> jev-1.13.0  sentiment mixed    (0.35) refund risk 0.72  $0.0000139
+jev-preview  -> jev-1.13.0  sentiment mixed    (0.44) refund risk 0.70  $0.0000139
+jev-1.13.0   -> jev-1.13.0  sentiment negative (0.25) refund risk 0.69  $0.0000139
+clef         skipped: Set CLOUDFLARE_ACCOUNT_ID in your environment or .env file.
+clef-flash   skipped: Set CLOUDFLARE_ACCOUNT_ID in your environment or .env file.
+```
+
+这条评价本身就很模糊（电池好、表带坏、客服不回复），答案也体现了这一点：每个别名的情感置信度都在 0.25 到 0.44 之间，并且在“mixed”和“negative”之间意见不一。低置信度本身就是信号。在生产环境中，你不会自动化这个决定，而是把它交给人工或第二个模型。相比之下，退款风险问题在三个别名上都稳定在 0.70 左右。
+
+### 集成来自不同服务商的模型
+
+当一个决定很重要时，可以同时询问不同服务商的模型，并对它们的概率取平均。因为答案是概率分布，取平均是有意义的，而 `arun()` 让每个模型同时作答：
+
+```python
+import asyncio
+
+from swarms import DecisionModel
+
+ENSEMBLE = ["jev-latest", "clef", "clef-flash"]
+
+
+def build_models(names: list) -> list:
+    """
+    Create a client for every model whose provider credentials are set.
+
+    Args:
+        names: Decision model names to try.
+
+    Returns:
+        The clients that could be created.
+    """
+    models = []
+    for name in names:
+        try:
+            models.append(DecisionModel(model_name=name))
+        except ValueError:
+            print(f"Skipping {name}: provider credentials are not set.")
+    return models
+
+
+async def ensemble_choice(models: list, state, question: dict) -> dict:
+    """
+    Ask every model the same choice question at once and average their probabilities.
+
+    Args:
+        models: Decision model clients.
+        state: Content the question is about.
+        question: A choice question.
+
+    Returns:
+        The winning option, the averaged probabilities and each model's pick.
+    """
+    responses = await asyncio.gather(
+        *(model.arun(state, {"q": question}) for model in models)
+    )
+    answers = [response["answers"]["q"] for response in responses]
+    options = question["criteria"]
+    averaged = {
+        option: sum(a["probabilities"][option] for a in answers) / len(answers)
+        for option in options
+    }
+    return {
+        "choice": max(averaged, key=averaged.get),
+        "probabilities": averaged,
+        "votes": {m.model_name: a["choice"] for m, a in zip(models, answers)},
+    }
+
+
+models = build_models(ENSEMBLE)
+result = asyncio.run(
+    ensemble_choice(
+        models,
+        state="Our dashboard shows last month's numbers even after a hard refresh.",
+        question={
+            "type": "choice",
+            "instructions": "What kind of problem is this?",
+            "criteria": {
+                "caching": "Stale data served from a cache",
+                "data_pipeline": "Data that was never ingested or computed",
+                "user_error": "The user is looking at the wrong view or filter",
+            },
+        },
+    )
+)
+print(f"Votes: {result['votes']}")
+print(f"Ensemble: {result['choice']} {result['probabilities']}")
+```
+
+如果只设置了 TypeSafe 密钥，集成会退化为它能访问的唯一模型：
+
+```text
+Skipping clef: provider credentials are not set.
+Skipping clef-flash: provider credentials are not set.
+Votes: {'jev-latest': 'caching'}
+Ensemble: caching {'caching': 0.98, 'data_pipeline': 0.02, 'user_error': 0.0}
+```
+
+加上 Cloudflare 密钥后，同样的代码会对 Jev、Clef 和 Clef Flash 取平均。请混合不同的服务商而不是别名：指向同一版本的两个 Jev 别名大多会给出相同的答案。
+
+### 级联：先用便宜的模型，不确定时再求第二意见
+
+大多数输入都很简单。级联先用最便宜的模型回答，只有当第一个模型不确定时才花更多钱。这里先由 Jev 作答，置信度低于 0.75 时再咨询 Clef，两者意见不一致的都标记为需要人工复核：
+
+```python
+from swarms import DecisionModel
+
+fast = DecisionModel(model_name="jev-latest")
+try:
+    second_opinion = DecisionModel(model_name="clef")
+except ValueError:
+    second_opinion = None
+
+
+def classify(state, question: dict, min_confidence: float = 0.75) -> dict:
+    """
+    Answer with the cheapest model, and ask a second model only when the first is unsure.
+
+    Args:
+        state: Content to classify.
+        question: A choice question.
+        min_confidence: Confidence below which the second model is consulted.
+
+    Returns:
+        The decision, which model made it, and whether a human should review it.
+    """
+    answer = fast.run(state, {"q": question})["answers"]["q"]
+    if answer["confidence"] >= min_confidence:
+        return {"choice": answer["choice"], "decided_by": fast.model_name, "review": False}
+
+    if second_opinion is None:
+        return {"choice": answer["choice"], "decided_by": fast.model_name, "review": True}
+
+    second = second_opinion.run(state, {"q": question})["answers"]["q"]
+    agree = second["choice"] == answer["choice"]
+    return {
+        "choice": second["choice"],
+        "decided_by": second_opinion.model_name,
+        "review": not agree or second["confidence"] < min_confidence,
+    }
+
+
+question = {
+    "type": "choice",
+    "instructions": "Which policy does this expense break?",
+    "criteria": {
+        "none": "The expense follows policy",
+        "alcohol": "Alcohol paid with company money",
+        "personal": "A personal purchase",
+        "missing_receipt": "No receipt was attached",
+    },
+}
+for expense in [
+    "Team lunch for 6 people, $142, receipt attached.",
+    "Dinner with a client, $310 including a bottle of wine, receipt attached.",
+    "Uber home after the offsite, receipt lost.",
+]:
+    print(f"{expense}\n  -> {classify(expense, question)}")
+```
+
+```text
+Team lunch for 6 people, $142, receipt attached.
+  -> {'choice': 'none', 'decided_by': 'jev-latest', 'review': False}
+Dinner with a client, $310 including a bottle of wine, receipt attached.
+  -> {'choice': 'alcohol', 'decided_by': 'jev-latest', 'review': False}
+Uber home after the offsite, receipt lost.
+  -> {'choice': 'missing_receipt', 'decided_by': 'jev-latest', 'review': False}
+```
+
+三笔报销都在第一个、也是最便宜的模型上通过了置信度门槛，所以根本没有调用 Clef。在真实的报销队列中，只有模糊的情况才需要为第二意见付费。
+
+## 第三部分：在智能体和集群中使用决策模型
+
+决策模型最有用的地方，是作为大模型智能体周围的快速层：由它决定谁来干活、输出是否可以接受、任务何时完成，而智能体负责推理和写作。下面的示例使用标准的 Swarms `Agent` 和多智能体结构。
+
+### 把任务路由给合适的智能体
+
+智能体自己的 `agent_description` 字段成为 `choice` 问题的选项，再用一个 `noul` 问题过滤掉不该处理的请求：
+
+```python
+from swarms import Agent, DecisionModel
+
+agents = [
+    Agent(
+        agent_name="Billing-Agent",
+        agent_description="Refunds, invoices, failed payments and subscription changes.",
+        system_prompt="You resolve billing questions clearly and briefly.",
+        model_name="gpt-5.4-mini",
+        max_loops=1,
+        output_type="final",
+        print_on=False,
+    ),
+    Agent(
+        agent_name="Technical-Agent",
+        agent_description="Bugs, API errors, integrations and outages.",
+        system_prompt="You debug technical problems step by step.",
+        model_name="gpt-5.4-mini",
+        max_loops=1,
+        output_type="final",
+        print_on=False,
+    ),
+]
+agents_by_name = {agent.agent_name: agent for agent in agents}
+router = DecisionModel(model_name="jev-latest")
+
+
+def route(task: str) -> str:
+    """
+    Send a task to the best agent, or escalate when the router is unsure.
+
+    Args:
+        task: The customer request.
+
+    Returns:
+        The agent's reply, or a note saying why no agent ran.
+    """
+    answers = router.run(
+        state=task,
+        questions={
+            "agent": {
+                "type": "choice",
+                "instructions": "Which agent should handle this request?",
+                "criteria": {a.agent_name: a.agent_description for a in agents},
+            },
+            "in_scope": {
+                "type": "noul",
+                "instructions": "A software company's support team should handle this request.",
+            },
+        },
+    )["answers"]
+
+    if answers["in_scope"]["noul"] < 0.5:
+        return "Declined: out of scope for support."
+    pick = answers["agent"]
+    if pick["confidence"] < 0.5:
+        return f"Escalated to a human: {pick['probabilities']}"
+
+    print(f"-> {pick['choice']} (confidence {pick['confidence']:.2f})")
+    return agents_by_name[pick["choice"]].run(task)
+
+
+for task in [
+    "Our webhook endpoint returns 500 since your API update this morning.",
+    "I was charged twice for my March invoice, can you refund one?",
+    "Can you write my history essay on the French Revolution?",
+]:
+    print(f"\nTask: {task}")
+    print(route(task)[:200])
+```
+
+```text
+Task: Our webhook endpoint returns 500 since your API update this morning.
+-> Technical-Agent (confidence 1.00)
+Sorry about that. I can help troubleshoot it.
+To narrow this down quickly, please send:
+1. The webhook request/response headers and body you're receiving
+...
+
+Task: I was charged twice for my March invoice, can you refund one?
+-> Billing-Agent (confidence 1.00)
+I can help with that, but I can't process refunds directly here.
+Please send:
+- the invoice number for March
+...
+
+Task: Can you write my history essay on the French Revolution?
+Declined: out of scope for support.
+```
+
+路由决策只需不到一秒，成本只有几百万分之一美元，所以你完全可以把它放在每个请求前面。当路由器的置信度低于 0.5 时，任务会交给人工，而不是交给错误的智能体。
+
+### 在发布前审核智能体输出
+
+大模型智能体有时会写出不能发布的内容。决策模型可以按你的政策检查每份草稿，检查不通过时让智能体重写：
+
+```python
+from swarms import Agent, DecisionModel
+
+writer = Agent(
+    agent_name="Copywriter",
+    system_prompt=(
+        "You are an aggressive growth copywriter. You love bold health "
+        "promises and urgency like 'only a few left'. Reply with the headlines only."
+    ),
+    model_name="gpt-5.4-mini",
+    max_loops=1,
+    output_type="final",
+    print_on=False,
+)
+gate = DecisionModel(model_name="jev-latest")
+
+GATE_QUESTIONS = {
+    "health_claim": {
+        "type": "noul",
+        "instructions": "The `copy` claims the product cures, treats or prevents a medical condition.",
+    },
+    "fake_scarcity": {
+        "type": "noul",
+        "instructions": "The `copy` invents urgency or scarcity, such as 'only 3 left'.",
+    },
+    "quality": {
+        "type": "score",
+        "instructions": "How compelling is the `copy` as marketing for the product in the `brief`?",
+        "criteria": ["Unusable", "Weak", "Good", "Excellent"],
+    },
+}
+
+
+def write_with_gate(brief: str, attempts: int = 3) -> str:
+    """
+    Draft copy, check it with the decision model, and redraft until it passes.
+
+    Args:
+        brief: What the copy should say.
+        attempts: Drafts to try before giving up.
+
+    Returns:
+        Copy that passed the gate, or the last draft marked for review.
+    """
+    task = brief
+    for attempt in range(1, attempts + 1):
+        copy = writer.run(task)
+        answers = gate.run(
+            state={"brief": brief, "copy": copy}, questions=GATE_QUESTIONS
+        )["answers"]
+        problems = [
+            name
+            for name in ("health_claim", "fake_scarcity")
+            if answers[name]["noul"] >= 0.5
+        ]
+        quality = answers["quality"]["score"]
+        print(f"Attempt {attempt}: problems {problems or 'none'}, quality {quality:.2f}/3")
+        if not problems and quality >= 1.5:
+            return copy
+        task = (
+            f"{brief}\n\nYour last draft was rejected for: "
+            f"{', '.join(problems) or 'weak quality'}. Rewrite it.\n\nLast draft:\n{copy}"
+        )
+    return f"[Needs human review]\n{copy}"
+
+
+print(
+    write_with_gate(
+        "Write three launch headlines for FocusFuel, a caffeine and "
+        "L-theanine drink for steady focus without the crash."
+    )
+)
+```
+
+```text
+Attempt 1: problems none, quality 2.45/3
+1. Steady Focus. Zero Crash.
+2. Meet FocusFuel: Clean Energy for All-Day Sharpness
+3. Caffeine + L-Theanine, Perfectly Balanced for Calm, Locked-In Focus
+```
+
+这份草稿第一次就通过了。为了看到审核拦截的效果，下面用同样的问题检查一份故意写坏的草稿和一份合规的草稿：
+
+```text
+'FocusFuel cures brain fog in 10 minutes! Only 50 cans left, order now!': health_claim 0.92, fake_scarcity 0.97, quality 0.85
+'Steady focus, zero crash: meet FocusFuel.': health_claim 0.03, fake_scarcity 0.01, quality 2.14
+```
+
+坏草稿的健康声明得分为 0.92，虚假稀缺得分为 0.97，会被退回重写。合规草稿的得分分别为 0.03 和 0.01。
+
+### 让决策模型选择集群架构
+
+Swarms 有许多多智能体架构，`SwarmRouter` 可以按名称运行其中任何一种。决策模型可以先读懂任务，在运行之前选好架构：
+
+```python
+from swarms import Agent, DecisionModel, SwarmRouter
+
+ARCHITECTURES = {
+    "SequentialWorkflow": "Steps that build on each other, where each agent needs the previous agent's output.",
+    "ConcurrentWorkflow": "Independent perspectives on the same input that can run in parallel.",
+    "MajorityVoting": "A single answer to a question with a discrete answer, where agreement reduces error.",
+}
+
+agents = [
+    Agent(
+        agent_name=f"Analyst-{i}",
+        system_prompt="You are a concise analyst. Answer in under 80 words.",
+        model_name="gpt-5.4-mini",
+        max_loops=1,
+        output_type="final",
+        print_on=False,
+    )
+    for i in range(3)
+]
+planner = DecisionModel(model_name="jev-latest")
+
+
+def run_with_best_architecture(task: str):
+    """
+    Pick the swarm architecture for a task with a decision model, then run it.
+
+    Args:
+        task: The task for the swarm.
+
+    Returns:
+        The swarm's output.
+    """
+    pick = planner.choice(
+        task,
+        "Which multi-agent architecture fits this task best?",
+        ARCHITECTURES,
+    )
+    print(f"Architecture: {pick['choice']} {pick['probabilities']}")
+    router = SwarmRouter(
+        agents=agents,
+        swarm_type=pick["choice"],
+        max_loops=1,
+        output_type="final",
+    )
+    return router.run(task)
+
+
+output = run_with_best_architecture(
+    "Give three independent takes on whether a 10-person startup should adopt Kubernetes: "
+    "one on cost, one on hiring and one on reliability."
+)
+print(str(output)[:400])
+```
+
+```text
+Architecture: ConcurrentWorkflow {'MajorityVoting': 0.0, 'SequentialWorkflow': 0.0, 'ConcurrentWorkflow': 1.0}
+- **Cost:** Usually **no** at 10 people unless you already need multi-service orchestration. Kubernetes adds operational overhead, tooling, and infra complexity that can outweigh savings...
+```
+
+任务要求三个相互独立的观点，因此决策模型以 1.0 的概率选择了 `ConcurrentWorkflow`。
+
+### 从多个大模型中选出最佳答案
+
+“多个模型”也可以指同时运行多个大模型并保留最好的答案。下面 GPT、Claude 和 Gemini 并发回答同一个问题，然后一次决策模型请求就按准确性和清晰度为三个答案打分：
+
+```python
+from swarms import Agent, DecisionModel, run_agents_concurrently
+
+TASK = (
+    "Explain the difference between a mutex and a semaphore to a junior "
+    "engineer in under 100 words, with one concrete example."
+)
+CANDIDATES = {
+    "A": "gpt-5.4-mini",
+    "B": "claude-haiku-4-5-20251001",
+    "C": "gemini/gemini-3.5-flash",
+}
+LEVELS = ["Poor", "Fair", "Good", "Excellent"]
+CRITERIA = {
+    "accuracy": "How technically accurate is `answers.{label}`?",
+    "clarity": "How clear is `answers.{label}` for a junior engineer?",
+}
+
+agents = [
+    Agent(
+        agent_name=label,
+        model_name=model_name,
+        max_loops=1,
+        output_type="final",
+        print_on=False,
+    )
+    for label, model_name in CANDIDATES.items()
+]
+answers = run_agents_concurrently(
+    agents=agents, task=TASK, return_agent_output_dict=True
+)
+
+judge = DecisionModel(model_name="jev-latest")
+response = judge.run(
+    state={"task": TASK, "answers": answers},
+    questions={
+        f"{name}_{label}": {
+            "type": "score",
+            "instructions": template.format(label=label),
+            "criteria": LEVELS,
+        }
+        for label in answers
+        for name, template in CRITERIA.items()
+    },
+)
+
+scores = {
+    label: sum(response["answers"][f"{name}_{label}"]["score"] for name in CRITERIA) / len(CRITERIA)
+    for label in answers
+}
+for label, score in sorted(scores.items(), key=lambda item: -item[1]):
+    print(f"{label} {CANDIDATES[label]:<28} {score:.2f}/3")
+best = max(scores, key=scores.get)
+print(f"\nBest answer ({CANDIDATES[best]}):\n{answers[best]}")
+print(f"\nJudging cost: ${judge.calculate_cost()['total_cost']:.6f}")
+```
+
+```text
+C gemini/gemini-3.5-flash      2.68/3
+A gpt-5.4-mini                 2.64/3
+B claude-haiku-4-5-20251001    2.57/3
+
+Best answer (gemini/gemini-3.5-flash):
+Think of a restaurant:
+*   A **mutex** is the single bathroom key. Only one person can hold it at a time, and only that person can unlock it (ownership).
+*   A **semaphore** is a host tracking 10 available tables. As groups sit, the count decreases; as they leave, it increases.
+...
+
+Judging cost: $0.000041
+```
+
+按两个标准评判三个答案只用了一次请求，成本为 0.000041 美元。用大模型做评委，同样的工作成本会高出几百倍，而且你拿到的是需要解析的文本，而不是分数。
+
+### Swarms 仓库中的更多模式
+
+[`examples/decision_models`](https://github.com/kyegomez/swarms/tree/master/examples/decision_models) 目录中有更大、更完整的示例：
+
+- **`guarded_group_chat.py`**：一个 `GroupChat`，在每条消息发布前用风险问题检查它，并拦截或标记不安全的消息。
+- **`system_one_director_swarm.py`**：一个由决策模型担任主管的 `HierarchicalSwarm`。它选择下一个工作者，识别工作者是否在重复自己，并在答案完整后停止集群。
+- **`debate_referee_early_stop.py`**：一个裁判，每轮为辩论双方打分，并在不再出现新论点时结束辩论。
+- **`decision_screening_funnel.py`**：用决策模型筛选 500 份简历，只把入围名单交给大模型。
+- **`calibrated_ensemble_judge.py`**：在一致性、速度和成本上对比决策模型评委与大模型评委。
+
+## 第四部分：通过 Swarms API 使用决策模型
+
+如果你不想自己管理服务商密钥，Swarms API 可以用你的 Swarms API 密钥替你运行决策模型，按 token 从你的 Swarms 额度中计费。在 [swarms.world/platform/api-keys](https://swarms.world/platform/api-keys) 获取密钥。
+
+| 路由 | 作用 |
+|---|---|
+| `GET /v1/decision-model/models` | 可用模型及其服务商和每百万 token 价格 |
+| `POST /v1/decision-model/completions` | 针对一个 state 提问。返回答案、作答模型，以及含成本的 token 用量 |
+| `POST /v1/systemone` | 同样的功能，但采用 TypeSafe 完全一致的请求和响应格式，因此 TypeSafe SDK 无需修改即可使用 |
+
+### 用 curl 列出模型并提问
+
+```bash
+curl https://api.swarms.world/v1/decision-model/models \
+  -H "x-api-key: $SWARMS_API_KEY"
+
+curl -X POST https://api.swarms.world/v1/decision-model/completions \
+  -H "x-api-key: $SWARMS_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model_name": "jev-latest",
+    "state": "Checkout has failed for every customer for the last hour.",
+    "questions": {
+      "team": {
+        "type": "choice",
+        "instructions": "Which team should handle this?",
+        "criteria": {"billing": "Payments and refunds", "technical": "Bugs and outages"}
+      },
+      "urgent": {"type": "noul", "instructions": "Is this urgent?"}
+    }
+  }'
+```
+
+completion 响应包含答案、作答的模型版本，以及带有本次请求成本的 `usage` 字段：
+
+```json
+{
+  "job_id": "decision-model-3f9c…",
+  "status": "success",
+  "model_name": "jev-latest",
+  "model": "jev-1.13.0",
+  "answers": {
+    "team": {"type": "choice", "choice": "technical", "confidence": 0.98, "probabilities": {"technical": 0.99, "billing": 0.01}},
+    "urgent": {"type": "noul", "noul": 0.97}
+  },
+  "usage": {"input_tokens": 421, "output_tokens": 73, "total_tokens": 494, "input_cost": 2.03343e-05, "output_cost": 0.0, "total_cost": 2.03343e-05},
+  "timestamp": "2026-10-03T13:47:56.151066+00:00"
+}
+```
+
+### 通过 API 对比所有模型
+
+有了模型列表，通过 API 使用多个模型和在框架中一样简单。下面把一条评价发给 API 提供的每个模型，并汇总成本：
+
+```python
+import os
+
+import requests
+
+BASE_URL = "https://api.swarms.world"
+HEADERS = {"x-api-key": os.environ["SWARMS_API_KEY"]}
+
+models = requests.get(f"{BASE_URL}/v1/decision-model/models", headers=HEADERS).json()["models"]
+for m in models:
+    print(f"{m['name']:<12} {m['provider']:<10} ${m['input_cost_per_1m']}/1M input")
+
+questions = {
+    "sentiment": {
+        "type": "choice",
+        "instructions": "What is the overall sentiment of this review?",
+        "criteria": {"positive": None, "mixed": None, "negative": None},
+    },
+    "refund_risk": {"type": "noul", "instructions": "The customer is likely to ask for a refund."},
+}
+review = "The battery lasts two days, but the strap broke after a week and support never replied."
+
+total = 0.0
+for m in models:
+    result = requests.post(
+        f"{BASE_URL}/v1/decision-model/completions",
+        headers=HEADERS,
+        json={"model_name": m["name"], "state": review, "questions": questions},
+    ).json()
+    answers = result["answers"]
+    total += result["usage"]["total_cost"]
+    print(
+        f"{m['name']:<12} sentiment {answers['sentiment']['choice']:<8} "
+        f"refund risk {answers['refund_risk']['noul']:.2f}"
+    )
+print(f"Total for {len(models)} models: ${total:.6f}")
+```
+
+```text
+jev-latest   typesafe   $0.0483/1M input
+jev-preview  typesafe   $0.0483/1M input
+jev-1.13.0   typesafe   $0.0483/1M input
+jev-latest   sentiment mixed    refund risk 0.69
+jev-preview  sentiment mixed    refund risk 0.68
+jev-1.13.0   sentiment negative refund risk 0.71
+Total for 3 models: $0.000048
+```
+
+API 配置了哪些服务商，它们的模型就会自动出现在列表中，所以 Clef 可用时，同一个循环也会覆盖它。
+
+### 用你的 Swarms 密钥调用 TypeSafe SDK
+
+`POST /v1/systemone` 接收和返回的内容与 TypeSafe 自己的 API 完全一致。这意味着官方 TypeSafe SDK 只需更换 base URL 和密钥就能在 Swarms 上运行，现有的 TypeSafe 集成改两行代码就能切换到 Swarms 计费：
+
+```bash
+pip install typesafe-sdk
+```
+
+```python
+import os
+
+from typesafe_sdk import Choice, Noul, Score, TypeSafeClient
+
+client = TypeSafeClient(
+    api_key=os.environ["SWARMS_API_KEY"],
+    base_url="https://api.swarms.world",
+)
+
+print([model.name for model in client.models.list().models])
+
+result = client.system_one(
+    state="I was charged twice for my March invoice. This is the second time!",
+    questions={
+        "team": Choice(
+            instructions="Which team should handle this?",
+            criteria={"billing": None, "technical": None, "sales": None},
+        ),
+        "frustration": Score(
+            instructions="How frustrated is the customer?",
+            criteria=["Calm", "Frustrated", "Angry"],
+        ),
+        "repeat_issue": Noul(instructions="The customer says this happened before."),
+    },
+    model="jev-latest",
+)
+
+print(result.choices["team"].choice, result.scores["frustration"].score, result.nouls["repeat_issue"].noul)
+print(f"Charged: ${result.raw_http_response.headers['x-swarms-total-cost']}")
+```
+
+```text
+['jev-latest', 'jev-preview', 'jev-1.13.0']
+billing 1.21 0.93
+Charged: $1.75812e-05
+```
+
+JavaScript SDK 的用法相同：
+
+```ts
+import { TypeSafeClient, noul } from "@typesafe-ai/sdk";
+
+const client = new TypeSafeClient({
+  apiKey: process.env.SWARMS_API_KEY,
+  baseURL: "https://api.swarms.world",
+});
+
+const { data, response } = await client
+  .systemOne({ state: "Site is down", questions: { urgent: noul("Is this urgent?") } })
+  .withResponse();
+
+console.log(data.answers.urgent.noul, response.headers.get("x-swarms-total-cost"));
+```
+
+响应体与 TypeSafe 完全一致（`model`、`answers` 和 `usage` 中的 token 数）。扣费金额在 `x-swarms-total-cost` 响应头中，请求 ID 在 `x-typesafe-request-id` 中，两个 SDK 都会读取它。
+
+### 只在需要时才调用大模型
+
+API 也能运行大模型智能体，因此决策模型可以放在 `/v1/agent/completions` 前面，在不需要智能体时直接跳过：
+
+```python
+import os
+
+import requests
+
+BASE_URL = "https://api.swarms.world"
+HEADERS = {"x-api-key": os.environ["SWARMS_API_KEY"]}
+
+
+def handle(message: str) -> None:
+    """
+    Draft a reply with an LLM agent only when the message needs one.
+
+    Args:
+        message: An inbound customer message.
+    """
+    decision = requests.post(
+        f"{BASE_URL}/v1/decision-model/completions",
+        headers=HEADERS,
+        json={
+            "model_name": "jev-latest",
+            "state": message,
+            "questions": {
+                "needs_reply": {
+                    "type": "noul",
+                    "instructions": "This message asks for help or information and needs a written reply.",
+                }
+            },
+        },
+    ).json()
+    needs_reply = decision["answers"]["needs_reply"]["noul"]
+    print(f"\n{message}\n  needs reply {needs_reply:.2f} (${decision['usage']['total_cost']:.7f})")
+    if needs_reply < 0.5:
+        print("  -> no agent call")
+        return
+
+    agent = requests.post(
+        f"{BASE_URL}/v1/agent/completions",
+        headers=HEADERS,
+        json={
+            "agent_config": {
+                "agent_name": "Support-Agent",
+                "system_prompt": "You write short, friendly support replies.",
+                "model_name": "gpt-5.4-mini",
+                "max_loops": 1,
+            },
+            "task": f"Draft a reply to this customer message:\n{message}",
+        },
+    ).json()
+    reply = agent["outputs"][-1]["content"]
+    print(f"  -> agent reply (${agent['usage']['total_cost']:.5f}): {reply[:160]}")
+
+
+for message in [
+    "Thanks so much, that fixed it!",
+    "How do I export my invoices as CSV?",
+    "Out of office until Monday.",
+]:
+    handle(message)
+```
+
+```text
+Thanks so much, that fixed it!
+  needs reply 0.05 ($0.0000139)
+  -> no agent call
+
+How do I export my invoices as CSV?
+  needs reply 0.97 ($0.0000139)
+  -> agent reply ($0.00171): Hi! You can usually export invoices as CSV from your billing or invoices page.
+
+Try this:
+1. Go to **Billing** or **In
+
+Out of office until Monday.
+  needs reply 0.05 ($0.0000138)
+  -> no agent call
+```
+
+CSV 问题的智能体调用花费 0.00171 美元，而它前面的决策只花费 0.0000139 美元，便宜一百多倍。只要你的入站流量中有一小部分是感谢信、自动回复和垃圾信息，这道门槛就能成倍收回成本。
+
+## 做好决策的技巧
+
+- **每次请求提多个问题。** state 只处理一次，所以一次请求五个问题的成本只比一个问题多一点。
+- **点明你指的字段。** 当 state 是 JSON 时，在指令中引用字段，例如“Is the `message` urgent?”，让模型知道该读哪一部分。
+- **描述你的选项。** 像 `"technical": "Bugs, outages and API errors"` 这样的 `criteria` 描述能告诉模型每个选项涵盖什么。只有当名称本身足够清楚时才用 `None`。
+- **把 noul 写成陈述句或是/否问题**，并用 `true` 和 `false` 标准界定边界情况。
+- **根据置信度行动。** 高置信度的答案自动处理，低置信度的交给人工、第二个模型或更贵的智能体。
+- **留意分数的概率分布。** 1.5 分可能表示“大家都认为介于两者之间”，也可能表示“在 1 和 2 之间各占一半”。`probabilities` 会告诉你是哪一种。
+
+## 价格一览
+
+| 模型 | 服务商 | 框架，使用你自己的密钥（每百万输入 token） | Swarms API，使用 Swarms 额度（每百万输入 token） |
+|---|---|---|---|
+| `jev-latest`、`jev-preview`、`jev-1.13.0` | TypeSafe | $0.042 | $0.0483 |
+| `clef` | Cloudflare | $0.24 | $0.276 |
+| `clef-flash` | Cloudflare | $0.09 | $0.1035 |
+
+所有模型的输出 token 都免费。框架价格由服务商从你自己的账户扣费。API 价格从你的 Swarms 额度扣除，`GET /v1/decision-model/models` 始终返回当前费率。
+
+## 开始使用
+
+- 用 `pip install -U "swarms>=16.0.1"` 安装框架，并从[决策模型示例](https://github.com/kyegomez/swarms/tree/master/examples/decision_models)开始。
+- 在 [swarms.world/platform/api-keys](https://swarms.world/platform/api-keys) 获取 Swarms API 密钥，并阅读 [Swarms API 文档](https://docs.swarms.ai)。
+- 在 [TypeSafe 文档](https://docs.typesafe.ai)中了解 Jev，在 [Cloudflare Workers AI](https://developers.cloudflare.com/workers-ai/models/clef/) 中了解 Clef。
+
+在你的下一个智能体前面放一个决策模型，让大模型把 token 花在真正需要它的工作上。

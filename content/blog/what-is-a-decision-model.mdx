@@ -1,0 +1,427 @@
+---
+title: "What Is a Decision Model? How Jev and Clef Differ from LLMs"
+description: "What is a decision model? How TypeSafe Jev and Cloudflare Clef answer typed questions with calibrated confidence instead of text, and how to use them in Swarms."
+date: "2026-10-03"
+author: "Swarms Team"
+categories: ["Guides", "Engineering"]
+readTime: "11 min read"
+image: "/what_is_a_decision_model.png"
+featured: false
+---
+
+# What Is a Decision Model? How Jev and Clef Differ from LLMs
+
+A **decision model** is an AI model that answers typed questions about a piece of content and returns probabilities, not prose. You hand it a state (a support ticket, a record, a chat log) and a set of questions with the allowed answers spelled out. It returns the answer to each question, a probability for every allowed option, and a confidence your code can branch on. It never writes a sentence.
+
+Two decision models are available today: TypeSafe's **Jev** and Cloudflare's **Clef**. Swarms 16 added a `DecisionModel` client for both. This guide explains what a decision model AI does, how it differs from asking an LLM for JSON or training a classifier, and when it is the wrong tool. Then it walks through working code.
+
+## Install
+
+```bash
+pip install -U swarms
+# or
+uv pip install -U swarms
+```
+
+`DecisionModel` calls TypeSafe's Jev by default and reads `TYPESAFE_API_KEY`. The routing example also runs an LLM agent, so it needs `OPENAI_API_KEY`. Clef needs two Cloudflare variables. Export the ones you need, or put them in a `.env` file in your working directory, which Swarms loads automatically:
+
+```bash
+export TYPESAFE_API_KEY="..."
+export OPENAI_API_KEY="sk-..."
+# Only for Cloudflare Clef
+export CLOUDFLARE_ACCOUNT_ID="..."
+export CLOUDFLARE_AUTH_TOKEN="..."
+```
+
+Check your version:
+
+```bash
+python -c "import swarms; print(swarms.__version__)"
+```
+
+Everything here needs Swarms 16 or later.
+
+## What is a decision model?
+
+TypeSafe calls Jev a "System One" model, after the fast, intuitive thinking that Daniel Kahneman described. TypeSafe's docs say plainly what it is not: it does not write replies, produce code or explain its reasoning. It evaluates typed questions against a state and returns typed values and probability distributions.
+
+A request has two parts:
+
+- **State**: the content to judge. A string, a JSON object or an array. Use an object when the decision compares parts, such as a message, an order and a refund policy.
+- **Questions**: a dictionary keyed by IDs you choose. Each question has a `type`, `instructions` and, for most types, `criteria` listing the allowed answers.
+
+Every question in a request sees the same state and is answered on its own. One answer is never hidden context for another. That is why you can put a router, a guardrail and a scorer in one call and still read each result separately.
+
+Clef has the same request and response shape. Cloudflare's model pages describe Clef as a 27B multimodal decision model and Clef Flash as a faster 9B model. Both read the state as text, JSON, images or video. Jev is text only for now.
+
+## The three question types: Choice, Score and Noul
+
+| Type | Asks | Returns |
+|---|---|---|
+| Choice | Which of these options? | `choice`, `probabilities`, `confidence` |
+| Score | Which level on an ordered scale? | `score`, `legend`, `probabilities`, `confidence` |
+| Noul | Is this statement true? | `noul`, a probability from 0 to 1 |
+
+**Choice** picks one option from a set with no order, such as a team, a document type or an intent. `criteria` maps each option to a description, or to `None` if the name says enough. Add an `other` option when your list might not cover every input.
+
+**Score** places the state on levels you define, listed lowest to highest. The `score` is weighted by probability, so it can land between two levels: 1.4 on a 0 to 2 frustration scale means "between frustrated and very angry".
+
+**Noul** is a yes/no question. The answer is the probability of yes. Near 0.5 means the model cannot tell. Noul has no separate `confidence` field, because the probability already says how sure it is.
+
+According to TypeSafe's API reference, a Choice can have up to 255 options and a Score from 2 to 10 levels. Cloudflare's schema allows 1 to 64 questions per Clef request. Because every answer is a distribution over the options you supplied, the model cannot return a value outside them.
+
+## Calibrated confidence, and why you gate actions on it
+
+TypeSafe trains Jev for calibrated decisions. Calibration is a statement about groups of predictions: of all the answers given a probability of 0.8, about 80% should be correct. It is not a promise about any single answer, but it makes the numbers usable as thresholds.
+
+`confidence` condenses a Choice or Score distribution into one number from 0 to 1. For a Choice with *n* options it measures how far the top probability sits above an even split: `(p_max - 1/n) / (1 - 1/n)`. All the probability on one option gives 1. An even spread gives 0. The Score formula also counts how far the probability sits from the most likely level, so being split between two neighbouring levels costs less than being split between the two ends.
+
+Confidence gives you a second axis. The answer tells you *what*; the confidence tells you *whether to act*. TypeSafe's docs suggest three bands, act automatically, proceed with confirmation, or hand off, with thresholds that rise with the cost of a mistake. Reading a balance back at 0.6 confidence is fine. Approving a transfer is not. Start conservative and tune the thresholds on your own data.
+
+## Decision model vs LLM structured output vs classifier
+
+You can already get labels from an LLM, or train a classifier. The difference is in what comes back and what it costs to change.
+
+| | LLM asked for JSON | Trained classifier | Decision model |
+|---|---|---|---|
+| Output | Generated text in a schema | Label and score | Answer and a probability for every option |
+| Uncertainty | A "confidence" field is more generated text | Its scores may need calibrating | Calibrated probabilities and `confidence` |
+| New labels | Edit the prompt | Collect data and retrain | Edit `criteria` in the request |
+| Training data | None | Required | None |
+| Writes prose or code | Yes | No | No |
+
+Structured output modes force an LLM's reply to match a schema, which solves parsing. They do not give you a usable probability: when the model writes `"confidence": 0.9`, that number was sampled like every other token. A classifier gives you real scores but fixes the label set at training time. A decision model sits between them. You define the options in plain language for each request, and you get back a distribution over exactly those options.
+
+## When to use a decision model, and when not to
+
+Use one when your code needs a narrow judgment over unstructured content and will act on the answer:
+
+- routing requests to agents, queues or humans
+- guardrails: is this message out of scope, abusive, or a prompt injection?
+- scoring against a rubric, such as severity, quality or fit
+- screening a large batch so that only the shortlist reaches an expensive LLM
+- deciding whether a loop should stop
+
+Do not use one when you need text: replies, summaries, code, plans or explanations. That is an LLM's job. A decision model also cannot reason through several steps for you. TypeSafe's guidance is to split a broad judgment ("rate this pitch") into atomic questions (market size, feasibility, differentiation) and combine them with weights in code. If a judgment needs a few seconds of thought from an expert, ask it. If it needs an afternoon, it is not a decision model question. Jev is also text only and most accurate in English, so test non-English content before you rely on it.
+
+The usual design is both together. The decision model makes the cheap, frequent, structured calls, and LLM [agents](/blog/what-is-an-agent) do the generative work. [Reduce LLM Costs with a Decision Model](/blog/reduce-llm-costs-decision-model) covers that funnel and its costs.
+
+## Several questions in one request with TypeSafe Jev
+
+`DecisionModel()` with no arguments uses TypeSafe's `jev-latest`. `run()` sends every question in one request:
+
+```python
+from swarms import DecisionModel
+
+# Reads TYPESAFE_API_KEY and uses TypeSafe's jev-latest by default.
+model = DecisionModel()
+
+ticket = {
+    "message": (
+        "Checkout has been failing for every customer for an hour. "
+        "We are losing orders. Please fix this now."
+    ),
+    "customer_plan": "enterprise",
+}
+
+result = model.run(
+    state=ticket,
+    questions={
+        "team": {
+            "type": "choice",
+            "instructions": "Which team should handle `message`?",
+            "criteria": {
+                "billing": "Payments, invoices and refunds",
+                "technical": "Outages, errors and integrations",
+                "sales": "Pricing, plans and upgrades",
+            },
+        },
+        "severity": {
+            "type": "score",
+            "instructions": "How severe is the customer impact in `message`?",
+            "criteria": ["No impact", "Minor", "Major", "Critical"],
+        },
+        "urgent": {
+            "type": "noul",
+            "instructions": "Does `message` convey urgency or time pressure?",
+        },
+    },
+)
+
+answers = result["answers"]
+print("Answered by:", result["model"])
+print("team:", answers["team"])
+print("severity:", answers["severity"])
+print("urgent:", answers["urgent"])
+print("usage:", result["usage"])
+cost = model.calculate_cost(result["usage"])
+print(f"cost: ${cost['total_cost']:.6f}")
+```
+
+Output from our run:
+
+```
+Answered by: jev-1.13.0
+team: {'type': 'choice', 'choice': 'technical', 'confidence': 0.98, 'probabilities': {'billing': 0.02, 'technical': 0.98, 'sales': 0.0}}
+severity: {'type': 'score', 'score': 3.0, 'confidence': 1.0, 'legend': {'0': 'No impact', '1': 'Minor', '2': 'Major', '3': 'Critical'}, 'probabilities': {'0': 0.0, '1': 0.0, '2': 0.0, '3': 1.0}}
+urgent: {'type': 'noul', 'noul': 0.99}
+usage: {'input_tokens': 438, 'output_tokens': 68}
+cost: $0.000018
+```
+
+The backticked `message` is a path into the state, which tells the model which field to judge. `result["model"]` reports the versioned model that answered (`jev-latest` currently points to `jev-1.13.0`), so you can log it, or pin a version if you have tuned thresholds against it. Before the request goes out, `DecisionModel` checks each question: the type must be valid, a Choice needs a non-empty `criteria` dict and a Score needs at least two levels. Afterwards it checks that every question came back with an answer of the same type.
+
+## Confidence-gated routing to Swarms agents
+
+Here the decision model is the router in front of two LLM agents. Thresholds are set by risk: a reply needs 0.6, a refund needs 0.9, and anything outside support is declined.
+
+```python
+from swarms import Agent, DecisionModel
+
+router = DecisionModel()
+
+agents = {
+    "billing": Agent(
+        agent_name="Billing-Agent",
+        system_prompt="You are our billing support agent. Reply to the customer in two sentences.",
+        model_name="gpt-5.4-mini",
+        max_loops=1,
+        output_type="final",
+        print_on=False,
+    ),
+    "technical": Agent(
+        agent_name="Technical-Agent",
+        system_prompt="You are our technical support agent. Reply to the customer in two sentences.",
+        model_name="gpt-5.4-mini",
+        max_loops=1,
+        output_type="final",
+        print_on=False,
+    ),
+}
+
+
+def handle(request: str) -> str:
+    """
+    Route a request to an agent, or to a person when the router is unsure.
+
+    Args:
+        request: The customer's message.
+
+    Returns:
+        The agent's reply or the reason the request went to a person.
+    """
+    answers = router.run(
+        state=request,
+        questions={
+            "team": {
+                "type": "choice",
+                "instructions": "Which team should handle this request?",
+                "criteria": {
+                    "billing": "Charges, invoices, refunds and subscriptions",
+                    "technical": "Bugs, API errors, outages and integrations",
+                    "other": "Not a billing or technical support request",
+                },
+            },
+            "refund": {
+                "type": "noul",
+                "instructions": "Does the request ask for money back?",
+            },
+        },
+    )["answers"]
+
+    team = answers["team"]
+    print(
+        f"  team={team['choice']} confidence={team['confidence']:.2f} "
+        f"refund={answers['refund']['noul']:.2f}"
+    )
+
+    if team["choice"] == "other":
+        return "Declined: not a support request."
+    if team["confidence"] < 0.6:
+        return "Sent to a person: the router is unsure who owns this."
+    # Refunds move money, so they need a higher bar than a reply does.
+    if answers["refund"]["noul"] > 0.5 and team["confidence"] < 0.9:
+        return "Sent to a person: refund with moderate confidence."
+    return agents[team["choice"]].run(request)
+
+
+requests = [
+    "Our webhook endpoint has returned 500 errors since your API update this morning.",
+    "I was charged twice for my March invoice. Please refund one of the charges.",
+    "Your sync bug duplicated 300 orders and we paid shipping on all of them. We want compensation.",
+    "Something is wrong with my account.",
+    "Can you write my history essay on the French Revolution?",
+]
+
+for request in requests:
+    print(f"\n{request}")
+    print(handle(request))
+```
+
+From our run, with the agent replies shortened:
+
+```
+Our webhook endpoint has returned 500 errors since your API update this morning.
+  team=technical confidence=1.00 refund=0.02
+Sorry for the trouble—could you send the webhook endpoint URL, a sample failing request payload, ...
+
+I was charged twice for my March invoice. Please refund one of the charges.
+  team=billing confidence=1.00 refund=0.99
+I’m sorry about the duplicate charge on your March invoice; I can help with that. ...
+
+Your sync bug duplicated 300 orders and we paid shipping on all of them. We want compensation.
+  team=billing confidence=0.68 refund=0.93
+Sent to a person: refund with moderate confidence.
+
+Something is wrong with my account.
+  team=technical confidence=0.24 refund=0.05
+Sent to a person: the router is unsure who owns this.
+
+Can you write my history essay on the French Revolution?
+  team=other confidence=1.00 refund=0.01
+Declined: not a support request.
+```
+
+Each branch fired. The vague request still got a top choice, `technical`, but at 0.24 confidence the code did not act on it. An LLM asked to pick a team would have picked one just as fluently. The sync-bug claim is mostly billing but partly technical, and because it asks for money, 0.68 was not enough. Only two of the five requests reached an LLM. Expect small differences between runs: across our runs, the vague request scored between 0.24 and 0.36 and the sync-bug claim between 0.65 and 0.72. Routing is one of the ways a [multi-agent system](/blog/what-is-a-multi-agent-system) fails without anyone noticing, which is why [multi-agent system failure modes](/blog/multi-agent-system-failure-modes) is worth reading alongside this.
+
+## Models, prices, usage and per-request cost
+
+`get_decision_models()` lists the models every provider offers. When a provider's credentials are set, it adds the provider's live list to the built-in names. Since [#2431](https://github.com/kyegomez/swarms/pull/2431), Swarms also tracks prices and token usage. `get_decision_model_prices()` returns US dollars per million tokens for each model. `model.usage` adds up the input and output tokens over every request the instance has made. `calculate_cost()` prices one response's usage, or the running total if you pass nothing.
+
+```python
+from swarms import DecisionModel, get_decision_model_prices, get_decision_models
+
+print(get_decision_models())
+for name, price in get_decision_model_prices().items():
+    print(f"{name}: ${price['input']} input, ${price['output']} output per million tokens")
+
+model = DecisionModel(model_name="jev-latest")
+review = "The battery lasts two days, but the screen scratched within a week."
+
+sentiment = model.score(
+    state=review,
+    instructions="How positive is this product review overall?",
+    criteria=["Negative", "Mixed", "Positive"],
+)
+topic = model.choice(
+    state=review,
+    instructions="What does the review complain about?",
+    criteria={"battery": None, "screen": None, "price": None, "shipping": None},
+)
+defect = model.noul(
+    state=review,
+    instructions="Does the review report damage or a defect?",
+)
+
+print("sentiment:", sentiment["score"], sentiment["confidence"])
+print("topic:", topic["choice"], topic["probabilities"])
+print("defect:", defect)
+print("usage:", model.usage)
+print(f"cost: ${model.calculate_cost()['total_cost']:.6f}")
+```
+
+Output from our run:
+
+```
+['jev-latest', 'jev-preview', 'jev-1.13.0', 'clef', 'clef-flash']
+jev-latest: $0.042 input, $0.0 output per million tokens
+jev-preview: $0.042 input, $0.0 output per million tokens
+jev-1.13.0: $0.042 input, $0.0 output per million tokens
+clef: $0.24 input, $0.0 output per million tokens
+clef-flash: $0.09 input, $0.0 output per million tokens
+sentiment: 0.95 0.93
+topic: screen {'screen': 1.0, 'battery': 0.0, 'shipping': 0.0, 'price': 0.0}
+defect: 0.97
+usage: {'input_tokens': 916, 'output_tokens': 82}
+cost: $0.000038
+```
+
+These prices match the providers' own pages. TypeSafe lists Jev 1.13 at $0.042 per million input tokens, with output tokens free. Cloudflare lists Clef at $0.24 and Clef Flash at $0.09 per million input tokens. TypeSafe has no price endpoint, so the Jev prices are built into Swarms. Clef prices are fetched live from Cloudflare when your credentials are set.
+
+`score()`, `choice()` and `noul()` are shortcuts for a single question, and each one is a separate request. The three calls above used 916 input tokens. When we asked the same three questions about the same review in one `run()`, it used 370. When the questions share a state, use `run()`. TypeSafe's docs put it the same way: an extra question in the same request costs only its own tokens. For usage across your whole stack, see [how to track LLM token usage and cost in Python](/blog/track-llm-token-usage-cost-python).
+
+## Switching to Cloudflare Clef
+
+Switching provider means changing the model name. Names starting with `clef` go to Cloudflare Workers AI. Swarms reads `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_AUTH_TOKEN` and unwraps Workers AI's `result` envelope, so the code that reads the response stays the same:
+
+```python
+from swarms import DecisionModel
+
+# Needs CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_AUTH_TOKEN in your environment or .env.
+clef = DecisionModel(model_name="clef")  # or "clef-flash"
+
+result = clef.run(
+    state="Checkout has been failing for every customer for the last hour.",
+    questions={
+        "team": {
+            "type": "choice",
+            "instructions": "Which team should handle this request?",
+            "criteria": {
+                "billing": "Payments, invoices and refunds",
+                "technical": "Outages, errors and configuration",
+            },
+        },
+        "urgent": {
+            "type": "noul",
+            "instructions": "Is this support request urgent?",
+        },
+    },
+)
+
+answers = result["answers"]
+print(result["model"], answers["team"]["choice"], answers["urgent"]["noul"])
+print(f"cost: ${clef.calculate_cost(result['usage'])['total_cost']:.6f}")
+```
+
+You need a Cloudflare account to run this. Without `CLOUDFLARE_ACCOUNT_ID`, the constructor raises `ValueError` and tells you which variable to set. We have not run this example against Workers AI. We ran it unchanged against a mocked HTTP transport, which confirmed that it posts to `.../accounts/<id>/ai/run/@cf/cloudflare/clef` with your token as a bearer header, sends the questions as written, and returns the same `model`, `answers` and `usage` shape as Jev. The v16 changelog says the same: the Clef path is covered by mocked tests and has not yet run against Workers AI.
+
+## What else DecisionModel does
+
+- **Async**: `await model.arun(state, questions)` has the same signature as `run()`.
+- **Retries**: 408, 429, 500, 502, 503, 504 and 529 responses, and connection errors, are retried with exponential backoff that honours `retry-after`. `max_retries` defaults to 3 and `timeout` to 30 seconds.
+- **Readable errors**: an error response raises with the response body included, so a 422 names the field that failed validation.
+- **Other providers**: pass `base_url`, `endpoint` and `api_key_env`, or subclass and override `build_headers`, `build_payload` and `parse_response`. `extra_body` merges fields into every request body.
+- **No new dependency**: it calls the HTTP APIs with `httpx`.
+
+The repository's [`examples/decision_models/`](https://github.com/kyegomez/swarms/tree/master/examples/decision_models) folder has eight more scripts, including a decision model as a `HierarchicalSwarm` director, a resume screening funnel and guardrails on a `GroupChat`. The [Swarms v16 "Overclock" release notes](/blog/swarms-v16-overclock-release) cover the rest of the release.
+
+## FAQ
+
+### What is a decision model in AI?
+
+A model that answers typed questions about a state with calibrated probabilities instead of generated text. You define the allowed answers. It returns the answer, a probability for each option and a confidence. TypeSafe's Jev and Cloudflare's Clef are two examples.
+
+### Is a decision model just an LLM that returns JSON?
+
+No. An LLM generates its JSON token by token, and any confidence it reports is generated text too. A decision model is trained to return a probability distribution over the options you supplied, so its confidence is something you can threshold on.
+
+### What is the difference between TypeSafe Jev and Cloudflare Clef?
+
+They take the same request and return the same answers. Jev is TypeSafe's text-only model, priced at $0.042 per million input tokens. Clef (27B) and Clef Flash (9B) run on Cloudflare Workers AI, also accept images and video, and cost $0.24 and $0.09 per million input tokens. In Swarms the difference is one model name.
+
+### When should I not use a decision model?
+
+When you need prose, code, a summary or a plan, or a judgment that takes several steps of reasoning. Use an LLM for those, or split the judgment into narrow questions and combine the answers in code.
+
+### How much does a decision model call cost?
+
+You pay for input tokens, and output tokens are free. In our runs, a three-question Jev request cost 438 input tokens, which is $0.000018. `DecisionModel.calculate_cost()` gives you that figure from the provider's reported usage.
+
+## Links and Resources
+
+| Resource | Link |
+| --- | --- |
+| Swarms v16 "Overclock" release notes | [/blog/swarms-v16-overclock-release](/blog/swarms-v16-overclock-release) |
+| Reduce LLM costs with a decision model | [/blog/reduce-llm-costs-decision-model](/blog/reduce-llm-costs-decision-model) |
+| Track LLM token usage and cost in Python | [/blog/track-llm-token-usage-cost-python](/blog/track-llm-token-usage-cost-python) |
+| What is an agent? | [/blog/what-is-an-agent](/blog/what-is-an-agent) |
+| What is a multi-agent system? | [/blog/what-is-a-multi-agent-system](/blog/what-is-a-multi-agent-system) |
+| Decision model examples | [examples/decision_models](https://github.com/kyegomez/swarms/tree/master/examples/decision_models) |
+| TypeSafe documentation | [docs.typesafe.ai](https://docs.typesafe.ai) |
+| Cloudflare Clef | [developers.cloudflare.com/workers-ai/models/clef](https://developers.cloudflare.com/workers-ai/models/clef/) |
+| Cloudflare Clef Flash | [developers.cloudflare.com/workers-ai/models/clef-flash](https://developers.cloudflare.com/workers-ai/models/clef-flash/) |
+| Swarms on GitHub | [github.com/kyegomez/swarms](https://github.com/kyegomez/swarms) |
+
+---
+
+*Have questions or feedback? Join our [Discord community](https://discord.gg/VapjxpSyHC) or check out the [documentation](https://docs.swarms.ai).*

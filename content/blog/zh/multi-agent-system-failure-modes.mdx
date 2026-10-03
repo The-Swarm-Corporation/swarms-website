@@ -1,0 +1,478 @@
+---
+title: "多智能体系统的失败模式：7 种静默失败及其修复"
+description: "七种多智能体系统失败模式：它们返回看似合理的输出而不是报错。本文讲清如何检测每一种，以及 Swarms 16 中的修复，并附可运行代码。"
+date: "2026-10-03"
+author: "Swarms 团队"
+categories: ["指南", "工程"]
+readTime: "11 分钟阅读"
+image: "/multi_agent_system_failure_modes.png"
+featured: false
+---
+
+# 多智能体系统的失败模式：7 种静默失败及其修复方法
+
+最糟糕的多智能体系统失败模式不会崩溃。它们返回的东西看起来像一个答案：一个空字符串、一份对话记录、一条「已完成」标记、一个被标记为成功的工具结果。没有任何报错，每次调用都照常计费，而缺陷要等到几天后才以一个已经被人采纳的错误答案的形式浮现出来。
+
+本指南逐一讲解其中七种，每一种都来自 [Swarms v16「Overclock」版本](/zh/blog/swarms-v16-overclock-release)期间发现并修复的真实缺陷。它们并不是 Swarms 独有的。任何把 LLM 调用、工具和智能体串起来的系统都有同样的接缝，在你自己的编排代码里也很容易犯同样的错误。每一种我们都会讲清机制、用户实际看到了什么、如何在你自己的系统中检测它，以及修复方法，并附上可以运行的代码。下面的每个缺陷都已在 Swarms 16 中修复。
+
+如果你刚接触这个主题，[什么是多智能体系统](/zh/blog/what-is-a-multi-agent-system)介绍了基础知识，[单智能体与多智能体](/zh/blog/single-agent-vs-multi-agent)讨论了额外的复杂度在什么时候值得。
+
+## 安装与配置
+
+```bash
+pip install -U swarms
+# or
+uv pip install -U swarms
+```
+
+其中三个示例会调用 `gpt-5.4-mini`，所以请设置一个 OpenAI key。其余示例使用桩智能体或故意写错的模型名，不产生任何费用。
+
+```bash
+export OPENAI_API_KEY="sk-..."
+```
+
+在工作目录里放一个包含同样内容的 `.env` 文件也可以；Swarms 会自动加载它。然后检查版本：
+
+```bash
+python -c "import swarms; print(swarms.__version__)"
+```
+
+本文的所有内容都需要 **Swarms 16 或更高版本**。
+
+## 多智能体系统的失败模式：为什么静默的那些代价最高
+
+崩溃是便宜的。它会终止运行、指向某一行代码，而且没有人会基于它的输出采取行动。AI 智能体中的静默失败之所以昂贵，是因为它能通过每一个只问「它返回了吗？」的检查。在多智能体系统中，代价会层层叠加：一个智能体的空答案成了下一个智能体的上下文，最后的综合结果自信满满地读过了一个空洞。
+
+v16 更新日志用一句话概括了这条共同主线：这些情况全都「返回了一个看似合理的值，而不是一个错误」。在检查你自己的代码时，把这句话当作测试标准。只要某处的失败能被转换成一个看起来正常的返回值，它迟早会被转换。
+
+## 1. 失败的 LLM 调用返回空字符串
+
+**机制。** 当一次 LLM 调用把所有重试都用完时，智能体循环会跳出并返回格式化后的历史记录。`run()` 交回的是 `""` 或提示词本身，没有任何错误。因为没有抛出任何异常，回退处理逻辑从未运行，所以即使配置了 `fallback_models`，它们也从来没有被尝试过（[#2418](https://github.com/kyegomez/swarms/pull/2418)）。
+
+**用户看到了什么。** 一个 key 被吊销、模型已下线或配额耗尽的智能体，带着空白输出「成功」了。在流水线中，下一个智能体被要求在一无所有的基础上工作。
+
+**如何检测。** 把一个智能体指向一个不可能存在的模型名，看看返回了什么。如果你的代码在 LLM 调用之后有 `if not result:` 这样的分支，它们正在掩盖这种失败模式。把空的补全结果当作错误，而不是数据。
+
+**修复。** 失败的调用现在会在重试之后抛出 `AgentLLMError`。在抛出之前，`run()` 会依次尝试每个回退模型，并移除失败那次尝试加入记忆的轮次，这样回退模型就不会看到两遍任务。设置了 `fallback_models` 时，它的第一个条目就是主模型。
+
+```python
+from swarms import Agent, AgentLLMError
+
+TASK = "In one sentence: why should a failed LLM call raise an error?"
+
+# No fallback: a model that cannot be reached now raises.
+broken = Agent(
+    agent_name="Broken-Agent",
+    model_name="gpt-5.4-typo",
+    max_loops=1,
+    retry_attempts=1,
+    print_on=False,
+)
+
+try:
+    broken.run(TASK)
+except AgentLLMError as e:
+    print(f"Raised {type(e).__name__}: {str(e)[:90]}...")
+
+# With fallbacks: the first entry is the primary, the rest are tried in order.
+resilient = Agent(
+    agent_name="Resilient-Agent",
+    fallback_models=["gpt-5.4-typo", "gpt-5.4-mini"],
+    max_loops=1,
+    retry_attempts=1,
+    output_type="final",
+    print_on=False,
+)
+
+answer = resilient.run(TASK)
+print("Served by:", resilient.get_current_model())
+print("Answer:", answer)
+```
+
+我们实际运行的输出（已删减 Swarms 的错误日志）：
+
+```
+Raised AgentLLMError: Agent 'Broken-Agent' got no response from 'gpt-5.4-typo' after 1 attempt(s): litellm.BadRe...
+Served by: gpt-5.4-mini
+Answer: A failed LLM call should raise an error because it clearly signals that the requested operation did not complete successfully, allowing the caller to handle the failure explicitly rather than silently using bad or incomplete output.
+```
+
+在生产环境中有两个细节很重要。Swarms 每次回退都会记录一条 `[Model Switch]` 警告，所以请针对它设置告警：每个请求都触发的回退，其实是一场你在花钱掩盖的故障。另外，在你调用 `agent.reset_model_index()` 之前，智能体在之后的运行中会一直停留在回退模型上。
+
+## 2. 工具失败被算到模型头上
+
+**机制。** 工具执行错误是在同一个 `try` 里抛出的，而这个 `try` 的处理器捕获的是生成错误。一个用完了重试的工具被记成了 LLM 错误，**模型**被重跑了 `retry_attempts` 次，最后整个运行以指责 provider 收场（[#2148](https://github.com/kyegomez/swarms/pull/2148)）。另外，工具批次在外层重试之上还有自己隐藏的一层重试，所以一个失败的工具默认会运行六次，而同一批次中已经成功的工具每次也会再跑一遍（[#2351](https://github.com/kyegomez/swarms/pull/2351)）。
+
+**用户看到了什么。** 日志说 provider 出了故障，实际出故障的是下游 API。每次工具故障都会推高 token 花费。对于有副作用的工具，比如发送邮件或下单，动作被重复执行了。
+
+**如何检测。** 给工具加一个计数器，并让它抛出异常。断言它运行的次数恰好等于你的重试设置，并且模型没有因为一个它无法修复的失败而被再次调用。无论如何，都要让有副作用的工具具备幂等性。
+
+**修复。** 工具失败现在会被记录为一个模型能读到的工具错误，智能体会退出重试循环，但不会退出这次运行。每次 `tool_retry_attempts` 尝试只运行一次批次。
+
+```python
+from swarms import Agent
+
+
+def get_exchange_rate(base: str, quote: str) -> str:
+    """Get the current exchange rate between two currencies.
+
+    Args:
+        base: Base currency code, e.g. 'USD'.
+        quote: Quote currency code, e.g. 'EUR'.
+
+    Returns:
+        The exchange rate as a string.
+    """
+    raise ConnectionError("rates API returned HTTP 503")
+
+
+agent = Agent(
+    agent_name="FX-Agent",
+    system_prompt="Answer currency questions. If a tool fails, say so plainly and do not guess a number.",
+    model_name="gpt-5.4-mini",
+    tools=[get_exchange_rate],
+    tool_retry_attempts=1,
+    max_loops=2,
+    output_type="final",
+    print_on=False,
+)
+
+print(agent.run("What is the USD to EUR exchange rate right now?"))
+```
+
+在我们的运行中，工具只运行了一次，模型没有被重试，第二个循环给出了这样的回答：
+
+```
+I attempted to fetch the USD to EUR exchange rate, but the tool call failed and returned no result. I can’t reliably provide a number without the tool output.
+```
+
+`max_loops=2` 给了模型一个读取失败信息的轮次。系统提示词里那句「不要猜数字」是**智能体错误处理**的另一半：框架负责让失败浮出水面，而你的提示词决定智能体如何处理它。
+
+## 3. 编排器宕机被报告为成功
+
+**机制。** 在 `HierarchicalSwarm` 中，`step()` 记录了异常后返回 `None`，所以 `run()` 里的处理器永远执行不到。一个失败的步骤照样推进循环计数，为一个什么也没运行的循环写下 `--- Loop N/M completed ---`，并把 `None` 喂给下一个循环。**即使主管在每个循环都失败了**，`run()` 也会返回一份对话记录，而不抛出任何异常（[#1886](https://github.com/kyegomez/swarms/pull/1886)）。
+
+**用户看到了什么。** 一次看起来已经完成、带着进度标记的运行，里面却没有任何工作成果。
+
+**如何检测。** 故意弄坏协调者，并断言这次运行会抛出异常。在你自己的编排代码里搜索那些记录日志后返回 `None` 的 `except Exception` 代码块；每一个都会把一次故障转换成交给下一层的空结果。
+
+**修复。** 错误现在会传到 `run()`。如果每个循环都失败，最后一个错误会被抛出。如果只有部分循环失败，运行会正常返回，而对话记录里写的是 `--- Loop N/M failed: <error> ---`，而不是「completed」。
+
+```python
+from swarms import Agent, HierarchicalSwarm
+
+workers = [
+    Agent(agent_name="Researcher", model_name="gpt-5.4-mini", max_loops=1, print_on=False),
+    Agent(agent_name="Writer", model_name="gpt-5.4-mini", max_loops=1, print_on=False),
+]
+
+# The director's model is unreachable, which simulates a provider outage.
+swarm = HierarchicalSwarm(
+    agents=workers,
+    director_model_name="gpt-5.4-typo",
+    director_settings={"retry_attempts": 1},
+    max_loops=2,
+    print_on=False,
+)
+
+try:
+    swarm.run("Write a two-line product update.")
+    print("Reported success")
+except Exception as e:
+    print(f"Run failed loudly: {type(e).__name__}")
+```
+
+```
+Run failed loudly: AgentLLMError
+```
+
+工作智能体从未被调用，所以运行这个示例不花一分钱。
+
+## 4. MCP 工具错误被报告为成功
+
+**机制。** mcp 2.x SDK 把 `CallToolResult.isError` 改名为 `is_error`。Swarms 用 `getattr(result, "isError", False)` 读取旧名字，在 2.x 上它总是返回默认值。**每一次失败的 MCP 工具调用都被当作成功报告给了智能体**（[#2128](https://github.com/kyegomez/swarms/pull/2128)）。`structuredContent` 也以同样的方式被改名，并以同样的方式失效。
+
+**用户看到了什么。** 智能体在一次写入并未成功的情况下照常继续，并报告建立在从未完成的调用之上的结果。
+
+**如何检测。** 这是适用范围最广的一条经验：对第三方对象使用带默认值的 `getattr`，会把上游的一次改名变成悄无声息的错误行为。保留一个使用总是失败的工具的契约测试，并在每次依赖变更时运行它。
+
+**修复。** Swarms 现在会同时读取两个名字，所以在 mcp 1.x 和 2.x 上这个标志都是正确的。下面就是那个契约测试。把服务器保存为 `flaky_server.py`：
+
+```python
+try:
+    from mcp.server.mcpserver import MCPServer  # mcp 2.x
+except ImportError:
+    from mcp.server.fastmcp import FastMCP as MCPServer  # mcp 1.x
+
+server = MCPServer(name="inventory")
+
+
+@server.tool()
+def reserve_stock(sku: str, quantity: int) -> str:
+    """Reserve stock for an order."""
+    raise RuntimeError(f"warehouse API timed out reserving {quantity} x {sku}")
+
+
+if __name__ == "__main__":
+    server.run()
+```
+
+然后通过 Swarms 以 stdio 方式调用它，服务器会被自动启动：
+
+```python
+import sys
+
+from swarms import MCPConnection, MCPManager
+
+manager = MCPManager(
+    mcp_config=MCPConnection(
+        transport="stdio",
+        command=sys.executable,
+        args=["flaky_server.py"],
+    )
+)
+
+result = manager.call_tool("reserve_stock", {"sku": "SKU-42", "quantity": 3})
+
+print("is_error:", result["is_error"])
+print("result:", result.get("result"))
+assert result["is_error"], "A failed MCP tool call was reported as a success"
+```
+
+```
+is_error: True
+result: Error executing tool reserve_stock: warehouse API timed out reserving 3 x SKU-42
+```
+
+我们是在 mcp 2.0.0 上运行的。如果你通过 MCP 对外提供自己的智能体，[把 AI 智能体变成 MCP 服务器](/zh/blog/turn-ai-agent-into-mcp-server-python)讲的是连接的另一端。
+
+## 5. 对话状态在任务之间泄漏
+
+**机制。** 大多数多智能体结构只在 `__init__` 里构建一次 `Conversation`，之后从不重置。在同一个实例上第二次调用 `run()`，会把上一个任务的对话记录当作上下文送出去，而每个批处理入口都只是在同一个实例上循环调用 `run`。所以 `batched_run(["task A", "task B"])` 在回答 B 时带着 A 的上下文，并在 B 的结果里返回了 A 的轮次。在 `ConcurrentWorkflow` 中使用 `output_type="dict"` 时，两次运行返回的是同一个活的列表，所以第一个调用方拿到的结果会在事后继续变长（[#2176](https://github.com/kyegomez/swarms/pull/2176)、[#2332](https://github.com/kyegomez/swarms/pull/2332)）。
+
+**用户看到了什么。** 答案提到了之前一个毫不相干的请求。在多租户服务中，这意味着一个客户的数据出现在了另一个客户的提示词里。
+
+**如何检测。** 埋一个金丝雀。在任务 A 里放一个独一无二的字符串，在同一个实例上运行任务 B，然后断言这个金丝雀从未出现在任何智能体收到的内容里。一个会记录自身输入的桩智能体，能让这变成一个零成本的单元测试：
+
+```python
+from swarms import RoundRobinSwarm
+
+
+class RecordingAgent:
+    """A stub agent that records every message it is shown. No API calls."""
+
+    def __init__(self, agent_name):
+        self.agent_name = agent_name
+        self.seen = []
+
+    def run(self, task, *args, messages=None, **kwargs):
+        self.seen.append(str(task) + str(messages or ""))
+        return f"{self.agent_name} done"
+
+
+alice, bob = RecordingAgent("Alice"), RecordingAgent("Bob")
+swarm = RoundRobinSwarm(agents=[alice, bob], max_loops=1)
+
+swarm.run("Task A. Customer secret: CANARY-7F3A")
+alice.seen.clear()
+bob.seen.clear()
+
+swarm.run("Task B. Summarise the release notes.")
+
+leaked = any("CANARY-7F3A" in m for m in alice.seen + bob.seen)
+print("Task A leaked into task B:", leaked)
+assert not leaked
+```
+
+```
+Task A leaked into task B: False
+```
+
+**修复。** 十二个结构现在都会在每次运行时重置对话，包括 `RoundRobinSwarm`、`HierarchicalSwarm`、`GroupChat`、`DebateWithJudge` 和 `ConcurrentWorkflow`。并发路径会让每个任务运行在一个浅拷贝上，这样多个线程就不会共用一份对话记录。如果你依赖运行之间的上下文延续，请自己持有这个 `Conversation`。
+
+## 6. 并发结果按完成顺序返回
+
+**机制。** `ConcurrentWorkflow` 有两条执行路径。仪表盘路径按位置把结果对回智能体；默认路径用的是 `as_completed`。**一个显示用的开关改变了你拿到的数据。** 三个智能体分别打桩为 0.30 秒、0.20 秒和 0.05 秒时，`show_dashboard=False` 返回的顺序恰好完全相反（[#2318](https://github.com/kyegomez/swarms/pull/2318)）。
+
+**用户看到了什么。** 读取「第一个结果」的代码拿到的是当天最快的那个智能体。按输入列表 zip 起来的结果被归到了错误的智能体名下，而且只是偶尔如此，因为延迟本身就在波动。
+
+**如何检测。** 给桩智能体设置与提交顺序相反的延迟，并断言输出顺序。真实的智能体很少以稳定的顺序完成，所以这个缺陷靠运气就能通过大多数真实测试。
+
+```python
+import time
+
+from swarms import ConcurrentWorkflow
+
+
+class SlowAgent:
+    """A stub agent that sleeps, then answers. No API calls."""
+
+    def __init__(self, agent_name, delay):
+        self.agent_name = agent_name
+        self.delay = delay
+
+    def run(self, task, *args, **kwargs):
+        time.sleep(self.delay)
+        return f"{self.agent_name} answer"
+
+
+agents = [
+    SlowAgent("First", 0.30),
+    SlowAgent("Second", 0.20),
+    SlowAgent("Third", 0.05),
+]
+
+workflow = ConcurrentWorkflow(agents=agents, output_type="dict", autosave=False)
+result = workflow.run("Same task for everyone")
+
+order = [m["role"] for m in result if m["role"] != "User"]
+print("Returned order:", order)
+assert order == ["First", "Second", "Third"]
+```
+
+```
+Returned order: ['First', 'Second', 'Third']
+```
+
+**修复。** 结果现在按提交顺序遍历 future 来收集，而不是用 `as_completed`。在你自己的代码里，规则是一样的：为每个输入预先分配一个槽位并按索引填充，或者把 future 和它们的输入 zip 在一起。
+
+## 7. 在导入时被冻结的时间戳
+
+**机制。** `Agent` 的默认系统提示词和自主循环的提示词都是模块级的 f-string，所以其中的时间只在导入时计算一次。默认提示词还被冻结了两次，因为它同时被用作参数默认值，而 Python 只对默认值求值一次。**一个长时间运行的进程里，每个智能体被告知的都是进程启动时的时间**（[#2134](https://github.com/kyegomez/swarms/pull/2134)、[#2242](https://github.com/kyegomez/swarms/pull/2242)）。
+
+**用户看到了什么。** 一个运行了一周的服务器，对「今天」给出的回答是一周之前的。
+
+**如何检测。** 搜索调用了 `datetime.now()`、`time.time()` 或任何其他会变化的东西的模块级 f-string 和参数默认值。这个机制十行代码就能说明：
+
+```python
+import time
+from datetime import datetime
+
+# The bug: an f-string at module level is evaluated once, at import.
+PROMPT = f"You are a helpful assistant. Time: {datetime.now():%H:%M:%S}"
+
+
+# The fix: build the prompt when it is used.
+def build_prompt() -> str:
+    return f"You are a helpful assistant. Time: {datetime.now():%H:%M:%S}"
+
+
+time.sleep(2)
+print("Constant:", PROMPT)
+print("Function:", build_prompt())
+```
+
+```
+Constant: You are a helpful assistant. Time: 10:36:15
+Function: You are a helpful assistant. Time: 10:36:17
+```
+
+**修复。** Swarms 现在会在构建智能体时生成这两个提示词。这覆盖了你为每个任务新建的任何智能体。但一个你保留了好几天的 `Agent` 对象，携带的仍然是它被构建时的时间，所以请在每个任务里附上当前时间：
+
+```python
+from datetime import datetime
+
+from swarms import Agent
+
+agent = Agent(agent_name="Clock-Agent", model_name="gpt-5.4-mini", max_loops=1, print_on=False)
+
+# The default system prompt is built when the agent is constructed.
+print([line for line in agent.system_prompt.splitlines() if line.startswith("Time:")])
+
+# For an agent object you keep alive for days, send the time with each task.
+task = f"Current time: {datetime.now().astimezone():%Y-%m-%d %H:%M %Z}. Is it a weekday?"
+print(task)
+```
+
+```
+['Time: Current date and time: Saturday, October 03, 2026 10:36 EDT']
+Current time: 2026-10-03 10:36 EDT. Is it a weekday?
+```
+
+这个脚本不会发起任何 API 调用。
+
+## AI 智能体的可靠性：能同时抓住这七种问题的做法
+
+这七个缺陷形态相同，所以防御手段也相同。
+
+- **在每一层都大声失败。** 智能体、swarm 和路由器在没有产出任何东西时都应该抛出异常。永远不要让 `except Exception` 把 `None` 或空字符串返回给下一层。
+- **测试失败路径，而不只是正常路径。** 一个错误的模型名、一个会抛出异常的工具、一个会报错的 MCP 工具，以及一个延迟反转的桩，全都不花钱，却能抓住七种中的四种。
+- **用金丝雀检查隔离性。** 在任务 A 里放一个独一无二的字符串，并断言它不出现在任务 B 中，就能在任何结构里抓住状态泄漏。
+- **数调用次数。** 悄悄翻倍的重试会在工具计数器和 token 总量上露出马脚。[追踪 token 用量和成本](/zh/blog/track-llm-token-usage-cost-python)能让一场重试风暴在出现在日志里之前，先出现在账单里。
+- **在调用时再填入动态值。** 时间、日期以及任何按请求变化的东西，都应该放在函数里，而不是常量里。
+- **在两个层面加上回退。** **LLM 回退模型**为单个智能体兜住 provider 故障。对于整个架构，`SwarmRouter(fallback_swarms=...)` 会在一种 swarm 类型失败时尝试下一种。
+
+```python
+from swarms import Agent, SwarmRouter
+
+agents = [
+    Agent(
+        agent_name="Researcher",
+        system_prompt="List three facts about the topic. Be brief.",
+        model_name="gpt-5.4-mini",
+        max_loops=1,
+        print_on=False,
+    ),
+    Agent(
+        agent_name="Writer",
+        system_prompt="Turn the facts you are given into one short paragraph.",
+        model_name="gpt-5.4-mini",
+        max_loops=1,
+        print_on=False,
+    ),
+]
+
+router = SwarmRouter(
+    agents=agents,
+    swarm_type="HierarchicalSwarm",
+    director_model_name="gpt-5.4-typo",  # simulate a director outage
+    director_settings={"retry_attempts": 1},
+    fallback_swarms=["SequentialWorkflow"],
+    output_type="final",
+)
+
+result = router.run("Why do multi-agent systems need fallbacks?")
+
+print("Served by:", router.active_swarm_type)
+for attempt in router.fallback_attempts:
+    print("Failed:", attempt["swarm_type"], "-", type(attempt["error"]).__name__)
+print(result)
+```
+
+我们的运行结果：
+
+```
+Served by: SequentialWorkflow
+Failed: HierarchicalSwarm - AgentLLMError
+Multi-agent systems need fallbacks to keep working when a primary agent fails or times out, ...
+```
+
+回退的 swarm 由同样的智能体和配置构建，并接收同样的任务。如果每种类型都失败，就会抛出 `SwarmRouterRunError`，并附带所有尝试记录。这之所以可行，正是因为第 3 个修复：在它之前，层级 swarm 的故障看起来像成功，路由器根本无从回退。请在每次运行时记录 `fallback_attempts`。[智能体编排模式](/zh/blog/agent-orchestration-patterns)讨论了哪些架构适合互为回退。
+
+两个相关的工具：当某个步骤本质上是一次分类时，[决策模型](/zh/blog/what-is-a-decision-model)会返回带类型、经过校准的答案，而不是需要你去解析的自由文本；而在一次作答不够可靠的问题上，[Tree of Thoughts](/zh/blog/tree-of-thoughts-python-guide) 能帮上忙。
+
+## 常见问题
+
+### 多智能体系统中最常见的失败模式有哪些？
+
+代价最高的是那些静默的：返回空输出的失败 LLM 调用、通过模型重试或被报告为成功的工具错误、被报告为已完成运行的编排器故障、在任务之间泄漏的对话状态、以错误顺序返回的结果，以及像时间戳这样被固化进提示词的过期值。每一种都会返回看似有效的东西，这正是它们能进入生产环境的原因。
+
+### 如何在 Python 中给 AI 智能体添加回退模型？
+
+在 Swarms 中，给 `Agent` 传入 `fallback_models=["primary-model", "backup-model"]`。第一个条目是主模型。如果它在 `retry_attempts` 次重试后仍然失败，就会尝试下一个；如果全部失败，就会抛出 `AgentLLMError`。`agent.get_current_model()` 会告诉你这次运行是由哪个模型完成的。
+
+### 为什么我的 AI 智能体返回了空字符串？
+
+通常是因为调用栈的某处把一次失败的 LLM 调用转换成了正常的返回值。在 Swarms 16 之前，一个调用用完所有重试仍然失败的智能体会返回 `""` 或提示词。从 16 开始，它会抛出 `AgentLLMError`，所以请捕获这个异常，或者配置 `fallback_models`。
+
+### 如何测试多智能体系统中的静默失败？
+
+故意注入失败：一个无效的模型名、一个会抛出异常的工具、一个总是报错的 MCP 工具、延迟反转的桩智能体，以及一个放在某个任务里、绝不能出现在下一个任务中的金丝雀字符串。这些都不需要 API 调用，而每一个都在检查失败是否以错误的形式浮出水面。
+
+### Swarms 会重试失败的工具调用吗？
+
+会，最多重试 `tool_retry_attempts` 次（默认 3 次），每次尝试运行一次。如果工具仍然失败，错误会作为工具错误记录在对话中，模型不会因此被重跑，所以当 `max_loops` 为 2 或更大时，智能体能读到这次失败并作出回应。
+
+---
+
+上面的每个修复及其 PR 都记录在 [Swarms v16 更新日志](/zh/blog/swarms-v16-overclock-release)中。框架在 [github.com/kyegomez/swarms](https://github.com/kyegomez/swarms) 开源。

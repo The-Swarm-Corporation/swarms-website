@@ -1,0 +1,1092 @@
+---
+title: "Swarms x TypeSafe: How to Use Decision Models with the Swarms Framework and API"
+description: "A complete guide to decision models in Swarms. Ask TypeSafe's Jev and Cloudflare's Clef typed questions for calibrated probabilities, compare and ensemble several models, plug them into agents and swarms, and call them through the Swarms API or the TypeSafe SDK."
+date: "2026-10-03"
+author: "Swarms Team"
+categories: ["Guides", "Engineering"]
+readTime: "10 min read"
+image: "/swarms_x_typesafe.png"
+featured: false
+---
+
+# Swarms x TypeSafe: How to Use Decision Models with the Swarms Framework and API
+
+Most of what an agent system does all day is make small decisions. Which agent should take this ticket? Is this reply safe to post? Is the task finished? Is this message spam? Teams usually answer these with another LLM call: write a prompt, generate some text, parse the text, and hope the format holds.
+
+Decision models answer those questions directly. You give a decision model a **state** (text, a JSON object or a list) and a set of typed **questions**, and it returns a probability for every possible answer in a single request. TypeSafe calls this a System One model: fast, cheap, typed judgments, next to the slower System Two reasoning that LLMs do well.
+
+Swarms now supports decision models in both the open-source framework and the Swarms API:
+
+- **TypeSafe's Jev** (`jev-latest`, `jev-preview`, `jev-1.13.0`) at $0.042 per million input tokens, with output tokens free.
+- **Cloudflare's Clef** (`clef`, a 27B multimodal model, and `clef-flash`, a faster 9B model) running on Workers AI.
+
+This guide covers everything from your first question to routing agents, gating their output, ensembling several decision models, and calling all of it through the Swarms API with either plain HTTP or the official TypeSafe SDKs. Every code sample below was run before publishing, and the outputs shown are real.
+
+## What a decision model returns
+
+There are three question types, and you can mix them freely in one request:
+
+| Type | What it answers | What you get back |
+|---|---|---|
+| `choice` | Which of these options applies? | `choice`, `probabilities` for every option, `confidence` |
+| `score` | Where does this sit on an ordered scale? | `score` (a probability-weighted level that can fall between levels), `legend`, `probabilities`, `confidence` |
+| `noul` | Is this yes/no statement true? | `noul`, the probability from 0 to 1 |
+
+Because every answer comes with probabilities, you decide what to do with uncertainty. A choice with confidence 0.98 can be automated. A choice with confidence 0.40 can go to a human or to a second model. You never parse free text, and the answer can never be an option you did not offer.
+
+## Part 1: Decision models in the Swarms framework
+
+### Install and set your keys
+
+Decision model support ships in `swarms` 16.0.1 and later:
+
+```bash
+pip install -U "swarms>=16.0.1"
+```
+
+Add the keys for the providers you want to use to your `.env` file. Swarms reads it automatically:
+
+```bash
+TYPESAFE_API_KEY="your-typesafe-key"        # Jev models
+CLOUDFLARE_ACCOUNT_ID="your-account-id"     # Clef models
+CLOUDFLARE_AUTH_TOKEN="your-workers-ai-token"
+```
+
+You only need the keys for the providers you plan to call. The model name picks the provider: names starting with `jev` go to TypeSafe and names starting with `clef` go to Cloudflare Workers AI.
+
+### Your first decision
+
+`DecisionModel` has a helper for each question type. Each helper sends one request and returns one answer:
+
+```python
+from swarms import DecisionModel
+
+# Uses TypeSafe's jev-latest and reads TYPESAFE_API_KEY from the environment or .env.
+model = DecisionModel()
+
+ticket = "I was charged twice for my March invoice and need one of the charges refunded today."
+
+urgent = model.noul(ticket, "The customer needs this resolved today.")
+team = model.choice(
+    ticket,
+    "Which team should handle this ticket?",
+    {
+        "billing": "Payments, refunds and invoices",
+        "technical": "Bugs, outages and API errors",
+        "sales": "Pricing and plan questions",
+    },
+)
+frustration = model.score(
+    ticket,
+    "How frustrated is the customer?",
+    ["Calm", "Frustrated", "Angry"],
+)
+
+print(f"Urgent: {urgent:.2f}")
+print(f"Team: {team['choice']} (confidence {team['confidence']:.2f})")
+print(f"Team probabilities: {team['probabilities']}")
+print(f"Frustration: {frustration['score']:.2f} on a 0 to 2 scale")
+```
+
+```text
+Urgent: 0.96
+Team: billing (confidence 1.00)
+Team probabilities: {'sales': 0.0, 'billing': 1.0, 'technical': 0.0}
+Frustration: 0.87 on a 0 to 2 scale
+```
+
+### Ask every question in one request
+
+The helpers are convenient, but `run()` is what you will use most. It sends the state once with any number of named questions, and returns every answer keyed by the name you chose. That is faster and cheaper than one request per question, because the state is only processed once:
+
+```python
+from swarms import DecisionModel
+
+model = DecisionModel(model_name="jev-latest")
+
+response = model.run(
+    state={
+        "subject": "Checkout is down",
+        "message": "Checkout has failed for every customer for the last hour. We are losing sales!",
+        "customer_plan": "enterprise",
+    },
+    questions={
+        "team": {
+            "type": "choice",
+            "instructions": "Which team should handle this ticket?",
+            "criteria": {
+                "billing": "Payments, refunds and invoices",
+                "technical": "Bugs, outages and API errors",
+                "sales": None,
+            },
+        },
+        "frustration": {
+            "type": "score",
+            "instructions": "How frustrated is the customer?",
+            "criteria": ["Calm", "Frustrated", "Angry"],
+        },
+        "urgent": {
+            "type": "noul",
+            "instructions": "Is this request urgent?",
+            "criteria": {"true": "Customers are blocked right now"},
+        },
+    },
+)
+
+answers = response["answers"]
+print(f"Answered by {response['model']}")
+print(f"Team: {answers['team']['choice']} {answers['team']['probabilities']}")
+print(f"Frustration: {answers['frustration']['score']:.2f} {answers['frustration']['probabilities']}")
+print(f"Urgent: {answers['urgent']['noul']:.2f}")
+print(f"Usage: {response['usage']}")
+print(f"Cost: ${model.calculate_cost(response['usage'])['total_cost']:.7f}")
+```
+
+```text
+Answered by jev-1.13.0
+Team: technical {'billing': 0.03, 'sales': 0.0, 'technical': 0.97}
+Frustration: 1.53 {'0': 0.0, '1': 0.47, '2': 0.53}
+Urgent: 0.97
+Usage: {'input_tokens': 434, 'output_tokens': 70}
+Cost: $0.0000182
+```
+
+A few things to notice:
+
+- `model` in the response is the version that actually answered. `jev-latest` and `jev-preview` are aliases, and at the time of writing both resolve to `jev-1.13.0`.
+- A `choice` option can have a description, or `None` to be judged by its name alone (`"sales": None` above).
+- The score of 1.53 sits between "Frustrated" (1) and "Angry" (2) because the model was split 47/53 between them. Use the `probabilities` when you need the full picture.
+- Three answers cost less than two thousandths of a cent.
+
+### See every model and its price
+
+`get_decision_models()` lists every decision model, fetching live lists from each provider whose keys are set. `get_decision_model_prices()` returns their prices in US dollars per million tokens. Cloudflare publishes prices through its API, so Clef prices are fetched live when your Cloudflare keys are set:
+
+```python
+from swarms import get_decision_model_prices, get_decision_models
+
+prices = get_decision_model_prices()
+for name in get_decision_models():
+    price = prices.get(name)
+    if price:
+        print(f"{name:<12} ${price['input']}/1M input, ${price['output']}/1M output")
+    else:
+        print(f"{name:<12} price not published")
+```
+
+```text
+jev-latest   $0.042/1M input, $0.0/1M output
+jev-preview  $0.042/1M input, $0.0/1M output
+jev-1.13.0   $0.042/1M input, $0.0/1M output
+clef         $0.24/1M input, $0.0/1M output
+clef-flash   $0.09/1M input, $0.0/1M output
+```
+
+### Track usage and cost
+
+Every `DecisionModel` adds up the input and output tokens the provider reports, across `run()`, `arun()` and the helpers:
+
+```python
+model = DecisionModel(model_name="jev-latest")
+model.run(state, questions)
+model.noul(state, "Is this urgent?")
+
+model.usage             # {"input_tokens": ..., "output_tokens": ...} summed over both calls
+model.get_price()       # {"input": 0.042, "output": 0.0}, US dollars per million tokens
+model.calculate_cost()  # input and output tokens, their cost, and total_cost for everything so far
+model.calculate_cost(response["usage"])  # the cost of one response
+```
+
+### Run thousands of decisions concurrently
+
+`arun()` is the async version of `run()`. With `asyncio.gather` and a semaphore to cap concurrency, you can push a large batch through one client:
+
+```python
+import asyncio
+
+from swarms import DecisionModel
+
+QUESTIONS = {
+    "spam": {"type": "noul", "instructions": "This message is spam or a scam."},
+    "language": {
+        "type": "choice",
+        "instructions": "What language is the message written in?",
+        "criteria": {"english": None, "spanish": None, "french": None, "other": None},
+    },
+}
+
+messages = [
+    "Congratulations! You won a $500 gift card, click here to claim it.",
+    "Hola, ¿pueden ayudarme a cambiar mi contraseña?",
+    "Bonjour, ma facture de septembre est incorrecte.",
+    "Can someone look at the failing deploy on staging?",
+] * 5
+
+
+async def main():
+    model = DecisionModel()
+    limit = asyncio.Semaphore(10)
+
+    async def check(message: str) -> dict:
+        async with limit:
+            response = await model.arun(message, QUESTIONS)
+            return response["answers"]
+
+    results = await asyncio.gather(*(check(m) for m in messages))
+    spam = sum(r["spam"]["noul"] > 0.5 for r in results)
+    print(f"Checked {len(results)} messages, {spam} flagged as spam")
+    print(f"First four languages: {[r['language']['choice'] for r in results[:4]]}")
+    cost = model.calculate_cost()
+    print(f"Total: {cost['input_tokens']} input tokens, ${cost['total_cost']:.6f}")
+
+
+asyncio.run(main())
+```
+
+```text
+Checked 20 messages, 5 flagged as spam
+First four languages: ['english', 'spanish', 'french', 'english']
+Total: 6645 input tokens, $0.000279
+```
+
+Twenty messages, two questions each, for under three hundredths of a cent.
+
+## Part 2: Working with multiple decision models
+
+Swarms treats every decision model the same way, so switching models is a one-word change and running several at once is a loop. This section covers three patterns: comparing models, ensembling them, and cascading from a cheap model to a second opinion.
+
+### Compare models on the same input
+
+This runs the same questions through every model you have keys for, and skips the rest:
+
+```python
+from swarms import DecisionModel, get_decision_models
+
+review = "The battery lasts two days, but the strap broke after a week and support never replied."
+questions = {
+    "sentiment": {
+        "type": "choice",
+        "instructions": "What is the overall sentiment of this review?",
+        "criteria": {"positive": None, "mixed": None, "negative": None},
+    },
+    "refund_risk": {
+        "type": "noul",
+        "instructions": "The customer is likely to ask for a refund.",
+    },
+}
+
+for name in get_decision_models():
+    try:
+        model = DecisionModel(model_name=name)
+    except ValueError as error:
+        print(f"{name:<12} skipped: {error}")
+        continue
+
+    response = model.run(review, questions)
+    answers = response["answers"]
+    cost = model.calculate_cost(response["usage"])["total_cost"]
+    print(
+        f"{name:<12} -> {response['model']:<11} "
+        f"sentiment {answers['sentiment']['choice']:<8} "
+        f"({answers['sentiment']['confidence']:.2f}) "
+        f"refund risk {answers['refund_risk']['noul']:.2f}  ${cost:.7f}"
+    )
+```
+
+```text
+jev-latest   -> jev-1.13.0  sentiment mixed    (0.35) refund risk 0.72  $0.0000139
+jev-preview  -> jev-1.13.0  sentiment mixed    (0.44) refund risk 0.70  $0.0000139
+jev-1.13.0   -> jev-1.13.0  sentiment negative (0.25) refund risk 0.69  $0.0000139
+clef         skipped: Set CLOUDFLARE_ACCOUNT_ID in your environment or .env file.
+clef-flash   skipped: Set CLOUDFLARE_ACCOUNT_ID in your environment or .env file.
+```
+
+The review is genuinely ambiguous (good battery, broken strap, silent support), and you can see it in the answers: the sentiment confidence is between 0.25 and 0.44 on every alias, and they disagree on "mixed" versus "negative". That low confidence is the signal. In production you would not automate this decision; you would send it to a person or to a second model. The refund-risk question, on the other hand, is stable at about 0.70 across all three.
+
+### Ensemble models from different providers
+
+When a decision matters, ask models from different providers and average their probabilities. Because the answers are probability distributions, averaging is meaningful, and `arun()` lets every model answer at the same time:
+
+```python
+import asyncio
+
+from swarms import DecisionModel
+
+ENSEMBLE = ["jev-latest", "clef", "clef-flash"]
+
+
+def build_models(names: list) -> list:
+    """
+    Create a client for every model whose provider credentials are set.
+
+    Args:
+        names: Decision model names to try.
+
+    Returns:
+        The clients that could be created.
+    """
+    models = []
+    for name in names:
+        try:
+            models.append(DecisionModel(model_name=name))
+        except ValueError:
+            print(f"Skipping {name}: provider credentials are not set.")
+    return models
+
+
+async def ensemble_choice(models: list, state, question: dict) -> dict:
+    """
+    Ask every model the same choice question at once and average their probabilities.
+
+    Args:
+        models: Decision model clients.
+        state: Content the question is about.
+        question: A choice question.
+
+    Returns:
+        The winning option, the averaged probabilities and each model's pick.
+    """
+    responses = await asyncio.gather(
+        *(model.arun(state, {"q": question}) for model in models)
+    )
+    answers = [response["answers"]["q"] for response in responses]
+    options = question["criteria"]
+    averaged = {
+        option: sum(a["probabilities"][option] for a in answers) / len(answers)
+        for option in options
+    }
+    return {
+        "choice": max(averaged, key=averaged.get),
+        "probabilities": averaged,
+        "votes": {m.model_name: a["choice"] for m, a in zip(models, answers)},
+    }
+
+
+models = build_models(ENSEMBLE)
+result = asyncio.run(
+    ensemble_choice(
+        models,
+        state="Our dashboard shows last month's numbers even after a hard refresh.",
+        question={
+            "type": "choice",
+            "instructions": "What kind of problem is this?",
+            "criteria": {
+                "caching": "Stale data served from a cache",
+                "data_pipeline": "Data that was never ingested or computed",
+                "user_error": "The user is looking at the wrong view or filter",
+            },
+        },
+    )
+)
+print(f"Votes: {result['votes']}")
+print(f"Ensemble: {result['choice']} {result['probabilities']}")
+```
+
+With only a TypeSafe key set, the ensemble falls back to the one model it can reach:
+
+```text
+Skipping clef: provider credentials are not set.
+Skipping clef-flash: provider credentials are not set.
+Votes: {'jev-latest': 'caching'}
+Ensemble: caching {'caching': 0.98, 'data_pipeline': 0.02, 'user_error': 0.0}
+```
+
+Add your Cloudflare keys and the same code averages Jev, Clef and Clef Flash. Mix providers rather than aliases: two Jev aliases that resolve to the same version will mostly agree with each other.
+
+### Cascade: cheap first, second opinion when unsure
+
+Most inputs are easy. A cascade answers them with the cheapest model and only spends more when the first model is unsure. Here Jev answers first, Clef is consulted below 0.75 confidence, and anything the two disagree on is marked for review:
+
+```python
+from swarms import DecisionModel
+
+fast = DecisionModel(model_name="jev-latest")
+try:
+    second_opinion = DecisionModel(model_name="clef")
+except ValueError:
+    second_opinion = None
+
+
+def classify(state, question: dict, min_confidence: float = 0.75) -> dict:
+    """
+    Answer with the cheapest model, and ask a second model only when the first is unsure.
+
+    Args:
+        state: Content to classify.
+        question: A choice question.
+        min_confidence: Confidence below which the second model is consulted.
+
+    Returns:
+        The decision, which model made it, and whether a human should review it.
+    """
+    answer = fast.run(state, {"q": question})["answers"]["q"]
+    if answer["confidence"] >= min_confidence:
+        return {"choice": answer["choice"], "decided_by": fast.model_name, "review": False}
+
+    if second_opinion is None:
+        return {"choice": answer["choice"], "decided_by": fast.model_name, "review": True}
+
+    second = second_opinion.run(state, {"q": question})["answers"]["q"]
+    agree = second["choice"] == answer["choice"]
+    return {
+        "choice": second["choice"],
+        "decided_by": second_opinion.model_name,
+        "review": not agree or second["confidence"] < min_confidence,
+    }
+
+
+question = {
+    "type": "choice",
+    "instructions": "Which policy does this expense break?",
+    "criteria": {
+        "none": "The expense follows policy",
+        "alcohol": "Alcohol paid with company money",
+        "personal": "A personal purchase",
+        "missing_receipt": "No receipt was attached",
+    },
+}
+for expense in [
+    "Team lunch for 6 people, $142, receipt attached.",
+    "Dinner with a client, $310 including a bottle of wine, receipt attached.",
+    "Uber home after the offsite, receipt lost.",
+]:
+    print(f"{expense}\n  -> {classify(expense, question)}")
+```
+
+```text
+Team lunch for 6 people, $142, receipt attached.
+  -> {'choice': 'none', 'decided_by': 'jev-latest', 'review': False}
+Dinner with a client, $310 including a bottle of wine, receipt attached.
+  -> {'choice': 'alcohol', 'decided_by': 'jev-latest', 'review': False}
+Uber home after the offsite, receipt lost.
+  -> {'choice': 'missing_receipt', 'decided_by': 'jev-latest', 'review': False}
+```
+
+All three expenses cleared the confidence bar on the first, cheapest model, so Clef was never called. On a real expense queue, only the ambiguous cases would pay for the second opinion.
+
+## Part 3: Decision models inside agents and swarms
+
+Decision models are most useful as the fast layer around your LLM agents: they decide who works, whether the output is acceptable, and when the job is done, while the agents do the reasoning and writing. These examples use standard Swarms `Agent`s and structures.
+
+### Route tasks to the right agent
+
+The agents' own `agent_description` fields become the options of a `choice` question, and a `noul` question filters out requests nobody should handle:
+
+```python
+from swarms import Agent, DecisionModel
+
+agents = [
+    Agent(
+        agent_name="Billing-Agent",
+        agent_description="Refunds, invoices, failed payments and subscription changes.",
+        system_prompt="You resolve billing questions clearly and briefly.",
+        model_name="gpt-5.4-mini",
+        max_loops=1,
+        output_type="final",
+        print_on=False,
+    ),
+    Agent(
+        agent_name="Technical-Agent",
+        agent_description="Bugs, API errors, integrations and outages.",
+        system_prompt="You debug technical problems step by step.",
+        model_name="gpt-5.4-mini",
+        max_loops=1,
+        output_type="final",
+        print_on=False,
+    ),
+]
+agents_by_name = {agent.agent_name: agent for agent in agents}
+router = DecisionModel(model_name="jev-latest")
+
+
+def route(task: str) -> str:
+    """
+    Send a task to the best agent, or escalate when the router is unsure.
+
+    Args:
+        task: The customer request.
+
+    Returns:
+        The agent's reply, or a note saying why no agent ran.
+    """
+    answers = router.run(
+        state=task,
+        questions={
+            "agent": {
+                "type": "choice",
+                "instructions": "Which agent should handle this request?",
+                "criteria": {a.agent_name: a.agent_description for a in agents},
+            },
+            "in_scope": {
+                "type": "noul",
+                "instructions": "A software company's support team should handle this request.",
+            },
+        },
+    )["answers"]
+
+    if answers["in_scope"]["noul"] < 0.5:
+        return "Declined: out of scope for support."
+    pick = answers["agent"]
+    if pick["confidence"] < 0.5:
+        return f"Escalated to a human: {pick['probabilities']}"
+
+    print(f"-> {pick['choice']} (confidence {pick['confidence']:.2f})")
+    return agents_by_name[pick["choice"]].run(task)
+
+
+for task in [
+    "Our webhook endpoint returns 500 since your API update this morning.",
+    "I was charged twice for my March invoice, can you refund one?",
+    "Can you write my history essay on the French Revolution?",
+]:
+    print(f"\nTask: {task}")
+    print(route(task)[:200])
+```
+
+```text
+Task: Our webhook endpoint returns 500 since your API update this morning.
+-> Technical-Agent (confidence 1.00)
+Sorry about that. I can help troubleshoot it.
+To narrow this down quickly, please send:
+1. The webhook request/response headers and body you're receiving
+...
+
+Task: I was charged twice for my March invoice, can you refund one?
+-> Billing-Agent (confidence 1.00)
+I can help with that, but I can't process refunds directly here.
+Please send:
+- the invoice number for March
+...
+
+Task: Can you write my history essay on the French Revolution?
+Declined: out of scope for support.
+```
+
+The routing decision takes a fraction of a second and costs a few millionths of a dollar, so you can afford to put it in front of every request. When the router's confidence drops below 0.5, the task goes to a person instead of the wrong agent.
+
+### Gate agent output before it ships
+
+LLM agents sometimes write things you cannot publish. A decision model can check every draft against your policies, and send the agent back to rewrite when a check fails:
+
+```python
+from swarms import Agent, DecisionModel
+
+writer = Agent(
+    agent_name="Copywriter",
+    system_prompt=(
+        "You are an aggressive growth copywriter. You love bold health "
+        "promises and urgency like 'only a few left'. Reply with the headlines only."
+    ),
+    model_name="gpt-5.4-mini",
+    max_loops=1,
+    output_type="final",
+    print_on=False,
+)
+gate = DecisionModel(model_name="jev-latest")
+
+GATE_QUESTIONS = {
+    "health_claim": {
+        "type": "noul",
+        "instructions": "The `copy` claims the product cures, treats or prevents a medical condition.",
+    },
+    "fake_scarcity": {
+        "type": "noul",
+        "instructions": "The `copy` invents urgency or scarcity, such as 'only 3 left'.",
+    },
+    "quality": {
+        "type": "score",
+        "instructions": "How compelling is the `copy` as marketing for the product in the `brief`?",
+        "criteria": ["Unusable", "Weak", "Good", "Excellent"],
+    },
+}
+
+
+def write_with_gate(brief: str, attempts: int = 3) -> str:
+    """
+    Draft copy, check it with the decision model, and redraft until it passes.
+
+    Args:
+        brief: What the copy should say.
+        attempts: Drafts to try before giving up.
+
+    Returns:
+        Copy that passed the gate, or the last draft marked for review.
+    """
+    task = brief
+    for attempt in range(1, attempts + 1):
+        copy = writer.run(task)
+        answers = gate.run(
+            state={"brief": brief, "copy": copy}, questions=GATE_QUESTIONS
+        )["answers"]
+        problems = [
+            name
+            for name in ("health_claim", "fake_scarcity")
+            if answers[name]["noul"] >= 0.5
+        ]
+        quality = answers["quality"]["score"]
+        print(f"Attempt {attempt}: problems {problems or 'none'}, quality {quality:.2f}/3")
+        if not problems and quality >= 1.5:
+            return copy
+        task = (
+            f"{brief}\n\nYour last draft was rejected for: "
+            f"{', '.join(problems) or 'weak quality'}. Rewrite it.\n\nLast draft:\n{copy}"
+        )
+    return f"[Needs human review]\n{copy}"
+
+
+print(
+    write_with_gate(
+        "Write three launch headlines for FocusFuel, a caffeine and "
+        "L-theanine drink for steady focus without the crash."
+    )
+)
+```
+
+```text
+Attempt 1: problems none, quality 2.45/3
+1. Steady Focus. Zero Crash.
+2. Meet FocusFuel: Clean Energy for All-Day Sharpness
+3. Caffeine + L-Theanine, Perfectly Balanced for Calm, Locked-In Focus
+```
+
+That draft passed on the first attempt. To see the gate catch something, here are the same questions on a deliberately bad draft and a clean one:
+
+```text
+'FocusFuel cures brain fog in 10 minutes! Only 50 cans left, order now!': health_claim 0.92, fake_scarcity 0.97, quality 0.85
+'Steady focus, zero crash: meet FocusFuel.': health_claim 0.03, fake_scarcity 0.01, quality 2.14
+```
+
+The bad draft scores 0.92 for a health claim and 0.97 for fake scarcity, and would have been sent back. The clean one scores 0.03 and 0.01.
+
+### Let a decision model pick the swarm architecture
+
+Swarms has many multi-agent architectures, and `SwarmRouter` can run any of them by name. A decision model can read the task and choose the architecture before anything runs:
+
+```python
+from swarms import Agent, DecisionModel, SwarmRouter
+
+ARCHITECTURES = {
+    "SequentialWorkflow": "Steps that build on each other, where each agent needs the previous agent's output.",
+    "ConcurrentWorkflow": "Independent perspectives on the same input that can run in parallel.",
+    "MajorityVoting": "A single answer to a question with a discrete answer, where agreement reduces error.",
+}
+
+agents = [
+    Agent(
+        agent_name=f"Analyst-{i}",
+        system_prompt="You are a concise analyst. Answer in under 80 words.",
+        model_name="gpt-5.4-mini",
+        max_loops=1,
+        output_type="final",
+        print_on=False,
+    )
+    for i in range(3)
+]
+planner = DecisionModel(model_name="jev-latest")
+
+
+def run_with_best_architecture(task: str):
+    """
+    Pick the swarm architecture for a task with a decision model, then run it.
+
+    Args:
+        task: The task for the swarm.
+
+    Returns:
+        The swarm's output.
+    """
+    pick = planner.choice(
+        task,
+        "Which multi-agent architecture fits this task best?",
+        ARCHITECTURES,
+    )
+    print(f"Architecture: {pick['choice']} {pick['probabilities']}")
+    router = SwarmRouter(
+        agents=agents,
+        swarm_type=pick["choice"],
+        max_loops=1,
+        output_type="final",
+    )
+    return router.run(task)
+
+
+output = run_with_best_architecture(
+    "Give three independent takes on whether a 10-person startup should adopt Kubernetes: "
+    "one on cost, one on hiring and one on reliability."
+)
+print(str(output)[:400])
+```
+
+```text
+Architecture: ConcurrentWorkflow {'MajorityVoting': 0.0, 'SequentialWorkflow': 0.0, 'ConcurrentWorkflow': 1.0}
+- **Cost:** Usually **no** at 10 people unless you already need multi-service orchestration. Kubernetes adds operational overhead, tooling, and infra complexity that can outweigh savings...
+```
+
+The task asked for three independent takes, so the decision model chose `ConcurrentWorkflow` with probability 1.0.
+
+### Pick the best answer from several LLMs
+
+"Multiple models" also means running several LLMs and keeping the best answer. Here GPT, Claude and Gemini answer the same question concurrently, and one decision model request scores all three answers on accuracy and clarity:
+
+```python
+from swarms import Agent, DecisionModel, run_agents_concurrently
+
+TASK = (
+    "Explain the difference between a mutex and a semaphore to a junior "
+    "engineer in under 100 words, with one concrete example."
+)
+CANDIDATES = {
+    "A": "gpt-5.4-mini",
+    "B": "claude-haiku-4-5-20251001",
+    "C": "gemini/gemini-3.5-flash",
+}
+LEVELS = ["Poor", "Fair", "Good", "Excellent"]
+CRITERIA = {
+    "accuracy": "How technically accurate is `answers.{label}`?",
+    "clarity": "How clear is `answers.{label}` for a junior engineer?",
+}
+
+agents = [
+    Agent(
+        agent_name=label,
+        model_name=model_name,
+        max_loops=1,
+        output_type="final",
+        print_on=False,
+    )
+    for label, model_name in CANDIDATES.items()
+]
+answers = run_agents_concurrently(
+    agents=agents, task=TASK, return_agent_output_dict=True
+)
+
+judge = DecisionModel(model_name="jev-latest")
+response = judge.run(
+    state={"task": TASK, "answers": answers},
+    questions={
+        f"{name}_{label}": {
+            "type": "score",
+            "instructions": template.format(label=label),
+            "criteria": LEVELS,
+        }
+        for label in answers
+        for name, template in CRITERIA.items()
+    },
+)
+
+scores = {
+    label: sum(response["answers"][f"{name}_{label}"]["score"] for name in CRITERIA) / len(CRITERIA)
+    for label in answers
+}
+for label, score in sorted(scores.items(), key=lambda item: -item[1]):
+    print(f"{label} {CANDIDATES[label]:<28} {score:.2f}/3")
+best = max(scores, key=scores.get)
+print(f"\nBest answer ({CANDIDATES[best]}):\n{answers[best]}")
+print(f"\nJudging cost: ${judge.calculate_cost()['total_cost']:.6f}")
+```
+
+```text
+C gemini/gemini-3.5-flash      2.68/3
+A gpt-5.4-mini                 2.64/3
+B claude-haiku-4-5-20251001    2.57/3
+
+Best answer (gemini/gemini-3.5-flash):
+Think of a restaurant:
+*   A **mutex** is the single bathroom key. Only one person can hold it at a time, and only that person can unlock it (ownership).
+*   A **semaphore** is a host tracking 10 available tables. As groups sit, the count decreases; as they leave, it increases.
+...
+
+Judging cost: $0.000041
+```
+
+Judging three answers on two criteria took one request and cost $0.000041. An LLM judge would cost several hundred times more for the same job, and it would give you text to parse instead of scores.
+
+### More patterns in the Swarms repo
+
+The [`examples/decision_models`](https://github.com/kyegomez/swarms/tree/master/examples/decision_models) folder has larger, complete examples:
+
+- **`guarded_group_chat.py`**: a `GroupChat` that checks every message against hazard questions before it is posted, and blocks or flags unsafe ones.
+- **`system_one_director_swarm.py`**: a `HierarchicalSwarm` whose director is a decision model. It picks the next worker, detects when a worker is repeating itself, and stops the swarm once the answer is complete.
+- **`debate_referee_early_stop.py`**: a referee that scores both sides of a debate every round and ends it once no new arguments appear.
+- **`decision_screening_funnel.py`**: screens 500 resumes with a decision model, then sends only the shortlist to an LLM.
+- **`calibrated_ensemble_judge.py`**: compares a decision model judge with an LLM judge on consistency, speed and cost.
+
+## Part 4: Decision models through the Swarms API
+
+If you would rather not manage provider keys, the Swarms API runs decision models for you on your Swarms API key, billed per token from your Swarms credits. Get a key at [swarms.world/platform/api-keys](https://swarms.world/platform/api-keys).
+
+| Route | What it does |
+|---|---|
+| `GET /v1/decision-model/models` | The available models with their provider and price per million tokens |
+| `POST /v1/decision-model/completions` | Ask questions about a state. Returns the answers, the model that answered, and token usage with cost |
+| `POST /v1/systemone` | The same thing in TypeSafe's exact request and response format, so the TypeSafe SDKs work unchanged |
+
+### List models and ask questions with curl
+
+```bash
+curl https://api.swarms.world/v1/decision-model/models \
+  -H "x-api-key: $SWARMS_API_KEY"
+
+curl -X POST https://api.swarms.world/v1/decision-model/completions \
+  -H "x-api-key: $SWARMS_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model_name": "jev-latest",
+    "state": "Checkout has failed for every customer for the last hour.",
+    "questions": {
+      "team": {
+        "type": "choice",
+        "instructions": "Which team should handle this?",
+        "criteria": {"billing": "Payments and refunds", "technical": "Bugs and outages"}
+      },
+      "urgent": {"type": "noul", "instructions": "Is this urgent?"}
+    }
+  }'
+```
+
+The completion response has the answers, the model version that answered, and a `usage` block with the cost of the request:
+
+```json
+{
+  "job_id": "decision-model-3f9c…",
+  "status": "success",
+  "model_name": "jev-latest",
+  "model": "jev-1.13.0",
+  "answers": {
+    "team": {"type": "choice", "choice": "technical", "confidence": 0.98, "probabilities": {"technical": 0.99, "billing": 0.01}},
+    "urgent": {"type": "noul", "noul": 0.97}
+  },
+  "usage": {"input_tokens": 421, "output_tokens": 73, "total_tokens": 494, "input_cost": 2.03343e-05, "output_cost": 0.0, "total_cost": 2.03343e-05},
+  "timestamp": "2026-10-03T13:47:56.151066+00:00"
+}
+```
+
+### Compare every model over the API
+
+The model list makes multi-model work over the API as easy as in the framework. This runs one review through every model the API offers and adds up the cost:
+
+```python
+import os
+
+import requests
+
+BASE_URL = "https://api.swarms.world"
+HEADERS = {"x-api-key": os.environ["SWARMS_API_KEY"]}
+
+models = requests.get(f"{BASE_URL}/v1/decision-model/models", headers=HEADERS).json()["models"]
+for m in models:
+    print(f"{m['name']:<12} {m['provider']:<10} ${m['input_cost_per_1m']}/1M input")
+
+questions = {
+    "sentiment": {
+        "type": "choice",
+        "instructions": "What is the overall sentiment of this review?",
+        "criteria": {"positive": None, "mixed": None, "negative": None},
+    },
+    "refund_risk": {"type": "noul", "instructions": "The customer is likely to ask for a refund."},
+}
+review = "The battery lasts two days, but the strap broke after a week and support never replied."
+
+total = 0.0
+for m in models:
+    result = requests.post(
+        f"{BASE_URL}/v1/decision-model/completions",
+        headers=HEADERS,
+        json={"model_name": m["name"], "state": review, "questions": questions},
+    ).json()
+    answers = result["answers"]
+    total += result["usage"]["total_cost"]
+    print(
+        f"{m['name']:<12} sentiment {answers['sentiment']['choice']:<8} "
+        f"refund risk {answers['refund_risk']['noul']:.2f}"
+    )
+print(f"Total for {len(models)} models: ${total:.6f}")
+```
+
+```text
+jev-latest   typesafe   $0.0483/1M input
+jev-preview  typesafe   $0.0483/1M input
+jev-1.13.0   typesafe   $0.0483/1M input
+jev-latest   sentiment mixed    refund risk 0.69
+jev-preview  sentiment mixed    refund risk 0.68
+jev-1.13.0   sentiment negative refund risk 0.71
+Total for 3 models: $0.000048
+```
+
+Models from every provider the API is configured for appear in the list automatically, so the same loop covers Clef when it is available.
+
+### Use the TypeSafe SDK with your Swarms key
+
+`POST /v1/systemone` accepts and returns exactly what TypeSafe's own API does. That means the official TypeSafe SDKs work against Swarms by changing the base URL and the key, and an existing TypeSafe integration moves onto Swarms billing with a two-line change:
+
+```bash
+pip install typesafe-sdk
+```
+
+```python
+import os
+
+from typesafe_sdk import Choice, Noul, Score, TypeSafeClient
+
+client = TypeSafeClient(
+    api_key=os.environ["SWARMS_API_KEY"],
+    base_url="https://api.swarms.world",
+)
+
+print([model.name for model in client.models.list().models])
+
+result = client.system_one(
+    state="I was charged twice for my March invoice. This is the second time!",
+    questions={
+        "team": Choice(
+            instructions="Which team should handle this?",
+            criteria={"billing": None, "technical": None, "sales": None},
+        ),
+        "frustration": Score(
+            instructions="How frustrated is the customer?",
+            criteria=["Calm", "Frustrated", "Angry"],
+        ),
+        "repeat_issue": Noul(instructions="The customer says this happened before."),
+    },
+    model="jev-latest",
+)
+
+print(result.choices["team"].choice, result.scores["frustration"].score, result.nouls["repeat_issue"].noul)
+print(f"Charged: ${result.raw_http_response.headers['x-swarms-total-cost']}")
+```
+
+```text
+['jev-latest', 'jev-preview', 'jev-1.13.0']
+billing 1.21 0.93
+Charged: $1.75812e-05
+```
+
+The JavaScript SDK works the same way:
+
+```ts
+import { TypeSafeClient, noul } from "@typesafe-ai/sdk";
+
+const client = new TypeSafeClient({
+  apiKey: process.env.SWARMS_API_KEY,
+  baseURL: "https://api.swarms.world",
+});
+
+const { data, response } = await client
+  .systemOne({ state: "Site is down", questions: { urgent: noul("Is this urgent?") } })
+  .withResponse();
+
+console.log(data.answers.urgent.noul, response.headers.get("x-swarms-total-cost"));
+```
+
+The response body is exactly TypeSafe's (`model`, `answers` and `usage` token counts). The amount charged is in the `x-swarms-total-cost` header, and the request ID in `x-typesafe-request-id`, which both SDKs read.
+
+### Only call an LLM when you need one
+
+The API also runs LLM agents, so a decision model can sit in front of `/v1/agent/completions` and skip the agent whenever it is not needed:
+
+```python
+import os
+
+import requests
+
+BASE_URL = "https://api.swarms.world"
+HEADERS = {"x-api-key": os.environ["SWARMS_API_KEY"]}
+
+
+def handle(message: str) -> None:
+    """
+    Draft a reply with an LLM agent only when the message needs one.
+
+    Args:
+        message: An inbound customer message.
+    """
+    decision = requests.post(
+        f"{BASE_URL}/v1/decision-model/completions",
+        headers=HEADERS,
+        json={
+            "model_name": "jev-latest",
+            "state": message,
+            "questions": {
+                "needs_reply": {
+                    "type": "noul",
+                    "instructions": "This message asks for help or information and needs a written reply.",
+                }
+            },
+        },
+    ).json()
+    needs_reply = decision["answers"]["needs_reply"]["noul"]
+    print(f"\n{message}\n  needs reply {needs_reply:.2f} (${decision['usage']['total_cost']:.7f})")
+    if needs_reply < 0.5:
+        print("  -> no agent call")
+        return
+
+    agent = requests.post(
+        f"{BASE_URL}/v1/agent/completions",
+        headers=HEADERS,
+        json={
+            "agent_config": {
+                "agent_name": "Support-Agent",
+                "system_prompt": "You write short, friendly support replies.",
+                "model_name": "gpt-5.4-mini",
+                "max_loops": 1,
+            },
+            "task": f"Draft a reply to this customer message:\n{message}",
+        },
+    ).json()
+    reply = agent["outputs"][-1]["content"]
+    print(f"  -> agent reply (${agent['usage']['total_cost']:.5f}): {reply[:160]}")
+
+
+for message in [
+    "Thanks so much, that fixed it!",
+    "How do I export my invoices as CSV?",
+    "Out of office until Monday.",
+]:
+    handle(message)
+```
+
+```text
+Thanks so much, that fixed it!
+  needs reply 0.05 ($0.0000139)
+  -> no agent call
+
+How do I export my invoices as CSV?
+  needs reply 0.97 ($0.0000139)
+  -> agent reply ($0.00171): Hi! You can usually export invoices as CSV from your billing or invoices page.
+
+Try this:
+1. Go to **Billing** or **In
+
+Out of office until Monday.
+  needs reply 0.05 ($0.0000138)
+  -> no agent call
+```
+
+The agent call for the CSV question cost $0.00171. The decision in front of it cost $0.0000139, more than a hundred times less. If even a small share of your inbound traffic is thank-you notes, auto-replies and spam, the gate pays for itself many times over.
+
+## Tips for good decisions
+
+- **Ask several questions per request.** The state is processed once, so five questions in one request cost little more than one.
+- **Name the fields you mean.** With a JSON state, refer to fields in your instructions, for example "Is the `message` urgent?", so the model knows which part to read.
+- **Describe your options.** `criteria` descriptions such as `"technical": "Bugs, outages and API errors"` tell the model what each option covers. Use `None` only when the name says it all.
+- **Phrase nouls as statements or yes/no questions**, and use the `true` and `false` criteria to define the edge cases.
+- **Act on confidence.** Automate high-confidence answers, and route low-confidence ones to a person, a second model or a more expensive agent.
+- **Watch the score probabilities.** A score of 1.5 can mean "everyone agrees it is in between" or "split between 1 and 2". The `probabilities` tell you which.
+
+## Pricing at a glance
+
+| Model | Provider | Framework, your own key (per 1M input tokens) | Swarms API, Swarms credits (per 1M input tokens) |
+|---|---|---|---|
+| `jev-latest`, `jev-preview`, `jev-1.13.0` | TypeSafe | $0.042 | $0.0483 |
+| `clef` | Cloudflare | $0.24 | $0.276 |
+| `clef-flash` | Cloudflare | $0.09 | $0.1035 |
+
+Output tokens are free on every model. Framework prices are billed by the provider on your own account. API prices are billed from your Swarms credits, and `GET /v1/decision-model/models` always returns the current rates.
+
+## Get started
+
+- Install the framework with `pip install -U "swarms>=16.0.1"` and start with the [decision model examples](https://github.com/kyegomez/swarms/tree/master/examples/decision_models).
+- Get a Swarms API key at [swarms.world/platform/api-keys](https://swarms.world/platform/api-keys) and read the [Swarms API docs](https://docs.swarms.ai).
+- Read more about Jev in the [TypeSafe docs](https://docs.typesafe.ai) and about Clef on [Cloudflare Workers AI](https://developers.cloudflare.com/workers-ai/models/clef/).
+
+Put a decision model in front of your next agent, and let the LLM spend its tokens on the work that actually needs it.

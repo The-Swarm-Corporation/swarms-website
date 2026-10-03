@@ -1,0 +1,427 @@
+---
+title: "什么是决策模型？Jev 和 Clef 与 LLM 有何不同"
+description: "什么是决策模型？TypeSafe Jev 与 Cloudflare Clef 如何用经过校准的置信度回答带类型的问题，而不是生成文本，以及如何在 Swarms 中使用它们。"
+date: "2026-10-03"
+author: "Swarms 团队"
+categories: ["指南", "工程"]
+readTime: "11 分钟阅读"
+image: "/what_is_a_decision_model.png"
+featured: false
+---
+
+# 什么是决策模型？Jev 和 Clef 与 LLM 有何不同
+
+**决策模型（decision model）**是一种 AI 模型：它针对一段内容回答带类型的问题，返回的是概率，而不是文字。你给它一个 state（一张工单、一条记录、一段对话记录），再给它一组问题，并写明每个问题允许的答案。它会返回每个问题的答案、每个允许选项的概率，以及一个可供代码分支判断的置信度。它从不写句子。
+
+目前有两个可用的决策模型：TypeSafe 的 **Jev** 和 Cloudflare 的 **Clef**。Swarms 16 为两者新增了 `DecisionModel` 客户端。本文先解释决策模型 AI 做什么、它和"让 LLM 返回 JSON"或训练一个分类器有什么区别、什么时候它是错误的工具，然后给出可运行的代码。
+
+## 安装
+
+```bash
+pip install -U swarms
+# or
+uv pip install -U swarms
+```
+
+`DecisionModel` 默认调用 TypeSafe 的 Jev，并读取 `TYPESAFE_API_KEY`。路由示例还会运行一个 LLM 智能体，所以需要 `OPENAI_API_KEY`。Clef 需要两个 Cloudflare 变量。导出你需要的变量，或者把它们写进工作目录下的 `.env` 文件，Swarms 会自动加载：
+
+```bash
+export TYPESAFE_API_KEY="..."
+export OPENAI_API_KEY="sk-..."
+# Only for Cloudflare Clef
+export CLOUDFLARE_ACCOUNT_ID="..."
+export CLOUDFLARE_AUTH_TOKEN="..."
+```
+
+检查版本：
+
+```bash
+python -c "import swarms; print(swarms.__version__)"
+```
+
+本文的所有内容都需要 Swarms 16 或更高版本。
+
+## 什么是决策模型？
+
+TypeSafe 把 Jev 称为"System One"模型，这个名字来自 Daniel Kahneman 描述的快速、直觉式思维。TypeSafe 的文档直白地说明了它不是什么：它不写回复、不写代码，也不解释自己的推理。它针对 state 评估带类型的问题，返回带类型的值和概率分布。
+
+一个请求由两部分组成：
+
+- **State**：要判断的内容。可以是字符串、JSON 对象或数组。当决策需要比较多个部分时（例如一条消息、一笔订单和一份退款政策），使用对象。
+- **Questions**：一个以你自选的 ID 为键的字典。每个问题有 `type`、`instructions`，大多数类型还有列出允许答案的 `criteria`。
+
+同一个请求中的每个问题看到的是同一个 state，并且各自独立作答。一个答案永远不会成为另一个问题的隐藏上下文。正因如此，你可以把路由器、护栏和打分器放进同一次调用，仍然分别读取每个结果。
+
+Clef 的请求和响应形状完全相同。Cloudflare 的模型页面把 Clef 描述为一个 27B 的多模态决策模型，把 Clef Flash 描述为更快的 9B 模型。两者都能以文本、JSON、图像或视频的形式读取 state。Jev 目前只支持文本。
+
+## 三种问题类型：Choice、Score 和 Noul
+
+| 类型 | 问的是 | 返回 |
+|---|---|---|
+| Choice | 这些选项中的哪一个？ | `choice`、`probabilities`、`confidence` |
+| Score | 在有序量表上处于哪一级？ | `score`、`legend`、`probabilities`、`confidence` |
+| Noul | 这个陈述是否为真？ | `noul`，一个 0 到 1 之间的概率 |
+
+**Choice** 从一组无序选项中选出一个，比如团队、文档类型或意图。`criteria` 把每个选项映射到一段描述；如果选项名本身已经说清楚，也可以映射到 `None`。如果你的列表可能覆盖不了所有输入，就加一个 `other` 选项。
+
+**Score** 把 state 放到你定义的等级上，等级从低到高排列。`score` 按概率加权，所以可能落在两个等级之间：在 0 到 2 的沮丧程度量表上得到 1.4，意思是"介于沮丧和非常愤怒之间"。
+
+**Noul** 是一个是/否问题。答案是"是"的概率。接近 0.5 表示模型无法判断。Noul 没有单独的 `confidence` 字段，因为概率本身已经说明了它有多确定。
+
+根据 TypeSafe 的 API 参考，一个 Choice 最多可以有 255 个选项，一个 Score 可以有 2 到 10 个等级。Cloudflare 的 schema 允许每个 Clef 请求包含 1 到 64 个问题。由于每个答案都是你所提供选项上的概率分布，模型无法返回这些选项之外的值。
+
+## 经过校准的置信度，以及为什么要用它来把关动作
+
+TypeSafe 训练 Jev 的目标是做出经过校准的决策。校准是对一组预测的描述：在所有被给出 0.8 概率的答案中，大约 80% 应当是正确的。它并不保证任何单个答案正确，但它让这些数字可以用作阈值。
+
+`confidence` 把一个 Choice 或 Score 的分布浓缩成一个 0 到 1 之间的数。对于有 *n* 个选项的 Choice，它衡量最高概率比均匀分布高出多少：`(p_max - 1/n) / (1 - 1/n)`。全部概率集中在一个选项上得 1，均匀分布得 0。Score 的公式还会计算概率离最可能的等级有多远，所以在两个相邻等级之间摇摆，比在两端之间摇摆扣分更少。
+
+置信度给了你第二个维度。答案告诉你"是什么"，置信度告诉你"要不要行动"。TypeSafe 的文档建议划分三个区间：自动执行、确认后执行、或者转交他人，阈值随出错代价的升高而提高。以 0.6 的置信度给用户读出余额没有问题，批准一笔转账则不行。先从保守的阈值开始，再用你自己的数据去调。
+
+## 决策模型 vs LLM 结构化输出 vs 分类器
+
+你本来就可以从 LLM 拿到标签，或者训练一个分类器。区别在于返回什么，以及改动的代价。
+
+| | 让 LLM 返回 JSON | 训练好的分类器 | 决策模型 |
+|---|---|---|---|
+| 输出 | 符合 schema 的生成文本 | 标签和分数 | 答案，以及每个选项的概率 |
+| 不确定性 | "confidence"字段也是生成出来的文本 | 分数可能需要额外校准 | 经过校准的概率和 `confidence` |
+| 新增标签 | 修改提示词 | 收集数据并重新训练 | 修改请求中的 `criteria` |
+| 训练数据 | 不需要 | 需要 | 不需要 |
+| 能写文字或代码 | 能 | 不能 | 不能 |
+
+结构化输出模式会强制 LLM 的回复符合某个 schema，解决了解析问题。但它不会给你一个可用的概率：当模型写下 `"confidence": 0.9` 时，这个数字和其他每个 token 一样是采样出来的。分类器能给出真实的分数，但标签集在训练时就固定了。决策模型介于两者之间。你在每个请求里用自然语言定义选项，拿回的是恰好覆盖这些选项的概率分布。
+
+## 什么时候该用决策模型，什么时候不该用
+
+当你的代码需要对非结构化内容做一个范围很窄的判断，并且会根据答案采取行动时，就用它：
+
+- 把请求路由到智能体、队列或人工
+- 护栏：这条消息是否超出范围、带有辱骂内容，或者是提示词注入？
+- 按评分标准打分，比如严重程度、质量或匹配度
+- 筛选一大批内容，只让入围的部分进入昂贵的 LLM
+- 判断一个循环是否应该停止
+
+当你需要文字时不要用它：回复、摘要、代码、计划或解释，这些是 LLM 的工作。决策模型也无法替你进行多步推理。TypeSafe 的建议是把一个宽泛的判断（"给这份融资路演打分"）拆成原子化的问题（市场规模、可行性、差异化），再在代码里加权组合。如果一个判断需要专家想几秒钟，就问它；如果需要一个下午，那就不是决策模型该回答的问题。Jev 目前只支持文本，并且英文的准确率最高，所以在依赖它处理非英文内容之前先做测试。
+
+常见的设计是两者配合。决策模型负责廉价、高频、结构化的调用，LLM [智能体](/zh/blog/what-is-an-agent)负责生成类的工作。[用决策模型降低 LLM 成本](/zh/blog/reduce-llm-costs-decision-model)一文介绍了这种漏斗及其成本。
+
+## 用 TypeSafe Jev 在一个请求里问多个问题
+
+不带参数的 `DecisionModel()` 使用 TypeSafe 的 `jev-latest`。`run()` 会把所有问题放进一个请求发送：
+
+```python
+from swarms import DecisionModel
+
+# Reads TYPESAFE_API_KEY and uses TypeSafe's jev-latest by default.
+model = DecisionModel()
+
+ticket = {
+    "message": (
+        "Checkout has been failing for every customer for an hour. "
+        "We are losing orders. Please fix this now."
+    ),
+    "customer_plan": "enterprise",
+}
+
+result = model.run(
+    state=ticket,
+    questions={
+        "team": {
+            "type": "choice",
+            "instructions": "Which team should handle `message`?",
+            "criteria": {
+                "billing": "Payments, invoices and refunds",
+                "technical": "Outages, errors and integrations",
+                "sales": "Pricing, plans and upgrades",
+            },
+        },
+        "severity": {
+            "type": "score",
+            "instructions": "How severe is the customer impact in `message`?",
+            "criteria": ["No impact", "Minor", "Major", "Critical"],
+        },
+        "urgent": {
+            "type": "noul",
+            "instructions": "Does `message` convey urgency or time pressure?",
+        },
+    },
+)
+
+answers = result["answers"]
+print("Answered by:", result["model"])
+print("team:", answers["team"])
+print("severity:", answers["severity"])
+print("urgent:", answers["urgent"])
+print("usage:", result["usage"])
+cost = model.calculate_cost(result["usage"])
+print(f"cost: ${cost['total_cost']:.6f}")
+```
+
+我们实际运行的输出：
+
+```
+Answered by: jev-1.13.0
+team: {'type': 'choice', 'choice': 'technical', 'confidence': 0.98, 'probabilities': {'billing': 0.02, 'technical': 0.98, 'sales': 0.0}}
+severity: {'type': 'score', 'score': 3.0, 'confidence': 1.0, 'legend': {'0': 'No impact', '1': 'Minor', '2': 'Major', '3': 'Critical'}, 'probabilities': {'0': 0.0, '1': 0.0, '2': 0.0, '3': 1.0}}
+urgent: {'type': 'noul', 'noul': 0.99}
+usage: {'input_tokens': 438, 'output_tokens': 68}
+cost: $0.000018
+```
+
+带反引号的 `message` 是指向 state 内部的路径，告诉模型应该判断哪个字段。`result["model"]` 报告实际作答的带版本号的模型（`jev-latest` 目前指向 `jev-1.13.0`），所以你可以把它记录下来；如果你针对某个版本调过阈值，也可以固定使用那个版本。请求发出之前，`DecisionModel` 会检查每个问题：类型必须有效，Choice 需要非空的 `criteria` 字典，Score 至少需要两个等级。请求返回之后，它会检查每个问题是否都得到了同类型的答案。
+
+## 用置信度把关，把请求路由给 Swarms 智能体
+
+这里决策模型充当两个 LLM 智能体前面的路由器。阈值按风险设定：回复需要 0.6，退款需要 0.9，任何不属于客服范围的请求都会被拒绝。
+
+```python
+from swarms import Agent, DecisionModel
+
+router = DecisionModel()
+
+agents = {
+    "billing": Agent(
+        agent_name="Billing-Agent",
+        system_prompt="You are our billing support agent. Reply to the customer in two sentences.",
+        model_name="gpt-5.4-mini",
+        max_loops=1,
+        output_type="final",
+        print_on=False,
+    ),
+    "technical": Agent(
+        agent_name="Technical-Agent",
+        system_prompt="You are our technical support agent. Reply to the customer in two sentences.",
+        model_name="gpt-5.4-mini",
+        max_loops=1,
+        output_type="final",
+        print_on=False,
+    ),
+}
+
+
+def handle(request: str) -> str:
+    """
+    Route a request to an agent, or to a person when the router is unsure.
+
+    Args:
+        request: The customer's message.
+
+    Returns:
+        The agent's reply or the reason the request went to a person.
+    """
+    answers = router.run(
+        state=request,
+        questions={
+            "team": {
+                "type": "choice",
+                "instructions": "Which team should handle this request?",
+                "criteria": {
+                    "billing": "Charges, invoices, refunds and subscriptions",
+                    "technical": "Bugs, API errors, outages and integrations",
+                    "other": "Not a billing or technical support request",
+                },
+            },
+            "refund": {
+                "type": "noul",
+                "instructions": "Does the request ask for money back?",
+            },
+        },
+    )["answers"]
+
+    team = answers["team"]
+    print(
+        f"  team={team['choice']} confidence={team['confidence']:.2f} "
+        f"refund={answers['refund']['noul']:.2f}"
+    )
+
+    if team["choice"] == "other":
+        return "Declined: not a support request."
+    if team["confidence"] < 0.6:
+        return "Sent to a person: the router is unsure who owns this."
+    # Refunds move money, so they need a higher bar than a reply does.
+    if answers["refund"]["noul"] > 0.5 and team["confidence"] < 0.9:
+        return "Sent to a person: refund with moderate confidence."
+    return agents[team["choice"]].run(request)
+
+
+requests = [
+    "Our webhook endpoint has returned 500 errors since your API update this morning.",
+    "I was charged twice for my March invoice. Please refund one of the charges.",
+    "Your sync bug duplicated 300 orders and we paid shipping on all of them. We want compensation.",
+    "Something is wrong with my account.",
+    "Can you write my history essay on the French Revolution?",
+]
+
+for request in requests:
+    print(f"\n{request}")
+    print(handle(request))
+```
+
+我们实际运行的输出，智能体的回复做了截断：
+
+```
+Our webhook endpoint has returned 500 errors since your API update this morning.
+  team=technical confidence=1.00 refund=0.02
+Sorry for the trouble—could you send the webhook endpoint URL, a sample failing request payload, ...
+
+I was charged twice for my March invoice. Please refund one of the charges.
+  team=billing confidence=1.00 refund=0.99
+I’m sorry about the duplicate charge on your March invoice; I can help with that. ...
+
+Your sync bug duplicated 300 orders and we paid shipping on all of them. We want compensation.
+  team=billing confidence=0.68 refund=0.93
+Sent to a person: refund with moderate confidence.
+
+Something is wrong with my account.
+  team=technical confidence=0.24 refund=0.05
+Sent to a person: the router is unsure who owns this.
+
+Can you write my history essay on the French Revolution?
+  team=other confidence=1.00 refund=0.01
+Declined: not a support request.
+```
+
+每个分支都被触发了。那条含糊的请求仍然得到了一个首选项 `technical`，但置信度只有 0.24，代码没有据此行动。如果让 LLM 选一个团队，它也会同样流畅地选出一个。同步缺陷那条索赔主要属于账单、部分属于技术，而且它在要钱，所以 0.68 不够。五个请求中只有两个到达了 LLM。不同运行之间会有小幅差异：在我们的几次运行中，那条含糊请求的得分在 0.24 到 0.36 之间，同步缺陷索赔在 0.65 到 0.72 之间。路由是[多智能体系统](/zh/blog/what-is-a-multi-agent-system)悄无声息地出错的方式之一，所以值得同时阅读[多智能体系统的失败模式](/zh/blog/multi-agent-system-failure-modes)。
+
+## 模型、价格、用量和每次请求的成本
+
+`get_decision_models()` 列出每个 provider 提供的模型。当某个 provider 的凭据已设置时，它会把该 provider 的实时列表合并到内置名称中。自 [#2431](https://github.com/kyegomez/swarms/pull/2431) 起，Swarms 还会跟踪价格和 token 用量。`get_decision_model_prices()` 以每百万 token 的美元价格返回每个模型的价格。`model.usage` 累加该实例发出的每个请求的输入和输出 token。`calculate_cost()` 为一次响应的用量定价，不传参数时则为累计总量定价。
+
+```python
+from swarms import DecisionModel, get_decision_model_prices, get_decision_models
+
+print(get_decision_models())
+for name, price in get_decision_model_prices().items():
+    print(f"{name}: ${price['input']} input, ${price['output']} output per million tokens")
+
+model = DecisionModel(model_name="jev-latest")
+review = "The battery lasts two days, but the screen scratched within a week."
+
+sentiment = model.score(
+    state=review,
+    instructions="How positive is this product review overall?",
+    criteria=["Negative", "Mixed", "Positive"],
+)
+topic = model.choice(
+    state=review,
+    instructions="What does the review complain about?",
+    criteria={"battery": None, "screen": None, "price": None, "shipping": None},
+)
+defect = model.noul(
+    state=review,
+    instructions="Does the review report damage or a defect?",
+)
+
+print("sentiment:", sentiment["score"], sentiment["confidence"])
+print("topic:", topic["choice"], topic["probabilities"])
+print("defect:", defect)
+print("usage:", model.usage)
+print(f"cost: ${model.calculate_cost()['total_cost']:.6f}")
+```
+
+我们实际运行的输出：
+
+```
+['jev-latest', 'jev-preview', 'jev-1.13.0', 'clef', 'clef-flash']
+jev-latest: $0.042 input, $0.0 output per million tokens
+jev-preview: $0.042 input, $0.0 output per million tokens
+jev-1.13.0: $0.042 input, $0.0 output per million tokens
+clef: $0.24 input, $0.0 output per million tokens
+clef-flash: $0.09 input, $0.0 output per million tokens
+sentiment: 0.95 0.93
+topic: screen {'screen': 1.0, 'battery': 0.0, 'shipping': 0.0, 'price': 0.0}
+defect: 0.97
+usage: {'input_tokens': 916, 'output_tokens': 82}
+cost: $0.000038
+```
+
+这些价格与各 provider 自己的页面一致。TypeSafe 列出的 Jev 1.13 价格是每百万输入 token 0.042 美元，输出 token 免费。Cloudflare 列出的 Clef 价格是每百万输入 token 0.24 美元，Clef Flash 是 0.09 美元。TypeSafe 没有价格接口，所以 Jev 的价格内置在 Swarms 中。设置了凭据时，Clef 的价格会从 Cloudflare 实时获取。
+
+`score()`、`choice()` 和 `noul()` 是单个问题的快捷方式，每次调用都是一个独立的请求。上面三次调用用了 916 个输入 token。我们把同样三个问题、针对同一条评论放进一次 `run()` 时，只用了 370 个。当问题共享同一个 state 时，用 `run()`。TypeSafe 的文档也是这么说的：同一请求中多问一个问题，只需付这个问题本身的 token。要跟踪整个技术栈的用量，请参阅[如何在 Python 中跟踪 LLM token 用量和成本](/zh/blog/track-llm-token-usage-cost-python)。
+
+## 切换到 Cloudflare Clef
+
+切换 provider 就是换一个模型名。以 `clef` 开头的名称会发往 Cloudflare Workers AI。Swarms 读取 `CLOUDFLARE_ACCOUNT_ID` 和 `CLOUDFLARE_AUTH_TOKEN`，并拆开 Workers AI 的 `result` 外层封装，所以读取响应的代码保持不变：
+
+```python
+from swarms import DecisionModel
+
+# Needs CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_AUTH_TOKEN in your environment or .env.
+clef = DecisionModel(model_name="clef")  # or "clef-flash"
+
+result = clef.run(
+    state="Checkout has been failing for every customer for the last hour.",
+    questions={
+        "team": {
+            "type": "choice",
+            "instructions": "Which team should handle this request?",
+            "criteria": {
+                "billing": "Payments, invoices and refunds",
+                "technical": "Outages, errors and configuration",
+            },
+        },
+        "urgent": {
+            "type": "noul",
+            "instructions": "Is this support request urgent?",
+        },
+    },
+)
+
+answers = result["answers"]
+print(result["model"], answers["team"]["choice"], answers["urgent"]["noul"])
+print(f"cost: ${clef.calculate_cost(result['usage'])['total_cost']:.6f}")
+```
+
+运行这段代码需要一个 Cloudflare 账户。没有 `CLOUDFLARE_ACCOUNT_ID` 时，构造函数会抛出 `ValueError`，并告诉你该设置哪个变量。我们没有在 Workers AI 上实际运行这个示例。我们把它原样运行在一个模拟的 HTTP 传输层上，确认了它会向 `.../accounts/<id>/ai/run/@cf/cloudflare/clef` 发起请求、把你的 token 作为 bearer 头发送、原样发送问题，并返回与 Jev 相同的 `model`、`answers` 和 `usage` 结构。v16 更新日志也是这么说的：Clef 路径由模拟测试覆盖，尚未在 Workers AI 上实际运行过。
+
+## DecisionModel 还能做什么
+
+- **异步**：`await model.arun(state, questions)` 的签名与 `run()` 相同。
+- **重试**：408、429、500、502、503、504 和 529 响应以及连接错误会以指数退避重试，并遵守 `retry-after`。`max_retries` 默认为 3，`timeout` 默认为 30 秒。
+- **可读的错误**：出错的响应会连同响应体一起抛出，所以 422 会指出哪个字段没有通过校验。
+- **其他 provider**：传入 `base_url`、`endpoint` 和 `api_key_env`，或者继承并重写 `build_headers`、`build_payload` 和 `parse_response`。`extra_body` 会把字段合并进每个请求体。
+- **没有新依赖**：它用 `httpx` 直接调用 HTTP API。
+
+仓库中的 [`examples/decision_models/`](https://github.com/kyegomez/swarms/tree/master/examples/decision_models) 目录还有八个脚本，包括把决策模型用作 `HierarchicalSwarm` 的主管、一个简历筛选漏斗，以及 `GroupChat` 上的护栏。[Swarms v16「Overclock」发布说明](/zh/blog/swarms-v16-overclock-release)介绍了这次发布的其余内容。
+
+## 常见问题
+
+### AI 中的决策模型是什么？
+
+一种针对 state 回答带类型问题的模型，它返回经过校准的概率，而不是生成的文本。你定义允许的答案，它返回答案、每个选项的概率和一个置信度。TypeSafe 的 Jev 和 Cloudflare 的 Clef 就是两个例子。
+
+### 决策模型只是一个返回 JSON 的 LLM 吗？
+
+不是。LLM 的 JSON 是逐个 token 生成的，它报告的任何置信度也是生成出来的文本。决策模型经过训练，返回的是你所提供选项上的概率分布，所以它的置信度可以拿来设阈值。
+
+### TypeSafe Jev 和 Cloudflare Clef 有什么区别？
+
+它们接收相同的请求，返回相同的答案。Jev 是 TypeSafe 的纯文本模型，价格为每百万输入 token 0.042 美元。Clef（27B）和 Clef Flash（9B）运行在 Cloudflare Workers AI 上，还能接收图像和视频，价格分别为每百万输入 token 0.24 美元和 0.09 美元。在 Swarms 中，两者的区别只是一个模型名。
+
+### 什么时候不该用决策模型？
+
+当你需要文字、代码、摘要或计划，或者需要经过多步推理的判断时。这些情况请用 LLM，或者把判断拆成范围很窄的问题，再在代码里组合答案。
+
+### 一次决策模型调用要花多少钱？
+
+你为输入 token 付费，输出 token 免费。在我们的运行中，一个包含三个问题的 Jev 请求用了 438 个输入 token，即 0.000018 美元。`DecisionModel.calculate_cost()` 会根据 provider 报告的用量给出这个数字。
+
+## 链接与资源
+
+| 资源 | 链接 |
+| --- | --- |
+| Swarms v16「Overclock」发布说明 | [/blog/swarms-v16-overclock-release](/zh/blog/swarms-v16-overclock-release) |
+| 用决策模型降低 LLM 成本 | [/blog/reduce-llm-costs-decision-model](/zh/blog/reduce-llm-costs-decision-model) |
+| 在 Python 中跟踪 LLM token 用量和成本 | [/blog/track-llm-token-usage-cost-python](/zh/blog/track-llm-token-usage-cost-python) |
+| 什么是智能体？ | [/blog/what-is-an-agent](/zh/blog/what-is-an-agent) |
+| 什么是多智能体系统？ | [/blog/what-is-a-multi-agent-system](/zh/blog/what-is-a-multi-agent-system) |
+| 决策模型示例 | [examples/decision_models](https://github.com/kyegomez/swarms/tree/master/examples/decision_models) |
+| TypeSafe 文档 | [docs.typesafe.ai](https://docs.typesafe.ai) |
+| Cloudflare Clef | [developers.cloudflare.com/workers-ai/models/clef](https://developers.cloudflare.com/workers-ai/models/clef/) |
+| Cloudflare Clef Flash | [developers.cloudflare.com/workers-ai/models/clef-flash](https://developers.cloudflare.com/workers-ai/models/clef-flash/) |
+| Swarms GitHub 仓库 | [github.com/kyegomez/swarms](https://github.com/kyegomez/swarms) |
+
+---
+
+*有问题或反馈？欢迎加入我们的 [Discord 社区](https://discord.gg/VapjxpSyHC)，或查阅[文档](https://docs.swarms.ai)。*

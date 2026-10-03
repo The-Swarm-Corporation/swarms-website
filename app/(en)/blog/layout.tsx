@@ -29,6 +29,7 @@ export const metadata: Metadata = {
       en: `${siteConfig.url}/blog`,
       "zh-Hans": `${siteConfig.url}/zh/blog`,
     },
+    types: { "application/rss+xml": `${siteConfig.url}/feed.xml` },
   },
   openGraph: {
     title: BLOG_TITLE,

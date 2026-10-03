@@ -17,14 +17,14 @@ export function HomeAnnouncementBanner() {
       className="mb-6 sm:mb-8"
     >
       <Link
-        href="/blog/swarms-v15-akira-release"
+        href="/blog/swarms-v16-overclock-release"
         className="group inline-flex items-center gap-2 rounded-full border border-white/[0.12] bg-white/[0.04] py-1.5 pl-1.5 pr-3 text-xs backdrop-blur-md transition-colors duration-200 hover:border-white/25 hover:bg-white/[0.07] sm:text-sm"
       >
         <span className="rounded-full border border-red-500/30 bg-red-500/10 px-2 py-0.5 font-mono text-[10px] font-medium uppercase tracking-[0.15em] text-red-400">
           New
         </span>
         <span className="text-white/80 transition-colors duration-200 group-hover:text-white">
-          Swarms v15 &ldquo;Akira&rdquo; just shipped
+          Swarms v16 &ldquo;Overclock&rdquo; just shipped
         </span>
         <span className="hidden text-white/40 sm:inline">·</span>
         <span className="hidden text-white/55 transition-colors duration-200 group-hover:text-white/80 sm:inline">

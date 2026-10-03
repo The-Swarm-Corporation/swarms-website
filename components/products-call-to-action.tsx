@@ -22,9 +22,9 @@ export function ProductsCallToAction() {
               Ready to build?
             </h2>
             <p className="text-base font-normal leading-relaxed text-white/50 sm:text-lg">
-              Sign up now and get $5 in free API credits. Join the marketplace
-              and start building with Swarms.
+              Sign up now for the Swarms Cloud and get $5 in free API credits to help you get started building your agentic workflows.
             </p>
+       
           </div>
           <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
             <Button

@@ -22,6 +22,10 @@ export type QuickstartStep = {
   file: string
   lang: string
   code: string
+  /** Shell line typed into the demo terminal. Omitted when the snippet is itself shell. */
+  command?: string
+  /** Illustrative terminal output, one entry per line. */
+  output: string[]
 }
 
 export const QUICKSTART: QuickstartStep[] = [
@@ -37,6 +41,12 @@ cargo add tokio --features full
 cargo add anyhow
 
 export OPENROUTER_API_KEY="sk-or-..."`,
+    output: [
+      "Creating binary (application) `my-agents` package",
+      "Adding swarms-rs v0.3.0 to dependencies",
+      "Adding tokio v1 to dependencies",
+      "Adding anyhow v1 to dependencies",
+    ],
   },
   {
     n: 2,
@@ -58,6 +68,15 @@ async fn main() -> anyhow::Result<()> {
     println!("{}", agent.run("What is a vector database?".to_string()).await?);
     Ok(())
 }`,
+    command: "cargo run",
+    output: [
+      "Compiling my-agents v0.1.0",
+      "Finished `dev` profile in 4.12s",
+      "Running `target/debug/my-agents`",
+      "A vector database stores data as high-dimensional vectors and finds",
+      "the closest matches by similarity, so you can search by meaning",
+      "instead of exact keywords.",
+    ],
   },
   {
     n: 3,
@@ -99,6 +118,15 @@ async fn main() -> anyhow::Result<()> {
     }
     Ok(())
 }`,
+    command: "cargo run",
+    output: [
+      "Compiling my-agents v0.1.0",
+      "Finished `dev` profile in 4.31s",
+      "Running `target/debug/my-agents`",
+      "Rust's borrow checker prevents data races at compile time. Every value",
+      "has one owner, and references are either shared and read-only or",
+      "exclusive and mutable, never both at once...",
+    ],
   },
 ]
 
@@ -110,6 +138,8 @@ export type Harness = {
   points: string[]
   file: string
   code: string
+  command: string
+  output: string[]
 }
 
 export const HARNESSES: Harness[] = [
@@ -131,6 +161,14 @@ export const HARNESSES: Harness[] = [
 
 let result = workflow.run("How Rust prevents data races").await?;
 println!("{}", result.history.last().unwrap().content);`,
+    command: "cargo run --example sequential",
+    output: [
+      "Finished `dev` profile in 0.31s",
+      "Running `target/debug/examples/sequential`",
+      "Rust prevents data races by enforcing one rule at compile time: a value",
+      "can have many readers or one writer, never both. Code that breaks the",
+      "rule does not compile...",
+    ],
   },
   {
     id: "concurrent",
@@ -154,6 +192,18 @@ let result = workflow
 for message in &result.history {
     println!("── {} ──\\n{}\\n", message.role, message.content);
 }`,
+    command: "cargo run --example concurrent",
+    output: [
+      "Finished `dev` profile in 0.28s",
+      "Running `target/debug/examples/concurrent`",
+      "── anthropic/claude-opus-5.5 ──",
+      "Start with a monolith. Split a service out only when a team or a",
+      "scaling limit forces it.",
+      "── openai/gpt-5.5 ──",
+      "Monolith first, with clean module boundaries you can cut along later.",
+      "── google/gemini-3.8-flash ──",
+      "A modular monolith. Microservices add operational cost you do not need yet.",
+    ],
   },
   {
     id: "subagents",
@@ -190,6 +240,15 @@ let coordinator = client
     .build();
 
 let output = coordinator.run("Why did Rust adopt async/await?".to_string()).await?;`,
+    command: "cargo run --example sub_agents_and_handoffs",
+    output: [
+      "Finished `dev` profile in 0.35s",
+      "Running `target/debug/examples/sub_agents_and_handoffs`",
+      "delegate_to_Researcher -> 3 facts returned",
+      "transfer_to_Writer -> context passed",
+      "Rust moved to async/await because green threads need a runtime and",
+      "extra stack management, which conflicts with zero-cost abstractions...",
+    ],
   },
   {
     id: "graph",
@@ -217,6 +276,15 @@ workflow.connect_agents("Processor", "Analyst", Flow::default())?;
 workflow.connect_agents("Summarizer", "Analyst", Flow::default())?;
 
 let results = workflow.execute_workflow("Collector", "How to build a graph database?").await?;`,
+    command: "cargo run --example graph_workflow",
+    output: [
+      "Finished `dev` profile in 0.33s",
+      "Running `target/debug/examples/graph_workflow`",
+      "Collector     -> done",
+      "Processor     -> done",
+      "Summarizer    -> done (condition met: output > 100 chars)",
+      "Analyst       -> done (joined 2 branches)",
+    ],
   },
   {
     id: "rearrange",
@@ -238,6 +306,14 @@ let results = workflow.execute_workflow("Collector", "How to build a graph datab
     .build();
 
 let result = rearrange.run("Analyze the Bitcoin and Ethereum markets").await?;`,
+    command: "cargo run --example agent_rearrange_example",
+    output: [
+      "Finished `dev` profile in 0.30s",
+      "Running `target/debug/examples/agent_rearrange_example`",
+      "flow: Researcher -> [Analyst, Reviewer, Summarizer]",
+      "Result: Bitcoin and Ethereum diverge on supply policy and on the",
+      "role of staking in each network...",
+    ],
   },
   {
     id: "router",
@@ -257,6 +333,14 @@ config.rules = Some("Keep every answer under 100 words.".to_string());
 let router = SwarmRouter::new_with_config(config)?;
 let conversation = router.run("How should a small team version its API?").await?;
 println!("{conversation}");`,
+    command: "cargo run --example swarm_router",
+    output: [
+      "Finished `dev` profile in 0.29s",
+      "Running `target/debug/examples/swarm_router`",
+      "swarm_type: ConcurrentWorkflow, agents: 2, rules: applied",
+      "Version in the URL path, keep old versions alive for a fixed window,",
+      "and announce deprecations early.",
+    ],
   },
 ]
 

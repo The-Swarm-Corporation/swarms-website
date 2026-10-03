@@ -1,5 +1,6 @@
 import { Navigation } from "@/components/navigation"
 import { ProductsCallToAction } from "@/components/products-call-to-action"
+import { MotionRoot } from "@/components/swarms-rs/reveal"
 import { SwarmsRsBenchmarks } from "@/components/swarms-rs/swarms-rs-benchmarks"
 import { SwarmsRsFaq } from "@/components/swarms-rs/swarms-rs-faq"
 import { SwarmsRsFeatures } from "@/components/swarms-rs/swarms-rs-features"
@@ -14,6 +15,7 @@ export default function SwarmsRs() {
       <Navigation />
 
       <main id="main-content" className="pt-[64px] sm:pt-[80px] md:pt-[96px]">
+        <MotionRoot>
         <SwarmsRsHero />
         <SwarmsRsQuickstart />
         <SwarmsRsHarnesses />
@@ -22,6 +24,7 @@ export default function SwarmsRs() {
         <SwarmsRsReading />
         <SwarmsRsFaq />
         <ProductsCallToAction />
+        </MotionRoot>
       </main>
     </div>
   )

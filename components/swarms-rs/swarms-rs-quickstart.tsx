@@ -1,13 +1,15 @@
 import { CodeBlock } from "@/components/code-block"
 
+import { Reveal } from "./reveal"
 import { QUICKSTART } from "./swarms-rs-data"
+import { RunnableCode } from "./swarms-rs-runnable"
 
 export function SwarmsRsQuickstart() {
   return (
     <section id="quickstart" className="scroll-mt-24 border-b border-white/[0.08] bg-black">
       <div className="container px-4 py-16 sm:px-6 sm:py-24 lg:px-8 lg:py-28">
         <div className="mx-auto max-w-7xl">
-          <div className="max-w-3xl">
+          <Reveal className="max-w-3xl">
             <p className="mb-4 font-mono text-[11px] font-medium uppercase tracking-[0.2em] text-white/40">
               Quickstart
             </p>
@@ -18,7 +20,7 @@ export function SwarmsRsQuickstart() {
               You need the latest stable Rust and one OpenRouter key. Each step builds on the one
               before it.
             </p>
-          </div>
+          </Reveal>
 
           <ol className="mt-12 space-y-12 sm:mt-16 sm:space-y-16">
             {QUICKSTART.map((step) => (
@@ -26,7 +28,7 @@ export function SwarmsRsQuickstart() {
                 key={step.n}
                 className="grid gap-6 lg:grid-cols-[minmax(0,4fr)_minmax(0,8fr)] lg:gap-12"
               >
-                <div className="lg:sticky lg:top-28 lg:self-start">
+                <Reveal className="lg:sticky lg:top-28 lg:self-start">
                   <span className="flex h-9 w-9 items-center justify-center rounded-full border border-white/20 font-mono text-sm text-white/80">
                     {step.n}
                   </span>
@@ -36,10 +38,16 @@ export function SwarmsRsQuickstart() {
                   <p className="mt-3 max-w-md text-sm font-normal leading-relaxed text-white/55 sm:text-base">
                     {step.body}
                   </p>
-                </div>
-                <div className="min-w-0 text-[13px] leading-relaxed [&_pre]:p-4">
-                  <CodeBlock code={step.code} lang={step.lang} file={step.file} chrome />
-                </div>
+                </Reveal>
+                <Reveal className="min-w-0" delay={0.1}>
+                  <RunnableCode
+                    file={step.file}
+                    code={step.code}
+                    command={step.command}
+                    output={step.output}
+                    codeNode={<CodeBlock code={step.code} lang={step.lang} file={step.file} />}
+                  />
+                </Reveal>
               </li>
             ))}
           </ol>

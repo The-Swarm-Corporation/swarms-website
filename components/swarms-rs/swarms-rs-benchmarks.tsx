@@ -1,6 +1,8 @@
 import { ArrowUpRight } from "lucide-react"
 import Link from "next/link"
 
+import { BenchBar } from "./bench-bar"
+import { Reveal } from "./reveal"
 import { BENCHMARK_METRICS } from "./swarms-rs-data"
 
 // Bars are drawn on a log scale: the raw values span more than two orders of
@@ -16,7 +18,7 @@ export function SwarmsRsBenchmarks() {
     <section id="benchmarks" className="scroll-mt-24 border-b border-white/[0.08] bg-black">
       <div className="container px-4 py-16 sm:px-6 sm:py-24 lg:px-8 lg:py-28">
         <div className="mx-auto max-w-7xl">
-          <div className="mb-10 max-w-3xl sm:mb-14">
+          <Reveal className="mb-10 max-w-3xl sm:mb-14">
             <p className="mb-4 font-mono text-[11px] font-medium uppercase tracking-[0.2em] text-white/40">
               Benchmarks
             </p>
@@ -27,42 +29,39 @@ export function SwarmsRsBenchmarks() {
               Every framework drove the same model, prompts and tasks, so what differs is the
               framework itself: startup, memory, per-call overhead and real parallelism.
             </p>
-          </div>
+          </Reveal>
 
           <div className="grid gap-px overflow-hidden rounded-xl border border-white/[0.08] bg-white/[0.08] md:grid-cols-2">
-            {BENCHMARK_METRICS.map((metric) => {
+            {BENCHMARK_METRICS.map((metric, mi) => {
               const values = metric.rows.map((r) => r.value)
               const max = Math.max(...values)
               const min = Math.min(...values)
+              const ours = metric.rows.find((r) => r.ours)!.value
               return (
                 <figure key={metric.id} className="bg-black p-6 sm:p-8">
-                  <figcaption>
-                    <h3 className="text-lg font-semibold tracking-tight text-white">
-                      {metric.title}
-                    </h3>
-                    <p className="mt-1 text-sm font-normal text-white/45">{metric.sub}</p>
-                  </figcaption>
+                  <Reveal delay={mi * 0.08}>
+                    <figcaption>
+                      <h3 className="text-lg font-semibold tracking-tight text-white">
+                        {metric.title}
+                      </h3>
+                      <p className="mt-1 text-sm font-normal text-white/45">{metric.sub}</p>
+                    </figcaption>
+                  </Reveal>
                   <ul className="mt-6 space-y-3.5">
-                    {metric.rows.map((row) => (
-                      <li key={row.name}>
-                        <div className="mb-1.5 flex items-baseline justify-between text-sm">
-                          <span className={row.ours ? "font-medium text-white" : "text-white/50"}>
-                            {row.name}
-                          </span>
-                          <span
-                            className={`font-mono text-xs ${row.ours ? "text-white" : "text-white/50"}`}
-                          >
-                            {row.display}
-                          </span>
-                        </div>
-                        <div className="h-2 rounded-full bg-white/[0.06]">
-                          <div
-                            className={`h-2 rounded-full ${row.ours ? "bg-white" : "bg-white/25"}`}
-                            style={{ width: `${barWidth(row.value, max, min)}%` }}
-                          />
-                        </div>
-                      </li>
-                    ))}
+                    {metric.rows.map((row, ri) => {
+                      const r = row.value / ours
+                      return (
+                        <BenchBar
+                          key={row.name}
+                          name={row.name}
+                          display={row.display}
+                          pct={barWidth(row.value, max, min)}
+                          ratio={row.ours ? undefined : `${r >= 10 ? Math.round(r) : r.toFixed(1)}x`}
+                          ours={row.ours}
+                          index={ri}
+                        />
+                      )
+                    })}
                   </ul>
                 </figure>
               )

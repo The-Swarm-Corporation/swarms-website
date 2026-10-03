@@ -6,6 +6,7 @@ import { ArrowRight, ArrowUpRight, Github } from "lucide-react"
 import { CopyButton } from "@/components/copy-button"
 import { Button } from "@/components/ui/button"
 
+import { CountUp } from "./count-up"
 import { SwarmsRsLogo3D } from "./swarms-rs-logo-3d"
 import { CRATE_URL, HERO_STATS, REPO_URL, VERSION } from "./swarms-rs-data"
 
@@ -115,11 +116,11 @@ export function SwarmsRsHero() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.32, ease }}
           >
-            {HERO_STATS.map((stat) => (
+            {HERO_STATS.map((stat, i) => (
               <div key={stat.label} className="flex flex-col bg-black p-5 sm:p-6">
                 <dt className="order-2 mt-2 text-sm font-normal text-white/55">{stat.label}</dt>
                 <dd className="order-1 text-3xl font-semibold tracking-tighter text-white sm:text-4xl">
-                  {stat.value}
+                  <CountUp value={stat.value} delay={0.5 + i * 0.1} duration={1.6} />
                 </dd>
                 <p className="order-3 mt-1 text-xs font-normal text-white/35">{stat.note}</p>
               </div>

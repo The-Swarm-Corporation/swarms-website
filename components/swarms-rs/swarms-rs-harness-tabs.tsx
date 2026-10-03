@@ -69,7 +69,7 @@ export function SwarmsRsHarnessTabs({ panels }: { panels: Panel[] }) {
               ))}
             </ul>
           </div>
-          <div className="min-w-0 text-[13px] leading-relaxed [&_pre]:p-4">{panel.code}</div>
+          <div className="min-w-0">{panel.code}</div>
         </div>
       ))}
     </div>

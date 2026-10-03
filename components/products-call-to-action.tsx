@@ -46,11 +46,11 @@ export function ProductsCallToAction() {
               asChild
             >
               <a
-                href="https://swarms.world"
+                href="https://cloud.swarms.world/learn-more"
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                Join Marketplace
+                Learn More
                 <ArrowUpRight className="ml-2 h-4 w-4 text-white/50" />
               </a>
             </Button>

@@ -4,6 +4,7 @@ import { HomeNewsletter } from "@/components/home-newsletter"
 import { BlogFeatured } from "@/components/blog/blog-featured"
 import { BlogIndexClient } from "@/components/blog/blog-index-client"
 import { LanguageToggle } from "@/components/language-toggle"
+import { Rss } from "lucide-react"
 import { getAllPostMeta, getAllCategories } from "@/lib/blog"
 import { siteConfig, zhSiteConfig } from "@/app/metadata"
 
@@ -66,6 +67,13 @@ export default function ZhBlogPage() {
             <p className="mt-5 max-w-2xl text-base font-normal leading-relaxed text-white/50 sm:text-lg">
               多智能体系统工程笔记、产品更新与实战指南，助你用 Swarms 构建生产级 AI 智能体。
             </p>
+            <a
+              href="/zh/feed.xml"
+              className="mt-5 inline-flex items-center gap-2 text-sm text-white/50 transition-colors hover:text-white"
+            >
+              <Rss className="h-4 w-4" aria-hidden="true" />
+              通过 RSS 订阅
+            </a>
           </div>
 
           {featured && (

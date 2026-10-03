@@ -3,6 +3,7 @@ import { HomeNewsletter } from "@/components/home-newsletter"
 import { BlogFeatured } from "@/components/blog/blog-featured"
 import { BlogIndexClient } from "@/components/blog/blog-index-client"
 import { LanguageToggle } from "@/components/language-toggle"
+import { Rss } from "lucide-react"
 import { getAllPostMeta, getAllCategories } from "@/lib/blog"
 
 export default function BlogPage() {
@@ -32,6 +33,13 @@ export default function BlogPage() {
               Engineering notes, product updates, and guides for building
               multi-agent systems with Swarms.
             </p>
+            <a
+              href="/feed.xml"
+              className="mt-5 inline-flex items-center gap-2 text-sm text-white/50 transition-colors hover:text-white"
+            >
+              <Rss className="h-4 w-4" aria-hidden="true" />
+              Subscribe via RSS
+            </a>
           </div>
 
           {featured && (

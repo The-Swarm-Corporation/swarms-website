@@ -329,10 +329,8 @@ export function Navigation() {
                         <p className="text-xs text-neutral-400 mt-0.5">Join the waitlist</p>
                       </div>
                     </Link>
-                    <a
-                      href="https://github.com/The-Swarm-Corporation/swarms-rs"
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <Link
+                      href="/swarms-rs"
                       className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
                     >
                       <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-white/25 transition-all duration-200">
@@ -342,7 +340,7 @@ export function Navigation() {
                         <span className="text-sm font-semibold text-white block">Swarms RS</span>
                         <p className="text-xs text-neutral-400 mt-0.5">Rust framework</p>
                       </div>
-                    </a>
+                    </Link>
                   </div>
                 </motion.div>
               )}
@@ -820,16 +818,14 @@ export function Navigation() {
                     <Smartphone className="mr-3 h-4 w-4 text-white/60 flex-shrink-0" />
                     Mobile App
                   </Link>
-                  <a
-                    href="https://github.com/The-Swarm-Corporation/swarms-rs"
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <Link
+                    href="/swarms-rs"
                     className="text-sm font-semibold text-white/85 hover:text-white transition-all duration-300 hover:bg-white/[0.05] p-3 rounded-lg flex items-center border border-transparent hover:border-white/10"
                     onClick={() => setIsOpen(false)}
                   >
                     <Rocket className="mr-3 h-4 w-4 text-white/60 flex-shrink-0" />
                     Swarms RS
-                  </a>
+                  </Link>
                 </div>
 
                 <Link

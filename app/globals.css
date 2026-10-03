@@ -579,3 +579,38 @@
     }
   }
 }
+
+/* swarms-rs landing page: slow 3D spin and float for the hero logo. */
+@keyframes rs-logo-spin {
+  from {
+    transform: rotateY(0deg);
+  }
+  to {
+    transform: rotateY(360deg);
+  }
+}
+
+@keyframes rs-logo-float {
+  0%,
+  100% {
+    transform: rotateX(-12deg) translateY(-8px);
+  }
+  50% {
+    transform: rotateX(-12deg) translateY(8px);
+  }
+}
+
+.rs-logo-spin {
+  animation: rs-logo-spin 26s linear infinite;
+}
+
+.rs-logo-float {
+  animation: rs-logo-float 7s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rs-logo-spin,
+  .rs-logo-float {
+    animation: none;
+  }
+}

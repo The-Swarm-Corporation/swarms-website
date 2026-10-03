@@ -77,7 +77,7 @@ export function Footer() {
                     icon: Code,
                     url: "https://docs.swarms.ai",
                   },
-                  { name: "Swarms RS", icon: Rocket, url: "https://github.com/The-Swarm-Corporation/swarms-rs" },
+                  { name: "Swarms RS", icon: Rocket, url: "/swarms-rs" },
                   { name: "Swarms Marketplace", icon: Sparkles, url: "/marketplace" },
                   { name: "Swarms Cloud", icon: Cloud, url: "https://cloud.swarms.world" },
                   { name: "Agent Economy", icon: DollarSign, url: "https://swarms.world/agent-economy" },

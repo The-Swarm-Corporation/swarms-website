@@ -23,6 +23,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     })),
     { path: "/products", priority: 0.9, changeFrequency: "weekly" },
     { path: "/stack", priority: 0.9, changeFrequency: "weekly" },
+    { path: "/swarms-rs", priority: 0.9, changeFrequency: "weekly" },
     { path: "/framework", priority: 0.9, changeFrequency: "weekly" },
     { path: "/pricing", priority: 0.9, changeFrequency: "weekly" },
     { path: "/api", priority: 0.8, changeFrequency: "weekly" },

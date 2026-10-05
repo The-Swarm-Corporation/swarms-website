@@ -12,6 +12,7 @@ const FEATURED_ROLE_SLUGS = [
   "front-end-engineer",
   "growth-marketers",
   "head-of-marketplace",
+  "devops-engineer",
 ]
 
 const featuredPositions = FEATURED_ROLE_SLUGS
@@ -52,7 +53,7 @@ export function HomeHiring() {
         </motion.div>
 
         <motion.div
-          className="mx-auto grid max-w-7xl grid-cols-1 gap-px overflow-hidden rounded-lg border border-white/[0.08] bg-white/[0.08] sm:grid-cols-2 lg:grid-cols-4"
+          className="mx-auto grid max-w-7xl grid-cols-1 gap-px overflow-hidden rounded-lg border border-white/[0.08] bg-white/[0.08] sm:grid-cols-2 lg:grid-cols-5"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-100px" }}
@@ -62,7 +63,7 @@ export function HomeHiring() {
             <Link
               key={position.slug}
               href={`/hiring/${position.slug}`}
-              className="group flex min-h-[200px] flex-col justify-between gap-6 bg-black p-5 transition-colors duration-300 hover:bg-[#0a0a0a] sm:min-h-[240px] sm:p-8"
+              className="group flex min-h-[200px] flex-col justify-between gap-6 bg-black p-5 sm:[&:last-child]:col-span-2 lg:[&:last-child]:col-span-1 transition-colors duration-300 hover:bg-[#0a0a0a] sm:min-h-[240px] sm:p-8"
             >
               <position.icon
                 className="h-5 w-5 text-white/50 transition-colors duration-300 group-hover:text-white"

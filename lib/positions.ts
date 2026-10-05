@@ -15,6 +15,7 @@ import {
   Store,
   Cloud,
   Microscope,
+  Workflow,
   LucideIcon
 } from 'lucide-react'
 
@@ -494,6 +495,34 @@ export const positions: Position[] = [
       'You have experience with distributed systems and container orchestration',
       'You are passionate about reliability and operational excellence',
       'You can balance between building new systems and maintaining existing ones',
+      'You have contributed 3 PRs or opened 3 new issues on the swarms GitHub (github.com/kyegomez/swarms)'
+    ]
+  },
+  {
+    slug: 'devops-engineer',
+    title: 'DevOps Engineer',
+    icon: Workflow,
+    department: 'Engineering',
+    type: 'Full-time',
+    location: 'San Francisco / Palo Alto / New York',
+    priority: 'High',
+    description: 'Own deployments, CI/CD, and reliability for the Swarms API, Swarms Cloud, and the Marketplace.',
+    requirements: ['CI/CD pipelines', 'Containers and cloud platforms', 'Monitoring and incident response', '3 PRs or 3 new issues on the swarms GitHub'],
+    aboutRole: 'As a DevOps Engineer at Swarms, you will own how our software ships and how it stays up. You will build the pipelines that deploy the Swarms API, Swarms Cloud, the Marketplace, and our open source frameworks, and you will make sure each of them is observable, secure, and fast to recover. Note: all developer roles require 3 PRs or 3 new issues on the swarms GitHub before applying.',
+    whatYoullDo: [
+      'Build and maintain CI/CD pipelines for the Swarms API, Swarms Cloud, and the Marketplace',
+      'Automate infrastructure with code and keep environments reproducible',
+      'Set up monitoring, alerting, and on-call practices, and lead incident reviews',
+      'Harden deployments: secrets management, access control, and dependency updates',
+      'Cut build times, deploy times, and cloud costs across the stack',
+      'Support releases of the Python and Rust frameworks, including packaging and publishing'
+    ],
+    youMayBeAFitIf: [
+      'You have 3+ years of DevOps, SRE, or platform engineering experience',
+      'You have strong experience with CI/CD, containers, and at least one major cloud platform',
+      'You write infrastructure as code and treat deploys as something to automate away',
+      'You have run production systems with real uptime targets and been on call for them',
+      'You like working close to the code and can read Python, TypeScript, or Rust',
       'You have contributed 3 PRs or opened 3 new issues on the swarms GitHub (github.com/kyegomez/swarms)'
     ]
   },

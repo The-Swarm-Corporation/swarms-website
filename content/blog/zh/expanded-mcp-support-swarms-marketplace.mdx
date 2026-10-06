@@ -1,0 +1,241 @@
+---
+title: "Swarms Marketplace 全面扩展 MCP 支持：检查、连接并发布 MCP 服务器"
+description: "现在在 swarms.world 上发布 MCP 服务器只需三步：粘贴 URL、检查、发布。市场会连接你的服务器，读取它的工具，并识别它的认证方式。每个 MCP 商品页都会附带一个连接区块，提供可直接粘贴到 Claude、Cursor、VS Code 等 MCP 客户端的配置。本文介绍每一部分如何运作，以及如何发布你自己的服务器。"
+date: "2026-10-06"
+author: "Swarms 团队"
+categories: ["产品"]
+featured: true
+readTime: "9 分钟阅读"
+image: "/expanded_mcp_support.png"
+---
+
+# Swarms Marketplace 全面扩展 MCP 支持：检查、连接并发布 MCP 服务器
+
+在此次更新之前，在 [Swarms Marketplace](https://swarms.world) 上发布 MCP 服务器只意味着填写一个 URL 字段，而且没有任何程序会去连接这个 URL。商品页无法说明服务器有哪些工具、是否需要密钥，也无法告诉你如何把它加入 MCP 客户端。你只能自己试过才知道。
+
+这个问题已经解决。现在，市场会连接你发布的每一个 MCP 服务器，读取它暴露的内容，并把这些信息变成一个拿来即用的商品页：服务器 URL、认证方式、完整的工具列表，以及适用于 Claude、Cursor、VS Code 和其他 MCP 客户端的复制粘贴配置。
+
+本次更新包括：
+
+- **发布前先检查。** 在发布页粘贴服务器 URL，点击 **Inspect**。市场会连接服务器、读取它的工具，并替你填写商品信息。
+- **声明认证方式。** 告诉客户端你的服务器是无需认证、需要 API 密钥，还是使用 OAuth 登录，应该发送哪个请求头，以及去哪里获取密钥。
+- **MCP 商品页新增「Connect to this MCP server」区块。** 展示 URL、认证与传输方式徽标、每个工具及其参数，以及各个客户端的配置。
+- **一键安装**到 Cursor 和 VS Code，适用于无需密钥的服务器。
+- **自动打标签。** 任何带有 MCP 服务器 URL 的智能体都会被标记为 MCP，并出现在 [MCP 服务器页面](https://swarms.world/mcp-servers)。
+- **人工精选推荐栏。** MCP 服务器页面顶部的位置改为人工精选，不再随每次新上传而变化。
+
+## 检查：粘贴 URL，查看服务器暴露了什么
+
+[发布页](https://swarms.world/launch)的 **MCP URL** 标签页现在有一个 **Inspect**（检查）按钮。点击后，市场会与你的服务器建立一个真实的 MCP 会话，使用的握手流程与 Claude 或 Cursor 完全相同。
+
+- **两种传输方式。** 先尝试 Streamable HTTP，失败后回退到较早的 SSE 传输。如果服务器拒绝了所提供的协议版本，检查器会改用服务器声明的版本重试一次。
+- **服务器暴露的一切。** 记录服务器的名称、版本和说明（instructions），以及每个工具的输入模式和只读、破坏性提示（hints）。同时统计服务器的资源（resources）和提示词（prompts）数量。
+- **认证检测。** `401` 响应意味着服务器需要凭证。如果服务器同时发布了 OAuth 受保护资源元数据，它使用 OAuth 登录；否则需要 API 密钥。
+
+结果会直接显示在 URL 字段下方：
+
+- **已连接：** 服务器名称与版本、传输方式和工具数量，后面列出各个工具的名称。
+- **需要凭证：** 对于 OAuth 服务器，无需额外操作，因为 MCP 客户端会自行处理登录。对于 API 密钥服务器，添加一个测试密钥（见下文）后再检查一次，即可读取工具。
+- **无法连接：** 显示原因。如果服务器返回了自己的错误信息，你会看到那条消息，从而知道它为什么拒绝连接。
+
+检查成功后还会自动填写部分表单。如果名称或描述为空，会根据服务器的名称和说明，或者根据其工具的简短摘要来填写。**MCP** 分类也会自动添加。
+
+### 服务器 URL 需要满足的条件
+
+市场要连接的是用户输入的 URL，因此检查过程有严格的限制：
+
+- **仅支持 https。**
+- **必须是公网地址。** 私有地址、回环地址、链路本地地址、CGNAT 地址和云元数据地址都会被拒绝，IPv4 和 IPv6 均是如此。每一次重定向都会按同样的规则检查。
+- 整个检查限时 **20 秒**。这足以让部署在免费托管套餐上的服务器从冷启动中唤醒。
+- 响应体最大 **1 MB**。
+- 每个已登录用户**每小时最多检查 30 次**。在发布表单上进行的预览检查不会存储任何内容。
+
+如果你还在本地开发，请先部署服务器，或通过 https 隧道将其暴露出来，再进行检查。
+
+## 认证：告诉客户端如何连接
+
+URL 字段填好后，会出现一个 **Authentication**（认证）选择器，提供三个选项。检查会预先选中它检测到的选项，你也可以手动修改。
+
+| 选项 | 适用场景 | 连接者获得的内容 |
+| --- | --- | --- |
+| **No auth**（无需认证） | 你的服务器是公开的 | 普通配置以及一键安装链接 |
+| **API key**（API 密钥） | 你的服务器要求在请求头中携带密钥 | 带有该请求头和 `YOUR_API_KEY` 占位符的配置 |
+| **OAuth sign-in**（OAuth 登录） | 你的服务器使用 MCP 的 OAuth 流程 | 普通配置；客户端首次连接时会打开浏览器进行登录 |
+
+对于 API 密钥服务器，你还可以设置：
+
+- **请求头名称。** 默认为 `Authorization`。
+- **以「Bearer `<key>`」形式发送密钥。** 默认开启。如果你的服务器需要原始密钥，请关闭此项。
+- **用户获取密钥的地址**（Where users get a key，可选）。这个链接会以 **Get an API key** 的形式显示在你的商品页上，让访问者知道去哪里注册。
+- **测试密钥**（Test key，可选，永不保存）。市场只在你检查和发布时各用它一次来读取工具，从不存储。没有测试密钥时，API 密钥类商品依然可以发布，依然会显示连接方式，但无法列出工具。
+
+## 全新的「Connect to This MCP Server」区块
+
+每个以 MCP 服务器形式发布的智能体（带有 MCP URL，且没有代码或 x402 URL）现在都会在 Overview（概览）标签页中显示一个 **Connect to this MCP server**（连接到此 MCP 服务器）区块。你可以在 [Swarms Marketplace MCP 商品页](https://swarms.world/agent/8cdea1a5-c1af-46d5-856d-c3f315663f16)上看到它。该区块包含：
+
+1. **服务器 URL**，附带复制按钮。
+2. **徽标**：认证方式（*API key required*、*OAuth sign-in* 或 *No auth required*）、传输方式（*Streamable HTTP* 或 *SSE*）和工具数量；如果发布者设置了 **Get an API key** 链接，也会一并显示。
+3. **客户端标签页：Claude、Cursor、VS Code 和 Other apps。** 每个标签页都提供为该服务器生成的配置，传输方式正确，需要密钥时也带有正确的请求头。
+4. **Add to Cursor** 和 **Add to VS Code** 按钮，适用于无需密钥的服务器。API 密钥服务器上不显示这两个按钮，因为一键安装会保存一份配置，而这份配置在你手动添加密钥之前始终无法使用。
+5. **工具列表。** 每个工具都会列出参数，必填参数会被标注。**Read-only**（只读）和 **destructive**（破坏性）徽标会在你把工具交给智能体之前，告诉你哪些工具只读取数据，哪些可能修改数据。
+
+下面是该区块为 Swarms Marketplace MCP（一个需要 API 密钥的服务器）生成的内容。
+
+**Claude Code**（添加 `--scope user` 即可在所有项目中使用该服务器）：
+
+```bash
+claude mcp add --transport http swarms-marketplace-mcp https://swarms.world/mcp --header "Authorization: Bearer YOUR_API_KEY"
+```
+
+**Cursor**（`~/.cursor/mcp.json`；若只想在某个项目中使用，则放在项目根目录的 `.cursor/mcp.json`）：
+
+```json
+{
+  "mcpServers": {
+    "swarms-marketplace-mcp": {
+      "url": "https://swarms.world/mcp",
+      "headers": {
+        "Authorization": "Bearer YOUR_API_KEY"
+      }
+    }
+  }
+}
+```
+
+**VS Code**（`.vscode/mcp.json`）。密钥不会写入文件。VS Code 会在服务器首次启动时询问密钥，并将其安全地保存：
+
+```json
+{
+  "inputs": [
+    {
+      "type": "promptString",
+      "id": "api-key",
+      "description": "Swarms Marketplace MCP API key",
+      "password": true
+    }
+  ],
+  "servers": {
+    "swarms-marketplace-mcp": {
+      "type": "http",
+      "url": "https://swarms.world/mcp",
+      "headers": {
+        "Authorization": "Bearer ${input:api-key}"
+      }
+    }
+  }
+}
+```
+
+**Claude Desktop**（`claude_desktop_config.json`，从 Settings → Developer → Edit Config 打开）通过 `mcp-remote` 桥接进行连接：
+
+```json
+{
+  "mcpServers": {
+    "swarms-marketplace-mcp": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "https://swarms.world/mcp",
+        "--header",
+        "Authorization: Bearer YOUR_API_KEY"
+      ]
+    }
+  }
+}
+```
+
+**Other apps** 标签页提供 Windsurf 配置，以及一个备用方案，适用于只能运行本地（stdio）服务器的客户端：
+
+```bash
+npx -y mcp-remote https://swarms.world/mcp --header "Authorization: Bearer YOUR_API_KEY"
+```
+
+对于无需密钥的服务器，所有配置都会去掉请求头。此时 Claude 标签页还会引导你使用 Claude Desktop 的 **Settings → Connectors → Add custom connector**，只需粘贴 URL 即可。对于 OAuth 服务器，配置中同样不包含密钥。客户端首次连接时会打开浏览器让你登录；在 Claude Code 中，运行 `/mcp` 即可登录。
+
+### 商品页始终保持最新
+
+商品页展示的内容不是发布那一刻定格的快照。当有人打开 MCP 商品页时，如果距上次检查已超过一天（若上次检查失败，则为超过 15 分钟），市场会重新检查该服务器。本次更新之前发布的商品页，会在首次被浏览时以同样的方式补全信息。这类刷新从不携带密钥；如果刷新时遇到认证拦截，商品页会保留发布时用测试密钥读取到的工具。
+
+## 查找 MCP 服务器：swarms.world/mcp-servers
+
+MCP 目录现已迁移至 [swarms.world/mcp-servers](https://swarms.world/mcp-servers)。原来的地址 `swarms.world/mcp` 现在是市场自己的 MCP 端点，任何 MCP 客户端都可以连接。详情请参阅 [Swarms Marketplace MCP 正式上线](/zh/blog/swarms-marketplace-mcp-server)。
+
+- **所有 MCP 商品都在目录中：** 包括每一个标记为 MCP 的智能体、提示词和工具。带有 MCP 服务器 URL 的智能体，无论是通过发布表单或 API 发布，还是在编辑对话框中保存，都会被自动打上标签，所有已有的此类智能体也已全部完成标记。
+- **基于代码的 MCP 服务器同样计入。** 在本地运行的服务器通常以工具或提示词的形式发布，并选择 MCP 分类，它们会和托管服务器一起保留在目录中。
+- **Featured MCP tools**（精选 MCP 工具）现在是一个人工精选栏，不再只是最新上传的四个：
+  - [Swarms Marketplace MCP](https://swarms.world/agent/8cdea1a5-c1af-46d5-856d-c3f315663f16)：从任意 MCP 客户端搜索、读取、发布和管理市场商品
+  - [Firecrawl MCP Agent](https://swarms.world/agent/76372600-f6b7-43f1-a437-4a00957be9f5)：网页搜索、爬取与抓取
+  - [DeepWiki MCP Agent](https://swarms.world/agent/a9f37d26-f668-4750-b2fc-bee17c4acda8)：研究 GitHub 仓库及其文档
+  - [Exa MCP Search Agent](https://swarms.world/agent/daa45075-4d72-4ce8-8078-0be68c273c28)：专为 AI 智能体打造的实时网页搜索
+- **Open in Registry**（在注册表中打开）现在会把 MCP 提示词和工具一并带入[注册表视图](https://swarms.world/platform/registry?type=agents,prompts,tools&industry=mcp)，而不仅仅是智能体。
+
+## 如何发布你的 MCP 服务器
+
+### 从发布页发布
+
+1. **部署服务器**，使用支持 Streamable HTTP 或 SSE 的公网 https URL。
+2. **登录**并打开 [swarms.world/launch](https://swarms.world/launch)。
+3. 在 **What would you like to publish?** 下选择 **Agent**。
+4. 在 **Agent Implementation** 中打开 **MCP URL** 标签页，粘贴服务器 URL，例如 `https://api.example.com/mcp`。
+5. 点击 **Inspect** 并核对结果：服务器名称、传输方式，以及你期望看到的工具。
+6. **设置认证方式。** 对于 API 密钥服务器，设置请求头名称、Bearer 选项和 **Where users get a key** 链接。如果希望列出工具，请添加测试密钥后再检查一次。
+7. **完善详情。** 如果名称和描述是自动填写的，请用你自己的话重写：描述正是人们搜索的内容。MCP 分类已经选好，再添加一张图片以及其他合适的分类即可。
+8. **选择定价。** 选择 **Free**（免费）或 **Paid**（付费）。付费商品的收入可以通过 **Crypto (SOL)** 或 **Card / Fiat (Stripe)** 结算。智能体还可以选择 **Tokenization**（代币化）。发布免费；只有在产生销售时，Swarms 才收取 10% 的费用，你保留 90%。付费商品的买家在获得访问权限后即可看到连接区块。
+9. **发布。** 如果你提供了测试密钥，市场会再用它一次来读取工具，并与商品一起保存。如果没有提供，商品会在第一次有人打开时读取你的服务器。无论哪种情况，这一步都发生在商品创建之后，因此永远不会阻塞发布：即使服务器暂时宕机，商品依然会上线，并在之后某次被浏览时补全信息。
+
+之后，你的商品会出现在 [/mcp-servers](https://swarms.world/mcp-servers) 和[注册表](https://swarms.world/platform/registry?type=agents,prompts,tools&industry=mcp)中，并拥有自己的连接区块。
+
+### 让你的智能体来发布
+
+发布页上的 **Publish via API or MCP** 按钮可以配置你自己的智能体替你发布，只需三步：创建 API 密钥，把页面给出的指令粘贴给你的智能体，以及（可选）连接市场的 MCP 服务器。之后，你的智能体就可以调用 `post_add-agent` 工具并传入 `mcp_url`。该商品会被自动标记为 MCP，并在第一次有人打开时进行检查，因此认证方式也会以同样的方式被检测出来。
+
+目前有两项设置只能在发布表单上完成：API 密钥服务器的请求头名称，以及它的 **Get an API key** 链接。测试密钥也只能在那里提供。所以，如果你的服务器需要密钥，并且你希望列出它的工具，请从发布页发布。
+
+## 为什么这很重要
+
+一个 MCP 服务器的商品页，应该在任何人安装之前回答三个问题：这个服务器能做什么，我该如何连接它，它会让我的智能体接触到什么。此前，市场一个都回答不了。现在，每个 MCP 商品页都会展示从服务器本身读取到的真实工具，注明发布者声明的认证方式，并为你正在使用的客户端提供配置。
+
+对发布者来说，这意味着要写的内容更少，要回答的支持问题也更少。粘贴一个 URL，市场就会生成你的安装说明和工具参考，并持续保持更新。对智能体构建者来说，这意味着你可以在连接之前看到服务器的工具，并知道其中哪些只读取数据。
+
+## 常见问题
+
+### Swarms 会存储我的 API 密钥吗？
+
+不会。测试密钥只在检查和发布时各使用一次，用于读取你的工具，从不保存。商品页显示的是 `YOUR_API_KEY` 占位符，每位用户需要填入自己的密钥。
+
+### 我可以检查运行在自己电脑上的服务器吗？
+
+不可以。检查只会连接公网 https 地址，本地和私有网络地址都会被拒绝。请先部署服务器，或通过 https 隧道将其暴露出来，再进行检查。
+
+### 支持哪些传输方式？
+
+Streamable HTTP 和较早的 SSE 传输。检查会先尝试 Streamable HTTP，再回退到 SSE。
+
+### 为什么我的商品页没有 Add to Cursor 和 Add to VS Code 按钮？
+
+你的服务器被设置为需要 API 密钥。一键安装会保存一份不含密钥的配置，在手动编辑之前这份配置无法使用，所以这两个按钮只出现在无需密钥的服务器上。商品页上的复制粘贴配置已经包含了请求头。
+
+### 我给服务器添加工具后，商品页会更新吗？
+
+会。当商品页被浏览、且距上次检查已超过一天时，市场会重新检查 MCP 服务器。对于 API 密钥服务器，不带密钥的刷新无法读取工具，因此商品页会保留你上一次带密钥检查时读取到的工具。
+
+### 如何让我的服务器出现在 MCP 服务器页面上？
+
+发布一个带有 MCP 服务器 URL 的智能体，它会被自动标记为 MCP。对于以工具或提示词形式发布的基于代码的服务器，请在发布页选择 **MCP** 分类。
+
+### 市场从付费 MCP 服务器中抽成多少？
+
+发布免费。只有在产生销售时，Swarms 才收取 10% 的费用，你保留 90%，通过 Stripe 或加密货币结算。详情请参阅[定价页面](https://swarms.world/pricing)。
+
+## 链接与资源
+
+- [Swarms Marketplace 上的 MCP 服务器](https://swarms.world/mcp-servers)
+- [发布 MCP 服务器](https://swarms.world/launch)
+- [MCP 注册表筛选](https://swarms.world/platform/registry?type=agents,prompts,tools&industry=mcp)
+- [Swarms Marketplace MCP 商品页](https://swarms.world/agent/8cdea1a5-c1af-46d5-856d-c3f315663f16)
+- [Swarms Marketplace MCP 正式上线](/zh/blog/swarms-marketplace-mcp-server)
+- [MCP Portal 正式上线](/zh/blog/mcp-portal-swarms-marketplace)
+- [开发者文档](https://swarms.world/developers)
+- [Model Context Protocol 规范](https://modelcontextprotocol.io)
+- [加入 Discord 社区](https://discord.gg/EamjgSaEQf)

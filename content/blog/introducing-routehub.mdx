@@ -1,0 +1,237 @@
+---
+title: "Introducing RouteHub: A Lightning-Fast LLM Gateway"
+description: "RouteHub is an open-source LLM gateway that connects 20+ providers through one API, with streaming, async and tool calling. It imports 383x faster than LiteLLM, reaches its first response 5.5x sooner with 3.9x less memory, adds 9 µs per call, and is faster than the official Anthropic SDK on Claude calls and streaming. This post covers how it works, the full benchmark results and how to get started."
+date: "2026-10-10"
+author: "Swarms Team"
+categories: ["Product", "Engineering"]
+readTime: "12 min read"
+image: "/route_hub_banner.png"
+featured: false
+---
+
+# Introducing RouteHub: A Lightning-Fast LLM Gateway
+
+Today we are introducing [RouteHub](https://github.com/The-Swarm-Corporation/RouteHub), an open-source LLM gateway built for performance. RouteHub connects your application to more than 20 LLM providers through a single `completion()` function: OpenAI, Anthropic, Gemini, Groq, xAI, DeepSeek, OpenRouter, Mistral, Together, Fireworks, Azure OpenAI, Ollama, vLLM and any OpenAI-compatible server. Streaming, async execution and tool calling all use that same function, and every response comes back as the official OpenAI SDK's own `ChatCompletion` type.
+
+RouteHub keeps LiteLLM's function names and module paths, so for most applications switching is a change of import. The difference is what the gateway costs you. In our benchmarks against LiteLLM 1.104.0:
+
+- **383x faster imports:** 3.2 ms against 1,235 ms.
+- **5.5x faster time to first response** in a fresh process: 267 ms against 1,464 ms.
+- **3.9x less peak memory:** 54 MiB against 211 MiB.
+- **Lower per-call overhead:** RouteHub adds 9 µs to a bare OpenAI SDK call. LiteLLM adds 647 µs.
+- **Faster Claude calls and streaming than the official Anthropic SDK**, even though RouteHub also translates every request and response.
+
+This post explains why gateway overhead matters for agents, how RouteHub keeps its overhead low, what the benchmarks show (including where RouteHub is not ahead yet), and how to get started. RouteHub is licensed under Apache 2.0, runs on Python 3.10 and later, and is available on [PyPI](https://pypi.org/project/routehub/) today.
+
+## Why We Built RouteHub
+
+An LLM gateway sits on the critical path of every request your application makes. For a single chat message, its cost is small next to the seconds a model spends generating tokens. Agent workloads multiply that cost in three ways:
+
+- **Agent loops.** An agent alternates model calls with tool calls for tens or hundreds of steps. Whatever the gateway does per call, and any reconnection after a long tool call, is paid again at every step.
+- **Short-lived processes.** Serverless functions, CLI tools, CI test suites and per-task workers pay the library's import time on every start. If importing the gateway takes more than a second, every cold start begins with that second before your code runs.
+- **Fan-out.** Multi-agent systems send many requests at once, so the CPU a gateway spends on each request and each streamed chunk limits how much work one process can handle.
+
+We ran into all three while building [Swarms](https://github.com/kyegomez/swarms). Importing LiteLLM loaded about 2,500 modules and, by default, downloaded a model price list from GitHub before any of our code ran. Every call then went through logging objects, hooks and response conversions that our agents did not need. RouteHub is the gateway we wanted: the same call signature, with as little as possible between your code and the provider's official SDK.
+
+Dependencies matter too. Every package a gateway installs is code that runs with your API keys. In March 2026, two LiteLLM releases on PyPI carried a credential stealer, one of them through a `.pth` file that runs whenever Python starts, even if LiteLLM is never imported. RouteHub has three direct dependencies (`openai`, `pydantic` and `tiktoken`) and installs 21 packages in total. LiteLLM installs 58.
+
+## How RouteHub Works and Why It's So Fast
+
+RouteHub follows one rule: do as little as possible between the caller and the official provider SDK. Each call is split once into request parameters and gateway options, the model string is looked up in a table of providers, and the request takes one of two paths:
+
+- **OpenAI-compatible providers** (every provider except Anthropic, including Azure, Gemini, Groq, OpenRouter and Ollama) go through a cached `openai.OpenAI` client, and RouteHub returns the SDK's response object unchanged.
+- **Anthropic** goes through RouteHub's own adapter for Claude's native Messages API, which translates the request, and the response or event stream, in a single pass each way.
+
+Six techniques keep the overhead low.
+
+**1. Lazy loading.** `import routehub` loads no third-party code. The package maps each public name to the submodule that defines it and imports that submodule the first time you use the name. Importing RouteHub adds 18 entries to `sys.modules`: the package itself and 17 standard-library modules. The OpenAI SDK loads when the first request needs it, and the tokenizer and model catalog load only when you count tokens or ask for model metadata. A process that imports RouteHub but never sends a request, such as a CLI printing `--help` or a test with a mocked model, never pays for the SDK.
+
+**2. Zero network calls during import.** Nothing touches the network until a request does. Model metadata (context windows, prices and capability flags) comes from OpenRouter's live model list, fetched on the first lookup and cached for five minutes. There is no bundled data file to go stale and no download holding up startup.
+
+**3. A thin hot path.** The work RouteHub does in front of the SDK is a handful of dictionary operations. When nothing in a message list needs removing, the list is passed through as is, so the common case copies nothing. Responses are never re-validated or re-wrapped: the SDK has already parsed them into typed objects, and those objects are what you get back.
+
+**4. Client pooling.** Building an SDK client means creating an HTTP client, a connection pool and an SSL context. RouteHub keeps up to 64 clients in a cache keyed by everything that changes a client's behavior: provider, API key, base URL, retry count, TLS setting and, for async clients, the event loop. Repeat calls reuse a warm client, and two callers with different settings each get their own.
+
+**5. HTTP connection reuse across agent steps.** httpx and the OpenAI SDK close an idle connection after 5 seconds by default. That suits a browser, but an agent whose tool runs longer than five seconds would reconnect at every step. RouteHub keeps connections open for 60 seconds, so the TCP and TLS handshake happens once per connection, and long tool calls don't trigger a new one.
+
+**6. A native Anthropic adapter.** Anthropic's OpenAI-compatible endpoint drops prompt caching, thinking output and cached-token usage. RouteHub calls the Messages API directly, so `cache_control` markers, extended thinking, signed thinking blocks, tool use, images, PDFs and cached-token accounting all work. For streaming, an incremental parser reads Anthropic's event stream and emits one OpenAI chunk per text, thinking or tool-argument delta.
+
+One more design choice matters for multi-agent systems: **RouteHub has no global settings**. Retries, TLS verification, timeouts and parameter dropping are arguments to each call. One agent's `ssl_verify=False` or retry policy can never change the behavior of another agent in the same process.
+
+## RouteHub Benchmarks: Faster Than Other LLM Gateways
+
+We measured RouteHub against LiteLLM 1.104.0, any-llm 1.30.0, aisuite 0.2.0, and the bare OpenAI and Anthropic SDKs. Their version requirements conflict, so each library ran in its own virtual environment, and every measurement ran in a fresh process with no API keys or proxies set. Calls went to a mock server on the same machine that answers instantly, which removes network and model time and leaves only the work each library does on the client. To give LiteLLM its best case, we turned off its GitHub price-list download for these runs. All results come from one Apple M3 Pro laptop running Python 3.12.
+
+### Cold start and memory
+
+| | Import | Import + first response | Peak memory | Modules at import |
+|---|---:|---:|---:|---:|
+| **RouteHub** | **3.2 ms** | **267 ms** | **54 MiB** | **18** |
+| OpenAI SDK (bare) | 217 ms | 258 ms | 53 MiB | 782 |
+| aisuite | 93 ms | 307 ms | 59 MiB | 278 |
+| any-llm | 569 ms | 624 ms | 87 MiB | 2,163 |
+| LiteLLM | 1,235 ms | 1,464 ms | 211 MiB | 2,502 |
+
+Medians of 20 fresh processes. RouteHub imports 383x faster than LiteLLM. Because RouteHub loads the OpenAI SDK on the first request, the fairest comparison is import plus first response: 267 ms for RouteHub, within 9 ms of the bare OpenAI SDK and 5.5x sooner than LiteLLM. Peak memory follows the same order, with RouteHub within about a megabyte of the bare SDK. With LiteLLM's default settings, its price-list download adds another 145 ms to the import, and the import then depends on GitHub being reachable.
+
+You may also see 190x quoted for import speed in the RouteHub README. That figure is from an earlier, simpler measurement against LiteLLM 1.76.1 (5.5 ms against 1,027 ms, and 0.004 ms against 0.74 ms of overhead per call). The numbers in this post come from the full benchmark in our technical report, which uses a newer LiteLLM and isolates each library in its own environment. Both runs point the same way.
+
+### Per-call overhead
+
+Median latency of warm, sequential calls in milliseconds, 1,200 calls each. The "agent" request is shaped like a real agent turn: a system prompt, 20 earlier turns and a new message (22 messages in all), plus four tools.
+
+| | OpenAI, 1 message | OpenAI, agent | Anthropic, 1 message | Anthropic, agent |
+|---|---:|---:|---:|---:|
+| Provider SDK (bare) | 0.54 | 2.04 | 0.42 | 0.45 |
+| **RouteHub** | 0.55 | 2.08 | **0.26** | **0.29** |
+| aisuite | 0.51 | 2.08 | 0.46 | 1.25 |
+| any-llm (AnyLLM client) | 0.75 | 2.40 | 0.69 | 1.48 |
+| LiteLLM | 1.19 | 2.78 | 0.98 | 1.12 |
+
+On the OpenAI route, RouteHub adds 9 µs to a bare SDK call, which is within run-to-run noise, and 32 µs for the agent request. LiteLLM adds 647 µs and 736 µs, and any-llm's client adds 210 µs and 354 µs. aisuite also hands requests straight to the SDK and is as cheap as RouteHub on this route, though it requires the older `openai` 1.x line. Counting function calls tells the same story more precisely: per request, RouteHub runs 70 Python function calls beyond the SDK's own, and LiteLLM runs 4,615.
+
+On the Anthropic route, RouteHub is faster than the official Anthropic SDK: 0.26 ms against 0.42 ms for one message, and 0.29 ms against 0.45 ms for the agent request. That holds even though RouteHub also converts the OpenAI-format request into Anthropic's format and the response back. The adapter encodes the request body once, sends it on a pooled connection and reads the reply straight into a `ChatCompletion`, while the SDK builds typed request and response models of its own. aisuite and any-llm call the Anthropic SDK and then convert its result, so they pay for both.
+
+### Streaming
+
+Time to consume a 200-chunk stream in milliseconds, medians of 200 streams:
+
+| | OpenAI, first chunk | OpenAI, full stream | Anthropic, first chunk | Anthropic, full stream |
+|---|---:|---:|---:|---:|
+| Provider SDK (bare) | 1.00 | 9.8 | 0.41 | 2.4 |
+| **RouteHub** | 0.82 | 9.1 | **0.29** | **1.2** |
+| aisuite | 0.68 | 8.1 | 0.49 | 3.0 |
+| any-llm (AnyLLM client) | 7.42 | 11.8 | 7.36 | 9.9 |
+| LiteLLM | 16.61 | 61.1 | 14.69 | 66.6 |
+
+On Anthropic, RouteHub parses the event stream and builds every OpenAI chunk itself, and still finishes the stream in half the time the Anthropic SDK needs for its own native events: 5 µs per chunk against 10 µs. LiteLLM spends 224 to 261 µs per chunk. Per-chunk cost adds up when many streams run at once. At 100 chunks per second, 0.2 ms per chunk uses 2% of a CPU core for each open stream, so a process with 50 concurrent streams spends a full core on chunk handling alone.
+
+### Connection reuse over a real network
+
+A mock server on the same machine hides connection setup, so for this test we sent requests to `api.openai.com` with a deliberately invalid key. The API answers with an instant 401, so the timing is connection work plus one round trip, with no model time and nothing billed. Each client opened a connection, waited 10 seconds (like an agent waiting on a slow tool), then sent a timed request.
+
+Back-to-back requests took 94 to 102 ms for every client. After the 10-second pause, RouteHub reused its open connection and answered in 116 ms. The bare OpenAI SDK and LiteLLM had closed theirs, reconnected, and took 166 ms and 185 ms. That is 67 ms saved on every agent step whose tool call runs longer than five seconds, or about 3.3 seconds of pure connection setup over a 50-step agent run. These figures come from one location, and the savings grow with the distance to the provider.
+
+### Where We Still Have Work to Do
+
+At low concurrency, RouteHub's async throughput tracks its per-call cost: 2,435 requests per second on the Anthropic route, against 1,711 for the Anthropic SDK and 907 for LiteLLM. As concurrency rises, every client built on httpx slows down, the bare SDKs included. At 128 requests in flight, LiteLLM's aiohttp-based transport moves ahead: 876 requests per second on the OpenAI route against RouteHub's 711, and 942 against 865 on Anthropic. At that level the limit is the shared HTTP library rather than RouteHub's own code, and both provider SDKs ship an aiohttp backend that RouteHub can expose as an option.
+
+The largest remaining cost on the OpenAI route is inside the OpenAI SDK itself, which walks and transforms every message and tool definition before sending a request. RouteHub's Anthropic path already serializes the body itself, which is why the same 22-message agent request takes 0.29 ms there and 2.08 ms on the OpenAI route.
+
+LiteLLM also does much more than RouteHub: a proxy server, budgets, spend logging, caching, callbacks and routing across more than 100 providers. Part of its per-call cost pays for that machinery. Our view is that those features belong outside the per-request path, in your application or a separate service, so that the client costs about as much as the SDK it wraps.
+
+## Quickstart
+
+![RouteHub quickstart: install with pip or uv, set a provider key, make a completion call, change providers by changing the model string, and stream, run async or call tools with the same function](/4b5f4d28-dba0-4f66-90d0-8bec2cd2b75a.png)
+
+Install RouteHub from PyPI:
+
+```bash
+pip install routehub
+
+# Or with uv
+uv add routehub
+
+# With orjson for faster JSON handling
+pip install "routehub[fast]"
+```
+
+Set a provider key and make a call:
+
+```bash
+export OPENAI_API_KEY="sk-..."
+```
+
+```python
+import routehub
+
+response = routehub.completion(
+    model="gpt-5.4-mini",
+    messages=[{"role": "user", "content": "Summarize our Q3 risks in three bullets."}],
+)
+print(response.choices[0].message.content)
+print(response.usage.total_tokens)
+```
+
+Change the model string to change providers. The call and the response type stay the same:
+
+```python
+messages = [{"role": "user", "content": "Summarize our Q3 risks in three bullets."}]
+
+routehub.completion(model="claude-sonnet-4-6", messages=messages)
+routehub.completion(model="gemini/gemini-3-flash-preview", messages=messages)
+routehub.completion(model="groq/llama-3.3-70b-versatile", messages=messages)
+routehub.completion(model="openrouter/anthropic/claude-sonnet-4.6", messages=messages)
+```
+
+Stream, run async or call tools with the same function:
+
+```python
+import asyncio
+
+weather = {
+    "type": "function",
+    "function": {
+        "name": "get_weather",
+        "description": "Get the weather for a city.",
+        "parameters": {
+            "type": "object",
+            "properties": {"city": {"type": "string"}},
+            "required": ["city"],
+        },
+    },
+}
+
+for chunk in routehub.completion(model="claude-sonnet-4-6", messages=messages, stream=True):
+    print(chunk.choices[0].delta.content or "", end="")
+
+response = asyncio.run(
+    routehub.acompletion(model="gpt-5.4-mini", messages=messages, tools=[weather])
+)
+print(response.choices[0].message.tool_calls)
+```
+
+Every provider failure is raised as a typed exception, such as `RateLimitError`, `ContextWindowExceededError` or `AuthenticationError`, with the status code, provider and model attached. Each one subclasses the matching OpenAI SDK exception, so error handlers you already have keep working. For tests, pass `mock_response="..."` to get a realistic response (or stream) back without a network call or an API key.
+
+### Coming from LiteLLM
+
+RouteHub uses the same function names and module paths as LiteLLM, so most code needs only a new import:
+
+| LiteLLM | RouteHub |
+|---|---|
+| `from litellm import completion, acompletion, embedding` | `from routehub import completion, acompletion, embedding` |
+| `from litellm.utils import get_model_info` | `from routehub.utils import get_model_info` |
+| `from litellm.exceptions import AuthenticationError` | `from routehub.exceptions import AuthenticationError` |
+| `litellm.drop_params = True` | `completion(..., drop_params=True)` |
+| `litellm.num_retries = 3` | `completion(..., num_retries=3)` |
+
+Two differences to plan for: settings are arguments to each call instead of module globals, and responses are OpenAI SDK objects, so you read them with attributes (`response.choices`) or `.model_dump()` rather than dictionary keys. The [README](https://github.com/The-Swarm-Corporation/RouteHub) covers the rest, including prompt caching with Claude, reasoning, structured output, embeddings, the live model catalog and every supported provider.
+
+## RouteHub in Swarms
+
+RouteHub is also coming to the Swarms framework as its fast path for model calls. Installing `swarms[fast]` adds RouteHub, and Swarms then makes every model call through it instead of LiteLLM. Your agent code does not change. In our tests, a new process got an agent's first answer in about 0.6 seconds instead of 1.2, and each model call spent about half as long in the client library.
+
+The `fast` extra is on the Swarms main branch now and will be included in the next release on PyPI. Until then, you can install it from GitHub:
+
+```bash
+pip install "swarms[fast] @ git+https://github.com/kyegomez/swarms.git"
+```
+
+## Read the Full Technical Report
+
+The design and every benchmark in this post are described in detail in our technical report, [RouteHub: A Low-Overhead, SDK-Native LLM Gateway for Agentic Workloads](https://github.com/The-Swarm-Corporation/RouteHub/blob/main/docs/routehub.pdf), by Kye Gomez, Shryuk Grandhi and Ayaan Gazali. It covers the architecture, the code behind each of the six techniques, the full methodology, charts for every result, a profile of where each library spends its time, and the limits of the study, including that all results come from one machine and that the benchmark was written by RouteHub's own developers.
+
+## To Conclude
+
+RouteHub is still young. Version 0.2.0 is on PyPI, and there is plenty left to build. Even at this stage, it is ahead of the most popular LLM gateways on the measures that matter most for agents: 383x faster imports and 5.5x faster time to first response than LiteLLM, 3.9x less memory, near-zero overhead on top of the OpenAI SDK, and Claude calls and streams that are faster than the official Anthropic SDK.
+
+Next on the roadmap: an aiohttp transport option for high-concurrency workloads, skipping the OpenAI SDK's request transform on the OpenAI route, HTTP/2 as an optional transport, the OpenAI Responses API, provider batch APIs, and native adapters for Amazon Bedrock and Google Vertex AI. Each will be built outside the per-request path, so RouteHub stays as cheap as the SDK beneath it while it grows.
+
+## Star, Fork and Contribute to RouteHub
+
+RouteHub is open source, and we would love your help making it faster.
+
+- **Star and fork** RouteHub on [GitHub](https://github.com/The-Swarm-Corporation/RouteHub).
+- **Install it** with `pip install routehub` or `uv add routehub`.
+- **Open an issue or a pull request** for a provider, feature or benchmark you want to see.
+- **Join the conversation** on [Discord](https://discord.gg/EamjgSaEQf) and follow [@swarms_corp](https://twitter.com/swarms_corp) for updates.

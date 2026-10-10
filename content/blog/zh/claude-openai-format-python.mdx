@@ -1,0 +1,334 @@
+---
+title: "如何在 Python 中通过 OpenAI SDK 格式使用 Claude，同时保留提示缓存"
+description: "了解如何在 Python 中通过 OpenAI SDK 格式使用 Claude、Anthropic 兼容端点会丢掉哪些功能，以及如何保留提示缓存、思考输出和 PDF 支持。"
+date: "2026-10-10"
+author: "Swarms 团队"
+categories: ["指南", "工程"]
+readTime: "14 分钟阅读"
+image: "/claude_openai_format_python.png"
+featured: false
+---
+
+# 如何在 Python 中通过 OpenAI SDK 格式使用 Claude，同时保留提示缓存
+
+很多团队希望通过 OpenAI SDK 格式使用 Claude，这样一套代码就能用相同的请求和响应结构调用 Claude、GPT、Gemini 和开源模型。在 Python 中有三种做法：Anthropic 的 OpenAI SDK 兼容端点、原生 Anthropic SDK，或者一个把 OpenAI 格式转换成 Claude 原生 Messages API 的网关。三种做法各有取舍，而差别主要体现在让 Claude 在生产环境中更便宜、更聪明的那些功能上：提示缓存、思考、缓存 token 统计、PDF 和结构化输出。
+
+本文逐一介绍这三种做法，根据 Anthropic 自己的文档列出兼容层具体丢掉了哪些功能，然后用 [RouteHub](https://github.com/The-Swarm-Corporation/RouteHub) 演示第三种做法的可运行代码。RouteHub 是我们为 [Swarms](https://github.com/kyegomez/swarms) 构建的开源 LLM 网关。下面每个 RouteHub 示例我们都在一个本地模拟的 Messages API 上验证过，所以文中描述的请求结构就是 RouteHub 实际发送的内容。
+
+## 为什么要通过 OpenAI SDK 格式使用 Claude？
+
+OpenAI 聊天格式已经成为 LLM 应用的通用接口。消息是一个 `{"role", "content"}` 字典列表，工具是 JSON Schema 函数定义，响应以带有 `choices`、`message` 和 `usage` 的 `ChatCompletion` 对象返回。智能体框架、评测工具、日志管线和重试封装通常都是按这个结构编写的。
+
+让 Claude 也使用同一种格式，有几个实际的好处：
+
+- **所有提供商共用一条代码路径。** 多智能体系统只需修改模型字符串，就能把规划步骤交给 Claude，把简单的分类步骤交给小型开源模型，再把兜底交给另一家厂商。
+- **只需解析一种响应类型。** 你的代码在任何地方都读取 `response.choices[0].message.content` 和 `response.usage.prompt_tokens`，不用按提供商分支处理。
+- **迁移更简单。** 把一个工作负载从一个模型迁到另一个模型，变成可以并排测试的配置改动。
+
+问题在于，Claude 的原生 API 有一些 OpenAI 格式里没有对应字段的功能，比如 `cache_control` 标记和带签名的思考块。你如何在两种格式之间转换，决定了这些功能能否保留下来。
+
+## 方案一：Anthropic 的 OpenAI SDK 兼容端点
+
+Anthropic 提供了一个兼容 OpenAI 的端点。你继续使用官方 `openai` 包，把它指向 Anthropic 的基础 URL，并换成 Claude API key：
+
+```python
+import os
+
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["ANTHROPIC_API_KEY"],
+    base_url="https://api.anthropic.com/v1/",
+)
+
+response = client.chat.completions.create(
+    model="claude-opus-5-5",
+    messages=[{"role": "user", "content": "Who are you?"}],
+)
+print(response.choices[0].message.content)
+```
+
+这是在现有 OpenAI 代码库中试用 Claude 最快的方式，也很适合做快速评估。Anthropic 对它的定位说得很直接。[OpenAI SDK 兼容性页面](https://platform.claude.com/docs/en/cli-sdks-libraries/libraries/openai-sdk)写道，这个兼容层“主要用于测试和比较模型能力，对大多数使用场景而言，并不被视为长期或可用于生产的方案”。
+
+### Anthropic 的 OpenAI 兼容层丢掉了哪些功能？
+
+根据该页面，截至 2026 年 10 月：
+
+- **不支持提示缓存**。
+- **不返回思考输出。** 你可以通过 `extra_body` 开启思考，但“OpenAI SDK 不会返回 Claude 的思考内容”。
+- **不报告缓存 token 用量。** `usage.prompt_tokens_details` 和 `usage.completion_tokens_details` “始终为空”。
+- **忽略 `reasoning_effort`**，所以无法用它控制 Claude 的思考程度。
+- **忽略 `response_format`**，函数定义上的 `strict` 标记也会被忽略，因此 JSON 输出不保证符合你的 schema。
+- **忽略 file 类型的内容部分**，所以无法用 OpenAI 的 `file` 格式发送 PDF。音频输入会被忽略并移除。
+- **系统消息和开发者消息会被提升**，无论它们出现在对话的哪个位置，都会被拼接成一个顶层系统提示。
+- 其他一些字段，包括 `seed`、`logprobs`、`presence_penalty` 和 `frequency_penalty`，也会被忽略。`n` 必须正好为 1。
+
+这些字段大多是被静默忽略，而不是报错，所以一个请求可能执行成功，却没有做到你要求的全部内容。对于每一步都要重新发送很长的系统提示和工具列表的智能体来说，仅仅失去提示缓存就可能大幅改变工作负载的成本。根据 Anthropic 的[提示缓存文档](https://platform.claude.com/docs/en/build-with-claude/prompt-caching)，缓存读取的价格是基础输入 token 价格的 0.1 倍，5 分钟缓存写入的价格是 1.25 倍。
+
+## 方案二：原生 Anthropic SDK
+
+原生 `anthropic` 包提供完整的 Claude API：提示缓存、带签名块的思考、引用、PDF、Files API、批处理、结构化输出，以及每一个新功能在发布当天就能使用。如果你的应用只调用 Claude，这是最好的选择，Anthropic 的兼容性页面也建议需要完整功能时使用它。
+
+代价是请求和响应的结构不同。请求使用单独的 `system` 参数，并且必须提供 `max_tokens`。响应是一组类型化的内容块（`text`、`tool_use`、`thinking`），而不是单个消息字符串；工具结果要以 `tool_result` 块的形式放在用户轮次中返回。如果代码还要调用 OpenAI 格式的提供商，就需要两套请求构建、两套响应解析和两套错误处理。第三种做法要消除的正是这种重复。
+
+## 方案三：转换到 Claude 原生 API 的网关
+
+网关接受 OpenAI 聊天格式，把每个请求转换成 Claude 原生的 Messages API，再把响应转换回 OpenAI 的 `ChatCompletion`。因为它调用的是原生端点，所以可以在转换过程中保留 Claude 特有的字段，而不是丢掉它们。
+
+RouteHub 就是这样工作的。对于所有兼容 OpenAI 的提供商，它直接把请求交给官方 OpenAI SDK。对于 Claude，它使用自己的 Messages API 适配器，请求和响应（或事件流）在每个方向上都只转换一遍。返回的是 OpenAI SDK 自己的 `ChatCompletion` 类型，并在 OpenAI 类型有空间的地方附上 Claude 的额外信息：
+
+- 系统提示、消息和工具上的 `cache_control` 标记会原样发送给 Anthropic。
+- 缓存读取和写入会出现在 `usage.prompt_tokens_details.cached_tokens` 和 `usage.cache_creation_input_tokens` 中。
+- 思考内容以 `message.reasoning_content`（文本）和 `message.thinking_blocks`（带签名的块）返回。
+- `reasoning_effort` 会转换成 Claude 的思考和 effort 设置。
+- OpenAI 的 `file` 部分会变成 Claude 的 `document` 块，所以可以发送 PDF。
+
+RouteHub 沿用了 LiteLLM 的函数名，如果你是从 LiteLLM 迁移过来，可以参考[迁移指南](/blog/migrate-from-litellm-to-routehub)；我们对 [Python 中最好的 LLM 网关](/blog/best-llm-gateway-python)的比较也把它和其他方案放在一起做了对比。
+
+## 如何通过 RouteHub 以 OpenAI SDK 格式使用 Claude
+
+本文剩下的部分都是动手操作。每个示例都使用当前的 Claude 模型 ID。RouteHub 会把所有以 `claude-` 开头的模型名发送给 Anthropic，加上 `anthropic/` 前缀也可以。
+
+### 安装 RouteHub 并发起第一次调用
+
+```bash
+pip install routehub
+export ANTHROPIC_API_KEY="sk-ant-..."
+```
+
+```python
+import routehub
+
+messages = [
+    {"role": "system", "content": "Be brief."},
+    {"role": "user", "content": "Summarize our Q3 risks in three bullets."},
+]
+
+response = routehub.completion(model="claude-sonnet-5-5", messages=messages, max_tokens=2048)
+print(response.choices[0].message.content)
+print(response.usage.total_tokens)
+```
+
+返回的是 `openai.types.chat.ChatCompletion`。在实际发送的请求中，RouteHub 把系统消息移到了 Claude 的顶层 `system` 字段，并把用户消息转换成了一个文本块。Anthropic 要求每个请求都带上 `max_tokens`。如果你不设置，RouteHub 会发送 4,096；由于在 Claude 上思考 token 也计入 `max_tokens`，处理困难任务时最好显式设置一个更大的值。
+
+### 流式输出
+
+```python
+stream = routehub.completion(
+    model="claude-sonnet-5-5",
+    messages=messages,
+    stream=True,
+    stream_options={"include_usage": True},
+)
+for chunk in stream:
+    if chunk.usage:
+        print("\nusage:", chunk.usage.prompt_tokens, chunk.usage.completion_tokens)
+    elif chunk.choices and chunk.choices[0].delta.content:
+        print(chunk.choices[0].delta.content, end="", flush=True)
+```
+
+RouteHub 解析 Anthropic 的服务器推送事件，每收到一段文本、思考内容或工具参数增量，就输出一个 `ChatCompletionChunk`。设置 `include_usage` 后，最后一个分块带有用量信息且不含 choices，和 OpenAI 的流完全一致。异步代码可以使用参数相同的 `acompletion`。
+
+### 调用工具，包括并行调用
+
+用 OpenAI 格式定义工具。RouteHub 会把每个工具转换成 Claude 的 `name`、`description` 和 `input_schema` 结构，再把 Claude 的 `tool_use` 块转换回 OpenAI 的 `tool_calls`。
+
+```python
+import json
+
+weather = {
+    "type": "function",
+    "function": {
+        "name": "get_weather",
+        "description": "Get the weather for a city.",
+        "parameters": {
+            "type": "object",
+            "properties": {"city": {"type": "string"}},
+            "required": ["city"],
+        },
+    },
+}
+
+conversation = [{"role": "user", "content": "What's the weather in Paris and Tokyo?"}]
+response = routehub.completion(model="claude-opus-5-5", messages=conversation, tools=[weather])
+message = response.choices[0].message
+
+conversation.append(message.model_dump(exclude_none=True))
+for call in message.tool_calls or []:
+    city = json.loads(call.function.arguments)["city"]
+    conversation.append({"role": "tool", "tool_call_id": call.id, "content": f"{city}: sunny"})
+
+final = routehub.completion(model="claude-opus-5-5", messages=conversation, tools=[weather])
+print(final.choices[0].message.content)
+```
+
+当 Claude 在一个轮次里同时查询两个城市时，`finish_reason` 为 `"tool_calls"`，`message.tool_calls` 中包含两个调用。Claude 的 API 把工具结果放在用户轮次中，因此 RouteHub 会把连续的 `tool` 消息合并成一个用户轮次，里面有两个 `tool_result` 块。把 `message.model_dump(exclude_none=True)` 追加到对话中，还会把助手的 `thinking_blocks` 一起带上，下一节会解释原因。`tool_choice` 接受 `"auto"`、`"none"`、`"required"` 和指定的函数名，`parallel_tool_calls=False` 会转换成 Claude 的 `disable_parallel_tool_use`。
+
+有一条和模型相关的规则。Anthropic 的[错误文档](https://platform.claude.com/docs/en/api/errors)指出，Claude Opus 5.5、Claude Sonnet 5.5、Claude Fable 5.1 和 Claude Mythos 5.1 不支持强制使用工具，遇到这种请求会返回 400 错误。RouteHub 会在发送前检查：在这些模型上使用 `tool_choice="required"` 或指定函数名会抛出 `UnsupportedParamsError`；设置 `drop_params=True` 时，RouteHub 会改为发送 `"auto"`。
+
+### 在 OpenAI 格式下保留提示缓存
+
+在 OpenAI 的内容部分里，用 Anthropic 的 `cache_control` 键标记要缓存的提示内容：
+
+```python
+messages = [
+    {
+        "role": "system",
+        "content": [
+            {"type": "text", "text": policy_handbook, "cache_control": {"type": "ephemeral"}}
+        ],
+    },
+    {"role": "user", "content": "Which policies cover vendor onboarding?"},
+]
+
+response = routehub.completion(model="claude-sonnet-5-5", messages=messages)
+print(response.usage.prompt_tokens_details.cached_tokens)  # tokens read from the cache
+print(response.usage.cache_creation_input_tokens)          # tokens written to the cache
+```
+
+这个标记会原样出现在发给 Anthropic 的系统块上。用户消息、助手消息和工具定义上的标记也会保留。Anthropic 的顶层自动缓存字段同样可以透传：`routehub.completion(..., cache_control={"type": "ephemeral"})` 会把 `cache_control` 放在请求体的顶层。
+
+在响应中，`prompt_tokens` 包含缓存读取和写入的 token，所以一个从缓存读取 3,000 个 token、另外发送 20 个新 token 的请求，会报告 `prompt_tokens=3020` 和 `cached_tokens=3000`。这样，只认识 OpenAI 用量字段的代码也能正确计算成本。根据 Anthropic 的文档，缓存默认保留 5 分钟（也可以选择 1 小时），最多可以设置 4 个缓存断点，而且提示必须达到最小长度才会被缓存：Claude Opus 5.5 和 Sonnet 5.5 为 512 个 token，Sonnet 4.6 为 1,024 个。更短的提示会在不使用缓存的情况下处理，也不会报错。
+
+### 使用思考和 reasoning_effort
+
+`reasoning_effort` 是 OpenAI 用来控制推理深度的参数。RouteHub 会把它转换成对应 Claude 模型接受的设置：
+
+- **Claude Opus 4.7 及之后的模型，以及所有 Claude 5 模型：** Anthropic 的文档指出，这些模型不再接受固定的思考预算。RouteHub 会发送自适应思考 `thinking={"type": "adaptive"}`，并把级别写入 `output_config.effort`（`"minimal"` 对应 `"low"`）。
+- **更早的思考模型，例如 Claude Sonnet 4.6：** RouteHub 发送固定预算：`minimal` 和 `low` 为 1,024 个 token，`medium` 为 2,048，`high` 为 4,096，`xhigh` 为 8,192，`max` 为 16,000。如果 `max_tokens` 不大于预算，RouteHub 会把它提高到预算加 1,024。
+
+在 Claude 5 上有一个值得了解的细节。Anthropic 的[思考文档](https://platform.claude.com/docs/en/build-with-claude/thinking)说明，这些模型默认已经开启思考，而 `display` 设置默认为 `"omitted"`，返回的思考块文本字段为空。要看到推理摘要，可以直接传入 Claude 的 `thinking` 设置。RouteHub 会原样发送，同时仍然应用你的 `reasoning_effort`：
+
+```python
+response = routehub.completion(
+    model="claude-opus-5-5",
+    messages=messages,
+    reasoning_effort="low",
+    thinking={"type": "adaptive", "display": "summarized"},
+    max_tokens=16000,
+)
+print(response.choices[0].message.reasoning_content)  # summarized thinking
+print(response.choices[0].message.content)            # the answer
+```
+
+这个请求发出时带有 `thinking={"type": "adaptive", "display": "summarized"}` 和 `output_config={"effort": "low"}`。Anthropic 的文档还说明，Claude 4.7 及之后的模型会拒绝大多数采样参数。如果你向这些模型传入 `temperature`、`top_p` 或 `top_k`，RouteHub 会抛出 `UnsupportedParamsError`；设置 `drop_params=True` 时则会丢弃这些参数。
+
+### 在工具调用中回传思考块
+
+Anthropic 要求在返回工具结果时，“必须把助手消息中的思考块完整、不加修改地传回 API”。每个思考块都带有 `signature`，即推理内容的加密副本；即使 `display` 为 `"omitted"`、文本为空，这一要求仍然适用。
+
+RouteHub 会在 `message.thinking_blocks` 上返回这些块。当对话历史中的某条助手消息带有 `thinking_blocks` 时，RouteHub 会把它们放回该助手轮次的开头。在上面的工具示例中，发回给 Claude 的助手轮次先是带签名的思考块，然后是两个 `tool_use` 块，没有任何修改。由此可以得出两条实用规则：
+
+- 用 `message.model_dump(exclude_none=True)` 追加助手消息；如果你手动构建消息，就自己把 `thinking_blocks` 复制过去。
+- 保持历史只追加、不修改。Anthropic 的文档指出，在 Claude Fable 5.1、Opus 5.5、Sonnet 5.5 和 Haiku 5.5 上，只有当系统提示、工具和之前的消息都没有变化时，回传的思考块才会被接受。
+
+在流式输出时，思考文本以 `reasoning_content` 增量的形式到达，签名则在该块结束时以 `thinking_blocks` 增量的形式到达。如果你打算继续对话，需要把两者都收集起来。
+
+### 发送图片和 PDF
+
+```python
+content = [
+    {"type": "text", "text": "Compare the chart with the report."},
+    {"type": "image_url", "image_url": {"url": "https://example.com/chart.png"}},
+    {"type": "file", "file": {"filename": "q3.pdf", "file_data": f"data:application/pdf;base64,{pdf_b64}"}},
+]
+response = routehub.completion(model="claude-sonnet-5-5", messages=[{"role": "user", "content": content}])
+```
+
+`image_url` 会变成 Claude 的 `image` 块：普通 URL 使用 URL 来源，data URI 使用 base64 来源。带 base64 数据的 `file` 部分会变成 `document` 块，带 `file_id` 的 `file` 部分则会变成引用你通过 Anthropic Files API 上传的文件的文档块。
+
+### 获取结构化输出
+
+```python
+from pydantic import BaseModel
+
+class RiskReport(BaseModel):
+    title: str
+    severity: int
+
+response = routehub.completion(
+    model="claude-sonnet-5-5",
+    messages=[{"role": "user", "content": "Assess the main risk of a single-region deployment."}],
+    response_format=RiskReport,
+)
+report = RiskReport.model_validate_json(response.choices[0].message.content)
+```
+
+pydantic 类会变成严格的 `json_schema` 响应格式。在 Claude Fable 5.1、Sonnet 5.5、Opus 5.5 及之后的模型上，RouteHub 把 schema 作为 Anthropic 原生的结构化输出（`output_config.format`）发送。在更早的模型上，它会添加一个名为 `json_tool_call`、以你的 schema 为参数的工具，强制 Claude 调用它，再把工具的输入作为消息内容返回，`finish_reason` 为 `"stop"`。如果你开启了思考，它会改为对这个工具使用 `tool_choice="auto"`，因为 Anthropic 不允许在手动扩展思考的同时强制使用工具。无论哪种方式，你的代码都从 `message.content` 读取 JSON。
+
+### 用类型化异常处理错误
+
+```python
+try:
+    routehub.completion(model="claude-sonnet-5-5", messages=messages, num_retries=3)
+except routehub.ContextWindowExceededError:
+    ...  # trim the conversation and retry
+except routehub.ServiceUnavailableError as error:
+    print(error.status_code, error.llm_provider, error.model)  # 529, anthropic, claude-sonnet-5-5
+except routehub.RateLimitError:
+    ...
+```
+
+当 API 暂时过载时，Anthropic 会返回 HTTP 529 和 `overloaded_error`。RouteHub 对此抛出 `ServiceUnavailableError`；在流中途收到 `overloaded_error` 事件时也是如此。抛出之前，它会对 429、529 和其他临时性状态码进行指数退避重试，并遵守 `retry-after`（默认重试 2 次，可通过 `num_retries` 修改）。每个异常都继承自对应的 OpenAI SDK 异常，所以现有的 `except openai.APIStatusError` 处理代码仍然能捕获它们。Claude 拒绝回答不算错误：它会以 `finish_reason="content_filter"` 返回。
+
+## 转换层会拖慢 Claude 吗？
+
+每个请求和响应都要转换，听起来像是额外的工作，但在我们的技术报告 [RouteHub: A Low-Overhead, SDK-Native LLM Gateway for Agentic Workloads](https://github.com/The-Swarm-Corporation/RouteHub/blob/main/docs/routehub.pdf) 中，RouteHub 的 Anthropic 路径测得比官方 Anthropic SDK 更快。以下是客户端开销，测试使用一个即时响应的本地模拟服务器，在 Apple M3 Pro、Python 3.12 和 Anthropic SDK 1.11.0 上进行：
+
+| 测量项（来自论文） | Anthropic SDK | RouteHub |
+|---|---:|---:|
+| 预热后的调用，1 条消息 | 0.42 ms | **0.26 ms** |
+| 预热后的调用，带 4 个工具的 22 条消息智能体请求 | 0.45 ms | **0.29 ms** |
+| 每个流式分块的耗时 | 10 µs | **5 µs** |
+| 完整的 200 分块流 | 2.4 ms | **1.2 ms** |
+| 异步每秒请求数，1 个请求在途 | 1,711 | **2,435** |
+
+作为基准的 Anthropic SDK 发送的是手写的原生请求，完全不做转换。RouteHub 仍然更快，是因为它的适配器只对请求体编码一次，通过池化的连接发送，再把回复直接校验成 `ChatCompletion`；而 SDK 会构建自己的类型化请求和响应模型。也要注意数量级：这些都是不到一毫秒的差别，而一次真实的 Claude 调用要花数秒生成 token。只有在大量智能体步骤、流或并发请求中累积起来时，这些节省才有意义。[RouteHub 发布文章](/blog/introducing-routehub)介绍了完整的基准测试，包括 RouteHub 目前还不占优的地方。
+
+## 应该选择哪种方案？
+
+| | 兼容端点 | 原生 Anthropic SDK | RouteHub |
+|---|---|---|---|
+| 请求和响应格式 | OpenAI | Anthropic | OpenAI |
+| 同一套代码调用其他提供商 | 可以 | 不可以 | 可以 |
+| 提示缓存 | 不支持 | 支持 | 支持 |
+| 返回思考文本和带签名的块 | 否 | 是 | 是 |
+| 缓存 token 用量 | 始终为空 | 有 | 有 |
+| `reasoning_effort` | 忽略 | 使用 `output_config.effort` | 转换为思考和 effort 设置 |
+| `response_format` | 忽略 | 结构化输出 | 结构化输出或强制工具调用 |
+| 以 `file` 部分发送 PDF | 忽略 | 支持 | 支持 |
+| Claude API 新功能 | 有限 | 最先可用 | 顶层字段可透传，其他需要 RouteHub 支持 |
+
+如果只是想在现有 OpenAI 代码库中快速试用 Claude，选择**兼容端点**。如果你的应用只调用 Claude，或者需要 OpenAI 格式中没有位置的功能，选择**原生 Anthropic SDK**。如果你希望 Claude 和其他提供商共用一条 OpenAI 格式的代码路径，同时不放弃缓存、思考和 PDF，选择 **RouteHub**。
+
+在决定之前，也要了解 RouteHub 的局限。引用以及 Anthropic 服务端工具（例如网页搜索）的结果块在 OpenAI 格式中没有对应字段，所以 RouteHub 只返回文本，不带这些元数据。它目前还不会把函数定义上的 OpenAI `strict` 标记转发给 Anthropic 的严格工具调用。和兼容端点一样，它会把所有系统消息移到顶层系统提示中。新的顶层请求字段，例如 `container`、`mcp_servers`、`context_management` 和 `service_tier`，可以作为关键字参数透传，但新的响应功能需要先支持转换，才会出现在 `ChatCompletion` 上。如果你的应用依赖这些功能，这部分请使用原生 SDK。
+
+## 常见问题
+
+### 可以通过 OpenAI SDK 使用 Claude 吗？
+
+可以。Anthropic 位于 `https://api.anthropic.com/v1/` 的兼容端点接受官方 `openai` 包发出的请求，只需使用 Claude API key。Anthropic 把它定位为测试和比较模型的工具，它会忽略提示缓存、思考输出、`reasoning_effort`、`response_format` 和 file 内容部分。如果要在生产环境中使用 OpenAI 格式，可以用 RouteHub 这样的网关改为调用 Claude 的原生 API。
+
+### 在 OpenAI 格式下，Claude 的提示缓存能用吗？
+
+通过 Anthropic 的兼容端点不能用，它不支持提示缓存。通过 RouteHub 可以：在内容部分或工具定义上加上 `"cache_control": {"type": "ephemeral"}`，然后从 `usage.prompt_tokens_details.cached_tokens` 和 `usage.cache_creation_input_tokens` 读取结果。
+
+### 如何以 OpenAI 格式获取 Claude 的思考内容？
+
+使用 RouteHub 时，设置 `reasoning_effort`，或者直接传入 Claude 的 `thinking` 设置。思考文本出现在 `message.reasoning_content` 上，带签名的块出现在 `message.thinking_blocks` 上。在 Claude 5 模型上，由于默认显示方式是 `"omitted"`，要获得摘要文本需要传入 `thinking={"type": "adaptive", "display": "summarized"}`。
+
+### reasoning_effort 对 Claude 有效吗？
+
+兼容端点会忽略它。RouteHub 在 Claude Opus 4.7 及之后的模型和 Claude 5 模型上，把它转换成带 `output_config.effort` 的自适应思考；在更早的思考模型上，则转换成固定的思考预算。
+
+### RouteHub 会比直接调用 Anthropic SDK 慢吗？
+
+在我们技术报告的基准测试中，它在客户端反而更快：每次预热后的调用 0.26 毫秒对 0.42 毫秒，每个流式分块 5 微秒对 10 微秒。和模型延迟相比，这两个数字都很小，所以选择 RouteHub 的主要理由是各提供商共用 OpenAI 格式。
+
+### RouteHub 支持哪些 Claude 模型？
+
+所有以 `claude-` 开头的模型名都会发送到 Anthropic 的 Messages API，包括 `claude-opus-5-5`、`claude-sonnet-5-5` 和 `claude-sonnet-4-6`。RouteHub 会按上文所述，针对思考、采样参数、强制工具调用和结构化输出应用各模型的规则。
+
+## 开始使用
+
+用 `pip install routehub` 从 [PyPI](https://pypi.org/project/routehub/) 安装 RouteHub，在 [GitHub](https://github.com/The-Swarm-Corporation/RouteHub) 上为项目点 Star，并阅读[技术报告](https://github.com/The-Swarm-Corporation/RouteHub/blob/main/docs/routehub.pdf)了解设计和基准测试。如果你在更广泛地评估网关，可以看看我们关于[最好的 LiteLLM 替代方案](/blog/best-litellm-alternative)的指南，以及我们对 [LiteLLM 为什么慢](/blog/why-is-litellm-slow)的分析。

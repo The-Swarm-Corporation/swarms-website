@@ -1,0 +1,196 @@
+---
+title: "2026 年最佳 LiteLLM 替代方案：RouteHub 及另外 5 个选择"
+description: "在找 LiteLLM 替代方案？我们从速度、依赖、功能和许可证四个方面，对比 RouteHub、any-llm、aisuite、Portkey、Bifrost 和 OpenRouter。"
+date: "2026-10-10"
+author: "Swarms 团队"
+categories: ["对比", "工程"]
+readTime: "12 分钟阅读"
+image: "/best_litellm_alternative.png"
+featured: false
+---
+
+# 2026 年最佳 LiteLLM 替代方案：RouteHub 及另外 5 个选择
+
+如果你在寻找 LiteLLM 替代方案，先确定你用的是 LiteLLM 的哪一部分。LiteLLM 其实是两个产品：一个 Python 库，把一次 `completion()` 调用转换成发往 100 多家提供商的请求；以及一个代理服务器，提供预算、花费追踪、虚拟 key 和路由。大多数 Python 应用只用到第一部分，对它们来说，最好的 LiteLLM 替代品是一个函数名相同、体积更小的库。运行代理服务器的团队则需要另一类工具。
+
+本文两种情况都会介绍：开发者为什么要替换 LiteLLM、替代品应该具备什么、2026 年的六个替代方案（三个 Python 库、两个自托管网关和一个托管服务）、对比表、LiteLLM 与 RouteHub 的基准测试数据，以及哪些情况下你应该继续使用 LiteLLM。RouteHub 是我们自己的项目，所以其他工具更合适的地方，我们会直接说明。
+
+## 开发者为什么要寻找 LiteLLM 替代方案？
+
+LiteLLM 之所以流行，是因为它功能很多。但功能多也有代价，在智能体工作负载中最明显：应用要发起大量模型调用、启动大量短生命周期进程，或者同时处理大量流式响应。下面是最常见的几个原因。
+
+**导入很慢。** 在我们对 LiteLLM 1.104.0 的基准测试中（数据来自 [RouteHub 技术报告](https://github.com/The-Swarm-Corporation/RouteHub/blob/main/docs/routehub.pdf)），`import litellm` 的中位耗时为 1,235 毫秒，加载了 2,502 个模块，包括 OpenAI SDK、`aiohttp`、`jinja2`、`yaml` 和 `tokenizers`。每一次无服务器冷启动、CLI 命令、CI 测试和 worker 进程，在做任何实际工作之前都要先付出这段时间。具体原因我们在 [LiteLLM 为什么慢？](/zh/blog/why-is-litellm-slow) 一文中有详细分析。
+
+**导入时发起网络请求。** 默认情况下，LiteLLM 在导入时会从 GitHub 下载模型价格表，除非你设置 `LITELLM_LOCAL_MODEL_COST_MAP=True`。在同一测试中，这次下载让导入的中位耗时又多了 145 毫秒，而且启动还要依赖 GitHub 能否访问。
+
+**单次调用开销。** 在即时响应的模拟服务器上测量，与裸 OpenAI SDK 相比，LiteLLM 给一次单消息的 OpenAI 调用增加了 647 微秒，给 22 条消息的智能体请求增加了 736 微秒。性能剖析显示了时间花在哪里：每次调用，LiteLLM 都会创建一个日志对象，运行缓存和响应元数据钩子，把回复转换成它自己的响应类型，并向后台线程池提交一个成功回调。算下来，每个请求在 SDK 自身之外多执行了 4,615 次 Python 函数调用。
+
+**流式输出开销。** LiteLLM 在 OpenAI 路径上每个分块约花 224 微秒，在 Anthropic 路径上约 261 微秒，首个分块要在请求发出约 15 到 17 毫秒后才到达。按每秒 100 个分块计算，每个分块 0.2 毫秒意味着每个打开的流要占用 2% 的 CPU 核心。一个同时处理 50 个流的进程，光是处理分块就要用掉一整个核心。
+
+**全局设置。** `litellm.drop_params`、`litellm.num_retries`、`litellm.ssl_verify` 和 `litellm.set_verbose` 等选项都是模块级全局变量。当多个智能体或租户共用一个进程时，一个组件的设置会改变所有人的行为。
+
+**依赖与供应链。** LiteLLM 会安装 58 个包（在我们的干净环境中占 168.5 MiB）。每一个包都是带着你的 API key 运行的代码。2026 年 3 月 24 日，攻击者获得了 LiteLLM 发布流水线的访问权限，PyPI 上的两个版本 1.82.7 和 1.82.8 被植入了凭证窃取程序。LiteLLM 团队[将其追溯到 CI 流程中被攻破的 Trivy 扫描器](https://docs.litellm.ai/blog/security-update-march-2026)。1.82.8 版本加入了一个 `litellm_init.pth` 文件，Python 解释器启动时就会执行它，因此即使从未导入 LiteLLM，窃取程序也可能运行。团队随后通过重建的流水线发布了干净的 1.83.0 版本。这次事件并不说明 LiteLLM 的代码本身有缺陷，但它表明网关库拥有多大的访问权限，也说明了依赖树小一些的价值。
+
+## LiteLLM 的替代品应该具备什么？
+
+在比较工具之前，先把你的需求写下来。对于把 LiteLLM 当作库使用的大多数 Python 应用，一个好的 LiteLLM 替代品应该具备以下特点：
+
+- **相同的调用方式。** 输入 OpenAI 格式的消息，输出 OpenAI 格式的响应，流式输出、异步和工具调用都通过同一个函数完成。最好函数名也相同，这样迁移只需要换一行导入。
+- **覆盖你用到的提供商。** 对照替代品的列表检查你实际使用的提供商，如果用到 Azure、Bedrock 和 Vertex AI，也要一并确认。
+- **在关键处提供原生支持。** Anthropic 的 OpenAI 兼容端点会丢弃提示缓存、思考输出和缓存 token 用量。如果你大量使用 Claude，替代品应该调用 Claude 的原生 Messages API。
+- **启动和单次调用开销低。** 以裸提供商 SDK 为下限，测量导入时间、首次调用时间和每次调用的额外开销。
+- **按调用配置。** 重试、超时和 TLS 设置都应该是参数，而不是全局变量。
+- **类型化错误。** 限流、上下文窗口超限和认证失败应该是不同的异常，这样重试和降级逻辑才能保持简单。
+- **依赖树小**，来自持续维护、采用宽松许可证的项目。
+
+如果你需要预算、虚拟 key、花费看板，或者给多个团队提供一个共享端点，那你需要的是网关服务器。下面列表的后半部分介绍这类工具。
+
+## 2026 年最佳 LiteLLM 替代方案
+
+### 1. RouteHub：Python 中可直接替换 LiteLLM 的方案
+
+[RouteHub](https://github.com/The-Swarm-Corporation/RouteHub) 是 Swarms 团队开发的开源 Python 库（Apache 2.0 许可证，Python 3.10 及以上）。它沿用了 LiteLLM 的函数名和模块路径（`completion`、`acompletion`、`embedding`、`routehub.utils`、`routehub.exceptions`），所以大多数代码只需要改导入就能迁移过来。它支持 20 多家提供商，包括 OpenAI、Anthropic、Gemini、Azure OpenAI、Groq、xAI、DeepSeek、OpenRouter、Mistral、Together、Fireworks、Ollama、vLLM，以及任何兼容 OpenAI 的服务。
+
+RouteHub 的设计目标是开销和它所封装的提供商 SDK 相当。`import routehub` 不加载任何第三方代码，OpenAI SDK 在第一次请求时才加载。兼容 OpenAI 的提供商通过缓存的官方 OpenAI 客户端发送请求，RouteHub 直接返回 SDK 自己的 `ChatCompletion` 对象，不做二次包装。Claude 走 Messages API 的原生适配器，因此提示缓存、扩展思考和缓存 token 统计都能正常工作。所有设置都是每次调用的参数，错误以继承自 OpenAI SDK 异常的类型化异常抛出，`mock_response` 让你不发网络请求也能测试。它只有三个直接依赖（`openai`、`pydantic` 和 `tiktoken`），总共安装 21 个包。
+
+**适合：** 使用 LiteLLM SDK 函数、希望缩短启动时间、降低单次调用开销、缩小依赖树，又不想重写调用代码的 Python 应用和智能体框架。设计细节请阅读[发布文章](/zh/blog/introducing-routehub)。
+
+**局限：** RouteHub 只是一个库。它没有代理服务器、预算、花费记录、回调或路由器；`fallbacks`、`metadata` 和 `caching` 等 LiteLLM 专有参数会被接受但不起作用。原生 Bedrock 和 Vertex AI 适配器在路线图上，尚未发布。与 LiteLLM 相比，0.2.0 版本还很年轻。
+
+### 2. any-llm（Mozilla.ai）
+
+[any-llm](https://github.com/mozilla-ai/any-llm) 是 Mozilla.ai 开发的 Python 库，采用 Apache 2.0 许可证，为众多提供商提供统一接口，并在提供商有官方 SDK 时使用官方 SDK。它需要 Python 3.11 或更高版本，通过 `any-llm-sdk[openai]` 这样的扩展安装各提供商的支持。它的[提供商列表](https://docs.mozilla.ai/any-llm/providers/)很长，超过 50 项，包括 AWS Bedrock 和 Google Vertex AI。它为脚本提供模块级函数，也提供一个会复用连接的 `AnyLLM` 客户端类，后者是官方推荐的生产用法。如果需要预算、虚拟 key 和用量追踪，Mozilla.ai 还有一个独立的自托管网关 [Otari](https://github.com/mozilla-ai/otari)（Python，Apache 2.0）。
+
+在我们的基准测试中，any-llm 的导入耗时 569 毫秒，因为它会预先加载 OpenAI 和 Anthropic 两个 SDK。它的 `AnyLLM` 客户端在裸 SDK 之上，每次单消息 OpenAI 调用增加 210 微秒。它的模块级函数每次调用都会新建一个提供商客户端，开销要大得多（Anthropic 路径上每次调用 13.16 毫秒），所以请使用客户端类。
+
+**适合：** 希望采用官方 SDK 设计、需要覆盖 Bedrock 和 Vertex AI 等更多提供商，并希望同一团队提供配套自托管网关的团队。
+
+### 3. aisuite
+
+[aisuite](https://github.com/andrewyng/aisuite) 是由吴恩达发起、采用 MIT 许可证的 Python 库，它把各提供商的 SDK 封装在一个 OpenAI 风格的 `client.chat.completions.create()` 调用之后。它支持 OpenAI、Anthropic、Google、Mistral、Hugging Face、AWS、Cohere、Ollama、OpenRouter 等提供商，还提供自动工具执行（`max_turns`）和 MCP 支持。它只在需要时才加载提供商模块，因此在我们的测试中导入只要 93 毫秒；在 OpenAI 路径上，它的单次调用开销和 RouteHub 一样低。
+
+采用之前有两点需要确认：PyPI 上的当前版本（0.2.0）对基于 OpenAI 的提供商把 `openai` 限制在 2.0 以下；在我们的测试中，0.2.0 必须安装 MCP 扩展后才能接受带工具的请求。它的调用方式也和 LiteLLM 不同，所以迁移需要重写调用代码。
+
+**适合：** 更看重简单接口和自动工具调用、而不需要兼容 LiteLLM 的脚本、原型和教学代码。
+
+### 4. Portkey AI Gateway
+
+[Portkey 网关](https://github.com/Portkey-AI/gateway) 是一个用 TypeScript 编写、采用 MIT 许可证的网关服务器。你可以用 `npx @portkey-ai/gateway` 运行它（或者使用托管版 Portkey Cloud），然后把任何 OpenAI SDK 的基础 URL 指向它。它可以路由到 1,600 多个模型，并提供降级、自动重试、跨 key 和提供商的负载均衡、缓存，以及 50 多种护栏。
+
+**适合：** 需要一个带护栏和路由规则的中心化网关，并且愿意运行 Node.js 服务或为托管控制面付费的团队。它替代的是 LiteLLM 代理，而不是 LiteLLM 库。
+
+### 5. Bifrost
+
+[Bifrost](https://github.com/maximhq/bifrost) 来自 Maxim AI，是一个用 Go 编写、采用 Apache 2.0 许可证的网关服务器。你可以用 `npx -y @maximhq/bifrost` 或 `docker run -p 8080:8080 maximhq/bifrost` 启动它。它支持 20 多家提供商，并提供故障切换、跨 key 和提供商的负载均衡、基于虚拟 key 和团队的预算、语义缓存、Prometheus 指标以及 MCP 工具。现有的 OpenAI、Anthropic 和 Google GenAI SDK 代码改一下基础 URL 就能接入，Go 应用还可以把它的核心作为库嵌入。
+
+**适合：** 想用一个编译型、自托管、内置预算和可观测性的网关来替代 LiteLLM 代理的团队。
+
+### 6. OpenRouter
+
+[OpenRouter](https://openrouter.ai) 是一个托管 API，用一个 key 和一个兼容 OpenAI 的端点访问多家提供商的模型，不需要运行任何服务。OpenRouter 按提供商原价收费，不加价，[用银行卡购买额度时收取 5.5% 的手续费（最低 0.80 美元）](https://openrouter.ai/docs/faq)，也支持使用你自己的 key。如果某个提供商返回错误，OpenRouter 会自动切换到该模型的下一个提供商。
+
+**适合：** 想访问大量模型、又不想管理各家提供商账号的团队。它也可以和库搭配使用：RouteHub、any-llm 和 aisuite 都能调用 OpenRouter，例如 `routehub.completion(model="openrouter/anthropic/claude-sonnet-4.6", ...)`。
+
+## LiteLLM 替代方案对比
+
+| | 类型 | 语言 | 许可证 | 运行方式 | 擅长 |
+|---|---|---|---|---|---|
+| **RouteHub** | 库 | Python 3.10+ | Apache 2.0 | 在你的进程中 | 低开销、可直接替换 LiteLLM 的 SDK 函数 |
+| any-llm | 库 | Python 3.11+ | Apache 2.0 | 在你的进程中（网关用 Otari） | 官方 SDK，50 多家提供商，含 Bedrock 和 Vertex AI |
+| aisuite | 库 | Python | MIT | 在你的进程中 | 简单接口、自动工具调用、MCP |
+| Portkey Gateway | 网关服务器 | TypeScript | MIT | 自托管或 Portkey Cloud | 护栏、路由、1,600 多个模型 |
+| Bifrost | 网关服务器 | Go | Apache 2.0 | 自托管（npx 或 Docker） | 预算、虚拟 key、故障切换、指标 |
+| OpenRouter | 托管 API | 不适用 | 商业服务 | 仅托管 | 一个 key 访问大量模型，无需运维 |
+| LiteLLM | 库和代理 | Python | MIT（`enterprise/` 目录以外） | 两者皆可 | 功能最全，100 多家提供商 |
+
+## LiteLLM 与 RouteHub 对比：RouteHub 快多少？
+
+以下数据来自 RouteHub 技术报告。测试对象为 LiteLLM 1.104.0，每个库运行在各自的环境中，调用发往一台 Apple M3 Pro 笔记本（Python 3.12）上即时响应的模拟服务器。排除网络和模型时间后，测到的就是每个库自身所做的工作。
+
+| | LiteLLM 1.104.0 | RouteHub | 差距 |
+|---|---:|---:|---:|
+| `import` 耗时 | 1,235 ms | 3.2 ms | 快 383 倍 |
+| 导入 + 首个响应 | 1,464 ms | 267 ms | 快 5.5 倍 |
+| 首次调用后的峰值内存 | 211 MiB | 54 MiB | 少 3.9 倍 |
+| `import` 加载的模块数 | 2,502 | 18 | |
+| 单次调用开销（OpenAI，1 条消息） | +647 µs | +9 µs | |
+| 单次调用开销（OpenAI，智能体请求） | +736 µs | +32 µs | |
+| Claude 调用，1 条消息 | 0.98 ms | 0.26 ms | |
+| 每个流式分块（Anthropic） | 261 µs | 5 µs | |
+| 安装的包数量 | 58 | 21 | |
+
+开销以裸 OpenAI SDK 为基准测量，裸 SDK 每次单消息调用耗时 0.54 毫秒。在 Anthropic 路径上，RouteHub 也比官方 Anthropic SDK（每次调用 0.42 毫秒）更快，因为它的适配器只对请求编码一次，并把回复直接读入 `ChatCompletion`。
+
+在真实网络上，RouteHub 60 秒的连接保持时间也很重要。在 10 秒的停顿之后（就像智能体在等待一个较慢的工具），RouteHub 复用了已有连接，116 毫秒就从 `api.openai.com` 得到响应；LiteLLM 需要重新连接，耗时 185 毫秒。
+
+RouteHub 的 README 中还引用了一次更早、更简单的测量，对比对象是 LiteLLM 1.76.1：导入 5.5 毫秒对 1,027 毫秒（约 190 倍），单次调用开销 0.004 毫秒对 0.74 毫秒。两次测量的结论一致。
+
+## 什么情况下应该继续使用 LiteLLM？
+
+替换并不总是正确的选择。如果符合以下情况，请继续使用 LiteLLM，或者在使用更轻量的库的同时保留它的代理：
+
+- **你在运行 LiteLLM 代理。** 预算、虚拟 key、花费记录、团队管理和管理界面都不属于 RouteHub、any-llm 或 aisuite 的功能。Portkey、Bifrost 和 Mozilla.ai 的 Otari 覆盖了其中一部分，请把它们的功能列表和你实际用到的功能对照一下。
+- **你依赖它的回调或路由器。** 日志集成、`Router` 类、部署级降级和冷却机制，在 RouteHub 中都没有对应功能。
+- **你需要 RouteHub 尚未支持的提供商。** LiteLLM 支持 100 多家提供商，包括 AWS Bedrock 和 Google Vertex AI。如果只差这两家，any-llm 也支持它们。
+- **你在单个进程中运行极高的异步并发。** 在我们同时有 128 个请求在途的吞吐量测试中，LiteLLM 的 aiohttp 传输层在 OpenAI 路径上每秒处理 876 个请求，RouteHub 为 711；Anthropic 路径上为 942 对 865。在这个并发水平上，所有基于 httpx 的客户端都会变慢，裸 SDK 也不例外。RouteHub 的 aiohttp 选项已在路线图上。
+
+对于单个交互式请求，无论你选择哪个库，模型自身的延迟都占大头。上面这些差距，要在乘以智能体步骤数、进程启动次数或并发流数量之后才会变得重要。
+
+## 如何用 RouteHub 替换 LiteLLM？
+
+安装 RouteHub：
+
+```bash
+pip install routehub
+# or
+uv add routehub
+```
+
+修改导入，函数名和参数保持不变：
+
+```python
+# Before
+from litellm import completion, acompletion
+from litellm.exceptions import RateLimitError
+
+# After
+from routehub import completion, acompletion
+from routehub.exceptions import RateLimitError
+
+response = completion(
+    model="claude-sonnet-4-6",
+    messages=[{"role": "user", "content": "Summarize our Q3 risks in three bullets."}],
+    num_retries=3,
+)
+print(response.choices[0].message.content)
+```
+
+把全局设置移到调用参数中。`litellm.drop_params = True` 变成 `completion(..., drop_params=True)`，`num_retries`、`ssl_verify` 和 `set_verbose` 也是一样。响应是 OpenAI SDK 对象，所以要用属性访问（`response.choices[0]`）或 `.model_dump()`，不能用 `response["choices"]`。如果你的代码传入了 `fallbacks` 等 LiteLLM 专有参数，RouteHub 会忽略它们，所以请在自己的代码里捕获类型化异常来实现降级。
+
+完整的迁移清单，包括测试、Claude 专有功能和常见错误，请参阅[如何从 LiteLLM 迁移到 RouteHub](/zh/blog/migrate-from-litellm-to-routehub)。如果你是从零开始选择网关，而不是替换现有网关，请参阅 [Python 最佳 LLM 网关](/zh/blog/best-llm-gateway-python)；Claude 相关的细节请阅读[如何在 Python 中用 OpenAI 格式调用 Claude](/zh/blog/claude-openai-format-python)。
+
+## 常见问题
+
+### Python 中最好的 LiteLLM 替代方案是什么？
+
+对于把 LiteLLM 当作库使用的应用，RouteHub 是最接近直接替换的 LiteLLM 替代方案：它保留了相同的函数名和模块路径，在我们的测试中导入只需 3.2 毫秒（LiteLLM 为 1,235 毫秒），每次调用只增加 9 微秒（LiteLLM 为 647 微秒）。如果你更喜欢 Mozilla.ai 基于官方 SDK 的设计，any-llm 是不错的选择；aisuite 适合简单脚本。如果需要网关服务器，可以看看 Portkey 或 Bifrost。
+
+### RouteHub 能直接替换 LiteLLM 吗？
+
+就 SDK 函数而言，基本可以。`completion`、`acompletion`、`embedding`、`get_model_info`、`supports_*` 系列辅助函数和异常类的名称都相同，所以大多数代码只需换一行导入。不同之处在于：设置是每次调用的参数，响应是不支持字典访问的 OpenAI SDK 对象，LiteLLM 的代理、路由器和回调没有对应功能。
+
+### RouteHub 能替代 LiteLLM 代理服务器吗？
+
+不能。RouteHub 是在你的进程中运行的 Python 库。如果你需要一个带预算和虚拟 key 的共享端点，请使用 Portkey、Bifrost、Otari 或 LiteLLM 代理本身这样的网关服务器。你的应用代码仍然可以通过 RouteHub 的 `api_base=` 参数调用这个服务器。
+
+### RouteHub 免费且开源吗？
+
+是的。RouteHub 采用 Apache 2.0 许可证，已发布在 [PyPI](https://pypi.org/project/routehub/) 上。源代码、issue 和路线图都在 [GitHub](https://github.com/The-Swarm-Corporation/RouteHub) 上。
+
+### RouteHub 支持哪些 LLM 提供商？
+
+20 多家，包括 OpenAI、Anthropic（通过原生 Messages API）、Google Gemini、Azure OpenAI、Groq、xAI、DeepSeek、OpenRouter、Together AI、Mistral、Fireworks、Perplexity、Cerebras、Ollama、LM Studio、vLLM，以及任何兼容 OpenAI 的服务。README 中有完整列表，包括模型字符串和环境变量。
+
+### 2026 年 3 月的事件之后，LiteLLM 还能安全使用吗？
+
+被攻破的版本是 1.82.7 和 1.82.8，LiteLLM 团队从 1.83.0 开始通过重建的流水线发布了干净的版本。如果你安装过这两个受影响的版本，请按照 [LiteLLM 的指引](https://docs.litellm.ai/blog/security-update-march-2026)处理，并轮换那台机器上的所有凭证。无论使用哪个库，都请锁定版本，并保持依赖树精简。

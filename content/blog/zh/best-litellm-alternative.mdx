@@ -49,7 +49,7 @@ LiteLLM 之所以流行，是因为它功能很多。但功能多也有代价，
 
 ### 1. RouteHub：Python 中可直接替换 LiteLLM 的方案
 
-[RouteHub](https://github.com/The-Swarm-Corporation/RouteHub) 是 Swarms 团队开发的开源 Python 库（Apache 2.0 许可证，Python 3.10 及以上）。它沿用了 LiteLLM 的函数名和模块路径（`completion`、`acompletion`、`embedding`、`routehub.utils`、`routehub.exceptions`），所以大多数代码只需要改导入就能迁移过来。它支持 20 多家提供商，包括 OpenAI、Anthropic、Gemini、Azure OpenAI、Groq、xAI、DeepSeek、OpenRouter、Mistral、Together、Fireworks、Ollama、vLLM，以及任何兼容 OpenAI 的服务。
+[RouteHub](/routehub) 是 Swarms 团队开发的开源 Python 库（Apache 2.0 许可证，Python 3.10 及以上）。它沿用了 LiteLLM 的函数名和模块路径（`completion`、`acompletion`、`embedding`、`routehub.utils`、`routehub.exceptions`），所以大多数代码只需要改导入就能迁移过来。它支持 20 多家提供商，包括 OpenAI、Anthropic、Gemini、Azure OpenAI、Groq、xAI、DeepSeek、OpenRouter、Mistral、Together、Fireworks、Ollama、vLLM，以及任何兼容 OpenAI 的服务。
 
 RouteHub 的设计目标是开销和它所封装的提供商 SDK 相当。`import routehub` 不加载任何第三方代码，OpenAI SDK 在第一次请求时才加载。兼容 OpenAI 的提供商通过缓存的官方 OpenAI 客户端发送请求，RouteHub 直接返回 SDK 自己的 `ChatCompletion` 对象，不做二次包装。Claude 走 Messages API 的原生适配器，因此提示缓存、扩展思考和缓存 token 统计都能正常工作。所有设置都是每次调用的参数，错误以继承自 OpenAI SDK 异常的类型化异常抛出，`mock_response` 让你不发网络请求也能测试。它只有三个直接依赖（`openai`、`pydantic` 和 `tiktoken`），总共安装 21 个包。
 

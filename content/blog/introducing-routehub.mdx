@@ -11,7 +11,7 @@ featured: false
 
 # Introducing RouteHub: A Lightning-Fast LLM Gateway
 
-Today we are introducing [RouteHub](https://github.com/The-Swarm-Corporation/RouteHub), an open-source LLM gateway built for performance. RouteHub connects your application to more than 20 LLM providers through a single `completion()` function: OpenAI, Anthropic, Gemini, Groq, xAI, DeepSeek, OpenRouter, Mistral, Together, Fireworks, Azure OpenAI, Ollama, vLLM and any OpenAI-compatible server. Streaming, async execution and tool calling all use that same function, and every response comes back as the official OpenAI SDK's own `ChatCompletion` type.
+Today we are introducing [RouteHub](/routehub), an open-source LLM gateway built for performance. RouteHub connects your application to more than 20 LLM providers through a single `completion()` function: OpenAI, Anthropic, Gemini, Groq, xAI, DeepSeek, OpenRouter, Mistral, Together, Fireworks, Azure OpenAI, Ollama, vLLM and any OpenAI-compatible server. Streaming, async execution and tool calling all use that same function, and every response comes back as the official OpenAI SDK's own `ChatCompletion` type.
 
 RouteHub keeps LiteLLM's function names and module paths, so for most applications switching is a change of import. The difference is what the gateway costs you. In our benchmarks against LiteLLM 1.104.0:
 

@@ -1,9 +1,9 @@
 import type { Metadata } from "next"
 import { siteConfig } from "@/app/metadata"
 
-const title = "Swarms Research — Multi-Agent, Multimodal & Large-Scale Agentic Simulation"
+const title = "Swarms Research: RouteHub and GraphWorkflow Papers"
 const description =
-  "Swarms Research advances multi-agent collaboration, multimodal intelligence, and large-scale agentic simulation. Explore active projects including VLAM, ModelGrid, HospitalSim, DART, SpikeMamba, and Senator Assembly."
+  "Research papers from the Swarms team: RouteHub, a low-overhead SDK-native LLM gateway for agentic workloads, and GraphWorkflow, a compile-once graph execution engine for multi-agent systems."
 const url = "https://www.swarms.ai/research"
 
 export const metadata: Metadata = {
@@ -11,20 +11,14 @@ export const metadata: Metadata = {
   description,
   keywords: [
     "swarms research",
-    "multi-agent research",
-    "ai research lab",
-    "vision language action model",
-    "VLAM",
-    "ModelGrid",
-    "HospitalSim",
-    "multi-agent simulation",
-    "spiking neural networks",
-    "state space models",
-    "mamba architecture",
-    "diffusion transformer",
-    "agentic simulation",
-    "multimodal ai research",
-    "autonomous systems research",
+    "routehub",
+    "routehub paper",
+    "llm gateway",
+    "graphworkflow",
+    "graphworkflow paper",
+    "graph execution engine",
+    "multi-agent systems",
+    "agent orchestration",
   ],
   alternates: { canonical: url },
   openGraph: {
@@ -87,39 +81,16 @@ const collectionJsonLd = {
     "@type": "ItemList",
     itemListElement: [
       {
-        "@type": "ResearchProject",
+        "@type": "ScholarlyArticle",
         position: 1,
-        name: "VLAM",
-        description: "Vision-Language-Action Model combining vision perception, natural language understanding, and robotic action prediction.",
-        url: "https://github.com/The-Swarm-Corporation/VLAM",
+        name: "RouteHub: A Low-Overhead, SDK-Native LLM Gateway for Agentic Workloads",
+        url: "https://github.com/The-Swarm-Corporation/RouteHub/blob/main/docs/routehub.pdf",
       },
       {
-        "@type": "ResearchProject",
+        "@type": "ScholarlyArticle",
         position: 2,
-        name: "ModelGrid",
-        description: "A quantitative framework for dynamic memory allocation in multi-model deployment.",
-        url: "https://github.com/The-Swarm-Corporation/ModelGrid",
-      },
-      {
-        "@type": "ResearchProject",
-        position: 3,
-        name: "HospitalSim",
-        description: "Multi-agent simulation of real-world hospital operations, patient care, and emergency response.",
-        url: "https://github.com/The-Swarm-Corporation/HospitalSim",
-      },
-      {
-        "@type": "ResearchProject",
-        position: 4,
-        name: "DART",
-        description: "Diffusion-Autoregressive Recursive Transformer combining diffusion models with autoregressive generation.",
-        url: "https://github.com/The-Swarm-Corporation/DART",
-      },
-      {
-        "@type": "ResearchProject",
-        position: 5,
-        name: "SpikeMamba",
-        description: "A joint spiking neural network and Mamba state space model architecture for language modeling.",
-        url: "https://github.com/The-Swarm-Corporation/SpikeMamba",
+        name: "GraphWorkflow: A Low-Overhead Compile-Once Graph Execution Engine for Multi-Agent Systems",
+        url: "https://github.com/The-Swarm-Corporation/GraphWorkflow-Paper/blob/main/main.pdf",
       },
     ],
   },

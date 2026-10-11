@@ -13,7 +13,7 @@ featured: false
 
 Many teams want to use Claude with the OpenAI SDK format so that one codebase can call Claude, GPT, Gemini and open models with the same request and response shapes. There are three ways to do it in Python: Anthropic's OpenAI SDK compatibility endpoint, the native Anthropic SDK, or a gateway that translates the OpenAI format into Claude's native Messages API. Each one makes a different trade-off, and the differences matter most for the features that make Claude cheaper and smarter in production: prompt caching, thinking, cached-token accounting, PDFs and structured output.
 
-This guide walks through all three options, lists exactly what Anthropic's compatibility layer leaves out according to Anthropic's own documentation, and then shows working code for the third option with [RouteHub](https://github.com/The-Swarm-Corporation/RouteHub), the open-source LLM gateway we built for [Swarms](https://github.com/kyegomez/swarms). We checked each RouteHub example below against a local fake of the Messages API, so the request shapes described here are the ones RouteHub actually sends.
+This guide walks through all three options, lists exactly what Anthropic's compatibility layer leaves out according to Anthropic's own documentation, and then shows working code for the third option with [RouteHub](/routehub), the open-source LLM gateway we built for [Swarms](https://github.com/kyegomez/swarms). We checked each RouteHub example below against a local fake of the Messages API, so the request shapes described here are the ones RouteHub actually sends.
 
 ## Why Use Claude with the OpenAI SDK Format?
 

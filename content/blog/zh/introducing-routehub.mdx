@@ -11,7 +11,7 @@ featured: false
 
 # RouteHub 发布：极速 LLM 网关
 
-今天我们正式发布 [RouteHub](https://github.com/The-Swarm-Corporation/RouteHub)，一个为性能而生的开源 LLM 网关。RouteHub 用一个 `completion()` 函数把你的应用连接到 20 多家 LLM 提供商：OpenAI、Anthropic、Gemini、Groq、xAI、DeepSeek、OpenRouter、Mistral、Together、Fireworks、Azure OpenAI、Ollama、vLLM，以及任何兼容 OpenAI 的服务。流式输出、异步执行和工具调用都使用同一个函数，每个响应都是官方 OpenAI SDK 自己的 `ChatCompletion` 类型。
+今天我们正式发布 [RouteHub](/routehub)，一个为性能而生的开源 LLM 网关。RouteHub 用一个 `completion()` 函数把你的应用连接到 20 多家 LLM 提供商：OpenAI、Anthropic、Gemini、Groq、xAI、DeepSeek、OpenRouter、Mistral、Together、Fireworks、Azure OpenAI、Ollama、vLLM，以及任何兼容 OpenAI 的服务。流式输出、异步执行和工具调用都使用同一个函数，每个响应都是官方 OpenAI SDK 自己的 `ChatCompletion` 类型。
 
 RouteHub 沿用了 LiteLLM 的函数名和模块路径，所以对大多数应用来说，切换过来只需要改一行导入。区别在于网关本身的开销。在我们与 LiteLLM 1.104.0 的对比测试中：
 

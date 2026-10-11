@@ -24,6 +24,7 @@ import {
   Network,
   Smartphone,
   Layers,
+  Route,
 } from "lucide-react"
 import { SiDiscord, SiTelegram } from "react-icons/si"
 
@@ -78,6 +79,7 @@ export function Footer() {
                     url: "https://docs.swarms.ai",
                   },
                   { name: "Swarms RS", icon: Rocket, url: "/swarms-rs" },
+                  { name: "RouteHub", icon: Route, url: "/routehub" },
                   { name: "Swarms Marketplace", icon: Sparkles, url: "/marketplace" },
                   { name: "Swarms Cloud", icon: Cloud, url: "https://cloud.swarms.world" },
                   { name: "Agent Economy", icon: DollarSign, url: "https://swarms.world/agent-economy" },

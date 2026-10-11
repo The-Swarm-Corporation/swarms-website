@@ -13,7 +13,7 @@ featured: false
 
 很多团队希望通过 OpenAI SDK 格式使用 Claude，这样一套代码就能用相同的请求和响应结构调用 Claude、GPT、Gemini 和开源模型。在 Python 中有三种做法：Anthropic 的 OpenAI SDK 兼容端点、原生 Anthropic SDK，或者一个把 OpenAI 格式转换成 Claude 原生 Messages API 的网关。三种做法各有取舍，而差别主要体现在让 Claude 在生产环境中更便宜、更聪明的那些功能上：提示缓存、思考、缓存 token 统计、PDF 和结构化输出。
 
-本文逐一介绍这三种做法，根据 Anthropic 自己的文档列出兼容层具体丢掉了哪些功能，然后用 [RouteHub](https://github.com/The-Swarm-Corporation/RouteHub) 演示第三种做法的可运行代码。RouteHub 是我们为 [Swarms](https://github.com/kyegomez/swarms) 构建的开源 LLM 网关。下面每个 RouteHub 示例我们都在一个本地模拟的 Messages API 上验证过，所以文中描述的请求结构就是 RouteHub 实际发送的内容。
+本文逐一介绍这三种做法，根据 Anthropic 自己的文档列出兼容层具体丢掉了哪些功能，然后用 [RouteHub](/routehub) 演示第三种做法的可运行代码。RouteHub 是我们为 [Swarms](https://github.com/kyegomez/swarms) 构建的开源 LLM 网关。下面每个 RouteHub 示例我们都在一个本地模拟的 Messages API 上验证过，所以文中描述的请求结构就是 RouteHub 实际发送的内容。
 
 ## 为什么要通过 OpenAI SDK 格式使用 Claude？
 

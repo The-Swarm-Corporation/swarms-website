@@ -14,12 +14,13 @@ export function GET() {
   const staticPages: { path: string; title: string; description: string }[] = [
     { path: "/products", title: "Products", description: "The complete multi-agent stack: Swarms Python, Swarms API, Swarms Marketplace, Swarms RS, Swarms Chat, and enterprise deployments." },
     { path: "/stack", title: "The Swarms Stack", description: "How the pieces fit: build agents with Swarms Python and Swarms Rust, deploy them with the Swarms API, monitor them with Swarms Cloud, and sell them on the Swarms Marketplace." },
+    { path: "/routehub", title: "RouteHub", description: "The open-source LLM gateway behind Swarms: one completion() function for 20+ providers, built on the official OpenAI SDK, with LiteLLM-compatible names. Imports 383x faster than LiteLLM and adds 9 µs per call." },
     { path: "/framework", title: "Swarms Framework", description: "The production-grade Python framework for multi-agent orchestration." },
     { path: "/api", title: "Swarms API", description: "Hosted multi-agent orchestration with 1,000+ models and 15+ swarm architectures behind one endpoint." },
     { path: "/pricing", title: "Pricing", description: "Plans and pricing for the Swarms platform." },
     { path: "/installation", title: "Installation", description: "Install the Swarms framework and set up your environment." },
     { path: "/open-source", title: "Open Source", description: "The open-source repositories behind the Swarms ecosystem." },
-    { path: "/research", title: "Research", description: "Research on multi-agent collaboration and swarm intelligence." },
+    { path: "/research", title: "Research", description: "Research papers from the Swarms team: RouteHub and GraphWorkflow." },
     { path: "/mobile", title: "Mobile App", description: "Swarms for iOS and Android." },
     { path: "/hiring", title: "Hiring", description: "Open roles at Swarms." },
   ]

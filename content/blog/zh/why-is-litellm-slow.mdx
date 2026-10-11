@@ -11,7 +11,7 @@ featured: false
 
 # LiteLLM 为什么慢？导入时间、单次调用开销以及解决方法
 
-如果你的 Python 应用启动慢、第一次请求慢，或者在流式输出时 CPU 占用很高，而它又是通过 LiteLLM 调用模型的，那么网关很可能就是原因所在。LiteLLM 慢主要体现在四个地方：`import litellm` 所花的时间、每次调用额外做的工作、每个流式分块消耗的 CPU，以及进程占用的内存。本文逐一测量这些开销，解释时间花在了哪里，教你如何检查自己的应用，并列出 LiteLLM 官方文档中的优化方法。最后我们会说明，在哪些情况下换用另一个网关（例如 [RouteHub](https://github.com/The-Swarm-Corporation/RouteHub)）是更直接的解决办法，以及在哪些情况下 LiteLLM 仍然是更好的选择。
+如果你的 Python 应用启动慢、第一次请求慢，或者在流式输出时 CPU 占用很高，而它又是通过 LiteLLM 调用模型的，那么网关很可能就是原因所在。LiteLLM 慢主要体现在四个地方：`import litellm` 所花的时间、每次调用额外做的工作、每个流式分块消耗的 CPU，以及进程占用的内存。本文逐一测量这些开销，解释时间花在了哪里，教你如何检查自己的应用，并列出 LiteLLM 官方文档中的优化方法。最后我们会说明，在哪些情况下换用另一个网关（例如 [RouteHub](/routehub)）是更直接的解决办法，以及在哪些情况下 LiteLLM 仍然是更好的选择。
 
 文中的数据有两个来源，每张表都会注明出处。大部分来自我们的技术报告 [RouteHub: A Low-Overhead, SDK-Native LLM Gateway for Agentic Workloads](https://github.com/The-Swarm-Corporation/RouteHub/blob/main/docs/routehub.pdf)，该报告在每个库各自独立的环境中，用一个即时响应的模拟服务器对 LiteLLM 1.104.0 做了基准测试。另有少量数据是我们为本文在 LiteLLM 1.104.2 上重新测量的，我们会在旁边注明所用的机器和方法。
 

@@ -11,7 +11,7 @@ featured: false
 
 # 如何从 LiteLLM 迁移到 RouteHub：分步指南
 
-如果你想从 LiteLLM 迁移到一个更轻量的网关，[RouteHub](https://github.com/The-Swarm-Corporation/RouteHub) 正是为这种迁移而设计的。它沿用了 LiteLLM 的函数名和模块路径（`completion`、`acompletion`、`embedding`、`routehub.utils`、`routehub.exceptions`），所以大部分工作只是修改导入。不过有几处行为确实不同，本指南会逐一说明，并附上可以直接复制的代码：设置、响应对象、流式输出、工具调用、结构化输出、Claude 功能、嵌入、模型信息、异常、测试，以及 RouteHub 有意不提供的 LiteLLM 功能。
+如果你想从 LiteLLM 迁移到一个更轻量的网关，[RouteHub](/routehub) 正是为这种迁移而设计的。它沿用了 LiteLLM 的函数名和模块路径（`completion`、`acompletion`、`embedding`、`routehub.utils`、`routehub.exceptions`），所以大部分工作只是修改导入。不过有几处行为确实不同，本指南会逐一说明，并附上可以直接复制的代码：设置、响应对象、流式输出、工具调用、结构化输出、Claude 功能、嵌入、模型信息、异常、测试，以及 RouteHub 有意不提供的 LiteLLM 功能。
 
 下面每一段 RouteHub 代码在发布前都已在 RouteHub 0.2.0 上运行过，使用的是 `mock_response` 或本地模拟服务器，因此不需要任何 API key。
 

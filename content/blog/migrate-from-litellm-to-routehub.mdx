@@ -11,7 +11,7 @@ featured: false
 
 # How to Migrate from LiteLLM to RouteHub: A Step-by-Step Guide
 
-If you want to migrate from LiteLLM to a lighter gateway, [RouteHub](https://github.com/The-Swarm-Corporation/RouteHub) is built for exactly that move. It keeps LiteLLM's function names and module paths (`completion`, `acompletion`, `embedding`, `routehub.utils`, `routehub.exceptions`), so most of the work is changing imports. A few things do behave differently, and this guide walks through each one with code you can copy: settings, response objects, streaming, tool calling, structured output, Claude features, embeddings, model metadata, exceptions, tests, and the LiteLLM features RouteHub leaves out on purpose.
+If you want to migrate from LiteLLM to a lighter gateway, [RouteHub](/routehub) is built for exactly that move. It keeps LiteLLM's function names and module paths (`completion`, `acompletion`, `embedding`, `routehub.utils`, `routehub.exceptions`), so most of the work is changing imports. A few things do behave differently, and this guide walks through each one with code you can copy: settings, response objects, streaming, tool calling, structured output, Claude features, embeddings, model metadata, exceptions, tests, and the LiteLLM features RouteHub leaves out on purpose.
 
 Every RouteHub snippet below was run against RouteHub 0.2.0 before publishing, using `mock_response` or a local mock server, so no API keys were needed.
 

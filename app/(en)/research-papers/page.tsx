@@ -2,13 +2,12 @@
 
 import Link from "next/link"
 import { Navigation } from "@/components/navigation"
+import { PaperCard } from "@/components/paper-card"
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import {
   ArrowRight,
   ArrowUpRight,
-  ExternalLink,
-  Github,
   BookOpen,
 } from "lucide-react"
 
@@ -77,58 +76,20 @@ export default function ResearchPapersPage() {
         {/* Research Papers Table */}
         <section className="border-b border-white/[0.08] bg-black">
           <div className="container px-4 py-16 sm:px-6 sm:py-24 lg:px-8 lg:py-32">
-            <motion.div
-              className="mx-auto max-w-5xl overflow-hidden rounded-lg border border-white/[0.08]"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, ease }}
-              viewport={{ once: true, margin: "-100px" }}
-            >
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-white/[0.08]">
-                      <th className="p-6 text-left text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40">Paper Title</th>
-                      <th className="p-6 text-left text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40">Link</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {researchPapers.map((paper, index) => (
-                      <motion.tr
-                        key={index}
-                        className="border-b border-white/[0.08] transition-colors duration-300 last:border-b-0 hover:bg-[#0a0a0a]"
-                        initial={{ opacity: 0, x: -12 }}
-                        whileInView={{ opacity: 1, x: 0 }}
-                        transition={{ delay: index * 0.08, duration: 0.4, ease }}
-                        viewport={{ once: true, margin: "-100px" }}
-                      >
-                        <td className="p-6">
-                          <h3 className="text-base font-medium text-white sm:text-lg">{paper.title}</h3>
-                        </td>
-                        <td className="p-6">
-                          <Button
-                            size="sm"
-                            className="rounded-full bg-white px-4 text-black hover:bg-neutral-200"
-                            asChild
-                          >
-                            <a
-                              href={paper.link}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center gap-2"
-                            >
-                              <Github className="h-4 w-4" />
-                              <span>View Paper</span>
-                              <ExternalLink className="h-4 w-4" />
-                            </a>
-                          </Button>
-                        </td>
-                      </motion.tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </motion.div>
+            <div className="mx-auto grid max-w-5xl grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2">
+              {researchPapers.map((paper, index) => (
+                <motion.div
+                  key={paper.link}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.06, duration: 0.5, ease }}
+                  viewport={{ once: true, margin: "-100px" }}
+                  className="flex"
+                >
+                  <PaperCard title={paper.title} href={paper.link} className="w-full" />
+                </motion.div>
+              ))}
+            </div>
           </div>
         </section>
 

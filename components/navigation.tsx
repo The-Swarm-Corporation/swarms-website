@@ -32,6 +32,7 @@ import {
   Smartphone,
   Mail,
   Briefcase,
+  Route,
 } from "lucide-react"
 import { useGithubStars } from "@/hooks/use-github-stars"
 import { formatStarsShort } from "@/lib/github-stars"
@@ -327,6 +328,15 @@ export function Navigation() {
                       <div className="flex-1 min-w-0">
                         <span className="text-sm font-semibold text-white block">Mobile App</span>
                         <p className="text-xs text-neutral-400 mt-0.5">Join the waitlist</p>
+                      </div>
+                    </Link>
+                    <Link href="/routehub" className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative">
+                      <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-white/25 transition-all duration-200">
+                        <Route className="h-4 w-4 text-neutral-300" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <span className="text-sm font-semibold text-white block">RouteHub</span>
+                        <p className="text-xs text-neutral-400 mt-0.5">Fast LLM gateway</p>
                       </div>
                     </Link>
                     <Link
@@ -817,6 +827,14 @@ export function Navigation() {
                   >
                     <Smartphone className="mr-3 h-4 w-4 text-white/60 flex-shrink-0" />
                     Mobile App
+                  </Link>
+                  <Link
+                    href="/routehub"
+                    className="text-sm font-semibold text-white/85 hover:text-white transition-all duration-300 hover:bg-white/[0.05] p-3 rounded-lg flex items-center border border-transparent hover:border-white/10"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    <Route className="mr-3 h-4 w-4 text-white/60 flex-shrink-0" />
+                    RouteHub
                   </Link>
                   <Link
                     href="/swarms-rs"

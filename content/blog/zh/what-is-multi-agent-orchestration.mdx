@@ -487,7 +487,7 @@ asyncio.run(main())
 - `execution_time`：实际耗时（秒）。
 - `usage`：`input_tokens`、`output_tokens`、`total_tokens`，以及一个 `billing_info` 对象，其中包含 `cost_breakdown`（智能体费用、输入 token 费用、输出 token 费用）和本次运行的 `total_cost`。
 
-示例输出：来自 [Swarm Completions 参考文档](https://docs.swarms.ai/docs/documentation/multi-agent/swarm_completions)中 `SequentialWorkflow` 响应示例的 `usage` 部分。
+示例输出：来自 [Swarm Completions 参考文档](https://docs.swarms.ai/docs/documentation/multi-agent/swarm_completions)中 `SequentialWorkflow` 响应示例的 `usage` 部分。其中的美元金额是按此前的固定 token 费率算出的。
 
 ```json
 {
@@ -508,11 +508,11 @@ asyncio.run(main())
 }
 ```
 
-Swarm completions 按 `agents` 数组中每个智能体收取固定费用，再加上 token 费用。截至本文撰写时，[定价页面](https://docs.swarms.ai/docs/documentation/resources/pricing)列出的价格是每个智能体 $0.01，每百万输入和输出 token 分别为 $6.50 和 $18.50；太平洋时间晚上 8 点到早上 6 点之间，token 费用享受 50% 折扣，而按智能体收取的费用在任何时段都全额收取。这对编排设计有两个影响：你列出的每个智能体都有成本，哪怕路由器从未调用它；而反复读取不断增长的对话记录的模式（群聊、多轮循环），其输入 token 费用的增长速度比短流水线快。
+Swarm completions 按 `agents` 数组中每个智能体收取固定费用，再加上 token 费用。截至本文撰写时，[定价页面](https://docs.swarms.ai/docs/documentation/resources/pricing)列出的价格是每个智能体 $0.01，每个模型的 token 按其提供商价格加 15% 服务费计算，因此每个智能体都按它自己所用模型的费率计费。太平洋时间晚上 8 点到早上 6 点之间，token 费用享受 50% 折扣，而按智能体收取的费用在任何时段都全额收取。这对编排设计有两个影响：你列出的每个智能体都有成本，哪怕路由器从未调用它；而反复读取不断增长的对话记录的模式（群聊、多轮循环），其输入 token 费用的增长速度比短流水线快。
 
 在账户层面，[Usage Report](https://docs.swarms.ai/docs/documentation/resources/usage-report) 页面记录了三个端点：
 
-- `GET /v1/usage/costs`：当前的定价模型，让你的成本估算与实时价格保持一致。
+- `GET /v1/usage/costs`：固定费用（例如按智能体收取的费用），以及只用于没有价格数据的模型的后备 token 费率。某个模型的 token 价格要通过 `GET /v1/models/pricing?model_name=...` 查询，或用 `GET /v1/models/available` 一次列出所有模型的价格。
 - `GET /v1/account/logs`：你所有 API 密钥的请求历史。`count` 是真实总数，`logs` 最多只包含最新的 1,000 条记录。
 - `GET /v1/account/metrics/summary`：用过的不同智能体数量、累计和成功的调用次数，以及最近 24 小时和 7 天内的调用次数（[详情](https://docs.swarms.ai/docs/documentation/capabilities/metrics_summary)）。
 
@@ -613,4 +613,4 @@ asyncio.run(main())
 
 ### 在 Swarms API 上，多智能体编排的成本是多少？
 
-一次 swarm 运行的费用是每个智能体的固定费用，加上输入和输出 token 的费用；响应中的 `usage.billing_info.total_cost` 给出了这次运行的实际收费。`GET /v1/usage/costs` 返回当前价格。对于同一个任务，智能体更多、循环更多或使用共享对话记录的模式，成本都会高于一条短流水线。
+一次 swarm 运行的费用是每个智能体的固定费用，加上输入和输出 token 的费用，token 按模型计价，即提供商费率加 15% 服务费；响应中的 `usage.billing_info.total_cost` 给出了这次运行的实际收费。`GET /v1/models/pricing` 返回某个模型当前的 token 价格，`GET /v1/usage/costs` 返回固定费用。对于同一个任务，智能体更多、循环更多或使用共享对话记录的模式，成本都会高于一条短流水线。

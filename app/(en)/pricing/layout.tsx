@@ -4,7 +4,7 @@ import { siteConfig } from "@/app/metadata"
 
 const title = "Pricing — Free, Pro, Premium, and Enterprise"
 const description =
-  "Transparent pricing for the Swarms multi-agent platform. Free tier with no card required, Pro at $19.99/month, Premium at $100/month ($1,020/year). Usage-based token pricing across all endpoints. Enterprise and on-premise available."
+  "Transparent pricing for the Swarms multi-agent platform. Free tier with no card required, Pro at $19.99/month, Premium at $100/month ($1,020/year). Per-model token pricing at each provider's rate plus a 15% service fee. Enterprise and on-premise available."
 const url = "https://www.swarms.ai/pricing"
 
 export const metadata: Metadata = {
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
     "ai usage based pricing",
     "ai token pricing",
     "agent token costs",
-    "mcp call pricing",
+    "per-model token pricing",
     "ai api rate limits",
     "openai pricing alternative",
     "anthropic pricing comparison",
@@ -120,7 +120,16 @@ const faqJsonLd = {
       acceptedAnswer: {
         "@type": "Answer",
         text:
-          "Credits are deducted after each request. Unified pricing: $6.50 per 1M input tokens and $18.50 per 1M output tokens. Additional per-agent, per-MCP-call, per-image, and per-tool costs may apply.",
+          "Credits are deducted automatically after each request. Tokens are billed at each model's provider price plus a 15% service fee, and a swarm that mixes models bills each agent at its own model. Flat fees apply on top: $0.01 per agent on swarm, graph and grid workflows, $0.25 per image, and $0.04 per request that enables web search. Free credits are consumed before paid credits.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "How much does a specific model cost?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text:
+          "Its provider's price per 1M tokens plus 15%. GET /v1/models/pricing returns one model's price with the fee included, and GET /v1/models/available lists every model on your plan with its price. A model with no published price data is billed at fallback rates of $6.50 per 1M input and $18.50 per 1M output tokens before the fee.",
       },
     },
     {

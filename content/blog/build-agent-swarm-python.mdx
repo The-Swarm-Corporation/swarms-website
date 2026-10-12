@@ -856,7 +856,7 @@ asyncio.run(main())
 }
 ```
 
-The [Pricing page](https://docs.swarms.ai/docs/documentation/resources/pricing) lists $6.50 per million input tokens, $18.50 per million output tokens, and $0.01 per agent for swarm completions. Swarm completions also get 50% off token costs between 8 PM and 6 AM Pacific (the agent fee is not discounted), and the [night-mode guide](https://docs.swarms.ai/docs/guides/guides/night-mode-pricing-strategy) notes that the check uses the time the run finishes. `GET /v1/usage/costs` returns current rates. Log `total_cost` per run next to the task, and you can answer "what does one brief cost?" from data. If you also run agents in your own process with the open-source framework, [tracking token usage and cost per agent](/blog/track-llm-token-usage-cost-python) covers the same accounting there.
+On the [Pricing page](https://docs.swarms.ai/docs/documentation/resources/pricing), tokens are priced per model: each model costs its provider's price plus a 15% service fee, and a swarm that mixes models, like the step 2 pipeline, is billed per agent at each agent's own model price. Swarm completions add $0.01 per agent and get 50% off token costs between 8 PM and 6 AM Pacific (the agent fee is not discounted), and the [night-mode guide](https://docs.swarms.ai/docs/guides/guides/night-mode-pricing-strategy) notes that the check uses the time the run finishes. `GET /v1/models/pricing?model_name=gpt-5.4` returns a model's current price per million tokens, and `GET /v1/usage/costs` returns the flat fees. Log `total_cost` per run next to the task, and you can answer "what does one brief cost?" from data. If you also run agents in your own process with the open-source framework, [tracking token usage and cost per agent](/blog/track-llm-token-usage-cost-python) covers the same accounting there.
 
 ### Stay inside rate limits
 
@@ -1013,7 +1013,7 @@ No. The swarm creates the director itself, and every entry in `agents` runs as a
 
 ### How much does it cost to run an agent swarm through the Swarms API?
 
-The Pricing page lists $6.50 per million input tokens, $18.50 per million output tokens and $0.01 per agent for swarm completions, with 50% off token costs from 8 PM to 6 AM Pacific. Each response reports the actual cost in `usage` (under `usage.billing_info.total_cost` for swarms), and `GET /v1/usage/costs` returns current rates. Running the same task through each step of this tutorial shows what extra agents cost for your workload.
+Each agent's tokens are billed at its model's provider price plus a 15% service fee, and swarm completions add $0.01 per agent, with 50% off token costs from 8 PM to 6 AM Pacific. Each response reports the actual cost in `usage` (under `usage.billing_info.total_cost` for swarms). `GET /v1/models/pricing` returns a model's current token price, and `GET /v1/usage/costs` returns the flat fees. Running the same task through each step of this tutorial shows what extra agents cost for your workload.
 
 ### How many agents can one swarm have?
 

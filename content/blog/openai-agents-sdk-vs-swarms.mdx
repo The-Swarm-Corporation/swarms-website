@@ -13,13 +13,13 @@ image: "/swarms_vs_openai_sdks.png"
 
 The OpenAI Agents SDK is a well built library. Its handoff model, where one agent passes control to another the way it would call a tool, is an elegant design, and its guardrails, sessions, and tracing are carefully designed.
 
-Swarms solves a wider problem. It is an open-source multi-agent framework (`pip install swarms`) and a hosted API, Swarms Cloud, that runs agents and whole swarms on **1,858 models from every major provider behind one API key and one flat price**. It also exposes an **OpenAI-compatible endpoint**, so code already written against the OpenAI SDK can move over by changing two strings.
+Swarms solves a wider problem. It is an open-source multi-agent framework (`pip install swarms`) and a hosted API, Swarms Cloud, that runs agents and whole swarms on **1,858 models from every major provider behind one API key and one bill**, each model at its provider's price plus a 15% service fee. It also exposes an **OpenAI-compatible endpoint**, so code already written against the OpenAI SDK can move over by changing two strings.
 
-This post compares the two across every dimension that matters when you pick an agent stack: model access, the OpenAI-compatible endpoint, handoffs, orchestration, failover, pricing, tools and MCP, structured outputs, streaming, memory, observability, and hosting. Every Swarms number below comes from the live API on September 25, 2026.
+This post compares the two across every dimension that matters when you pick an agent stack: model access, the OpenAI-compatible endpoint, handoffs, orchestration, failover, pricing, tools and MCP, structured outputs, streaming, memory, observability, and hosting. Every Swarms number below comes from the live API on September 25, 2026. The run costs quoted were billed under the flat token rate Swarms charged that day; the Pricing section below covers today's per-model prices.
 
 ## The short answer
 
-- **Choose Swarms** if you want any model from any lab, cross-vendor review and failover inside a single request, one bill at one rate, 14 named multi-agent architectures plus graph and grid workflow endpoints, and a managed API you call over HTTP (or through the OpenAI SDK you already use).
+- **Choose Swarms** if you want any model from any lab, cross-vendor review and failover inside a single request, one bill across every provider, 14 named multi-agent architectures plus graph and grid workflow endpoints, and a managed API you call over HTTP (or through the OpenAI SDK you already use).
 - **Choose the Agents SDK** if you are committed to OpenAI models and want OpenAI's hosted tools (file search over vector stores, code interpreter, a hosted shell), realtime voice agents, or built-in guardrails running inside your own Python process.
 - **Use both** by keeping the OpenAI SDK client you already have, pointing it at Swarms for chat-shaped calls, and moving the calls that need a team of agents to the native swarm endpoint.
 
@@ -31,7 +31,7 @@ This post compares the two across every dimension that matters when you pick an 
 | Default model path | OpenAI Responses API | Any of 1,858 catalog models, named per agent |
 | Non-OpenAI models | Chat Completions-compatible clients or beta LiteLLM and any-llm adapters, one key and one bill per provider | Every provider in the catalog behind one Swarms key |
 | OpenAI-compatible endpoint | It is the OpenAI client | `POST /v1/chat/completions`, a two-line switch |
-| Token pricing | Each provider's list price, per model | $6.50 per million input, $18.50 per million output, on every model |
+| Token pricing | Each provider's list price, per model | Each model's provider price plus a 15% service fee, on one bill |
 | Handoffs | Core primitive | `handoffs` on any agent, each target on its own model |
 | Orchestration | Handoffs, agents as tools, and your own Python | 14 `swarm_type` values plus GraphWorkflow and BatchedGridWorkflow endpoints |
 | Model failover | Opt-in retries of the same model | `fallback_models`, an ordered cross-vendor list, handled server side |
@@ -164,7 +164,7 @@ response = client.chat.completions.create(
 )
 ```
 
-Every call through this endpoint runs on the full Swarms agent infrastructure, so it is metered at the same unified rate, logged, and visible in your usage reports like any native call.
+Every call through this endpoint runs on the full Swarms agent infrastructure, so it is billed at the model's own price plus the 15% service fee, logged, and visible in your request history like any native call.
 
 The endpoint is built for chat-shaped calls. Tool calling, `response_format`, `logprobs`, and `n > 1` are not supported on it today; for tools and structured output, use `/v1/agent/completions`, covered below. That also settles a common question: the Agents SDK can talk to any Chat Completions endpoint through `set_default_openai_client` and `set_default_openai_api("chat_completions")`, but the SDK implements both function tools and handoffs as tool calls, so pointing it at this endpoint only suits agents that use neither. For anything with tools, the native Swarms endpoints are the right target.
 
@@ -255,7 +255,7 @@ print(result["output"])
 print(result["usage"]["billing_info"])
 ```
 
-Three things happen in this one payload. The researcher and reviewer run on different labs. Each names an ordered fallback chain across the other vendors, so a provider failure on either side is absorbed inside the request. And the whole run is one key, one bill, one rate.
+Three things happen in this one payload. The researcher and reviewer run on different labs. Each names an ordered fallback chain across the other vendors, so a provider failure on either side is absorbed inside the request. And the whole run is one key and one bill, with each agent's tokens priced at its own model's rate.
 
 We ran this payload against the live API (with a length limit added to each system prompt). It finished in **24.5 seconds** and cost **$0.052** in total, of which $0.02 was the two-agent fee. The reviewer earned its place: among other things, it flagged that the researcher's figure for LFP's market share rested on a single analyst source and asked for a second source to confirm it.
 
@@ -414,22 +414,24 @@ The practical rule: make each chain cross vendors. A fallback on the same lab as
 
 The Agents SDK itself is free and open source. You pay each provider for the models you call, at that provider's list price, and OpenAI bills hosted tools separately. With three providers in a workflow, you manage three price lists, three invoices, and three sets of rate limits, and your cost per run changes whenever any of them reprices.
 
-Swarms Cloud charges one rate for every model:
+Swarms Cloud bills every model at its provider's price plus a 15% service fee, on one key and one bill:
 
 | Item | Price |
 |---|---|
-| Input tokens | $6.50 per million, every model |
-| Output tokens | $18.50 per million, every model |
+| Input tokens | Model's provider price + 15% |
+| Output tokens | Model's provider price + 15% |
 | Agent fee | $0.01 per agent on swarm, graph, and grid workflows |
-| Web search (`auto_search`) | $0.04 per search |
-| Web scraper | $0.15 per scrape |
-| MCP call | $0.10 per call |
+| Web search (`auto_search`) | $0.04 once per request that enables it |
+| Web scraper (`web_scraper`) | Free, only tokens are billed |
+| MCP servers | Free, only tokens are billed |
 | Image input | $0.25 per image |
 | Night mode | 50% off tokens on swarm completions, 8 PM to 6 AM Pacific |
 
-Because the rate is the same everywhere, switching a step from one lab's model to another's is purely a quality and latency decision. Nobody needs budget approval to try a different frontier model.
+At the time of writing, `gpt-4.1` costs $2.30 per million input tokens and $9.20 per million output tokens through Swarms (OpenAI's list price of $2.00 and $8.00 plus the fee), and `claude-sonnet-5` costs $2.30 and $11.50. Provider prices change, so look up any model's current price with `GET /v1/models/pricing?model_name=...`, or list every model with its price through `GET /v1/models/available`.
 
-A flat rate is easiest to budget and comes out ahead on premium models. If a workload is mostly high-volume calls to one small, inexpensive model, compare the flat rate with that model's list price before you move it.
+A mixed-model swarm is billed per agent, each agent's tokens at its own model's price, so switching a step from one lab's model to another's reprices only that step, on the same key and the same bill.
+
+Per token, Swarms bills the provider's list price plus 15%, so it never undercuts the provider on a single call. The fee pays for one key and one bill across every provider, server-side failover, the orchestration endpoints, the cost of every run in its response, and 50% off swarm tokens at night. If a workload is high-volume calls to one model from one provider and needs none of that, calling the provider directly costs less.
 
 Every swarm response carries its own cost breakdown, so you never reconcile an invoice to learn what a run cost:
 
@@ -451,7 +453,7 @@ Every swarm response carries its own cost breakdown, so you never reconcile an i
 }
 ```
 
-That block is from the jury run above.
+That block is from the jury run above, billed on September 25, 2026, under the flat token rate Swarms charged then. A run today prices each agent's tokens at its own model's rate, so the token costs differ.
 
 ## Tools and MCP
 
@@ -523,7 +525,7 @@ The Agents SDK's built-in tracing is excellent for debugging, and it exports to 
 Swarms records every request on the platform:
 
 - Every swarm response includes `execution_time`, token counts, and the full `billing_info` cost breakdown.
-- `GET /v1/account/logs` returns your request history, `GET /v1/usage/costs` breaks down spending, and `GET /v1/account/credits` shows your balance.
+- `GET /v1/account/logs` returns your request history, `GET /v1/models/pricing` returns any model's token price, `GET /v1/usage/costs` lists the flat fees and the fallback rate for unpriced models, and `GET /v1/account/credits` shows your balance.
 - Rate-limit headers (`X-RateLimit-*`) come back on responses, so you can throttle before you hit a 429.
 - [Completion Logs](/blog/completion-logs-swarms-cloud) in Swarms Cloud shows each run's inputs, outputs, and costs in the dashboard.
 
@@ -593,7 +595,7 @@ Not today. For tools, MCP servers, handoffs, and structured output, use `/v1/age
 For agents without function tools or handoffs, yes, through `set_default_openai_client` and the Chat Completions API setting. Agents that use tools or handoffs should call the native Swarms endpoints instead.
 
 **How does Swarms pricing compare with calling providers directly?**
-Swarms charges $6.50 per million input tokens and $18.50 per million output tokens on every model, plus $0.01 per agent on multi-agent endpoints. That is lower than list price on premium frontier models and simpler to budget everywhere, and a single small model called directly can come in cheaper at its own list price.
+Swarms bills each model at its provider's list price plus a 15% service fee (at the time of writing, `gpt-4.1` is $2.30 per million input tokens and $9.20 per million output, against OpenAI's $2.00 and $8.00), plus $0.01 per agent on swarm, graph, and grid workflows. Per token it costs more than calling the provider directly. In return you get one key and one bill across every provider, the cost of each run in its response, and 50% off swarm token costs from 8 PM to 6 AM Pacific. `GET /v1/models/pricing` returns any model's current price.
 
 **Is Swarms open source?**
 The Swarms framework is open source on [GitHub](https://github.com/kyegomez/swarms). Swarms Cloud is the hosted API that runs agents and swarms for you.

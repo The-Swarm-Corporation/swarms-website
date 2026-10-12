@@ -17,7 +17,6 @@ import {
   Wrench,
   Search,
   Moon,
-  Zap,
   CreditCard,
   DollarSign,
   Server,
@@ -117,51 +116,44 @@ const usageItems = [
   {
     icon: Database,
     item: "输入 tokens",
-    cost: "$6.50",
-    unit: "每百万 tokens",
-    note: "所有端点统一计价",
+    cost: "模型价格",
+    unit: "+ 15%",
+    note: "按各模型供应商的每百万 tokens 价格",
   },
   {
     icon: Activity,
     item: "输出 tokens",
-    cost: "$18.50",
-    unit: "每百万 tokens",
-    note: "所有端点统一计价",
+    cost: "模型价格",
+    unit: "+ 15%",
+    note: "按各模型供应商的每百万 tokens 价格",
   },
   {
     icon: Users,
     item: "智能体费用",
     cost: "$0.01",
     unit: "每个智能体",
-    note: "适用于 swarm 与工作流",
+    note: "适用于 swarm、Graph 与 Grid 工作流",
   },
   {
     icon: ImageIcon,
     item: "图像处理",
     cost: "$0.25",
     unit: "每张图像",
-    note: "提供图像时收取",
-  },
-  {
-    icon: Globe,
-    item: "MCP 调用",
-    cost: "$0.10",
-    unit: "每次调用",
-    note: "提供 MCP URL 时收取",
+    note: "每张发送给智能体的图像",
   },
   {
     icon: Search,
     item: "Exa 搜索工具",
     cost: "$0.04",
-    unit: "每次搜索",
-    note: "按每次搜索执行计费",
+    unit: "每次请求",
+    note: "启用搜索的请求只收取一次",
   },
   {
-    icon: Wrench,
-    item: "网页抓取工具",
-    cost: "$0.15",
-    unit: "每次抓取",
-    note: "按每次抓取执行计费",
+    icon: Globe,
+    item: "MCP 服务器与网页抓取",
+    cost: "$0",
+    unit: "免费",
+    note: "只按 tokens 计费",
   },
 ]
 
@@ -174,18 +166,18 @@ const discounts = [
       "太平洋时间晚 8 点至次日早 6 点期间，Swarm Completions 的 token 费用享受 5 折优惠，智能体费用不变，系统自动生效。",
   },
   {
-    icon: Zap,
-    title: "疯狂模式",
-    label: "全部请求免费",
+    icon: Sparkles,
+    title: "按模型计价",
+    label: "选什么模型付什么价",
     description:
-      "在黑色星期五（11 月第四个星期五）当天 24 小时内，所有 API 请求完全免费，系统自动生效，无需任何操作。",
+      "每个智能体都按其所用模型的价格计费，在简单步骤上使用轻量模型的 swarm 成本更低。可通过 /v1/models/pricing 查询任意模型的价格。",
   },
   {
-    icon: Sparkles,
-    title: "统一定价",
-    label: "全平台同价",
+    icon: Wrench,
+    title: "MCP 与网页抓取免费",
+    label: "无工具费用",
     description:
-      "Swarm Completions、Agent Completions、Advanced Research、Auto Swarm Builder、Graph 工作流与 Batched Grid 工作流等所有端点，均采用完全相同的 token 定价。",
+      "接入 MCP 服务器和使用网页抓取工具不产生额外费用，只按智能体实际使用的 tokens 计费。",
   },
 ]
 
@@ -200,13 +192,13 @@ const creditDetails = [
     icon: DollarSign,
     title: "按调用计费",
     description:
-      "系统会根据每次调用的操作类型、token 用量、智能体数量以及 MCP、图像处理等附加项进行扣费。",
+      "系统会根据每个智能体按其模型价格计算的 token 费用、智能体数量以及图像、网页搜索等附加项进行扣费。",
   },
   {
     icon: Server,
-    title: "实时成本 API",
+    title: "实时价格 API",
     description:
-      "通过 /v1/usage/costs 接口以编程方式获取实时定价数据，帮助您精准做好预算规划。",
+      "通过 /v1/models/pricing 获取任意模型的当前价格，通过 /v1/models/available 获取所有模型的价格，通过 /v1/usage/costs 获取固定费用。",
   },
 ]
 
@@ -232,12 +224,12 @@ const faqs = [
   {
     question: "按需计费是如何运作的？",
     answer:
-      "每次请求后，系统会自动扣除相应额度。所有端点均采用统一定价：每百万输入 tokens 收费 $6.50，每百万输出 tokens 收费 $18.50。此外可能还会产生按智能体、按图像、按 MCP 调用及按工具计算的费用。免费额度会优先于付费额度被消耗。",
+      "每次请求后，系统会自动扣除相应额度。Tokens 按各模型供应商的价格加收 15% 服务费计费，混用多个模型的 swarm 会按每个智能体各自的模型计费。此外还有固定费用：swarm、Graph 与 Grid 工作流每个智能体 $0.01，每张图像 $0.25，启用网页搜索的请求每次 $0.04。免费额度会优先于付费额度被消耗。",
   },
   {
-    question: "什么是统一定价？",
+    question: "某个模型的价格是多少？",
     answer:
-      "Swarm Completions、Agent Completions、Advanced Research、Auto Swarm Builder、Graph Workflow 与 Batched Grid Workflow 等所有端点，均采用完全相同的 token 定价，全平台价格统一、透明可预测。",
+      "即该模型供应商的每百万 tokens 价格加 15%。GET /v1/models/pricing 返回单个模型含服务费的价格，GET /v1/models/available 列出您的方案可用的所有模型及其价格。没有公开价格数据的模型按备用费率计费：服务费前每百万输入 tokens $6.50，每百万输出 tokens $18.50。",
   },
   {
     question: "夜间折扣是如何运作的？",
@@ -247,7 +239,7 @@ const faqs = [
   {
     question: "什么是高级端点（Premium Endpoints）？",
     answer:
-      "高级端点包括批处理、推理智能体、Batched Grid 工作流、Graph 工作流、Auto Swarm Builder 以及 Advanced Research，仅在专业版与高级版方案中开放，免费版无法使用。",
+      "高级端点包括智能体与 swarm 批处理、推理智能体、Batched Grid 工作流以及 Graph 工作流，仅在专业版与高级版方案中开放，免费版无法使用。",
   },
   {
     question: "专业版与高级版有什么区别？",
@@ -262,7 +254,7 @@ const faqs = [
   {
     question: "额度用尽后会发生什么？",
     answer:
-      "API 调用将返回明确的错误代码，您可以充值额度或升级方案以获得更高的限额。计费提醒可在控制台中自行配置。",
+      "计费端点要求额度余额高于 $1.00，低于该值时会返回 402 Payment Required 错误。您可以充值额度或升级方案以获得更高的限额。计费提醒可在控制台中自行配置。",
   },
   {
     question: "是否支持私有化部署？",
@@ -272,12 +264,12 @@ const faqs = [
   {
     question: "图像处理如何计费？",
     answer:
-      "每张传入智能体的图像均按 $0.25 计费，该规则在所有方案与端点中统一适用。",
+      "通过 img 或 imgs 传给智能体的每张图像，在 tokens 费用之外按 $0.25 计费，该规则适用于所有方案。",
   },
   {
-    question: "疯狂模式（Frenzy Mode）是如何运作的？",
+    question: "MCP 服务器或工具会额外收费吗？",
     answer:
-      "从黑色星期五（11 月第四个星期五）开始的 24 小时内，所有 API 请求完全免费。此促销活动自动生效，无需输入任何代码或进行额外操作。",
+      "MCP 服务器和网页抓取工具免费，只按智能体实际使用的 tokens 计费。Exa 网页搜索工具在启用它的请求中只收取一次 $0.04，无论智能体执行多少次搜索。",
   },
 ]
 
@@ -474,7 +466,7 @@ export default function PricingPage() {
             <SectionHeading
               eyebrow="按需计费"
               title="按实际使用付费"
-              description="所有端点均采用透明的按操作计费，没有隐藏费用，也没有最低消费。"
+              description="每个模型按其供应商的 token 价格加收 15% 服务费，另有少量固定费用。"
             />
 
             <div className="mx-auto max-w-7xl">
@@ -517,7 +509,7 @@ export default function PricingPage() {
             <SectionHeading
               eyebrow="折扣与政策"
               title="内置省钱机制"
-              description="限时折扣、统一的 token 定价，以及自动发放的促销额度。"
+              description="错峰折扣、按模型计价的 token 费用，以及免费的 MCP 与网页抓取。"
             />
 
             <div className="mx-auto grid max-w-7xl grid-cols-1 gap-px overflow-hidden rounded-lg border border-white/[0.08] bg-white/[0.08] md:grid-cols-3">
@@ -551,7 +543,7 @@ export default function PricingPage() {
             <SectionHeading
               eyebrow="计费机制"
               title="计费方式说明"
-              description="扣费逻辑清晰可预测，额度优先级明确，并提供实时成本接口，助力您的数据看板。"
+              description="扣费逻辑清晰可预测，额度优先级明确，并提供实时价格接口，助力您的数据看板。"
             />
 
             <div className="mx-auto grid max-w-7xl grid-cols-1 gap-px overflow-hidden rounded-lg border border-white/[0.08] bg-white/[0.08] md:grid-cols-3">

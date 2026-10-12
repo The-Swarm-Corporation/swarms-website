@@ -231,7 +231,7 @@ print(result["outputs"][-1]["content"])
 print(json.dumps(result["usage"], indent=2))
 ```
 
-`agent_config` 块就是第 4 步中的 `Agent(...)` 调用写成了 JSON：字段名相同，含义相同。响应如下：
+`agent_config` 块就是第 4 步中的 `Agent(...)` 调用写成了 JSON：字段名相同，含义相同。响应如下（其中的 `total_cost` 是按此前的固定 token 费率算出的）：
 
 ```json
 {
@@ -349,14 +349,14 @@ print(json.dumps(result["usage"], indent=2))
 }
 ```
 
-四个 GPT-6 Astra 智能体，一份综合答案，39 秒，**8.3 美分**，逐项列明。注意 `night_time_discount_applied` 字段，下文会详细说明。
+四个 GPT-6 Astra 智能体，一份综合答案，39 秒，**8.3 美分**，逐项列明。这次运行是按此前的固定 token 费率计费的。截至本文撰写时，GPT-6 Astra 在 Swarms 上的价格是每百万输入 token 11.50 美元、每百万输出 token 57.50 美元（提供商价格加 15% 服务费），按这个价格，同样的 165 个输入 token 和 2,244 个输出 token 分别是 0.0019 美元和 0.1290 美元，加上 0.04 美元的智能体费用，合计约 **17.1 美分**。Swarms 现在按提供商报告的 token 计费，涵盖每个智能体的每一次调用，推理 token 也包括在内，所以重新运行时 token 数会有所不同。注意 `night_time_discount_applied` 字段，下文会详细说明。
 
 ## 为什么团队最终都会用上 API
 
 框架确实非常适合构建。但一旦智能体跑通了，问题就变了：那次运行花了多少钱，我们能同时跑多少个，密钥由谁保管。API 回答了这三个问题。
 
 - **一个密钥，所有模型。** GPT-6 Astra 与 Claude、Gemini、Grok、DeepSeek 等 1,900 多个模型并列在同一个 `x-api-key` 之后。把上面整个委员会切换到另一个模型只需改一个字符串。
-- **响应中自带成本。** 每次 completion 都返回 `total_cost`，swarm 运行还会返回逐项的 `cost_breakdown`。定价固定且公开：每个智能体每次 swarm 运行 0.01 美元，每百万输入 token 6.50 美元，每百万输出 token 18.50 美元，所有端点一致。`/v1/usage/costs` 端点和成本估算示例可以让你在运行前先算出工作负载的价格。
+- **响应中自带成本。** 每次 completion 都返回 `total_cost`，swarm 运行还会返回逐项的 `cost_breakdown`。定价公开且按模型计算：每个模型的 token 按其提供商价格加 15% 服务费计费，swarm 运行另收每个智能体 0.01 美元。`GET /v1/models/pricing` 返回任意模型当前的 token 价格，`GET /v1/usage/costs` 返回固定费用，让你在运行前先算出工作负载的价格。
 - **夜间半价。** 在**太平洋时间晚上 8 点到早上 6 点**之间运行的 swarm completion，token 费用**减半**，响应中的 `night_time_discount_applied` 标志会告诉你折扣是否生效。批处理任务、夜间流水线，以及任何对延迟不敏感的工作，都应该直接安排在这个时段。[夜间模式定价指南](https://docs.swarms.ai/docs/guides/guides/night-mode-pricing-strategy)详细讲解了这一点，[成本优化手册](https://docs.swarms.ai/docs/guides/guides/cost-optimization-playbook)则覆盖了其他手段：给模型分层，让便宜的智能体起草、GPT-6 Astra 做综合，以及在智能体之间压缩上下文。
 - **零基础设施。** 跨智能体扇出、重试、流式输出、每个响应上的速率限制头，以及托管的 MCP 服务器，都随密钥一起提供。上面的 `agents` 列表在 Swarms Cloud 上运行；你的笔记本只发送了 60 行 JSON。
 - **每种架构，同一个请求。** `swarm_type` 接受 `SequentialWorkflow`、`ConcurrentWorkflow`、`HierarchicalSwarm`、`GroupChat`、`MajorityVoting`、`HeavySwarm` 等。把上面的委员会改成带主管的分层结构只需改一个字段。

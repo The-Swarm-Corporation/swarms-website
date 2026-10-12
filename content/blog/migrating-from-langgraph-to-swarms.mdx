@@ -112,7 +112,7 @@ Every node's output comes back, keyed by agent name, with a flat usage block:
     "input_tokens": 1250,
     "output_tokens": 3200,
     "total_tokens": 4450,
-    "total_cost": 0.087325,
+    "total_cost": 0.059675,
     "cost_per_agent": 0.02
   },
   "timestamp": "2024-01-15T10:30:45.123456+00:00"
@@ -1370,7 +1370,7 @@ for (source, target), meta in edge_index.items():
 | Models per node | One client per vendor, each with its own key and bill | `model_name` per agent, one key for every vendor in the catalog. |
 | Failover | `with_fallbacks` on each client | `fallback_models` (ordered) and `fallback_model_name` per agent. |
 | Edge data | None; tags and metadata apply to the whole run | Free-form `metadata` on every edge. |
-| Pricing | Free library; each provider bills its own rates | $6.50 per million input tokens and $18.50 per million output tokens on every model, plus $0.01 per agent. Requires a Pro, Ultra, or Premium plan. |
+| Pricing | Free library; each provider bills its own rates | Each model's provider price plus a 15% service fee, plus $0.01 per agent. Requires a Pro, Ultra, or Premium plan. |
 | Cost per run | Joined from provider invoices and your tracing tool | `usage.total_cost` in every response. |
 | Compile and execution overhead | Per-superstep work on every run | 7.0x faster execution on average, 21.6x to 31.3x faster compilation, per the paper. |
 
@@ -1378,7 +1378,7 @@ for (source, target), meta in edge_index.items():
 
 Every graph response carries its own bill. `usage` is a flat object with `input_tokens`, `output_tokens`, `total_tokens`, `total_cost`, and `cost_per_agent`, and `total_cost` is the full charge for the run: input and output token costs plus the per-agent fee.
 
-The rates are the same for every model: **$6.50 per million input tokens, $18.50 per million output tokens, and $0.01 per agent in the graph.** The docs' two-agent example works out exactly: 1,250 input tokens ($0.0081) plus 3,200 output tokens ($0.0592) plus two agents ($0.02) is $0.0873. The nine-agent layered mesh in Pattern 5 carries $0.09 in agent fees before tokens. Swarms' 50% overnight token discount does not apply to graph workflows.
+Each node is billed at its own model's price: **the provider's price per million input and output tokens plus a 15% service fee, and $0.01 per agent in the graph.** Look up a model's current price with `GET /v1/models/pricing?model_name=...`. If both agents run on the default `claude-sonnet-5` ($2.30 per million input tokens and $11.50 per million output tokens at the time of writing, fee included), the two-agent response above works out exactly: 1,250 input tokens ($0.0029) plus 3,200 output tokens ($0.0368) plus two agents ($0.02) is $0.0597. The nine-agent layered mesh in Pattern 5 carries $0.09 in agent fees before tokens. Swarms' 50% overnight token discount does not apply to graph workflows.
 
 Three habits keep graph costs predictable:
 

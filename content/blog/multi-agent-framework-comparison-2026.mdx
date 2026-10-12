@@ -59,7 +59,7 @@ Where this shows up in practice: cold starts on serverless, evaluation sweeps, a
 |---|---|---|---|---|
 | Published reproducible benchmark | Yes, paper plus open harness | None published | None published | None published |
 | Models behind one API key | 1,605 across Anthropic, OpenAI, Google, xAI, DeepSeek, Meta and more | Bring your own keys | Bring your own keys | Bring your own keys |
-| Pricing regardless of provider | Flat: $6.50 per M input, $18.50 per M output | Provider list price each | Provider list price each | Provider list price each |
+| Token pricing | Each model's provider price plus a 15% service fee, on one bill | Provider list price each | Provider list price each | Provider list price each |
 | Orchestration topologies as one parameter | 15 plus `auto` | Topology is the chat pattern | Topology is the graph you draw | Topology is the crew process |
 | Per-agent model failover | `fallback_models` on the agent | Your own retry code | Your own retry code | Your own retry code |
 | Hosted first-party execution | Swarms Cloud API | Primarily self-run | Vendor platform | Vendor platform |
@@ -147,7 +147,7 @@ Two agents, two different vendors' models, one key, one bill. Change `"swarm_typ
 
 ## Which should you pick
 
-**Swarms, for most readers.** If you are building a pipeline, shipping a product, running evaluations, serving orchestration per request, or you simply want to stop operating a worker fleet, the compile-once engine, the measured overhead, the topology catalogue, the failover, and the flat pricing across 1,605 models all point the same way. It is also the only one you can adopt without owning any infrastructure, and the only one whose performance claim you can verify yourself before you commit.
+**Swarms, for most readers.** If you are building a pipeline, shipping a product, running evaluations, serving orchestration per request, or you simply want to stop operating a worker fleet, the compile-once engine, the measured overhead, the topology catalogue, the failover, and one key and one bill across 1,605 models all point the same way. It is also the only one you can adopt without owning any infrastructure, and the only one whose performance claim you can verify yourself before you commit.
 
 **One honest exception: LangGraph, if your control flow genuinely needs cycles or conditional edges** that must be reasoned about branch by branch in your own process. GraphWorkflow is a DAG engine and does not express those, and there LangGraph's typed state and reducers buy capability rather than ceremony. We wrote that trade-off up in full in [GraphWorkflow vs LangGraph](/blog/swarms-graphworkflow-vs-langgraph). If your workflow is a static DAG run many times, which is most of them, the exception does not apply to you.
 

@@ -96,16 +96,16 @@ const STEPS: Step[] = [
     title: "Monitor it",
     body: "Watch every run in Swarms Cloud, with its logs, tokens, cost, and context use per agent.",
     window: "cloud.swarms.world/history",
-    // Costs are gpt-4.1's rate ($2 in, $8 out per million tokens), and the
-    // totals follow from them: ~500 runs a day at ~$0.006 each.
+    // Costs use Swarms' gpt-4.1 rate ($2.30 in, $9.20 out per million tokens, the
+    // $2/$8 list price plus 15%); totals: ~500 runs a day at ~$0.007 each, 30 days.
     lines: [
       dim("Completion logs for Research-Agent"),
-      log("14:02:11  200  1,050 tokens  $0.0059"),
-      log("14:02:15  200  1,222 tokens  $0.0067"),
-      log("14:02:19  200    987 tokens  $0.0055"),
-      ok("500 runs today, 0 failed, $3.02 spent"),
+      log("14:02:11  200  1,050 tokens  $0.0068"),
+      log("14:02:15  200  1,222 tokens  $0.0077"),
+      log("14:02:19  200    987 tokens  $0.0063"),
+      ok("500 runs today, 0 failed, $3.47 spent"),
       out("Peak context use: 0.12% of the window"),
-      dim("On track for $90.60 this month"),
+      dim("On track for $104.10 this month"),
     ],
   },
   {

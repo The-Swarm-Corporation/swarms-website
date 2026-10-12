@@ -231,7 +231,7 @@ print(result["outputs"][-1]["content"])
 print(json.dumps(result["usage"], indent=2))
 ```
 
-The `agent_config` block is the `Agent(...)` call from Step 4 written as JSON — same field names, same meaning. The response looks like this:
+The `agent_config` block is the `Agent(...)` call from Step 4 written as JSON: same field names, same meaning. The response looks like this (its `total_cost` was computed under the earlier flat token pricing):
 
 ```json
 {
@@ -349,14 +349,14 @@ We ran exactly this. The three specialists each produced a comparison table; the
 }
 ```
 
-Four GPT-6 Astra agents, a synthesized answer, 39 seconds, **8.3 cents** — itemized. Note the `night_time_discount_applied` field; more on that below.
+Four GPT-6 Astra agents, a synthesized answer, 39 seconds, **8.3 cents**, itemized. That run was billed under the earlier flat token pricing. At the time of writing, GPT-6 Astra costs $11.50 per million input tokens and $57.50 per million output tokens on Swarms (provider price plus the 15% service fee), which puts the same 165 input and 2,244 output tokens at $0.0019 and $0.1290, or about **17.1 cents** with the $0.04 in agent fees. Swarms now bills the tokens the provider reports for every call each agent makes, reasoning tokens included, so a rerun will show different token counts. Note the `night_time_discount_applied` field; more on that below.
 
 ## Why teams end up on the API
 
 The framework is genuinely good for building. But once an agent works, the questions change: how much did that run cost, how many can we run at once, and who is keeping the keys. The API answers all three.
 
 - **One key, every model.** GPT-6 Astra sits next to Claude, Gemini, Grok, DeepSeek and the rest — over 1,900 models — behind a single `x-api-key`. Switching the whole council above to a different model is one string.
-- **Cost in the response.** Every completion returns `total_cost`, and swarm runs return the itemized `cost_breakdown`. Pricing is flat and public: $0.01 per agent per swarm run, $6.50 per million input tokens, $18.50 per million output tokens, the same on every endpoint. A `/v1/usage/costs` endpoint and a cost-estimator example let you price a workload before you run it.
+- **Cost in the response.** Every completion returns `total_cost`, and swarm runs return the itemized `cost_breakdown`. Pricing is public and per model: each model's tokens cost its provider price plus a 15% service fee, and swarm runs add $0.01 per agent. `GET /v1/models/pricing` returns any model's current token price and `GET /v1/usage/costs` the flat fees, so you can price a workload before you run it.
 - **50% off at night.** Swarm completions run between **8 PM and 6 AM Pacific** get **half off token costs** — the `night_time_discount_applied` flag in the response tells you it kicked in. Batch jobs, overnight pipelines, and anything not latency-sensitive should simply be scheduled there. The [night-mode pricing guide](https://docs.swarms.ai/docs/guides/guides/night-mode-pricing-strategy) walks through it, and the [cost optimization playbook](https://docs.swarms.ai/docs/guides/guides/cost-optimization-playbook) covers the other levers — tiering models so cheap agents draft and GPT-6 Astra synthesizes, and compressing context between agents.
 - **No infrastructure.** Fan-out across agents, retries, streaming, rate-limit headers on every response, and the hosted MCP server all come with the key. The `agents` list above ran on Swarms Cloud; your laptop sent 60 lines of JSON.
 - **Every architecture, same request.** `swarm_type` accepts `SequentialWorkflow`, `ConcurrentWorkflow`, `HierarchicalSwarm`, `GroupChat`, `MajorityVoting`, `HeavySwarm` and the rest. Changing the council above into a hierarchy with a director is one field.

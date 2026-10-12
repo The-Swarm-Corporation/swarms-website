@@ -856,7 +856,7 @@ asyncio.run(main())
 }
 ```
 
-[定价页面](https://docs.swarms.ai/docs/documentation/resources/pricing)列出的价格是：输入 token 每百万 6.50 美元，输出 token 每百万 18.50 美元，蜂群调用每个智能体 0.01 美元。蜂群调用在太平洋时间晚 8 点到早 6 点之间还能享受 token 费用五折（按智能体收取的费用不打折），[夜间定价指南](https://docs.swarms.ai/docs/guides/guides/night-mode-pricing-strategy)指出判断依据是运行结束的时间。`GET /v1/usage/costs` 会返回当前费率。把每次运行的 `total_cost` 和任务一起记录下来，你就能用数据回答"一份简报要花多少钱"。如果你还用开源框架在自己的进程里运行智能体，[追踪每个智能体的 token 用量与成本](/zh/blog/track-llm-token-usage-cost-python)讲了那边对应的统计方法。
+在[定价页面](https://docs.swarms.ai/docs/documentation/resources/pricing)上，token 按模型计价：每个模型的价格是其提供商的价格加 15% 服务费；混用多个模型的蜂群（比如第 2 步的流水线）按智能体计费，每个智能体按它自己所用模型的价格计算。蜂群调用每个智能体另收 0.01 美元，并在太平洋时间晚 8 点到早 6 点之间享受 token 费用五折（按智能体收取的费用不打折），[夜间定价指南](https://docs.swarms.ai/docs/guides/guides/night-mode-pricing-strategy)指出判断依据是运行结束的时间。`GET /v1/models/pricing?model_name=gpt-5.4` 会返回某个模型当前每百万 token 的价格，`GET /v1/usage/costs` 会返回固定费用。把每次运行的 `total_cost` 和任务一起记录下来，你就能用数据回答"一份简报要花多少钱"。如果你还用开源框架在自己的进程里运行智能体，[追踪每个智能体的 token 用量与成本](/zh/blog/track-llm-token-usage-cost-python)讲了那边对应的统计方法。
 
 ### 控制在速率限制之内
 
@@ -1013,7 +1013,7 @@ API 一共提供 14 种蜂群类型，包括 `MajorityVoting`、`CouncilAsAJudge
 
 ### 通过 Swarms API 运行一个智能体蜂群要花多少钱？
 
-定价页面列出的价格是：输入 token 每百万 6.50 美元，输出 token 每百万 18.50 美元，蜂群调用每个智能体 0.01 美元，太平洋时间晚 8 点到早 6 点 token 费用五折。每个响应都会在 `usage` 中报告实际成本（蜂群调用位于 `usage.billing_info.total_cost`），`GET /v1/usage/costs` 会返回当前费率。把同一个任务依次跑过本教程的每一步，就能看出对你的工作负载来说，多加的智能体要花多少钱。
+每个智能体的 token 按其模型的提供商价格加 15% 服务费计费，蜂群调用每个智能体另收 0.01 美元，太平洋时间晚 8 点到早 6 点 token 费用五折。每个响应都会在 `usage` 中报告实际成本（蜂群调用位于 `usage.billing_info.total_cost`）。`GET /v1/models/pricing` 会返回某个模型当前的 token 价格，`GET /v1/usage/costs` 会返回固定费用。把同一个任务依次跑过本教程的每一步，就能看出对你的工作负载来说，多加的智能体要花多少钱。
 
 ### 一个蜂群最多能有多少个智能体？
 

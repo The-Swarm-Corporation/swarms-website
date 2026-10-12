@@ -128,7 +128,7 @@ asyncio.run(main())
 
 成功的响应包含 `job_id`、`status`、`swarm_type`、`output`、`number_of_agents`、`execution_time` 和 `usage`。`output` 字段是一个由 `{"role", "content"}` 轮次组成的列表，这些轮次的含义取决于架构：对流水线来说是一份执行轨迹，对 MajorityVoting 来说是一组投票，对 judgment 类架构来说是各方答案加上最后的裁定。解析时请根据 `swarm_type` 分支处理。
 
-蜂群补全（swarm completions）按 `agents` 数组中的每个智能体收取 0.01 美元的固定费用，另加 token 费用（输入每百万 token 6.50 美元，输出每百万 token 18.50 美元），太平洋时间晚上 8 点到早上 6 点之间 token 费用减半（[Pricing](https://docs.swarms.ai/docs/documentation/resources/pricing)）。因此比较架构时有两点值得关注：一次运行要发起多少次模型调用，以及每次调用要读入多少上下文。
+蜂群补全（swarm completions）按 `agents` 数组中的每个智能体收取 0.01 美元的固定费用，另加 token 费用，token 按模型计价，即提供商价格加 15% 服务费（`GET /v1/models/pricing` 会返回某个模型的当前价格）。每个智能体的 token 都按它自己所用模型的价格计费，蜂群类型替你创建的智能体（例如 HierarchicalSwarm 的 director）也是如此。太平洋时间晚上 8 点到早上 6 点之间 token 费用减半（[Pricing](https://docs.swarms.ai/docs/documentation/resources/pricing)）。因此比较架构时有两点值得关注：一次运行要发起多少次模型调用，以及每次调用要读入多少上下文。
 
 **想试另一种架构时，保留这段脚本，只改 payload。** 下面每个条目只列出与基础请求不同的字段。在 `main()` 中、`session.post` 发送请求之前，用 `payload.update({...})` 把它们合并进 `payload` 即可；代码片段中没有出现的字段保持基础请求中的值。
 
@@ -374,7 +374,7 @@ flowchart TD
     S --> O[报告]
 ```
 
-HeavySwarm 会自己组建团队，所以你要发送 `"agents": []`。一个提问智能体通过函数调用把任务转化为四个专门的问题。在默认变体中，Research、Analysis、Alternatives 和 Verification 四个智能体并行回答这些问题，再由一个 Synthesis 智能体写出最终报告。`heavy_swarm_variant` 会替换整套阵容：`"default"` 运行上面这 5 个 worker，`"medium"` 运行 4 个（一名队长加三位专家），`"heavy"` 运行 16 个（一名队长协调 15 位领域专家）。把 `heavy_swarm_max_loops` 设为大于 1 时，会以上一轮的结果作为上下文重复整个循环。由于请求中的 `agents` 数组为空，`number_of_agents` 和按智能体收取的固定费用都是 0，但内部智能体使用的每一个 token 你仍然要付费。
+HeavySwarm 会自己组建团队，所以你要发送 `"agents": []`。一个提问智能体通过函数调用把任务转化为四个专门的问题。在默认变体中，Research、Analysis、Alternatives 和 Verification 四个智能体并行回答这些问题，再由一个 Synthesis 智能体写出最终报告。`heavy_swarm_variant` 会替换整套阵容：`"default"` 运行上面这 5 个 worker，`"medium"` 运行 4 个（一名队长加三位专家），`"heavy"` 运行 16 个（一名队长协调 15 位领域专家）。把 `heavy_swarm_max_loops` 设为大于 1 时，会以上一轮的结果作为上下文重复整个循环。由于请求中的 `agents` 数组为空，`number_of_agents` 和按智能体收取的固定费用都是 0，但内部智能体使用的每一个 token 你仍然要付费，全部按 `heavy_swarm_worker_model_name` 所指模型的价格计算。
 
 **适用场景：** 答案质量比延迟和成本更重要：尽职调查、深入的市场或技术研究，以及默认就应覆盖核实与备选方案的问题。
 

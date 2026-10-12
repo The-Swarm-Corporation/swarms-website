@@ -3,7 +3,7 @@ import type { Metadata } from "next"
 
 const title = "价格方案 - Swarms AI"
 const description =
-  "Swarms 多智能体平台的透明定价：免费版无需信用卡即可开始，专业版每月 $19.99，高级版每月 $100（或每年 $1,020）。所有端点统一按 token 用量计费，并提供企业级定制方案与私有化部署。"
+  "Swarms 多智能体平台的透明定价：免费版无需信用卡即可开始，专业版每月 $19.99，高级版每月 $100（或每年 $1,020）。token 按各模型供应商的价格加收 15% 服务费计费，并提供企业级定制方案与私有化部署。"
 
 export const metadata: Metadata = {
   title: { absolute: title },

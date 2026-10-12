@@ -17,7 +17,6 @@ import {
   Wrench,
   Search,
   Moon,
-  Zap,
   CreditCard,
   DollarSign,
   Server,
@@ -117,51 +116,44 @@ const usageItems = [
   {
     icon: Database,
     item: "Input tokens",
-    cost: "$6.50",
-    unit: "per 1M tokens",
-    note: "Unified across all endpoints",
+    cost: "Model price",
+    unit: "+ 15%",
+    note: "Each model's provider price per 1M tokens",
   },
   {
     icon: Activity,
     item: "Output tokens",
-    cost: "$18.50",
-    unit: "per 1M tokens",
-    note: "Unified across all endpoints",
+    cost: "Model price",
+    unit: "+ 15%",
+    note: "Each model's provider price per 1M tokens",
   },
   {
     icon: Users,
     item: "Agent cost",
     cost: "$0.01",
     unit: "per agent",
-    note: "For swarms and workflows",
+    note: "Swarms, graph and grid workflows",
   },
   {
     icon: ImageIcon,
     item: "Image processing",
     cost: "$0.25",
     unit: "per image",
-    note: "When an image is provided",
-  },
-  {
-    icon: Globe,
-    item: "MCP call",
-    cost: "$0.10",
-    unit: "per call",
-    note: "When MCP URL is provided",
+    note: "Each image sent to an agent",
   },
   {
     icon: Search,
     item: "Exa search tool",
     cost: "$0.04",
-    unit: "per search",
-    note: "Per search execution",
+    unit: "per request",
+    note: "Once per request with search enabled",
   },
   {
-    icon: Wrench,
-    item: "Web scraper tool",
-    cost: "$0.15",
-    unit: "per scrape",
-    note: "Per scrape execution",
+    icon: Globe,
+    item: "MCP servers & web scraper",
+    cost: "$0",
+    unit: "no fee",
+    note: "Only the tokens are billed",
   },
 ]
 
@@ -174,18 +166,18 @@ const discounts = [
       "Swarm Completions receive a 50% token discount between 8 PM – 6 AM Pacific Time. Agent costs unchanged. Applied automatically.",
   },
   {
-    icon: Zap,
-    title: "Frenzy mode",
-    label: "All requests free",
+    icon: Sparkles,
+    title: "Per-model pricing",
+    label: "Pay for the model you pick",
     description:
-      "All API requests are free for 24 hours during Black Friday (4th Friday of November). Applied automatically — no action needed.",
+      "Every agent is billed at its own model's price, so a swarm that puts lighter models on simple steps costs less. Look up any model with /v1/models/pricing.",
   },
   {
-    icon: Sparkles,
-    title: "Unified pricing",
-    label: "Same cost everywhere",
+    icon: Wrench,
+    title: "Free MCP & scraping",
+    label: "No tool fees",
     description:
-      "All endpoints — Swarm Completions, Agent Completions, Advanced Research, Auto Swarm Builder, Graph and Batched Grid Workflows — use identical token pricing.",
+      "Attaching MCP servers and using the web scraper tool cost nothing extra. Only the tokens the agent uses are billed.",
   },
 ]
 
@@ -200,13 +192,13 @@ const creditDetails = [
     icon: DollarSign,
     title: "Per-call billing",
     description:
-      "Credits deduct on each call based on operation, token usage, agent count, and any add-ons like MCP or image processing.",
+      "Credits deduct on each call based on each agent's tokens at its model's price, the agent count, and add-ons like images or web search.",
   },
   {
     icon: Server,
-    title: "Live cost API",
+    title: "Live price API",
     description:
-      "Retrieve up-to-the-minute pricing programmatically via the /v1/usage/costs endpoint for accurate budgeting.",
+      "Get any model's current price from /v1/models/pricing, every model's price from /v1/models/available, and the flat fees from /v1/usage/costs.",
   },
 ]
 
@@ -232,12 +224,12 @@ const faqs = [
   {
     question: "How does usage-based pricing work?",
     answer:
-      "Credits are deducted automatically after each request. All endpoints use unified pricing: $6.50 per 1M input tokens and $18.50 per 1M output tokens. Additional per-agent, per-image, per-MCP-call, and per-tool costs may apply. Free credits are consumed before paid credits.",
+      "Credits are deducted automatically after each request. Tokens are billed at each model's provider price plus a 15% service fee, and a swarm that mixes models bills each agent at its own model. Flat fees apply on top: $0.01 per agent on swarm, graph and grid workflows, $0.25 per image, and $0.04 per request that enables web search. Free credits are consumed before paid credits.",
   },
   {
-    question: "What is unified pricing?",
+    question: "How much does a specific model cost?",
     answer:
-      "Every endpoint — Swarm Completions, Agent Completions, Advanced Research, Auto Swarm Builder, Graph Workflow, and Batched Grid Workflow — uses identical token pricing. One predictable rate across the platform.",
+      "Its provider's price per 1M tokens plus 15%. GET /v1/models/pricing returns one model's price with the fee included, and GET /v1/models/available lists every model on your plan with its price. A model with no published price data is billed at fallback rates of $6.50 per 1M input and $18.50 per 1M output tokens before the fee.",
   },
   {
     question: "How does the night-time discount work?",
@@ -247,7 +239,7 @@ const faqs = [
   {
     question: "What are Premium Endpoints?",
     answer:
-      "Premium Endpoints — batch processing, reasoning agents, batched grid workflows, graph workflows, auto-swarm-builder, and advanced research — are available on Pro and Premium plans. They are not accessible on the Free tier.",
+      "Premium Endpoints — batch agent and swarm completions, reasoning agents, batched grid workflows, and graph workflows — are available on Pro and Premium plans. They are not accessible on the Free tier.",
   },
   {
     question: "What's the difference between Pro and Premium?",
@@ -262,7 +254,7 @@ const faqs = [
   {
     question: "What happens when I run out of credits?",
     answer:
-      "API calls return an explicit error code. You can top up credits or upgrade your plan for higher limits. Billing alerts are configurable in the dashboard.",
+      "Billable endpoints need a credit balance above $1.00 and return a 402 Payment Required error below that. You can top up credits or upgrade your plan for higher limits. Billing alerts are configurable in the dashboard.",
   },
   {
     question: "Is there an on-premise option?",
@@ -272,12 +264,12 @@ const faqs = [
   {
     question: "How is image processing charged?",
     answer:
-      "Each image passed to an agent is billed at $0.25. This applies uniformly across all tiers and endpoints.",
+      "Each image sent to an agent, in img or imgs, is billed at $0.25 on top of the tokens. This applies on every plan.",
   },
   {
-    question: "How does Frenzy Mode work?",
+    question: "Do MCP servers or tools cost extra?",
     answer:
-      "All API requests are free for 24 hours starting on Black Friday (4th Friday of November). The promotion applies automatically — no codes or action required.",
+      "MCP servers and the web scraper tool are free: only the tokens the agent uses are billed. The Exa web search tool costs $0.04 once per request that enables it, however many searches the agent runs.",
   },
 ]
 
@@ -474,7 +466,7 @@ export default function PricingPage() {
             <SectionHeading
               eyebrow="Usage-based pricing"
               title="Pay only for what you use"
-              description="Transparent per-operation pricing across every endpoint. No surprises, no minimums."
+              description="Every model at its provider's token price plus a 15% service fee, with a few flat fees on top."
             />
 
             <div className="mx-auto max-w-7xl">
@@ -517,7 +509,7 @@ export default function PricingPage() {
             <SectionHeading
               eyebrow="Discounts & policies"
               title="Built-in savings"
-              description="Time-based discounts, unified token pricing, and automatic promotional credits."
+              description="Off-peak discounts, per-model token pricing, and no fees for MCP or scraping."
             />
 
             <div className="mx-auto grid max-w-7xl grid-cols-1 gap-px overflow-hidden rounded-lg border border-white/[0.08] bg-white/[0.08] md:grid-cols-3">
@@ -551,7 +543,7 @@ export default function PricingPage() {
             <SectionHeading
               eyebrow="Billing"
               title="How billing works"
-              description="Predictable deductions, clear priority order, and a live cost endpoint to power your dashboards."
+              description="Predictable deductions, clear priority order, and live price endpoints to power your dashboards."
             />
 
             <div className="mx-auto grid max-w-7xl grid-cols-1 gap-px overflow-hidden rounded-lg border border-white/[0.08] bg-white/[0.08] md:grid-cols-3">

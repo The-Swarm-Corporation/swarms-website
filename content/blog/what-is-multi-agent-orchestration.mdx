@@ -487,7 +487,7 @@ Every successful `POST /v1/swarm/completions` response carries what you need to 
 - `execution_time`: wall-clock seconds.
 - `usage`: `input_tokens`, `output_tokens`, `total_tokens`, and a `billing_info` object with a `cost_breakdown` (agent cost, input token cost, output token cost) and the run's `total_cost`.
 
-Example output: the `usage` block from the documented `SequentialWorkflow` response in the [Swarm Completions reference](https://docs.swarms.ai/docs/documentation/multi-agent/swarm_completions).
+Example output: the `usage` block from the documented `SequentialWorkflow` response in the [Swarm Completions reference](https://docs.swarms.ai/docs/documentation/multi-agent/swarm_completions). Its dollar amounts were computed under the earlier flat token pricing.
 
 ```json
 {
@@ -508,11 +508,11 @@ Example output: the `usage` block from the documented `SequentialWorkflow` respo
 }
 ```
 
-Swarm completions are billed as a flat fee for each agent in the `agents` array plus token costs. At the time of writing, the [pricing page](https://docs.swarms.ai/docs/documentation/resources/pricing) lists $0.01 per agent and $6.50 and $18.50 per million input and output tokens, with a 50% discount on token costs between 8 PM and 6 AM Pacific time; the per-agent fee is charged in full at any hour. Two consequences for orchestration design: every agent you list costs something even if a router never calls it, and patterns that re-read a growing transcript (group chat, many loops) grow their input token bill faster than a short pipeline.
+Swarm completions are billed as a flat fee for each agent in the `agents` array plus token costs. At the time of writing, the [pricing page](https://docs.swarms.ai/docs/documentation/resources/pricing) lists $0.01 per agent, and each model's tokens cost its provider price plus a 15% service fee, so every agent is billed at its own model's rate. Token costs get a 50% discount between 8 PM and 6 AM Pacific time; the per-agent fee is charged in full at any hour. Two consequences for orchestration design: every agent you list costs something even if a router never calls it, and patterns that re-read a growing transcript (group chat, many loops) grow their input token bill faster than a short pipeline.
 
 For the account as a whole, the [Usage Report](https://docs.swarms.ai/docs/documentation/resources/usage-report) page documents three endpoints:
 
-- `GET /v1/usage/costs`: the current pricing model, so your cost estimates stay in sync with live prices.
+- `GET /v1/usage/costs`: the flat fees, such as the per-agent fee, plus the fallback token rates used only for models with no price data. A model's token price comes from `GET /v1/models/pricing?model_name=...`, or `GET /v1/models/available` for every model at once.
 - `GET /v1/account/logs`: request history across all of your API keys. `count` is the true total, and `logs` holds at most the 1,000 newest entries.
 - `GET /v1/account/metrics/summary`: unique agents used, lifetime and successful completion counts, and calls in the last 24 hours and 7 days ([details](https://docs.swarms.ai/docs/documentation/capabilities/metrics_summary)).
 
@@ -613,4 +613,4 @@ Bound the run with `max_loops` and `max_tokens`, set a client timeout, retry onl
 
 ### How much does multi-agent orchestration cost on the Swarms API?
 
-A swarm run costs a flat fee per agent plus input and output tokens, and `usage.billing_info.total_cost` in the response gives the charge for that run. `GET /v1/usage/costs` returns current prices. Patterns with more agents, more loops or a shared transcript cost more than a short pipeline on the same task.
+A swarm run costs a flat fee per agent plus input and output tokens, priced per model at the provider's rate plus a 15% service fee, and `usage.billing_info.total_cost` in the response gives the charge for that run. `GET /v1/models/pricing` returns a model's current token price, and `GET /v1/usage/costs` returns the flat fees. Patterns with more agents, more loops or a shared transcript cost more than a short pipeline on the same task.

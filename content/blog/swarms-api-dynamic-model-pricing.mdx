@@ -1,0 +1,278 @@
+---
+title: "Dynamic Model Pricing on the Swarms API: Every Model at Its Own Price"
+description: "The Swarms API no longer charges one flat token rate for every model. Each model is now billed at its provider's price plus a 15% service fee, the MCP and web scraper fees are gone, the search fee shows up in usage.total_cost, and a new /v1/models/pricing endpoint prices any model. Here is what changed, what it costs, and which endpoint outputs are different."
+date: "2026-10-12"
+author: "Swarms Team"
+categories: ["Product"]
+readTime: "8 min read"
+image: "/swarms_api_dynamic_pricing.png"
+featured: true
+---
+
+# Dynamic Model Pricing on the Swarms API: Every Model at Its Own Price
+
+<video src="/swarms_api_dynamic_pricing.mp4" poster="/swarms_api_dynamic_pricing_poster.png" controls playsinline preload="metadata"></video>
+
+Until today, every token on the Swarms API cost the same. Agent and swarm completions were billed at a flat **$6.50 per million input tokens and $18.50 per million output tokens**, whether the agent ran Claude Haiku or Claude Opus. That was simple, but it meant a light model on a simple step cost as much as a frontier model doing hard reasoning, and it gave you no reason to pick a cheaper model when one would do.
+
+As of October 12, the Swarms API prices every model on its own. Each model is billed at its provider's price plus a 15% service fee. For most models that is a large cut: Claude Haiku 5.5 input is 98% cheaper than before, and Gemini 3.1 Flash-Lite input is 96% cheaper. Of the 1,657 models with a published provider price, **1,497 now cost less than the old flat rate on both input and output**.
+
+This post covers how prices are set, what the common models cost now, the fees we removed, and every endpoint whose output changed, so you can update your client if you need to.
+
+## What changed, in short
+
+- **Per-model token pricing.** Each agent's tokens are billed at its own model's price plus 15%, across agent, chat, swarm, graph workflow, batched grid workflow, auto agent builder and reasoning agent completions.
+- **No more MCP fee.** Attaching MCP servers used to cost $0.10 per server per request. It is now free.
+- **No more web scraper fee.** The `web_scraper` tool used to cost $0.15 per request. It is now free.
+- **The search fee is in your usage.** The $0.04 Exa search fee is now included in `usage.total_cost` and is only charged when the run succeeds.
+- **A new endpoint, `GET /v1/models/pricing`,** returns the price of any model.
+- **The model listings carry prices.** `GET /v1/models/available` and `GET /v1/models` now return each model's price next to its name.
+- **`GET /v1/usage/costs` changed shape.** The flat token rates and the removed fees are gone.
+- **Token counts come from the provider.** The `usage` block keeps the same keys, but the counts are what the model provider reported.
+
+## How a model's price is set
+
+Every model has an input price and an output price per million tokens. The API looks them up in this order:
+
+1. **OpenRouter models** (ids that start with `openrouter/`) use OpenRouter's published price for that model.
+2. **Every other model** uses the provider price in LiteLLM's model price list.
+3. **Models with no published price** use a fallback of $6.50 input and $18.50 output, the old flat rate.
+
+A 15% service fee is added to the price in every case, and the prices the API returns already include it. Every price response also has a `price_source` field (`openrouter`, `litellm` or `fallback`) that says where the price came from.
+
+One thing to know about the fallback: with the fee, a model without a published price now costs $7.475 and $21.275 per million tokens, a little more than the old flat rate. About 250 of the 1,900+ models in the catalogue are priced this way. Most of them are image, transcription, video and search models that their providers price per image, per second or per request rather than per token, plus some older hosted models. If you use one of them, `/v1/models/pricing` will tell you, and there is very likely a priced model that does the same job.
+
+These are unchanged:
+
+- **Swarm agent fee:** $0.01 per agent on the multi-agent endpoints.
+- **Images:** $0.25 per image on agent completions.
+- **Exa search:** $0.04 per request with `auto_search` enabled.
+- **Night-time discount:** 50% off the token cost between 8 PM and 6 AM Pacific time. It applies to the per-model price the same way it applied to the flat rate.
+
+## What common models cost now
+
+Prices per million tokens, including the 15% fee, from the live API on October 12:
+
+| Model | Input | Output | Input vs. before | Output vs. before |
+|---|---|---|---|---|
+| `claude-opus-5` | $5.75 | $28.75 | −12% | +55% |
+| `claude-sonnet-5` | $2.30 | $11.50 | −65% | −38% |
+| `gemini/gemini-3.1-pro-preview` | $2.30 | $13.80 | −65% | −25% |
+| `openrouter/moonshotai/kimi-k3` | $0.8395 | $11.50 | −87% | −38% |
+| `gemini/gemini-3.1-flash-lite` | $0.2875 | $1.725 | −96% | −91% |
+| `claude-haiku-5-5` | $0.115 | $0.575 | −98% | −97% |
+| Before, every model | $6.50 | $18.50 | | |
+
+Notice the top row. The flat rate under-charged the most expensive frontier models, so Claude Opus 5 output now costs more than it did. Almost every other model costs less, and the cheapest models cost a small fraction of what they did.
+
+### A worked example
+
+Take a three-agent swarm whose run processes 60,000 input tokens and writes 8,000 output tokens, at daytime prices:
+
+| Setup | Tokens | Agent fees | Total |
+|---|---|---|---|
+| Before, any model | $0.538 | $0.03 | **$0.568** |
+| All three agents on `claude-opus-5` | $0.575 | $0.03 | **$0.605** |
+| All three agents on `claude-sonnet-5` | $0.230 | $0.03 | **$0.260** |
+| Lead agent on `claude-sonnet-5` (20,000 in, 2,000 out), two workers on `claude-haiku-5-5` (40,000 in, 6,000 out) | $0.077 | $0.03 | **$0.107** |
+| All three agents on `claude-haiku-5-5` | $0.0115 | $0.03 | **$0.0415** |
+
+The mixed swarm is where per-model pricing pays off most. Each agent is billed at its own model's price, so you can keep a strong model on the step that needs judgement and put lighter models on extraction, formatting and summaries. You pay frontier prices only for the tokens that need a frontier model.
+
+## Look up any model's price
+
+The new `GET /v1/models/pricing` endpoint takes a `model_name` and returns that model's price:
+
+```bash
+curl -s "https://api.swarms.world/v1/models/pricing?model_name=claude-haiku-5-5" \
+  -H "x-api-key: $SWARMS_API_KEY"
+```
+
+```json
+{
+  "status": "success",
+  "model_name": "claude-haiku-5-5",
+  "input_cost_per_1m": 0.115,
+  "output_cost_per_1m": 0.575,
+  "price_source": "litellm",
+  "timestamp": "2026-10-12T22:26:36.645032+00:00"
+}
+```
+
+A model without a published price returns the fallback, with `price_source` set to `fallback`:
+
+```json
+{
+  "status": "success",
+  "model_name": "not-a-real-model",
+  "input_cost_per_1m": 7.475,
+  "output_cost_per_1m": 21.275,
+  "price_source": "fallback",
+  "timestamp": "2026-10-12T22:26:37.424072+00:00"
+}
+```
+
+You can use it to estimate a run before you send it:
+
+```python
+import os
+import requests
+
+API = "https://api.swarms.world"
+HEADERS = {"x-api-key": os.environ["SWARMS_API_KEY"]}
+
+
+def price(model_name: str) -> dict:
+    r = requests.get(
+        f"{API}/v1/models/pricing",
+        params={"model_name": model_name},
+        headers=HEADERS,
+        timeout=30,
+    )
+    r.raise_for_status()
+    return r.json()
+
+
+def estimate(model_name: str, input_tokens: int, output_tokens: int) -> float:
+    p = price(model_name)
+    return (
+        input_tokens * p["input_cost_per_1m"]
+        + output_tokens * p["output_cost_per_1m"]
+    ) / 1_000_000
+
+
+print(f"${estimate('claude-sonnet-5', 60_000, 8_000):.4f}")  # $0.2300
+```
+
+The estimate covers tokens only. Add $0.01 per agent on the swarm endpoints, and halve the token cost at night.
+
+## Endpoints whose output changed
+
+No request schema changed. Four endpoints return a different response shape, and the completion endpoints return different numbers in the same shape.
+
+| Endpoint | Change | Breaking? |
+|---|---|---|
+| `GET /v1/models/available` | Each entry in `models` is an object with the model's price, not a string | **Yes**, if you read the entries as strings |
+| `GET /v1/models` | Each entry in `data` gets a `pricing` object | No, fields are only added |
+| `GET /v1/models/pricing` | New endpoint | No |
+| `GET /v1/usage/costs` | Six fields removed, two fallback fields added | **Yes**, if you read a removed field |
+| Agent, chat, swarm, graph, grid, auto builder and reasoning completions | Same `usage` keys, with provider-reported token counts and per-model costs | No |
+
+### `GET /v1/models/available`
+
+Before, `models` was a list of model names. Now each entry carries its price:
+
+```json
+{
+  "success": true,
+  "models": [
+    {
+      "model_name": "claude-sonnet-5",
+      "input_cost_per_1m": 2.3,
+      "output_cost_per_1m": 11.5,
+      "price_source": "litellm"
+    }
+  ],
+  "count": 1903
+}
+```
+
+If your code reads the entries as names, take the name from each object:
+
+```python
+models = requests.get(f"{API}/v1/models/available", headers=HEADERS).json()["models"]
+names = [m["model_name"] for m in models]
+```
+
+### `GET /v1/models`
+
+The OpenAI-compatible listing keeps its shape, and each model gets a `pricing` object:
+
+```json
+{
+  "id": "claude-sonnet-5",
+  "object": "model",
+  "created": 0,
+  "owned_by": "anthropic",
+  "pricing": {
+    "input_cost_per_1m": 2.3,
+    "output_cost_per_1m": 11.5,
+    "price_source": "litellm"
+  }
+}
+```
+
+OpenAI SDKs ignore fields they don't know, so existing clients keep working.
+
+### `GET /v1/usage/costs`
+
+Before:
+
+```json
+{
+  "usage_pricing": {
+    "swarm_completions_agent_cost": 0.01,
+    "swarm_completions_input_cost_per_1m": 6.5,
+    "swarm_completions_output_cost_per_1m": 18.5,
+    "agent_completions_input_cost_per_1m": 6.5,
+    "agent_completions_output_cost_per_1m": 18.5,
+    "agent_completions_img_cost": 0.25,
+    "agent_completions_mcp_cost": 0.1,
+    "search_cost": 0.04,
+    "scrape_cost": 0.15,
+    "night_time_discount": 0.5
+  }
+}
+```
+
+Now:
+
+```json
+{
+  "usage_pricing": {
+    "fallback_input_cost_per_1m": 6.5,
+    "fallback_output_cost_per_1m": 18.5,
+    "swarm_completions_agent_cost": 0.01,
+    "agent_completions_img_cost": 0.25,
+    "search_cost": 0.04,
+    "night_time_discount": 0.5
+  },
+  "timestamp": "2026-10-12T22:26:37.694656+00:00"
+}
+```
+
+The four flat token rates, `agent_completions_mcp_cost` and `scrape_cost` are removed. The two `fallback_*` fields are the rates for models without a published price, **before** the 15% fee. For the price you will actually pay for a model, use `/v1/models/pricing`.
+
+### Usage on the completion endpoints
+
+Agent, chat, swarm (including streaming and batch), graph workflow, batched grid workflow, auto agent builder and reasoning agent completions return the same `usage` keys as before. Two things about the values are different:
+
+- **Token counts are what the model provider reported.** For agent and swarm runs they include system prompts, tool schemas, the conversation carried across loops, reasoning tokens, and agents a swarm creates for itself, such as a hierarchical swarm's director. Multi-loop and multi-agent runs therefore often report more tokens than before. The count is now what the model actually processed.
+- **`total_cost` is priced per model.** In a swarm, each agent's tokens are priced at that agent's model.
+
+Here is a real agent completion on `claude-haiku-5-5` with `auto_search` enabled:
+
+```json
+"usage": {
+  "input_tokens": 2060,
+  "output_tokens": 200,
+  "total_tokens": 2260,
+  "image_count": 0,
+  "img_cost": 0.0,
+  "total_cost": 0.040352
+}
+```
+
+That is $0.000352 of tokens plus the $0.04 search fee, and $0.040352 is exactly what was deducted from the account. Before this change, the search fee was charged separately when the request was set up, even if the run then failed, and it was missing from `total_cost`. Now it is charged with the run, only when the run succeeds, and the cost you see in the response is the cost you paid.
+
+## Runs from before the change
+
+Runs made before October 12 were billed at the old flat rate, and their logs keep the cost they were billed at. Nothing is re-billed.
+
+## Get started
+
+Every model in the catalogue is available at its own price from today, with no change to your requests. Pick a model per agent, check its price with `/v1/models/pricing`, and put lighter models on the steps that don't need a frontier one.
+
+- Get an API key at [cloud.swarms.world/api-keys](https://cloud.swarms.world/api-keys).
+- Compare plans and fees on the [pricing page](/pricing).
+- Read the API reference, the pricing guide and examples for every endpoint at [docs.swarms.ai](https://docs.swarms.ai).

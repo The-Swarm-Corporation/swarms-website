@@ -1,0 +1,278 @@
+---
+title: "Swarms API 动态模型定价：每个模型按自己的价格计费"
+description: "Swarms API 不再对所有模型收取统一的 token 费率。现在每个模型按其提供商的价格加 15% 服务费计费，MCP 和网页抓取费用已取消，搜索费用计入 usage.total_cost，新的 /v1/models/pricing 端点可查询任意模型的价格。本文介绍变化内容、当前价格，以及哪些端点的输出发生了变化。"
+date: "2026-10-12"
+author: "Swarms 团队"
+categories: ["产品"]
+readTime: "8 分钟阅读"
+image: "/swarms_api_dynamic_pricing.png"
+featured: true
+---
+
+# Swarms API 动态模型定价：每个模型按自己的价格计费
+
+<video src="/swarms_api_dynamic_pricing.mp4" poster="/swarms_api_dynamic_pricing_poster.png" controls playsinline preload="metadata"></video>
+
+在此之前，Swarms API 上每个 token 的价格都一样。智能体和集群调用统一按**每百万输入 token 6.50 美元、每百万输出 token 18.50 美元**计费，无论智能体运行的是 Claude Haiku 还是 Claude Opus。这样很简单，但也意味着在简单步骤上运行的轻量模型，和做复杂推理的前沿模型花费相同；即使便宜的模型就能胜任，你也没有理由去选它。
+
+从 10 月 12 日起，Swarms API 对每个模型单独定价。每个模型按其提供商的价格加 15% 服务费计费。对大多数模型来说，这是一次大幅降价：Claude Haiku 5.5 的输入价格比之前便宜 98%，Gemini 3.1 Flash-Lite 的输入价格便宜 96%。在 1,657 个有公开提供商价格的模型中，**有 1,497 个模型的输入和输出价格都低于原来的统一费率**。
+
+本文介绍价格如何确定、常用模型现在的价格、我们取消的费用，以及所有输出发生变化的端点，方便你在需要时更新客户端。
+
+## 变化一览
+
+- **按模型计算 token 价格。** 每个智能体的 token 按其自身模型的价格加 15% 计费，适用于智能体、聊天、集群、图工作流、批量网格工作流、自动智能体构建器和推理智能体调用。
+- **取消 MCP 费用。** 过去每次请求每挂载一个 MCP 服务器收费 0.10 美元，现在免费。
+- **取消网页抓取费用。** `web_scraper` 工具过去每次请求收费 0.15 美元，现在免费。
+- **搜索费用计入用量。** 0.04 美元的 Exa 搜索费用现在包含在 `usage.total_cost` 中，并且只在运行成功时收取。
+- **新端点 `GET /v1/models/pricing`**，返回任意模型的价格。
+- **模型列表包含价格。** `GET /v1/models/available` 和 `GET /v1/models` 现在会在每个模型名称旁返回其价格。
+- **`GET /v1/usage/costs` 结构变化。** 统一的 token 费率和已取消的费用字段都已移除。
+- **token 数量来自模型提供商。** `usage` 中的字段不变，但数值是模型提供商报告的实际数量。
+
+## 模型价格如何确定
+
+每个模型都有每百万 token 的输入价格和输出价格。API 按以下顺序查找：
+
+1. **OpenRouter 模型**（以 `openrouter/` 开头的 id）使用 OpenRouter 公布的该模型价格。
+2. **其他所有模型**使用 LiteLLM 模型价格表中的提供商价格。
+3. **没有公开价格的模型**使用后备价格：输入 6.50 美元、输出 18.50 美元，也就是原来的统一费率。
+
+所有情况下都会在价格上加 15% 服务费，API 返回的价格已经包含这部分费用。每个价格响应都有一个 `price_source` 字段（`openrouter`、`litellm` 或 `fallback`），说明价格的来源。
+
+关于后备价格需要注意一点：加上服务费后，没有公开价格的模型现在每百万 token 收费 7.475 美元和 21.275 美元，比原来的统一费率略高。目录中 1,900 多个模型里约有 250 个按这种方式定价。其中大多数是图像、转录、视频和搜索模型，它们的提供商按图像、秒数或请求计价，而不是按 token 计价；另外还有一些较旧的托管模型。如果你使用其中某个模型，`/v1/models/pricing` 会告诉你，而且很可能有一个已定价的模型能完成同样的工作。
+
+以下内容保持不变：
+
+- **集群智能体费用：** 多智能体端点每个智能体 0.01 美元。
+- **图像：** 智能体调用每张图像 0.25 美元。
+- **Exa 搜索：** 启用 `auto_search` 时每次请求 0.04 美元。
+- **夜间折扣：** 太平洋时间晚 8 点至早 6 点之间，token 费用享受 50% 折扣。它对按模型计算的价格同样适用，方式与原来的统一费率相同。
+
+## 常用模型的当前价格
+
+每百万 token 价格，含 15% 服务费，取自 10 月 12 日的线上 API：
+
+| 模型 | 输入 | 输出 | 输入相比之前 | 输出相比之前 |
+|---|---|---|---|---|
+| `claude-opus-5` | $5.75 | $28.75 | −12% | +55% |
+| `claude-sonnet-5` | $2.30 | $11.50 | −65% | −38% |
+| `gemini/gemini-3.1-pro-preview` | $2.30 | $13.80 | −65% | −25% |
+| `openrouter/moonshotai/kimi-k3` | $0.8395 | $11.50 | −87% | −38% |
+| `gemini/gemini-3.1-flash-lite` | $0.2875 | $1.725 | −96% | −91% |
+| `claude-haiku-5-5` | $0.115 | $0.575 | −98% | −97% |
+| 之前，所有模型 | $6.50 | $18.50 | | |
+
+请注意第一行。原来的统一费率对最昂贵的前沿模型收费偏低，所以 Claude Opus 5 的输出现在比以前更贵。几乎所有其他模型都更便宜了，最便宜的模型只需原来价格的一小部分。
+
+### 计算示例
+
+以一个三智能体集群为例，一次运行处理 60,000 个输入 token、生成 8,000 个输出 token，按白天价格计算：
+
+| 配置 | Token 费用 | 智能体费用 | 合计 |
+|---|---|---|---|
+| 之前，任意模型 | $0.538 | $0.03 | **$0.568** |
+| 三个智能体都使用 `claude-opus-5` | $0.575 | $0.03 | **$0.605** |
+| 三个智能体都使用 `claude-sonnet-5` | $0.230 | $0.03 | **$0.260** |
+| 主智能体使用 `claude-sonnet-5`（输入 20,000，输出 2,000），两个工作智能体使用 `claude-haiku-5-5`（输入 40,000，输出 6,000） | $0.077 | $0.03 | **$0.107** |
+| 三个智能体都使用 `claude-haiku-5-5` | $0.0115 | $0.03 | **$0.0415** |
+
+混合模型的集群最能体现按模型定价的价值。每个智能体都按其自身模型的价格计费，所以你可以在需要判断力的步骤上保留强模型，把提取、格式化和摘要交给更轻量的模型。只有真正需要前沿模型的 token 才按前沿价格付费。
+
+## 查询任意模型的价格
+
+新的 `GET /v1/models/pricing` 端点接收 `model_name` 参数，返回该模型的价格：
+
+```bash
+curl -s "https://api.swarms.world/v1/models/pricing?model_name=claude-haiku-5-5" \
+  -H "x-api-key: $SWARMS_API_KEY"
+```
+
+```json
+{
+  "status": "success",
+  "model_name": "claude-haiku-5-5",
+  "input_cost_per_1m": 0.115,
+  "output_cost_per_1m": 0.575,
+  "price_source": "litellm",
+  "timestamp": "2026-10-12T22:26:36.645032+00:00"
+}
+```
+
+没有公开价格的模型会返回后备价格，`price_source` 为 `fallback`：
+
+```json
+{
+  "status": "success",
+  "model_name": "not-a-real-model",
+  "input_cost_per_1m": 7.475,
+  "output_cost_per_1m": 21.275,
+  "price_source": "fallback",
+  "timestamp": "2026-10-12T22:26:37.424072+00:00"
+}
+```
+
+你可以用它在发送请求前估算一次运行的费用：
+
+```python
+import os
+import requests
+
+API = "https://api.swarms.world"
+HEADERS = {"x-api-key": os.environ["SWARMS_API_KEY"]}
+
+
+def price(model_name: str) -> dict:
+    r = requests.get(
+        f"{API}/v1/models/pricing",
+        params={"model_name": model_name},
+        headers=HEADERS,
+        timeout=30,
+    )
+    r.raise_for_status()
+    return r.json()
+
+
+def estimate(model_name: str, input_tokens: int, output_tokens: int) -> float:
+    p = price(model_name)
+    return (
+        input_tokens * p["input_cost_per_1m"]
+        + output_tokens * p["output_cost_per_1m"]
+    ) / 1_000_000
+
+
+print(f"${estimate('claude-sonnet-5', 60_000, 8_000):.4f}")  # $0.2300
+```
+
+这个估算只包含 token 费用。在集群端点上，每个智能体还要加 0.01 美元；夜间的 token 费用减半。
+
+## 输出发生变化的端点
+
+请求结构没有任何变化。有四个端点的响应结构发生了变化，各个调用端点则以相同的结构返回不同的数值。
+
+| 端点 | 变化 | 是否破坏兼容性 |
+|---|---|---|
+| `GET /v1/models/available` | `models` 中的每一项现在是包含价格的对象，而不是字符串 | **是**，如果你把这些项当作字符串读取 |
+| `GET /v1/models` | `data` 中的每一项增加了 `pricing` 对象 | 否，只新增字段 |
+| `GET /v1/models/pricing` | 新端点 | 否 |
+| `GET /v1/usage/costs` | 移除六个字段，新增两个后备价格字段 | **是**，如果你读取了被移除的字段 |
+| 智能体、聊天、集群、图、网格、自动构建器和推理调用 | `usage` 字段不变，token 数量来自提供商，费用按模型计算 | 否 |
+
+### `GET /v1/models/available`
+
+之前，`models` 是模型名称列表。现在每一项都带有价格：
+
+```json
+{
+  "success": true,
+  "models": [
+    {
+      "model_name": "claude-sonnet-5",
+      "input_cost_per_1m": 2.3,
+      "output_cost_per_1m": 11.5,
+      "price_source": "litellm"
+    }
+  ],
+  "count": 1903
+}
+```
+
+如果你的代码把这些项当作名称读取，请从每个对象中取出名称：
+
+```python
+models = requests.get(f"{API}/v1/models/available", headers=HEADERS).json()["models"]
+names = [m["model_name"] for m in models]
+```
+
+### `GET /v1/models`
+
+兼容 OpenAI 的模型列表保持原有结构，每个模型增加了一个 `pricing` 对象：
+
+```json
+{
+  "id": "claude-sonnet-5",
+  "object": "model",
+  "created": 0,
+  "owned_by": "anthropic",
+  "pricing": {
+    "input_cost_per_1m": 2.3,
+    "output_cost_per_1m": 11.5,
+    "price_source": "litellm"
+  }
+}
+```
+
+OpenAI SDK 会忽略不认识的字段，因此现有客户端可以继续正常工作。
+
+### `GET /v1/usage/costs`
+
+之前：
+
+```json
+{
+  "usage_pricing": {
+    "swarm_completions_agent_cost": 0.01,
+    "swarm_completions_input_cost_per_1m": 6.5,
+    "swarm_completions_output_cost_per_1m": 18.5,
+    "agent_completions_input_cost_per_1m": 6.5,
+    "agent_completions_output_cost_per_1m": 18.5,
+    "agent_completions_img_cost": 0.25,
+    "agent_completions_mcp_cost": 0.1,
+    "search_cost": 0.04,
+    "scrape_cost": 0.15,
+    "night_time_discount": 0.5
+  }
+}
+```
+
+现在：
+
+```json
+{
+  "usage_pricing": {
+    "fallback_input_cost_per_1m": 6.5,
+    "fallback_output_cost_per_1m": 18.5,
+    "swarm_completions_agent_cost": 0.01,
+    "agent_completions_img_cost": 0.25,
+    "search_cost": 0.04,
+    "night_time_discount": 0.5
+  },
+  "timestamp": "2026-10-12T22:26:37.694656+00:00"
+}
+```
+
+四个统一 token 费率字段、`agent_completions_mcp_cost` 和 `scrape_cost` 都已移除。两个 `fallback_*` 字段是没有公开价格的模型所用的费率，**不含** 15% 服务费。要查询某个模型的实际价格，请使用 `/v1/models/pricing`。
+
+### 调用端点的用量
+
+智能体、聊天、集群（包括流式和批量）、图工作流、批量网格工作流、自动智能体构建器和推理智能体调用返回的 `usage` 字段与之前相同。数值有两点不同：
+
+- **token 数量是模型提供商报告的数量。** 对于智能体和集群运行，它包括系统提示词、工具定义、跨轮次传递的对话、推理 token，以及集群自己创建的智能体（例如层级集群中的主管智能体）。因此，多轮次和多智能体运行报告的 token 数量通常比以前多。现在的数量就是模型实际处理的数量。
+- **`total_cost` 按模型计算。** 在集群中，每个智能体的 token 按该智能体所用模型的价格计算。
+
+下面是一次真实的智能体调用，使用 `claude-haiku-5-5` 并启用了 `auto_search`：
+
+```json
+"usage": {
+  "input_tokens": 2060,
+  "output_tokens": 200,
+  "total_tokens": 2260,
+  "image_count": 0,
+  "img_cost": 0.0,
+  "total_cost": 0.040352
+}
+```
+
+其中 token 费用为 0.000352 美元，加上 0.04 美元的搜索费用，账户实际扣除的正是 0.040352 美元。在这次变更之前，搜索费用在请求准备阶段单独收取，即使之后运行失败也会扣费，而且不包含在 `total_cost` 中。现在它随运行一起收取，只在运行成功时扣费，响应中看到的费用就是你实际支付的费用。
+
+## 变更之前的运行
+
+10 月 12 日之前的运行按原来的统一费率计费，其日志保留当时的计费金额。不会重新计费。
+
+## 开始使用
+
+从今天起，目录中的每个模型都按自己的价格提供，你的请求无需任何修改。为每个智能体选择模型，用 `/v1/models/pricing` 查询价格，并把不需要前沿模型的步骤交给更轻量的模型。
+
+- 在 [cloud.swarms.world/api-keys](https://cloud.swarms.world/api-keys) 获取 API 密钥。
+- 在[定价页面](/zh/pricing)比较套餐和费用。
+- 在 [docs.swarms.ai](https://docs.swarms.ai) 阅读 API 参考、定价指南以及每个端点的示例。

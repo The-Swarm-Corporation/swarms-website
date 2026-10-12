@@ -12,6 +12,7 @@ import "../globals.css"
 import type React from "react"
 import { Footer } from "@/components/footer"
 import { NewsletterPopupProvider } from "@/components/newsletter-popup-provider"
+import { RouteLoader } from "@/components/route-loader"
 import { Analytics } from "@vercel/analytics/next"
 
 export const metadata: Metadata = {
@@ -122,6 +123,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
         <NewsletterPopupProvider>
           {children}
           <Footer />
+          <RouteLoader />
         </NewsletterPopupProvider>
 
         <Analytics />

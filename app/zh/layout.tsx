@@ -5,6 +5,7 @@ import { montserrat, orbitron } from "@/app/fonts"
 import "../globals.css"
 import { Footer } from "@/components/footer"
 import { NewsletterPopupProvider } from "@/components/newsletter-popup-provider"
+import { RouteLoader } from "@/components/route-loader"
 import { Analytics } from "@vercel/analytics/next"
 
 export const metadata: Metadata = {
@@ -106,6 +107,7 @@ export default function ZhRootLayout({ children }: ZhRootLayoutProps) {
         <NewsletterPopupProvider>
           {children}
           <Footer />
+          <RouteLoader label="加载中" />
         </NewsletterPopupProvider>
 
         <Analytics />

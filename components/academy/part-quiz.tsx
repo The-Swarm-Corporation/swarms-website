@@ -109,7 +109,7 @@ export function PartQuiz({ questions, partNumber }: { questions: QuizQuestion[];
               type="button"
               onClick={submit}
               disabled={answered === 0}
-              className="rounded-full border border-[#27272a] bg-[#121214] px-6 py-2.5 text-sm font-medium text-white transition-colors hover:border-[#3f3f46] hover:bg-[#1a1a1d] disabled:pointer-events-none disabled:opacity-50"
+              className="rounded-full border border-[#27272a] bg-[#121214] shadow-none hover:shadow-none px-6 py-2.5 text-sm font-medium text-white transition-colors hover:border-[#3f3f46] hover:bg-[#1a1a1d] disabled:pointer-events-none disabled:opacity-50"
             >
               Check answers
             </button>

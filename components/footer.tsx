@@ -27,6 +27,7 @@ import {
   Route,
 } from "lucide-react"
 import { SiDiscord, SiTelegram } from "react-icons/si"
+import { FooterNewsletter } from "@/components/footer-newsletter"
 
 export function Footer() {
   return (
@@ -53,6 +54,9 @@ export function Footer() {
                   <p className="text-sm sm:text-base text-gray-400 leading-relaxed">
                     Building the infrastructure for collective intelligence.
                   </p>
+                </div>
+                <div className="mt-2">
+                  <FooterNewsletter />
                 </div>
               </div>
             </div>

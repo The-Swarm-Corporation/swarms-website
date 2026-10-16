@@ -161,7 +161,7 @@ function ProductPanel({
 
         <div className="mt-6 flex flex-wrap items-center gap-3">
           <Button
-            className="h-10 rounded-full border border-[#27272a] bg-[#121214] px-5 text-sm font-medium text-white hover:border-[#3f3f46] hover:bg-[#1a1a1d]"
+            className="h-10 rounded-full border border-[#27272a] bg-[#121214] shadow-none hover:shadow-none px-5 text-sm font-medium text-white hover:border-[#3f3f46] hover:bg-[#1a1a1d]"
             asChild
           >
             <SmartLink href={product.primary.href}>

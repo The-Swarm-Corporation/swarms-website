@@ -58,7 +58,7 @@ export function SwarmsRsHero() {
             transition={{ duration: 0.7, delay: 0.16, ease }}
           >
             <Button
-              className="h-12 w-full rounded-full border border-[#27272a] bg-[#121214] px-7 text-base font-medium text-white hover:border-[#3f3f46] hover:bg-[#1a1a1d] sm:w-auto"
+              className="h-12 w-full rounded-full border border-[#27272a] bg-[#121214] shadow-none hover:shadow-none px-7 text-base font-medium text-white hover:border-[#3f3f46] hover:bg-[#1a1a1d] sm:w-auto"
               asChild
             >
               <a href="#quickstart">

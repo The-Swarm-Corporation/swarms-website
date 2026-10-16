@@ -1,7 +1,7 @@
 "use client"
 
 import { AnimatePresence, motion, useInView } from "framer-motion"
-import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react"
+import { useEffect, useRef, useState, type KeyboardEvent } from "react"
 
 import { JOBS, productById, type Job, type ProductId } from "./stack-data"
 import { useReducedMotionSafe } from "./use-reduced-motion-safe"
@@ -106,7 +106,6 @@ export function StackDiagram({
   className?: string
 }) {
   const reduceMotion = useReducedMotionSafe()
-  const uid = useId().replace(/:/g, "")
   const ref = useRef<HTMLDivElement>(null)
   const inView = useInView(ref, { margin: "-80px" })
 
@@ -185,16 +184,6 @@ export function StackDiagram({
         onMouseEnter={compact ? undefined : () => setExploded(true)}
         onMouseLeave={compact ? undefined : () => setExploded(false)}
       >
-        <defs>
-          <filter id={`glow-${uid}`} x="-150%" y="-150%" width="400%" height="400%">
-            <feGaussianBlur stdDeviation="7" result="blur" />
-            <feMerge>
-              <feMergeNode in="blur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-        </defs>
-
         {TIERS.map((job, tierIndex) => {
           const elev = elevation(job)
           const tierBlocks = BLOCKS.filter((b) => b.job === job)
@@ -285,7 +274,6 @@ export function StackDiagram({
             <motion.g
               key={cycle}
               aria-hidden="true"
-              filter={`url(#glow-${uid})`}
               initial={{ x: px, y: py - 36, opacity: 0 }}
               animate={{ x: px, y: py, opacity: 1 }}
               exit={{ opacity: 0, transition: { duration: 0.35 } }}
@@ -298,9 +286,9 @@ export function StackDiagram({
                 animate={{ y: step === 0 ? 0 : [0, -34, 0] }}
                 transition={{ duration: 0.7, ease: "easeOut" }}
               >
-                <polygon points={CUBE_FACES.left} fill="#b91c1c" />
-                <polygon points={CUBE_FACES.right} fill="#7f1d1d" />
-                <polygon points={CUBE_FACES.top} fill="#f87171" />
+                <polygon points={CUBE_FACES.left} fill="#a1a1aa" />
+                <polygon points={CUBE_FACES.right} fill="#52525b" />
+                <polygon points={CUBE_FACES.top} fill="#e4e4e7" />
               </motion.g>
             </motion.g>
           )}
@@ -462,8 +450,8 @@ function SlabBlock({
                 rx={4}
                 initial={false}
                 animate={{
-                  fill: landing ? "#ef4444" : isListed ? "#7f1d1d" : "#1a1a1a",
-                  stroke: landing ? "#fca5a5" : isListed ? "#b91c1c" : "rgba(255,255,255,0.1)",
+                  fill: landing ? "#e4e4e7" : isListed ? "#3f3f46" : "#1a1a1a",
+                  stroke: landing ? "#ffffff" : isListed ? "#71717a" : "rgba(255,255,255,0.1)",
                 }}
                 transition={{ duration: 0.4 }}
                 strokeWidth={1}

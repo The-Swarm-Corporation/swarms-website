@@ -192,7 +192,7 @@ export function NewsletterPopup({ isOpen, onClose }: NewsletterPopupProps) {
                     <button
                       type="submit"
                       disabled={isSubmitting || !email}
-                      className="group flex w-full items-center justify-center gap-2 rounded-full border border-[#27272a] bg-[#121214] px-6 py-3 text-sm font-medium text-white transition-colors duration-300 hover:border-[#3f3f46] hover:bg-[#1a1a1d] disabled:pointer-events-none disabled:opacity-50"
+                      className="group flex w-full items-center justify-center gap-2 rounded-full border border-[#27272a] bg-[#121214] shadow-none hover:shadow-none px-6 py-3 text-sm font-medium text-white transition-colors duration-300 hover:border-[#3f3f46] hover:bg-[#1a1a1d] disabled:pointer-events-none disabled:opacity-50"
                     >
                       {isSubmitting ? (
                         <>

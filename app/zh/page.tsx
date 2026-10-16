@@ -172,7 +172,7 @@ export default function ZhHomePage() {
               <div className="mt-10 flex w-full flex-col items-center justify-center gap-3 sm:w-auto sm:flex-row">
                 <Link
                   href="/zh/installation"
-                  className="inline-flex h-12 w-full items-center justify-center rounded-full border border-[#27272a] bg-[#121214] px-8 text-base font-medium text-white transition-colors hover:border-[#3f3f46] hover:bg-[#1a1a1d] sm:h-14 sm:w-auto sm:text-lg"
+                  className="inline-flex h-12 w-full items-center justify-center rounded-full border border-[#27272a] bg-[#121214] shadow-none hover:shadow-none px-8 text-base font-medium text-white transition-colors hover:border-[#3f3f46] hover:bg-[#1a1a1d] sm:h-14 sm:w-auto sm:text-lg"
                 >
                   开始使用
                   <ArrowRight className="ml-2 h-5 w-5" />
@@ -313,7 +313,7 @@ export default function ZhHomePage() {
               <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
                 <Link
                   href="/zh/blog"
-                  className="inline-flex h-11 w-full items-center justify-center rounded-full border border-[#27272a] bg-[#121214] px-6 text-sm font-medium text-white transition-colors hover:border-[#3f3f46] hover:bg-[#1a1a1d] sm:w-auto"
+                  className="inline-flex h-11 w-full items-center justify-center rounded-full border border-[#27272a] bg-[#121214] shadow-none hover:shadow-none px-6 text-sm font-medium text-white transition-colors hover:border-[#3f3f46] hover:bg-[#1a1a1d] sm:w-auto"
                 >
                   阅读中文博客
                   <ArrowRight className="ml-2 h-4 w-4" />
@@ -336,7 +336,7 @@ export default function ZhHomePage() {
               <div className="mt-4 flex w-full flex-col items-center justify-center gap-3 sm:w-auto sm:flex-row">
                 <Link
                   href="/zh/installation"
-                  className="inline-flex h-12 w-full items-center justify-center rounded-full border border-[#27272a] bg-[#121214] px-8 text-base font-medium text-white transition-colors hover:border-[#3f3f46] hover:bg-[#1a1a1d] sm:h-14 sm:w-auto sm:text-lg"
+                  className="inline-flex h-12 w-full items-center justify-center rounded-full border border-[#27272a] bg-[#121214] shadow-none hover:shadow-none px-8 text-base font-medium text-white transition-colors hover:border-[#3f3f46] hover:bg-[#1a1a1d] sm:h-14 sm:w-auto sm:text-lg"
                 >
                   开始使用
                   <ArrowRight className="ml-2 h-5 w-5" />

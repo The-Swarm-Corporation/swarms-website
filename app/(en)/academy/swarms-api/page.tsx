@@ -182,7 +182,7 @@ export default function SwarmsApiCoursePage() {
 
               <div className="mt-10 flex w-full flex-col items-center justify-center gap-3 sm:w-auto sm:flex-row">
                 <Button
-                  className="h-12 w-full rounded-full border border-[#27272a] bg-[#121214] px-8 text-base font-medium text-white hover:border-[#3f3f46] hover:bg-[#1a1a1d] sm:h-14 sm:w-auto sm:text-lg"
+                  className="h-12 w-full rounded-full border border-[#27272a] bg-[#121214] shadow-none hover:shadow-none px-8 text-base font-medium text-white hover:border-[#3f3f46] hover:bg-[#1a1a1d] sm:h-14 sm:w-auto sm:text-lg"
                   asChild
                 >
                   <Link href={`/academy/swarms-api/${courseParts[0].slug}`}>
@@ -375,7 +375,7 @@ export default function SwarmsApiCoursePage() {
                 </div>
                 <div className="flex flex-col gap-3 sm:flex-row">
                   <Button
-                    className="h-11 w-full rounded-full border border-[#27272a] bg-[#121214] px-6 text-sm font-medium text-white hover:border-[#3f3f46] hover:bg-[#1a1a1d] sm:w-auto"
+                    className="h-11 w-full rounded-full border border-[#27272a] bg-[#121214] shadow-none hover:shadow-none px-6 text-sm font-medium text-white hover:border-[#3f3f46] hover:bg-[#1a1a1d] sm:w-auto"
                     asChild
                   >
                     <Link href={`/academy/swarms-api/${courseParts[0].slug}`}>

@@ -9,7 +9,7 @@ import type { BlogPostMeta } from "@/lib/blog"
 import { BlogCard } from "@/components/blog/blog-card"
 
 export const NEWSLETTER_SUBSCRIBED_KEY = "swarms-newsletter-subscribed"
-const POPUP_SEEN_KEY = "swarms-newsletter-popup-seen"
+export const POPUP_SEEN_KEY = "swarms-newsletter-popup-seen"
 
 const ease: [number, number, number, number] = [0.22, 1, 0.36, 1]
 
@@ -121,7 +121,7 @@ export function HomeNewsletter({
       <button
         type="submit"
         disabled={isSubmitting || !email.trim()}
-        className="rounded-full border border-[#27272a] bg-[#121214] px-6 py-3 text-sm font-medium text-white transition-colors duration-300 hover:border-[#3f3f46] hover:bg-[#1a1a1d] disabled:pointer-events-none disabled:opacity-50"
+        className="rounded-full border border-[#27272a] bg-[#121214] shadow-none hover:shadow-none px-6 py-3 text-sm font-medium text-white transition-colors duration-300 hover:border-[#3f3f46] hover:bg-[#1a1a1d] disabled:pointer-events-none disabled:opacity-50"
       >
         {isSubmitting ? t.submitting : t.cta}
       </button>

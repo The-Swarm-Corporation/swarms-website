@@ -149,7 +149,7 @@ export default function SimulationsPage() {
 
               <div className="mt-10 flex w-full flex-col items-center justify-center gap-3 sm:w-auto sm:flex-row">
                 <Button
-                  className="h-12 w-full rounded-full border border-[#27272a] bg-[#121214] px-8 text-base font-medium text-white hover:border-[#3f3f46] hover:bg-[#1a1a1d] sm:h-14 sm:w-auto sm:text-lg"
+                  className="h-12 w-full rounded-full border border-[#27272a] bg-[#121214] shadow-none hover:shadow-none px-8 text-base font-medium text-white hover:border-[#3f3f46] hover:bg-[#1a1a1d] sm:h-14 sm:w-auto sm:text-lg"
                   asChild
                 >
                   <Link href="/hiring">
@@ -232,7 +232,7 @@ export default function SimulationsPage() {
                           size="sm"
                           className={
                             domain.cta.variant === "default"
-                              ? "w-full rounded-full border border-[#27272a] bg-[#121214] text-sm font-medium text-white hover:border-[#3f3f46] hover:bg-[#1a1a1d]"
+                              ? "w-full rounded-full border border-[#27272a] bg-[#121214] shadow-none hover:shadow-none text-sm font-medium text-white hover:border-[#3f3f46] hover:bg-[#1a1a1d]"
                               : "w-full rounded-full border-white/[0.14] bg-black text-sm font-medium text-white hover:border-white/30 hover:bg-white/[0.06] hover:text-white"
                           }
                           variant={domain.cta.variant === "default" ? "default" : "outline"}
@@ -279,7 +279,7 @@ export default function SimulationsPage() {
               </p>
               <div className="mt-8 flex w-full flex-col items-center justify-center gap-3 sm:w-auto sm:flex-row">
                 <Button
-                  className="h-11 w-full rounded-full border border-[#27272a] bg-[#121214] px-6 text-sm font-medium text-white hover:border-[#3f3f46] hover:bg-[#1a1a1d] sm:w-auto"
+                  className="h-11 w-full rounded-full border border-[#27272a] bg-[#121214] shadow-none hover:shadow-none px-6 text-sm font-medium text-white hover:border-[#3f3f46] hover:bg-[#1a1a1d] sm:w-auto"
                   asChild
                 >
                   <a href="https://github.com/kyegomez/swarms" target="_blank" rel="noopener noreferrer">
@@ -360,7 +360,7 @@ export default function SimulationsPage() {
               </p>
               <div className="flex w-full flex-col items-center justify-center gap-3 sm:w-auto sm:flex-row">
                 <Button
-                  className="h-11 w-full rounded-full border border-[#27272a] bg-[#121214] px-6 text-sm font-medium text-white hover:border-[#3f3f46] hover:bg-[#1a1a1d] sm:w-auto"
+                  className="h-11 w-full rounded-full border border-[#27272a] bg-[#121214] shadow-none hover:shadow-none px-6 text-sm font-medium text-white hover:border-[#3f3f46] hover:bg-[#1a1a1d] sm:w-auto"
                   asChild
                 >
                   <Link href="/hiring">

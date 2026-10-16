@@ -125,7 +125,7 @@ export default async function PositionPage({ params }: PageProps) {
               <a
                 href={apply.href}
                 {...applyTargetProps}
-                className="group inline-flex items-center gap-3 border border-[#27272a] bg-[#121214] text-white px-8 py-4 rounded-full font-medium text-base transition-all duration-300 hover:scale-[1.02] hover:border-[#3f3f46] hover:bg-[#1a1a1d]"
+                className="group inline-flex items-center gap-3 border border-[#27272a] bg-[#121214] shadow-none hover:shadow-none text-white px-8 py-4 rounded-full font-medium text-base transition-all duration-300 hover:scale-[1.02] hover:border-[#3f3f46] hover:bg-[#1a1a1d]"
               >
                 Apply for this role
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
@@ -222,7 +222,7 @@ export default async function PositionPage({ params }: PageProps) {
                     href={SWARMS_GITHUB_URL}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="group inline-flex items-center justify-center gap-2 rounded-full border border-[#27272a] bg-[#121214] px-6 py-3 text-sm font-medium text-white transition-colors hover:border-[#3f3f46] hover:bg-[#1a1a1d]"
+                    className="group inline-flex items-center justify-center gap-2 rounded-full border border-[#27272a] bg-[#121214] shadow-none hover:shadow-none px-6 py-3 text-sm font-medium text-white transition-colors hover:border-[#3f3f46] hover:bg-[#1a1a1d]"
                   >
                     <Github className="w-4 h-4" />
                     Swarms on GitHub
@@ -269,7 +269,7 @@ export default async function PositionPage({ params }: PageProps) {
             <a
               href={apply.href}
               {...applyTargetProps}
-              className="group inline-flex items-center gap-3 border border-[#27272a] bg-[#121214] text-white px-8 py-4 rounded-full font-medium text-base transition-all duration-300 hover:scale-[1.02] hover:border-[#3f3f46] hover:bg-[#1a1a1d]"
+              className="group inline-flex items-center gap-3 border border-[#27272a] bg-[#121214] shadow-none hover:shadow-none text-white px-8 py-4 rounded-full font-medium text-base transition-all duration-300 hover:scale-[1.02] hover:border-[#3f3f46] hover:bg-[#1a1a1d]"
             >
               {apply.type === 'email' ? 'Apply via Email' : 'Apply Now'}
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />

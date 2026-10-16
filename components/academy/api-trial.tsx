@@ -164,7 +164,7 @@ export function ApiTrial({
             type="button"
             onClick={run}
             disabled={running}
-            className="inline-flex items-center gap-2 rounded-full border border-[#27272a] bg-[#121214] px-5 py-2 text-xs font-medium text-white transition-colors hover:border-[#3f3f46] hover:bg-[#1a1a1d] disabled:pointer-events-none disabled:opacity-60"
+            className="inline-flex items-center gap-2 rounded-full border border-[#27272a] bg-[#121214] shadow-none hover:shadow-none px-5 py-2 text-xs font-medium text-white transition-colors hover:border-[#3f3f46] hover:bg-[#1a1a1d] disabled:pointer-events-none disabled:opacity-60"
           >
             {running ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
             {running ? "Running" : "Send request"}

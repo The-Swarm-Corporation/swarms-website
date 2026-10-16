@@ -56,7 +56,7 @@ export function ResearchHero() {
           </p>
           <div className="pointer-events-auto mt-10 flex w-full flex-col items-center justify-center gap-3 sm:w-auto sm:flex-row">
             <Button
-              className="h-11 w-full rounded-full border border-[#27272a] bg-[#121214] px-6 text-sm font-medium text-white hover:border-[#3f3f46] hover:bg-[#1a1a1d] sm:w-auto"
+              className="h-11 w-full rounded-full border border-[#27272a] bg-[#121214] shadow-none hover:shadow-none px-6 text-sm font-medium text-white hover:border-[#3f3f46] hover:bg-[#1a1a1d] sm:w-auto"
               asChild
             >
               <Link href="/hiring">

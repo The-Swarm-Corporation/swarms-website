@@ -214,7 +214,7 @@ export default function ApplicationsClientPage() {
                 transition={{ duration: 0.7, delay: 0.2, ease }}
               >
                 <Button
-                  className="h-12 w-full rounded-full border border-[#27272a] bg-[#121214] px-8 text-base font-medium text-white hover:border-[#3f3f46] hover:bg-[#1a1a1d] sm:h-14 sm:w-auto sm:text-lg"
+                  className="h-12 w-full rounded-full border border-[#27272a] bg-[#121214] shadow-none hover:shadow-none px-8 text-base font-medium text-white hover:border-[#3f3f46] hover:bg-[#1a1a1d] sm:h-14 sm:w-auto sm:text-lg"
                   asChild
                 >
                   <a href="#industry-applications">
@@ -1122,7 +1122,7 @@ export default function ApplicationsClientPage() {
                       Swarms AI is at the forefront of developing these next-generation multi-agent systems, pushing
                       the boundaries of what&apos;s possible with collaborative AI.
                     </p>
-                    <Button className="rounded-full border border-[#27272a] bg-[#121214] px-6 font-medium text-white hover:border-[#3f3f46] hover:bg-[#1a1a1d]" asChild>
+                    <Button className="rounded-full border border-[#27272a] bg-[#121214] shadow-none hover:shadow-none px-6 font-medium text-white hover:border-[#3f3f46] hover:bg-[#1a1a1d]" asChild>
                       <a
                         href="https://docs.swarms.world/examples/overviews/paper-implementations"
                         target="_blank"
@@ -1160,7 +1160,7 @@ export default function ApplicationsClientPage() {
               </div>
               <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
                 <Button
-                  className="h-11 w-full rounded-full border border-[#27272a] bg-[#121214] px-6 text-sm font-medium text-white hover:border-[#3f3f46] hover:bg-[#1a1a1d] sm:w-auto"
+                  className="h-11 w-full rounded-full border border-[#27272a] bg-[#121214] shadow-none hover:shadow-none px-6 text-sm font-medium text-white hover:border-[#3f3f46] hover:bg-[#1a1a1d] sm:w-auto"
                   asChild
                 >
                   <a href="https://cal.com/swarms/swarms-strategy-session" target="_blank" rel="noopener noreferrer">

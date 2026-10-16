@@ -318,7 +318,7 @@ export function InstallationClientPageZh() {
                 transition={{ duration: 0.7, delay: 0.2, ease }}
               >
                 <Button
-                  className="h-12 w-full rounded-full border border-[#27272a] bg-[#121214] px-8 text-base font-medium text-white hover:border-[#3f3f46] hover:bg-[#1a1a1d] sm:h-14 sm:w-auto sm:text-lg"
+                  className="h-12 w-full rounded-full border border-[#27272a] bg-[#121214] shadow-none hover:shadow-none px-8 text-base font-medium text-white hover:border-[#3f3f46] hover:bg-[#1a1a1d] sm:h-14 sm:w-auto sm:text-lg"
                   onClick={() => copyToClipboard("pip install swarms", "hero-copy")}
                 >
                   {copiedCommand === "hero-copy" ? (
@@ -634,7 +634,7 @@ export function InstallationClientPageZh() {
                   </a>
                 </Button>
                 <Button
-                  className="h-11 w-full rounded-full border border-[#27272a] bg-[#121214] px-6 text-sm font-medium text-white hover:border-[#3f3f46] hover:bg-[#1a1a1d] sm:w-auto"
+                  className="h-11 w-full rounded-full border border-[#27272a] bg-[#121214] shadow-none hover:shadow-none px-6 text-sm font-medium text-white hover:border-[#3f3f46] hover:bg-[#1a1a1d] sm:w-auto"
                   asChild
                 >
                   <a

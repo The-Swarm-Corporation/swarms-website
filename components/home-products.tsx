@@ -7,8 +7,8 @@ import { useGithubStars } from "@/hooks/use-github-stars"
 import { formatStarsShort } from "@/lib/github-stars"
 import Image from "next/image"
 import Link from "next/link"
-import { CopyButton } from "@/components/copy-button"
 import { CodeBlock } from "@/components/code-block"
+import { CodeRunTabs } from "@/components/code-run-tabs"
 
 const ease: [number, number, number, number] = [0.22, 1, 0.36, 1]
 
@@ -23,6 +23,9 @@ type Product = {
   docsLink: string
   docsLabel?: string
   code?: string
+  /** Command typed into the terminal under the code, and its illustrative output. */
+  command?: string
+  output?: string[]
   image?: string
 }
 
@@ -56,7 +59,19 @@ writer = Agent(
 workflow = SequentialWorkflow(
     agents=[researcher, writer]
 )
-final_post = workflow.run("AI history")`,
+final_post = workflow.run("AI history")
+print(final_post)`,
+    command: "python workflow.py",
+    output: [
+      "── Researcher · gpt-4o-mini",
+      "1956: the Dartmouth workshop coins \"artificial intelligence\".",
+      "1997: Deep Blue beats Kasparov. 2012: AlexNet starts the deep",
+      "learning era. 2017: the Transformer. 2022: ChatGPT reaches 100M users.",
+      "── Writer · gpt-4o-mini",
+      "From Dartmouth to ChatGPT: How AI Grew Up",
+      "In the summer of 1956, a small group of researchers met at Dartmouth",
+      "with a bold idea: machines could learn to think...",
+    ],
   },
   {
     title: "Swarms API",
@@ -84,7 +99,25 @@ response = requests.post(
     "https://api.swarms.world/v1/agent/completions",
     headers={"x-api-key": "your-api-key"},
     json=payload
-)`,
+)
+print(response.json())`,
+    command: "python agent.py",
+    output: [
+      "{",
+      '  "id": "agent-7c1e4f20",',
+      '  "outputs": [',
+      '    { "role": "Research Analyst",',
+      '      "content": "AI is changing healthcare in three places: faster',
+      "        diagnostics from imaging models, shorter drug discovery cycles,",
+      '        and less admin work for clinicians..." }',
+      "  ],",
+      '  "usage": {',
+      '    "input_tokens": 412,',
+      '    "output_tokens": 638,',
+      '    "total_tokens": 1050',
+      "  }",
+      "}",
+    ],
   },
   {
     title: "Swarms-RS",
@@ -111,8 +144,19 @@ async fn main() -> Result<()> {
 
     let result = workflow
         .run("BTC/USD").await?;
+    println!("{result}");
     Ok(())
 }`,
+    command: "cargo run --release",
+    output: [
+      "Compiling trading-strategy v0.1.0",
+      "Finished `release` profile in 6.84s",
+      "Running `target/release/trading-strategy`",
+      "── Market-Analyst",
+      "BTC/USD is holding above its 50-day moving average with rising volume.",
+      "── Risk-Manager",
+      "Cap position size at 2% of the portfolio, stop-loss 4% below entry.",
+    ],
   },
   {
     title: "Swarms Marketplace",
@@ -299,24 +343,19 @@ function ProductRow({
             )
           })()
         ) : (
-          <div className="overflow-hidden rounded-lg border border-white/[0.08] bg-[#0a0a0a]">
-            <div className="flex items-center gap-1.5 border-b border-white/[0.08] px-4 py-3">
-              <span className="h-2.5 w-2.5 rounded-full bg-white/[0.12]" />
-              <span className="h-2.5 w-2.5 rounded-full bg-white/[0.12]" />
-              <span className="h-2.5 w-2.5 rounded-full bg-white/[0.12]" />
-              <span className="ml-3 font-mono text-[11px] font-normal text-white/40">
-                {product.file}
-              </span>
-              <CopyButton value={product.code ?? ""} className="ml-auto" />
-            </div>
-            <div className="p-4 sm:p-5">
+          <CodeRunTabs
+            file={product.file ?? ""}
+            code={product.code ?? ""}
+            command={product.command}
+            output={product.output ?? []}
+            codeNode={
               <CodeBlock
                 code={product.code ?? ""}
                 file={product.file}
                 className="font-mono text-[11px] font-normal leading-relaxed sm:text-[12.5px]"
               />
-            </div>
-          </div>
+            }
+          />
         )}
       </div>
     </motion.div>

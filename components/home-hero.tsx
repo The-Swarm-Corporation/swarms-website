@@ -24,7 +24,7 @@ const LAYER_LINKS: Record<ProductId, string> = {
 // (the nav badge counts the main swarms repo only).
 const METRICS = [
   { value: "800K+", label: "Developers" },
-  { value: "40K+", label: "GitHub stars" },
+  { value: "53,745", label: "GitHub stars" },
   { value: "40%", label: "Of the Fortune 500" },
   { value: "2B+", label: "Agents created" },
 ]

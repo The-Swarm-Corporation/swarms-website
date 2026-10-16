@@ -51,7 +51,7 @@ export function Footer() {
                 <div>
                   <h2 className="text-xl sm:text-2xl font-bold text-white mb-3">Swarms</h2>
                   <p className="text-sm sm:text-base text-gray-400 leading-relaxed">
-                    Enabling organizations to become fully autonomous through multi-agent collaboration.
+                    Building the infrastructure for collective intelligence.
                   </p>
                 </div>
               </div>

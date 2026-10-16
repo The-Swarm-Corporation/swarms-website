@@ -1,12 +1,15 @@
 "use client"
 
+import { useCallback, useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { motion } from "framer-motion"
-import { ArrowRight } from "lucide-react"
-import { getPositionBySlug, Position } from "@/lib/positions"
+import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react"
+import { BlogCover } from "@/components/blog/blog-cover"
+import { getPositionBySlug, positions, Position } from "@/lib/positions"
 
 const ease: [number, number, number, number] = [0.22, 1, 0.36, 1]
 
+// Shown first; every other open role follows in the carousel.
 const FEATURED_ROLE_SLUGS = [
   "head-of-multi-agent-research",
   "front-end-engineer",
@@ -19,10 +22,74 @@ const featuredPositions = FEATURED_ROLE_SLUGS
   .map(getPositionBySlug)
   .filter((p): p is Position => Boolean(p))
 
-export function HomeHiring() {
+const orderedPositions = [
+  ...featuredPositions,
+  ...positions.filter((p) => !FEATURED_ROLE_SLUGS.includes(p.slug)),
+]
+
+// Same layout as BlogCard: a 16:9 cover, an uppercase meta line, the title,
+// and a two-line description.
+function RoleCard({ position }: { position: Position }) {
   return (
-    <section className="border-b border-white/[0.08] bg-black">
-      <div className="container px-4 py-16 sm:px-6 sm:py-24 lg:px-8 lg:py-32">
+    <Link
+      href={`/hiring/${position.slug}`}
+      data-carousel-card
+      className="group block w-[80vw] shrink-0 snap-start sm:w-[340px] lg:w-[384px]"
+    >
+      <div className="overflow-hidden rounded-xl border border-white/10">
+        <div className="relative aspect-video transition-transform duration-500 ease-out group-hover:scale-[1.03]">
+          {/* Same title-in-cover treatment BlogCover uses for posts without art */}
+          <BlogCover slug={position.slug} title={position.title} className="absolute inset-0" />
+        </div>
+      </div>
+      <div className="mt-4 flex items-center gap-2 text-xs font-medium uppercase tracking-[0.15em] text-white/40">
+        <span className="text-white/60">{position.department}</span>
+        <span aria-hidden="true">&middot;</span>
+        <span>{position.type}</span>
+      </div>
+      <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-white/45">{position.description}</p>
+    </Link>
+  )
+}
+
+export function HomeHiring() {
+  const scrollerRef = useRef<HTMLDivElement>(null)
+  const [canScrollPrev, setCanScrollPrev] = useState(false)
+  const [canScrollNext, setCanScrollNext] = useState(true)
+
+  const updateScrollState = useCallback(() => {
+    const el = scrollerRef.current
+    if (!el) return
+    setCanScrollPrev(el.scrollLeft > 4)
+    setCanScrollNext(el.scrollLeft + el.clientWidth < el.scrollWidth - 4)
+  }, [])
+
+  useEffect(() => {
+    updateScrollState()
+    window.addEventListener("resize", updateScrollState)
+    return () => window.removeEventListener("resize", updateScrollState)
+  }, [updateScrollState])
+
+  // Step one card forward or back, landing on its snap position.
+  const scrollCards = (direction: 1 | -1) => {
+    const el = scrollerRef.current
+    if (!el) return
+    const cards = Array.from(el.querySelectorAll<HTMLElement>("[data-carousel-card]"))
+    const inset = cards[0]?.offsetLeft ?? 0
+    const stops = cards.map((card) => card.offsetLeft - inset)
+    const target =
+      direction === 1
+        ? stops.find((stop) => stop > el.scrollLeft + 4)
+        : [...stops].reverse().find((stop) => stop < el.scrollLeft - 4)
+    el.scrollTo({ left: target ?? (direction === 1 ? el.scrollWidth : 0), behavior: "smooth" })
+  }
+
+  const navButton =
+    "flex h-11 w-11 items-center justify-center rounded-full border border-white/[0.14] bg-white/[0.04] text-white/70 transition-colors hover:bg-white/[0.1] hover:text-white disabled:pointer-events-none disabled:opacity-30"
+
+  return (
+    <section className="border-b border-white/[0.08] bg-black py-16 sm:py-24 lg:py-32">
+      <div className="container px-4 sm:px-6 lg:px-8">
         <motion.div
           className="mx-auto mb-10 flex max-w-7xl flex-col items-start justify-between gap-6 sm:mb-14 md:flex-row md:items-end"
           initial={{ opacity: 0, y: 20 }}
@@ -51,39 +118,54 @@ export function HomeHiring() {
             <ArrowRight className="ml-2 h-4 w-4" />
           </Link>
         </motion.div>
-
-        <motion.div
-          className="mx-auto grid max-w-7xl grid-cols-1 gap-px overflow-hidden rounded-lg border border-white/[0.08] bg-white/[0.08] sm:grid-cols-2 lg:grid-cols-5"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-100px" }}
-          transition={{ duration: 0.7, delay: 0.1, ease }}
-        >
-          {featuredPositions.map((position) => (
-            <Link
-              key={position.slug}
-              href={`/hiring/${position.slug}`}
-              className="group flex min-h-[200px] flex-col justify-between gap-6 bg-black p-5 sm:[&:last-child]:col-span-2 lg:[&:last-child]:col-span-1 transition-colors duration-300 hover:bg-[#0a0a0a] sm:min-h-[240px] sm:p-8"
-            >
-              <position.icon
-                className="h-5 w-5 text-white/50 transition-colors duration-300 group-hover:text-white"
-                strokeWidth={1.5}
-              />
-              <div>
-                <h3 className="mb-2 text-base font-medium text-white">
-                  {position.title}
-                </h3>
-                <p className="mb-3 font-mono text-[11px] uppercase tracking-[0.15em] text-white/40">
-                  {position.department} · {position.location}
-                </p>
-                <p className="text-sm font-normal leading-relaxed text-white/50">
-                  {position.description}
-                </p>
-              </div>
-            </Link>
-          ))}
-        </motion.div>
       </div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-100px" }}
+        transition={{ duration: 0.7, delay: 0.1, ease }}
+      >
+        {/* Starts at the content edge and bleeds off the right of the viewport */}
+        <div
+          ref={scrollerRef}
+          onScroll={updateScrollState}
+          aria-label="Open roles"
+          className="scrollbar-hide flex snap-x snap-mandatory gap-5 overflow-x-auto pb-2 sm:gap-6 [padding-inline:max(1rem,calc((100%_-_80rem)_/_2))] [scroll-padding-inline:max(1rem,calc((100%_-_80rem)_/_2))] sm:[padding-inline:max(1.5rem,calc((100%_-_80rem)_/_2))] sm:[scroll-padding-inline:max(1.5rem,calc((100%_-_80rem)_/_2))] lg:[padding-inline:max(2rem,calc((100%_-_80rem)_/_2))] lg:[scroll-padding-inline:max(2rem,calc((100%_-_80rem)_/_2))]"
+        >
+          {orderedPositions.map((position) => (
+            <RoleCard key={position.slug} position={position} />
+          ))}
+        </div>
+
+        <div className="container px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto mt-8 hidden max-w-7xl items-center justify-between gap-3 sm:flex">
+            <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-white/40">
+              {orderedPositions.length} open roles
+            </p>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => scrollCards(-1)}
+                disabled={!canScrollPrev}
+                aria-label="Previous roles"
+                className={navButton}
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => scrollCards(1)}
+                disabled={!canScrollNext}
+                aria-label="Next roles"
+                className={navButton}
+              >
+                <ChevronRight className="h-5 w-5" />
+              </button>
+            </div>
+          </div>
+        </div>
+      </motion.div>
     </section>
   )
 }

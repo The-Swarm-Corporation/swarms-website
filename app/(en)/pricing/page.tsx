@@ -364,7 +364,7 @@ export default function PricingPage() {
                 transition={{ duration: 0.7, delay: 0.2, ease }}
               >
                 <Button
-                  className="h-12 w-full rounded-full bg-white px-8 text-base font-medium text-black hover:bg-neutral-200 sm:h-14 sm:w-auto sm:text-lg"
+                  className="h-12 w-full rounded-full border border-[#27272a] bg-[#121214] px-8 text-base font-medium text-white hover:border-[#3f3f46] hover:bg-[#1a1a1d] sm:h-14 sm:w-auto sm:text-lg"
                   asChild
                 >
                   <a href="https://cloud.swarms.world/api-keys" target="_blank" rel="noopener noreferrer">
@@ -443,7 +443,7 @@ export default function PricingPage() {
                   <Button
                     className={
                       tier.highlight
-                        ? "w-full rounded-full bg-white font-medium text-black hover:bg-neutral-200"
+                        ? "w-full rounded-full border border-[#27272a] bg-[#121214] font-medium text-white hover:border-[#3f3f46] hover:bg-[#1a1a1d]"
                         : "w-full rounded-full border-white/[0.14] bg-black font-medium text-white hover:border-white/30 hover:bg-white/[0.06] hover:text-white"
                     }
                     variant={tier.highlight ? "default" : "outline"}
@@ -592,7 +592,7 @@ export default function PricingPage() {
                     </p>
                   </div>
                   <div className="flex flex-col gap-3 sm:flex-row">
-                    <Button className="rounded-full bg-white font-medium text-black hover:bg-neutral-200" asChild>
+                    <Button className="rounded-full border border-[#27272a] bg-[#121214] font-medium text-white hover:border-[#3f3f46] hover:bg-[#1a1a1d]" asChild>
                       <a href="https://cal.com/swarms/swarms-strategy-session" target="_blank" rel="noopener noreferrer">
                         Talk to sales
                         <ArrowRight className="ml-2 h-4 w-4" />
@@ -701,7 +701,7 @@ export default function PricingPage() {
               </div>
               <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
                 <Button
-                  className="h-11 w-full rounded-full bg-white px-6 text-sm font-medium text-black hover:bg-neutral-200 sm:w-auto"
+                  className="h-11 w-full rounded-full border border-[#27272a] bg-[#121214] px-6 text-sm font-medium text-white hover:border-[#3f3f46] hover:bg-[#1a1a1d] sm:w-auto"
                   asChild
                 >
                   <a href="https://cloud.swarms.world/api-keys" target="_blank" rel="noopener noreferrer">

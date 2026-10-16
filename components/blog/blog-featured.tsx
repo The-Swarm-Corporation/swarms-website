@@ -47,7 +47,7 @@ export function BlogFeatured({ post, locale = "en" }: { post: BlogPostMeta; loca
         <p className="mt-3 max-w-xl text-sm leading-relaxed text-white/60 line-clamp-2 sm:text-base">
           {post.description}
         </p>
-        <div className="mt-5 inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-medium text-black transition-colors duration-300 group-hover:bg-neutral-200">
+        <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-[#27272a] bg-[#121214] px-5 py-2.5 text-sm font-medium text-white transition-colors duration-300 group-hover:border-[#3f3f46] group-hover:bg-[#1a1a1d]">
           {t.read}
           <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5" />
         </div>

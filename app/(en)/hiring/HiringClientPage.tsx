@@ -244,7 +244,7 @@ const HiringClientPage = () => {
                 href={SWARMS_GITHUB_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-medium text-black transition-colors hover:bg-neutral-200"
+                className="group inline-flex items-center gap-2 rounded-full border border-[#27272a] bg-[#121214] px-6 py-3 text-sm font-medium text-white transition-colors hover:border-[#3f3f46] hover:bg-[#1a1a1d]"
               >
                 <Github className="h-4 w-4" />
                 Swarms on GitHub
@@ -499,7 +499,7 @@ const HiringClientPage = () => {
               href={GOOGLE_FORM_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="group inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-medium text-black transition-colors hover:bg-neutral-200"
+              className="group inline-flex items-center gap-2 rounded-full border border-[#27272a] bg-[#121214] px-6 py-3 text-sm font-medium text-white transition-colors hover:border-[#3f3f46] hover:bg-[#1a1a1d]"
             >
               Submit General Application
               <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />

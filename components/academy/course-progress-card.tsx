@@ -68,7 +68,7 @@ export function CourseProgressCard({ parts }: { parts: PartSummary[] }) {
         <div className="flex flex-col gap-2 sm:items-end">
           <Link
             href={`/academy/swarms-api/${firstIncomplete.slug}`}
-            className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-2.5 text-sm font-medium text-black transition-colors hover:bg-neutral-200"
+            className="inline-flex items-center gap-2 rounded-full border border-[#27272a] bg-[#121214] px-6 py-2.5 text-sm font-medium text-white transition-colors hover:border-[#3f3f46] hover:bg-[#1a1a1d]"
           >
             {started ? `Continue Part ${firstIncomplete.part}` : "Start Part 1"}
             <ArrowRight className="h-4 w-4" />

@@ -32,11 +32,6 @@ export function HomeHero() {
 
   return (
     <section className="relative flex min-h-screen items-center overflow-hidden border-b border-white/[0.08] bg-black">
-      {/* Hairline grid background */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:72px_72px] [mask-image:radial-gradient(ellipse_75%_70%_at_50%_35%,black_25%,transparent_100%)]"
-      />
       {/* Soft monochrome glow */}
       <div
         aria-hidden="true"
@@ -75,7 +70,7 @@ export function HomeHero() {
 
           <motion.h1
             id="hero-title"
-            className="font-bold leading-[0.95] tracking-tighter text-white"
+            className="bg-gradient-to-b from-white from-20% to-[#5a5a60] bg-clip-text font-bold leading-[0.95] tracking-tighter text-transparent"
             style={{ fontSize: "clamp(4.5rem, 13vw, 11rem)" }}
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
@@ -101,7 +96,7 @@ export function HomeHero() {
             transition={{ duration: 0.7, delay: 0.2, ease }}
           >
             <Button
-              className="h-12 w-full rounded-full bg-white px-8 text-base font-medium text-black hover:bg-neutral-200 sm:h-14 sm:w-auto sm:text-lg"
+              className="h-12 w-full rounded-full border border-[#27272a] bg-[#121214] px-8 text-base font-medium text-white hover:border-[#3f3f46] hover:bg-[#1a1a1d] sm:h-14 sm:w-auto sm:text-lg"
               asChild
             >
               <a

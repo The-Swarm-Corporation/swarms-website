@@ -376,7 +376,7 @@ export default function MarketplacePage() {
                 transition={{ duration: 0.7, delay: 0.2, ease }}
               >
                 <Button
-                  className="h-12 w-full rounded-full bg-white px-8 text-base font-medium text-black hover:bg-neutral-200 sm:h-14 sm:w-auto sm:text-lg"
+                  className="h-12 w-full rounded-full border border-[#27272a] bg-[#121214] px-8 text-base font-medium text-white hover:border-[#3f3f46] hover:bg-[#1a1a1d] sm:h-14 sm:w-auto sm:text-lg"
                   asChild
                 >
                   <a href="https://swarms.world" target="_blank" rel="noopener noreferrer">
@@ -451,7 +451,7 @@ export default function MarketplacePage() {
                   Load anything you buy straight into the Swarms framework in a few lines.
                 </p>
                 <Button
-                  className="w-full rounded-full bg-white font-medium text-black hover:bg-neutral-200 sm:w-auto"
+                  className="w-full rounded-full border border-[#27272a] bg-[#121214] font-medium text-white hover:border-[#3f3f46] hover:bg-[#1a1a1d] sm:w-auto"
                   asChild
                 >
                   <a href="https://swarms.world/platform/registry" target="_blank" rel="noopener noreferrer">
@@ -644,7 +644,7 @@ export default function MarketplacePage() {
                 ))}
                 <div className="flex flex-wrap gap-3 pt-3">
                   <Button
-                    className="rounded-full bg-white text-sm font-medium text-black hover:bg-neutral-200"
+                    className="rounded-full border border-[#27272a] bg-[#121214] text-sm font-medium text-white hover:border-[#3f3f46] hover:bg-[#1a1a1d]"
                     asChild
                   >
                     <a href="https://swarms.world/mcp" target="_blank" rel="noopener noreferrer">
@@ -872,7 +872,7 @@ export default function MarketplacePage() {
               </div>
               <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
                 <Button
-                  className="h-11 w-full rounded-full bg-white px-6 text-sm font-medium text-black hover:bg-neutral-200 sm:w-auto"
+                  className="h-11 w-full rounded-full border border-[#27272a] bg-[#121214] px-6 text-sm font-medium text-white hover:border-[#3f3f46] hover:bg-[#1a1a1d] sm:w-auto"
                   asChild
                 >
                   <a href="https://swarms.world" target="_blank" rel="noopener noreferrer">

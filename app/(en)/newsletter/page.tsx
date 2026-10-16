@@ -163,7 +163,7 @@ export default function NewsletterPage() {
                 <Button
                   type="submit"
                   disabled={isSubmitting || !email.trim()}
-                  className="h-12 min-h-[44px] w-full flex-shrink-0 rounded-full bg-white px-6 text-base font-medium text-black hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-50 sm:h-14 sm:min-h-[48px] sm:w-auto sm:px-8 sm:text-lg"
+                  className="h-12 min-h-[44px] w-full flex-shrink-0 rounded-full border border-[#27272a] bg-[#121214] px-6 text-base font-medium text-white hover:border-[#3f3f46] hover:bg-[#1a1a1d] disabled:cursor-not-allowed disabled:opacity-50 sm:h-14 sm:min-h-[48px] sm:w-auto sm:px-8 sm:text-lg"
                 >
                   {isSubmitting ? (
                     <>

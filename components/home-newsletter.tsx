@@ -121,7 +121,7 @@ export function HomeNewsletter({
       <button
         type="submit"
         disabled={isSubmitting || !email.trim()}
-        className="rounded-full bg-white px-6 py-3 text-sm font-medium text-black transition-colors duration-300 hover:bg-neutral-200 disabled:pointer-events-none disabled:opacity-50"
+        className="rounded-full border border-[#27272a] bg-[#121214] px-6 py-3 text-sm font-medium text-white transition-colors duration-300 hover:border-[#3f3f46] hover:bg-[#1a1a1d] disabled:pointer-events-none disabled:opacity-50"
       >
         {isSubmitting ? t.submitting : t.cta}
       </button>

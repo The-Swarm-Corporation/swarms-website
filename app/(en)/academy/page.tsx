@@ -147,7 +147,7 @@ export default function AcademyPage() {
                 transition={{ duration: 0.7, delay: 0.2, ease }}
               >
                 <Button
-                  className="h-12 w-full rounded-full bg-white px-8 text-base font-medium text-black hover:bg-neutral-200 sm:h-14 sm:w-auto sm:text-lg"
+                  className="h-12 w-full rounded-full border border-[#27272a] bg-[#121214] px-8 text-base font-medium text-white hover:border-[#3f3f46] hover:bg-[#1a1a1d] sm:h-14 sm:w-auto sm:text-lg"
                   asChild
                 >
                   <Link href="/academy/swarms-api">

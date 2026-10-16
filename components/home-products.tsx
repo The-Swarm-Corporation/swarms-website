@@ -230,7 +230,7 @@ function ProductRow({
         </p>
         <div className="flex flex-wrap items-center gap-3 pt-2">
           <Button
-            className="h-10 rounded-full bg-white px-5 text-sm font-medium text-black hover:bg-neutral-200"
+            className="h-10 rounded-full border border-[#27272a] bg-[#121214] px-5 text-sm font-medium text-white hover:border-[#3f3f46] hover:bg-[#1a1a1d]"
             asChild
           >
             {product.link.startsWith("/") ? (

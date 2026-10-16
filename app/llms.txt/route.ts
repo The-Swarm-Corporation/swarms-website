@@ -22,6 +22,8 @@ export function GET() {
     { path: "/open-source", title: "Open Source", description: "The open-source repositories behind the Swarms ecosystem." },
     { path: "/research", title: "Research", description: "Research papers from the Swarms team: RouteHub and GraphWorkflow." },
     { path: "/mobile", title: "Mobile App", description: "Swarms for iOS and Android." },
+    { path: "/about", title: "About Swarms", description: "How Swarms started: a 2023 research project putting multiple GPT-3 models in a group chat, which became the open-source Swarms framework and the full multi-agent stack." },
+    { path: "/story", title: "The Swarms Story", description: "Timeline of every Swarms release with dates: Swarms Python (May 2023), Swarms Marketplace (Aug 2024), Swarms Rust (Mar 2025), Swarms API (May 2025), Swarms Cloud (Jun 2026), AgentHQ (Aug 2026), and RouteHub (Oct 2026)." },
     { path: "/hiring", title: "Hiring", description: "Open roles at Swarms." },
   ]
 

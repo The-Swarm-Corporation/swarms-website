@@ -39,6 +39,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/agenthq", priority: 0.7, changeFrequency: "weekly" },
     { path: "/programs", priority: 0.6, changeFrequency: "monthly" },
     { path: "/programs/startups", priority: 0.6, changeFrequency: "monthly" },
+    { path: "/about", priority: 0.7, changeFrequency: "monthly" },
+    { path: "/story", priority: 0.7, changeFrequency: "monthly" },
     { path: "/hiring", priority: 0.6, changeFrequency: "weekly" },
     { path: "/newsletter", priority: 0.5, changeFrequency: "monthly" },
   ]

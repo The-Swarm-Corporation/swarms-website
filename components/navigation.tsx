@@ -524,6 +524,12 @@ export function Navigation() {
                             </TabsContent>
 
                             <TabsContent value="about" className="space-y-1 mt-0 h-full">
+                              <FuturisticMenuItem icon={Users} href="/about" iconColor="red">
+                                About Us
+                              </FuturisticMenuItem>
+                              <FuturisticMenuItem icon={Calendar} href="/story" iconColor="red">
+                                Our Story
+                              </FuturisticMenuItem>
                               <FuturisticMenuItem icon={Briefcase} href="/hiring" iconColor="red">
                                 Hiring
                               </FuturisticMenuItem>
@@ -845,6 +851,14 @@ export function Navigation() {
                     Swarms RS
                   </Link>
                 </div>
+
+                <Link
+                  href="/about"
+                  className="block text-sm font-semibold text-white/85 hover:text-white transition-all duration-300 hover:bg-white/[0.05] p-3 rounded-lg border border-transparent hover:border-white/10"
+                  onClick={() => setIsOpen(false)}
+                >
+                  About Us
+                </Link>
 
                 <Link
                   href="/hiring"

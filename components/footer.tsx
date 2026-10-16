@@ -194,6 +194,8 @@ export function Footer() {
                 {[
                   { name: "Pricing", icon: DollarSign, url: "/pricing" },
                   { name: "Book a Call", icon: Phone, url: "https://cal.com/swarms" },
+                  { name: "About Us", icon: Building, url: "/about" },
+                  { name: "Our Story", icon: Calendar, url: "/story" },
                   { name: "Careers", icon: Users, url: "/hiring" },
                   { name: "Status Page", icon: Activity, url: "https://status.swarms.ai" },
                   { name: "Customer Support", icon: MessageCircle, url: "https://swarms.world/support" },

@@ -88,8 +88,9 @@
     @apply bg-background text-foreground;
     font-family: inherit;
     font-weight: 600;
-    overflow-x: hidden;
-    overflow-y: auto;
+    /* clip (not hidden) so body does not become a scroll container, which
+       would silently break position: sticky on every page */
+    overflow-x: clip;
     -webkit-overflow-scrolling: touch;
   }
   
@@ -549,7 +550,7 @@
     
     body {
       -webkit-overflow-scrolling: touch;
-      overflow-x: hidden;
+      overflow-x: clip;
     }
   }
   

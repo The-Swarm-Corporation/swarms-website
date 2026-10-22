@@ -1,0 +1,416 @@
+---
+title: "Swarms API 更新日志：2026 年 3 月至 10 月"
+description: "八个月的 API 工作汇于一处：OpenAI、Anthropic 与 TypeSafe 兼容端点、按模型计价加固定服务费、真正的逐 token 流式输出、决策模型、备用模型、工具调用、任务结果查询端点、四区域部署，以及一长串针对计费、校验与错误处理的修复，并专设一节说明现有客户端需要了解的变化。"
+date: "2026-10-22"
+author: "Swarms 团队"
+categories: ["产品"]
+readTime: "32 分钟阅读"
+featured: true
+image: "/swarms_api_changelog.png"
+---
+
+# Swarms API 更新日志：2026 年 3 月至 10 月
+
+本文完整记录了 2026 年 3 月 1 日至 10 月 22 日期间 Swarms API（[api.swarms.world](https://api.swarms.world)）上线的全部内容：206 个已合并的 Pull Request，共 352 次提交。本文只覆盖 API 本身。控制台 [cloud.swarms.world](https://cloud.swarms.world) 有自己的更新日志，最近一份覆盖 [8 月 3 日至 9 月 19 日](/zh/blog/swarms-cloud-changelog-august-september)。
+
+这段时间可以清晰地分为两半。3 月到 6 月相对安静，不到 60 次提交，主要围绕兼容性：OpenAI 形态的 chat 端点上线，流式输出变成了真正的逐 token 流式，swarm 路由器获得了框架早已具备的调优参数。随后节奏发生了变化。7 月一个月的提交数就超过了此前四个月的总和，8 月、9 月和 10 月各自都超过了一百次。后半段正是计费被重建、API 不再对没有产出的运行收费、新端点族落地、服务迁移到四区域部署的时期。
+
+关于写法有两点说明。本文列出的是今天已经在线的内容，因此上线后又被替代的工作会以其最终形态来描述，只在必要时提及中间步骤。修复则从客户端的角度来写：你以前会看到什么，现在会看到什么。
+
+## 概览
+
+今年 API 发生了三件事，下面几乎每一条记录都归属于其中之一。
+
+**它成了现有 SDK 的直接替代品。** 3 月时 API 只讲一种形态，也就是它自己的形态。到了 10 月，它还能以 OpenAI 的 chat 与 responses 形态、Anthropic 的 messages 形态和 TypeSafe 的 system 形态作答，全部走同一条智能体路径、同一套计费，因此基于其中任何一种 SDK 编写的客户端只需改一个 base URL 就能工作。这股推力也深入到了请求内部：工具调用、停止序列、多轮历史、多模态内容和流式输出，如今的表现都与这些 SDK 的预期一致。
+
+**计费被彻底重建。** 费用过去是在每个端点内部各自复制的一份相同算术里计算的，所有模型用同一个固定费率，并以三个不同的键发布。现在它在一个模块中计算，按每个模型自己的价格加一笔固定服务费，以一个键发布，并且只从已购买的额度中扣除。沿途，API 不再对那些本就不该收费的东西收费：没有产出的运行、不存在的模型、被供应商拒绝的请求、被当作输出重复计数的提示词，以及失败运行上的附加费。
+
+**服务更快了，对失败也更诚实了。** 按网络等待而非 CPU 核心数来确定线程池大小、纯 ASGI 中间件、真正的 token 流式、线路上的 orjson 与 zstd、把计费和遥测移出事件循环，这些加在一起，让服务器能处理的并发量是 3 月时的数倍。而一长串过去会在运行深处才失败、或者会按你没要求的方式运行的请求，现在会在门口就以 422 失败，并明确指出合法的取值；供应商的错误则会以供应商自己的原因和状态码返回。
+
+在这三条之下，API 新增了两个端点族（决策模型和自动智能体构建器），获得了任务结果查询、带价格的模型列表和自描述的 swarm 目录，并迁移到了带延迟路由的四区域部署。重点内容之后的一节会按日期列出现有客户端能感知到的每一处变化。
+
+## 重点内容
+
+最值得了解的十项变化，按上线顺序排列。
+
+1. **OpenAI 兼容的 `POST /v1/chat/completions`（3 月 27 日）。** 为 OpenAI SDK 提供只需替换 base URL 的直接替代，接受 `Authorization: Bearer` 与 `x-api-key` 两种认证，支持多模态内容片段和 OpenAI 错误信封；此后又陆续加入了 `max_loops`、`tools`、`tool_choice`、`stop`、真正的 token 流式和正确的多轮历史。
+2. **逐 token 流式（5 月 8 日至 13 日）。** 智能体调用以及两种可流式的 swarm 类型会随着 token 生成发送 SSE 块。
+3. **`/v1/swarms/available` 描述每一种架构（7 月 29 日）。** 名称、描述、类别、最适用场景、该架构特有的 `SwarmSpec` 参数和文档链接，全部从框架自身的类型列表生成，因此不会过时。
+4. **备用模型（8 月 3 日）。** 每个智能体规格上都有 `fallback_models` 和 `fallback_model_name`。主模型出错时，智能体会在列表中的下一个模型上重试，并且每个备用模型都按与主模型相同的规则校验。
+5. **`POST /v1/auto-agent-builder/completions`（8 月 6 日）。** 描述一个任务，构建器智能体返回一组完整的智能体配置，无需修改即可直接提交给 swarm 端点。
+6. **处处都是 `usage.total_cost`（8 月 30 日）。** 每个端点都用同一个键表示单次运行的费用。此前有四个端点用其他名字发布它，这就是控制台对它们显示 $0 的原因。
+7. **OpenAI 端点上的工具调用（9 月 25 日）。** `tools` 与 `tool_choice` 得到遵守，`tool_calls` 随消息返回，`finish_reason` 为 `tool_calls`、`length` 或 `stop`，`role: "tool"` 消息可通过历史回放。
+8. **决策模型（10 月 3 日）。** 一个新的端点族，带有自己的定价模型列表和 TypeSafe 兼容路由。
+9. **按模型计价（10 月 12 日）。** 供应商价格乘以 1.15，`/v1/models/available`、`/v1/models` 和新增的 `GET /v1/models/pricing` 都会发布计费实际使用的费率。
+10. **`GET /v1/job/{job_id}`（10 月 16 日）。** 用响应返回的 `job_id` 取回任意一次历史调用的存储结果，或用 `batch_id` 取回一次智能体批量运行的结果。
+
+## 已经在用 API 的用户需要了解什么
+
+本节汇集了现有客户端能感知到的每一处变化，按影响的方面分组。日期为变更上线的当天。
+
+### 计费
+
+| 项目 | 现在 | 起始日期 |
+| --- | --- | --- |
+| Token 价格 | 每个模型的供应商价格乘以 1.15。仅当模型没有列出价格时，才使用每百万 token 输入 $6.50、输出 $18.50 的兜底费率 | 10 月 12 日 |
+| 单智能体费 | swarm、graph、grid 和构建器运行中每个智能体 $0.01。从免费模型回退到付费模型的智能体仍需支付 | 未变 |
+| 图片 | 每张图片 $0.25，`img` 与 `imgs` 合并计数 | 9 月 22 日 |
+| `auto_search` | 每次启用它的调用 $0.04，计入 `usage.total_cost`，仅在运行成功时收取 | 10 月 12 日 |
+| MCP 服务器与 `web_scraper` | 免费。只对 token 计费 | 10 月 12 日 |
+| OpenRouter 免费模型 | $0：无 token 费用、无单智能体费、永不使用兜底费率。运行仍计入速率限制 | 10 月 16 日 |
+| 夜间折扣 | 太平洋时间晚 8 点至早 6 点 token 费用五折，仅限付费套餐 | 10 月 22 日 |
+| 推理智能体调用 | 与其他端点一样计费。8 月 16 日之前从未扣费 | 8 月 16 日 |
+| 失败的运行 | 模型未知、供应商拒绝请求或没有产出时，不收取任何费用 | 9 月 24 日 |
+
+曾短暂出现在 `usage` 中的服务费系数和按智能体的模型明细属于内部信息，不再序列化。`GET /v1/usage/costs` 列出已发布的费率，`GET /v1/models/pricing?model_name=...` 给出单个模型的价格。
+
+### 额度
+
+- **只扣除已购买的额度。** 扣费和检查余额时不再读取 `free_credit` 和 `referral_credits`。402 响应会说明这一点并链接到 [cloud.swarms.world/settings](https://cloud.swarms.world/settings)。自 10 月 15 日起。
+- **$1.00 的最低余额**会在任何计费请求运行之前检查。自 7 月 11 日起。
+- **额度账本记录精确的费用。** 过去每条记录都会被截断为整数。自 8 月 6 日起。
+
+### 响应形态
+
+- `usage.total_cost` 是每个端点上单次运行的费用。在 graph 工作流、批量 grid 和自动智能体构建器上它曾是 `usage.token_cost`；在 swarm 调用上它曾嵌套在 `billing_info` 里，后者保留用于费用明细。
+- 请求携带 `tasks` 和 `messages` 时，swarm 调用会把它们原样回传。
+- 批量 grid 运行中有一个智能体失败时，该智能体以 `{"error": ...}` 条目返回，`status` 为 `"partial"`，而不是 500。如果所有智能体都失败，响应为 502 且不收费。
+- 部分节点失败的 graph 工作流会返回每个节点的输出（包括错误文本），并只对节点有应答的智能体计费。
+- 失败的流式智能体与 chat 调用会把供应商的原因作为错误帧发送，而不是以 `finish_reason: "stop"` 结束。
+
+### 迁移或移除的端点
+
+| 旧 | 现在 |
+| --- | --- |
+| `GET /v1/swarm/logs` | `GET /v1/account/logs`。旧路径仍可用，并标记为已弃用 |
+| `GET /v1/metrics/summary` | `GET /v1/account/metrics/summary`。旧路径仍可用，并标记为已弃用 |
+| `GET /v1/premium/endpoints` | `GET /v1/account/premium-endpoints` |
+| `POST /v1/decision-model/completions`、`GET /v1/decision-model/models` | `POST /v1/decision/completions`、`GET /v1/decision/models`。旧路径自 10 月 8 日起返回 404 |
+| `POST /v1/marketplace/agents` | 6 月 21 日移除。智能体规格上的 `marketplace_prompt_id` 仍可用 |
+| `/v1/advanced-research/*` | 6 月 15 日移除 |
+| 自动 swarm 构建器 | 6 月 19 日移除。后继者是 `POST /v1/auto-agent-builder/completions` |
+| `POST /v1/swarm/types` | 3 月 23 日移除。请使用 `GET /v1/swarms/available` |
+
+### 现在会在前端被拒绝的请求
+
+下面每一项过去都会被接受，然后在运行中途失败、按你没要求的方式运行，或者运行并收费。现在它们会在任何模型调用或扣费之前返回 4xx。
+
+- 未知的模型名返回 404 并指明该模型。OpenAI 客户端会收到 `model_not_found`。
+- Ollama 和 Hugging Face 的模型 id 返回 400，并指向提供同样开源权重模型的 OpenRouter。
+- `temperature` 超出 0 到 2、`reasoning_effort` 超出支持集合、`heavy_swarm_variant` 不是 `default`、`medium` 或 `heavy`，都返回 422。
+- 在 swarm、智能体、推理智能体和 chat 调用上，`max_loops` 低于 1 或高于上限返回 422。`"auto"` 仍然可以通过。
+- 三个批量端点的请求体都以 50 项为上限，并且智能体批量端点现在真的接受 50 项。在 8 月 19 日之前，它声称 50 却拒绝任何超过 10 的请求。
+- swarm 阵容、graph 阵容和 handoff 列表都以同一个阵容上限约束。
+- 推理智能体端点的 `swarm_type` 只接受 `AgentJudge`、`ReflexionAgent`、`self-consistency` 和 `consistency-agent`。默认值为 `self-consistency`。
+- `selected_tools` 含有未知名称时返回 422 并列出允许的工具。以字符串传入的单个名称会被视为单元素列表；过去它会被逐字符迭代。
+- 同时发送 `tasks` 和 `task` 或 `messages` 会被拒绝，而不是静默地只运行一个任务。
+- 缺少 `source` 或 `target` 的 graph 边会被拒绝，而不是被丢弃。
+- 批量 grid 上的 `imgs` 返回 422，因为 grid 无法转发图片。
+- chat 调用上的 `stop` 接受一个字符串或最多四个字符串。
+
+### 认证与错误
+
+- 未知、已吊销或格式错误的 API key 在每条路由上都返回 401。过去在某些路由上是 400，另一些是 403，格式错误时是 500。
+- 查询 key 时的数据库故障返回可重试的 5xx，而不是让客户端去轮换 key 的 403。
+- 订阅查询失败返回 503，而不是静默地把付费账户当作免费层处理。
+- `/v1/models` 和 `/v1/chat/completions` 对每一种错误（包括 500）都返回 OpenAI 错误信封。
+- 429 会转发上游的 `Retry-After`，API 自身的 429 会报告真正阻塞你的时间窗口，因此被小时级限制挡住的调用方不会再被告知 60 秒后重试。
+- 每个校验错误都会链接到该字段的文档页面。
+
+### 默认值
+
+- 默认智能体模型是 `claude-sonnet-5`。推理智能体的默认值也从一个已退役的 Claude Sonnet 4 id 迁移到了这里。
+- 除非你设置了 `temperature`，否则不会发送它，由供应商的默认值生效。`top_p` 可用。`dynamic_temperature_enabled` 默认为 false。
+- 只有在你设置时才传递 `reasoning_effort`。可接受的梯度在供应商支持的范围内从 `low` 到 `max`，默认 `max_tokens` 为 16,000。
+- 对 Claude 5 系列模型会丢弃推理参数，直到固定版本的 LiteLLM 能以 Anthropic 接受的形态发送它们为止，因此这些模型会在没有扩展思考的情况下运行，而不是什么都不返回。
+- `GET /v1/account/logs` 返回最新的 1,000 条调用，最新在前，`count` 是账户下所有 key（包括已轮换的 key）的真实总数。
+
+### 速率限制
+
+- 每个经过认证的响应都携带 `X-RateLimit-Limit-Minute`、`X-RateLimit-Remaining-Minute`、对应的小时与天级头、`X-RateLimit-Reset` 和 `X-RateLimit-Tier`。
+- 免费层允许每分钟 100 次、每小时 350 次、每天 1,200 次请求，每个智能体 200,000 token。付费层允许每分钟 2,000 次，每个智能体 2,000,000 token。
+- 只有计费的工作才计入限制。过去为每个请求写入的遥测行也会计入，因此一个空闲的仪表盘就可能耗尽每分钟的额度。
+- 免费层的模型限制只适用于各实验室当前的顶级模型。中端和小型模型对免费 key 开放。
+
+### API 运行在哪里
+
+自 10 月 22 日起，API 运行在 ECS Fargate 的四个区域：`us-east-1`（弗吉尼亚）、`us-west-1`（加利福尼亚）、`ap-southeast-1`（新加坡）和 `eu-central-1`（法兰克福）。`api.swarms.world` 会路由到健康检查通过的最近区域，每个区域还有形如 `<region>.api.swarms.world` 的固定主机名，供希望固定在一个区域的客户端使用。响应会根据 `Accept-Encoding` 以 zstd 或 gzip 压缩。
+
+## 3 月
+
+OpenAI 兼容端点到来的月份。
+
+- **3 月 23 日。** 请求路径不再为每个请求创建线程池，改为复用一个模块级执行器；一次请求中对每个智能体重复运行多次的 token 计数被合并为一次。移除了未使用的 `POST /v1/swarm/types` 路由。
+- **3 月 24 日。** LiteLLM 被固定到特定版本，这样依赖更新就不会在部署时改变模型行为。
+- **3 月 26 日。** 拒绝 Hugging Face 模型 id，因为它们无法通过 API 提供服务。
+- **3 月 27 日。** **`POST /v1/chat/completions` 上线**，兼容 OpenAI，因此 OpenAI SDK 客户端只需修改 base URL 即可工作。`Authorization: Bearer <key>` 与 `x-api-key` 都被接受。随后三天的跟进修复让它经受住了真实 SDK 的考验：多模态内容片段会被解析而不是字符串化，图片 URL 映射到智能体的图片字段，错误以 `{"error": {"message": ...}}` 而非 FastAPI 的 `{"detail": ...}` 返回，`n > 1` 和没有用户消息的请求会以清晰的错误被拒绝，非流式路径不再阻塞事件循环。
+
+## 4 月
+
+- **4 月 1 日。** OpenAI 兼容端点支持 `max_loops`，通过 SDK 的 `extra_body` 发送，因此 OpenAI 客户端也能使用多轮循环的智能体推理。此前它被硬编码为 1。
+- **4 月 13 日。** 压缩协商在两处得到修复：通配 `Accept-Encoding` 总是选中服务器列表中的第一个编解码器，而未安装的编解码器仍会被提供。校验错误不再泄露 Pydantic 的内部字段，一个兜底处理器把逃逸的异常变成干净的 500，HTTP 与校验错误会在服务端记录日志。
+- **4 月 21 日。** **每个经过认证的响应都带有 `X-RateLimit-*` 头**，429 带有 `Retry-After`。同一天，遥测写入被移到响应发送之后，不再给每个请求的延迟增加一次数据库往返。
+- **4 月 26 日。** 智能体与 swarm 调用从事件循环移入线程池。实测在四个并发请求下吞吐量达到 3.7 倍。修正了七个声明为 async 却包裹同步工作的路由处理器，并新增了覆盖 OpenAI、Anthropic、Gemini、xAI 和 Groq 的供应商测试套件。
+
+## 5 月
+
+- **5 月 5 日。** 默认推理强度降为 `low`，API 构建的智能体实例禁用了持久记忆，因此一个请求的状态不会泄漏到另一个请求。
+- **5 月 8 日。** **`POST /v1/agent/completions` 上真正的逐 token 流式。** 流式路径挂接了智能体的 token 回调，因此 SSE 块会随着模型生成到达，而不是在运行结束之后。
+- **5 月 13 日。** **`POST /v1/swarm/completions` 上的逐 token 流式**，适用于 `SequentialWorkflow` 和 `AgentRearrange`，即框架能够流式输出的两种架构。其他 swarm 类型保持先运行后发送的行为。
+- **5 月 28 日。** `temperature` 变为可选。不设置时不会发送任何值，由供应商默认值生效。OpenAI 兼容端点按原样转发请求中的 temperature。
+
+## 6 月
+
+- **6 月 10 日。** 在缺少流式方法的框架版本上流式运行 `SequentialWorkflow` 和 `AgentRearrange` 时，会返回 200、一个 SSE 错误事件且没有任何数据块。现在路径会先检查该方法，缺失时回退为完整的非流式响应。
+- **6 月 11 日。** OpenAI 兼容端点只从字符串结果中提取助手文本，因此返回消息字典或列表的非 OpenAI 供应商会得到原始 repr。现在所有结果形态都能处理。
+- **6 月 13 日。** **`SwarmSpec` 上新增四个 swarm 路由器调优参数：** 用于 `CouncilAsAJudge` 的 `council_judge_model_name`、用于 `LLMCouncil` 的 `chairman_model`、用于 `HeavySwarm` 的 `heavy_swarm_variant`，以及 `multi_agent_collab_prompt`。默认值与框架一致，省略时行为不变。
+- **6 月 15 日。** 移除了高级研究端点。swarm 路由器逻辑移入独立模块，并开始转发规格中的路由器参数。没有智能体列表的 `HeavySwarm` 请求不再在长度检查时崩溃。启用了 `/docs` 上的交互式 API 文档。
+- **6 月 18 日。** **速率限制只统计计费的工作。** 计数器此前包含了为每个请求写入的遥测行，因此后台轮询的仪表盘几秒钟就会耗尽每分钟额度，真正的调用反而收到 429。推理智能体的运行作为调用记录，因此能正确计数；完整的工作流和流式输出现在也会被记录，这正是控制台历史页面读取的内容。
+- **6 月 19 日。** 移除了自动 swarm 构建器端点。
+- **6 月 21 日。** 移除了 `POST /v1/marketplace/agents`。智能体规格上的 `marketplace_prompt_id` 是智能体参数，予以保留。
+
+## 7 月
+
+节奏发生变化的月份：82 次提交。
+
+**7 月 2 日。** 带批量 `tasks` 的 swarm 流式运行会在回退路径中以 `'list' object has no attribute 'get'` 崩溃。已修复。
+
+**7 月 3 日。** OpenAI 形态的 `GET /v1/models`，因此 OpenAI SDK 的 `client.models.list()` 可以工作。
+
+**7 月 3 日至 6 日：Freedom Mode。** 为庆祝独立日，到太平洋时间 7 月 6 日晚 11:59 为止，所有 API 请求免费，每个账户都解锁了付费层的端点、模型和速率限制。活动如期结束，代码在次日移除。
+
+**7 月 6 日。** 免费层的小时限制提高到 350 次请求。`GET /v1/metrics/summary` 上线，提供按账户的调用、token 和费用汇总；它在 8 月迁移到 `/v1/account/` 之下。其背后的调用计数读取数据库总数，而不是在前 1,000 行停下。
+
+**7 月 7 日至 9 日。** 模型列表被重建：OpenRouter 模型与 LiteLLM 的模型一同获取并缓存，两个列表去重，响应带有模型数量，OpenRouter 获取失败时会以有上限的延迟重试而不是挂起。`GET /v1/agents/list` 和 `POST /v1/reasoning-agent/completions` 获得了类型化的响应模型，因此其形态出现在 API 参考中。
+
+**7 月 11 日。** **任何计费请求运行之前都会检查 $1.00 的最低余额**，因此账户无法支付的运行不会启动。每个请求背后的认证检查改为并发执行，压缩中间件重写为纯 ASGI 并对缓冲量设限，中间件顺序得到修正。`GET /v1/reasoning-agent/types` 获得了与实际返回一致的类型化响应；其描述此前宣称了一些从未发送过的字段。
+
+**7 月 14 日与 15 日。** 三个过去会在运行深处失败的请求字段现在会在解析时以 422 失败并指明合法取值：`temperature` 限定在 0 到 2，`reasoning_effort` 限定为后端支持的值，`heavy_swarm_variant` 限定为 `default`、`medium` 或 `heavy`。OpenAPI 规范会枚举每一项。
+
+**7 月 17 日。** 密集的一天。
+
+- `GET /v1/swarm/logs` 返回最新的 1,000 条记录，最新在前，`count` 填入真实总数，文档中的响应形态与实际一致。
+- 速率限制改为用单个数据库过程统计时间窗口，修复了在 1,000 行停下的计数，并去掉了每个请求重复的订阅查询。
+- 无效 API key 返回 500 而非 400，导致 SDK 对永久错误的 key 反复重试。已修复。
+- 三个批量端点的请求体在模式层以 50 项为上限。此前 10,000 个任务的批量请求能通过校验，然后在下游失败。
+- 遥测成为只记录调用方数据的纯 ASGI 中间件，定价模型只构建一次并缓存。
+- `POST /v1/swarm/batch/completions` 获得了类型化的响应模型。
+
+**7 月 19 日与 20 日。**
+
+- 智能体创建使用专用线程池，消除了可能让大型 swarm 批量运行停滞的死锁；批量运行中一个 swarm 失败不再导致整个批量失败。
+- `SwarmSpec` 字段动态转发给路由器，按规格与路由器签名的交集计算，因此新的路由器参数无需手工维护的列表就能到达 API。为 `HierarchicalSwarm` 新增了 `director_model_name` 和 `director_settings`；它们此前被静默丢弃。
+- 阻塞调用从流式事件循环中移出，SSE 事件以 orjson 序列化。
+- 每条错误消息都链接到相关字段或端点的具体文档页面。
+
+**7 月 21 日。** 免费层的受限模型列表更新为 2026 年 7 月的阵容。
+
+**7 月 29 日。** **`GET /v1/swarms/available` 描述每一种 swarm 类型：** 名称、描述、类别、最适用场景、该架构特有的 `SwarmSpec` 参数和文档链接，放在新的 `swarm_types_metadata` 数组中。原有的 `swarm_types` 字符串列表保持不变。同一天，推理强度梯度扩展为从 `low` 到 `max`，默认强度为 `medium`，默认 `max_tokens` 为 16,000。
+
+## 8 月
+
+117 次提交，计费被重建的月份。
+
+**8 月 1 日。** **免费层的限制收窄到只针对前沿模型**：GPT-5.6、Claude Fable 5、Opus 5 和 Opus 4.8、Gemini 3.1 Pro 和 Deep Think，以及 Grok 4.5。Sonnet、Haiku、Gemini Flash 和 GPT 的 mini、nano 模型对免费 key 开放。403 中建议的替代模型已对照在线目录检查；其中四个指向了已退役的模型。**`claude-sonnet-5` 成为默认智能体模型。** 智能体规格新增 `top_p`，`dynamic_temperature_enabled` 现在默认为 false。`swarms` 框架固定到 14 版。
+
+**8 月 3 日。** **备用模型。** `fallback_models` 接受一个有序列表，`fallback_model_name` 接受单个模型；主模型出错时智能体切换到下一个。每个备用模型都按与主模型相同的规则校验。
+
+**8 月 4 日。** Ollama 和 Hugging Face 的 id 在解析请求体时就以 400 拒绝，覆盖每一个模型字段，包括此前绕过校验的 swarm 级字段。消息指向 OpenRouter。
+
+**8 月 6 日。**
+
+- **`POST /v1/auto-agent-builder/completions` 上线。** 构建器智能体为你描述的任务设计阵容。每个条目都映射到智能体规格，因此响应中的 `agents` 列表无需修改即可提交给任何多智能体端点。它按一次智能体运行计费，从不按它设计的阵容规模计费，`max_agents` 和 `num_agents` 的上限是 swarm 可接受的最大阵容。
+- 被复制到每个端点且已经出现偏差的计费算术被整合到一个模块中。一次 200,000 种组合的扫描确认每个端点的收费与此前完全一致，精确到比特。
+- 额度账本不再把费用截断为整数。
+
+**8 月 7 日。** 其余的直接扣费也通过同一模块路由，因此费用只在一个地方计算，任何端点绕过它都会让测试套件失败。
+
+**8 月 11 日。** 拒绝低于 1 的 `max_loops` 和非正的 `max_tokens`。什么都没运行的请求过去也会被收费。
+
+**8 月 12 日。** **`/v1/chat/completions` 上的多轮对话读取历史的顺序是错的。** 每条助手回复都被放在它所回答的问题之前，因此正常的对话到达模型时是乱序的，并且被收费。已修复。同一天，未注册 key 的遥测写入不再以紧急级别记录。
+
+**8 月 13 日。**
+
+- **没有产出的智能体会返回 `"success": true` 并被收费。** 现在它会在任何扣费或日志行之前返回 400。
+- **只要涉及推理，Claude 5 系列智能体就会返回空输出**，因为两个 bug 叠加：即使请求未设置，也会应用默认推理强度，而 LiteLLM 以 Anthropic 拒绝的形态发送它。推理参数现在会被显式解析，并对这些模型丢弃，直到固定版本的 LiteLLM 能发送被接受的形态。
+- swarm 调用路径上的两次日志写入从事件循环移出。一个被阻塞的请求曾让该 worker 上的所有其他请求停滞一次数据库往返的时间。
+
+**8 月 14 日。** **并发的智能体创建打乱了你要求的流水线顺序。** 智能体按完成顺序收集，因此一个按 Researcher、Writer、Editor 请求的 `SequentialWorkflow` 可能以 Writer、Editor、Researcher 的顺序运行，返回 200 且没有任何迹象。现在 swarm 和 swarm 批量都按提交顺序收集结果。另外，通配 `Accept-Encoding` 解析为 gzip，大的响应体在事件循环之外压缩。
+
+**8 月 16 日。** **推理智能体调用开始计费。** 该端点此前从未扣除过额度。它的 `usage` 块也得到修复；小数费用曾使响应校验失败，端点在任何真实扣费时都返回 500。
+
+**8 月 17 日。** 流式 chat 调用在答案已经算出之后不再暂停约一秒。智能体批量中一个失败的智能体会返回按智能体的错误条目而不是让整个批量失败，其他智能体也不再为不属于它们的失败付费。`GET /v1/premium/endpoints` 列出每条仅限高级版的路由及其功能描述。
+
+**8 月 18 日。** 账户范围的路由迁移到 `/v1/account/` 之下：`/v1/account/logs`（`/v1/swarm/logs` 保留为已弃用的别名）和 `/v1/account/premium-endpoints`。市场提示词在上游获取失败时映射为转发 `Retry-After` 的 429 或 502，而不是把责任推给你的请求的 500。
+
+**8 月 19 日与 20 日。** swarm 阵容和循环次数获得了硬上限，覆盖 swarm 本身、其中每个智能体、推理智能体和 chat 调用。智能体批量端点接受其规范宣称的 50 项；此前它拒绝任何超过 10 项的请求。智能体调用上的 `imgs` 现在能到达智能体；它过去被接受、记录在文档中、收费，然后被丢弃，因此多图请求实际按纯文本运行。省略 `max_loops` 的批量 grid 在文档所述的默认用法下返回 400；现在默认为 1。
+
+**8 月 21 日。** 在调查为什么一个有 27,800 次调用的账户在 `/v1/account/logs` 上只显示 3,600 次时，发现了五个缺陷。
+
+- 轮换 API key 会把它的历史从计数中抹去。现在范围涵盖已吊销的 key，暴露此问题的账户从显示真实用量的 13% 变为全部。
+- 日志查询把未知类别的行也当作调用计数，这就是日志与指标汇总不一致的原因。现在使用一个允许列表，并由测试保证它与计费类别一致。
+- key 校验期间的数据库故障被报告为 403 无效 key。现在它作为可重试的 5xx 透传。
+- `max_loops: "auto"` 对其自身描述中记录的取值返回 500。现在可以通过校验。
+- `/v1/metrics/summary` 迁移到 `/v1/account/metrics/summary`，旧路径保留并标记为已弃用。
+
+**8 月 22 日。** 一条时间戳为空的日志行会让整个账户的 `/v1/agents/list` 失效。同时请求 `auto_search` 和 `web_scraper` 会静默地只给智能体第一个。两者都已修复。
+
+**8 月 24 日。** 在 swarm 上同时提供 `messages` 和 `task` 会丢弃 messages，而响应却声称它们参与了运行。swarm 校验对每个智能体各查一次账户的速率限制，因此一个 25 智能体的 swarm 在任何工作开始前会发出 50 次相同的查询：885 毫秒变为 35 毫秒。遥测在自己的线程池上运行，因此不会拖慢认证。
+
+**8 月 26 日。** 调用方的套餐每个请求只解析一次，而不是对每个受限模型、每个备用模型和每个 handoff 各解析一次。一个十智能体、各带一个备用模型的高级 swarm 曾花 6.2 秒向数据库问同一个问题四十次；现在只花 0.3 秒问两次。**智能体规格上的 MCP 字段与框架重新对齐**：`mcp_urls` 是新增字段，用于同时连接多个服务器；`mcp_url` 既接受字符串也接受连接对象；`mcp_configs` 是普通列表。这是在一次框架发布改变了 API 底层模式之后做出的调整。
+
+**8 月 30 日。** **每个端点都有 `usage.total_cost`。** graph 工作流、批量 grid 和自动智能体构建器此前以 `token_cost` 发布费用；swarm 调用把它嵌套在 `billing_info` 里。控制台对四个端点族的费用列显示为空就是因为这个。
+
+## 9 月
+
+162 次提交，最繁忙的月份。其中大部分是性能与正确性工作，效果可见：更少的 500、更快的响应，以及多处 API 曾悄悄收取不该收取费用的地方。
+
+**9 月 2 日至 6 日。** 现在只要任何 `/v1` 路由忘记认证，就有一个测试让套件失败；只要 `api/` 下任何模块无法导入，另一个测试也会让它失败，这正是 8 月 26 日故障的成因。两个 CI 工作流一直指向 7 月已迁移的测试路径；已修复。认证中间件从 Starlette 的 `BaseHTTPMiddleware` 迁出，后者会为每个响应生成一个任务组并通过两个流桥接。
+
+**9 月 8 日。** swarm 调用回传 `tasks` 和 `messages`。计费使用供应商为每个智能体报告的用量。
+
+**9 月 9 日。** 推荐额度能通过预检余额检查却无法支付费用，因此由推荐额度注资的账户会运行 swarm、向供应商付费，然后收到 402 而余额未动。已修复，随后在 10 月 15 日被"仅限已购买额度"的规则取代。每个 worker 的认证线程上限从 40 提高到 200。
+
+**9 月 10 日。** 性能日，九项变更合并。
+
+- **OpenAI 兼容的流式输出真正按 token 流式。** 此前它会把智能体运行到结束，再把完成的字符串切成约二十段，因此第一个 token 要等整个答案完成才到达。
+- 每个线程拥有自己的 Supabase 客户端。在共享一个 HTTP/2 连接时，一次连接重置会让所有进行中的请求同时失败：20 个并发调用中有 11 个在任何智能体工作开始前就返回了 500。
+- 剩下的两个头部中间件移植为纯 ASGI。它们此前为了设置头部而缓冲每个响应，包括流式响应。
+- 智能体运行与创建线程池按网络等待而非 CPU 核心数确定大小。一台 12 核机器过去最多同时运行 13 个调用，第 14 个要排在一个可能耗时 30 秒的请求后面。20 个并发的 2 秒调用从两波变为一波。
+- `uvicorn[standard]` 带来了 uvloop 和 httptools：同一应用约 19% 的吞吐量提升，p95 从 192 毫秒降至 157 毫秒。
+- 每条流式路径上的 SSE 负载都以 orjson 序列化，每块快 8 到 16 倍。
+- **zstd 压缩**，当客户端对两者评分相同时优先于 gzip 协商。
+- 每条应用日志都带有 worker PID，每个 worker 的启动噪声降为 debug 级别，一条随每个压缩响应一起输出的 debug 日志被静默。
+- 示例目录按端点和 swarm 类型重新组织。
+
+**9 月 15 日与 16 日。** swarm 规格上的 `img` 会转发给每一次 swarm 运行调用。swarm 运行内部扣费产生的 402 得以保留，而不是变成 500。swarm 批量在自己的执行器上运行，而不是共享的请求线程池。
+
+**9 月 21 日与 22 日。**
+
+- **智能体的 `description` 字段从未到达智能体。** 框架对该参数使用了不同的名字，因此每个智能体都以库的默认描述运行。已修复。
+- **同步的 swarm 与批量运行对你的提示词重复收费。** 路由器会在智能体的回答旁返回调用方自己的任务，同步路径把它当作输出 token 计数。流式路径早已剔除它；现在两条路径共用同一处剔除。
+- handoff 列表以阵容上限约束。
+- 提供给夜间检查的时间戳会先转换为太平洋时间再读取小时。
+- 图片费用对 `img` 与 `imgs` 中的每张图片计数。
+- 同时发送 `tasks` 与 `task` 或 `messages` 会被拒绝，而不是只运行一个任务。
+- 缺少 `source` 或 `target` 的 graph 边会被拒绝而不是丢弃，后者曾运行并收费一个你并未描述的图。
+- 空的非流式 chat 结果返回 400，而不是带 `finish_reason: "stop"` 的已收费 200。
+
+**9 月 24 日。** 单日最大的正确性修复。
+
+- **未知模型在任何扣费之前返回 404**，覆盖每个调用端点。名称会对照 LiteLLM 的注册表检查，`openrouter/` 名称则对照 OpenRouter 的目录。此前未知模型会运行到一个空结果。
+- **已知模型失败时，你会得到供应商的原因：** 供应商不提供该模型时为 404，供应商拒绝请求时为带供应商消息的 400，被限速时为 429，供应商故障时为 502。这些情况都不收费。旧的消息是"produced no output"。
+- 没有任务也没有历史的请求返回 400 而不是 500。
+- **无效 API key 在每条路由上都返回 401。**
+- `POST /v1/reasoning-agent/completions` 接受四个 `swarm_type` 值：`AgentJudge`、`ReflexionAgent`、`self-consistency` 和 `consistency-agent`。默认值为 `self-consistency`；旧的默认值并不是合法类型。`num_knowledge_items` 随 GKP 类型一起移除。
+- 带两张图片的 chat 请求会把第一张发送两次并按三张收费。现在每张图片放在一个字段中，只收费一次。
+- 调度器不返回任何指令的 `HierarchicalSwarm` 返回 502，而不是 500。
+- 每个示例和文档字符串都从 GPT-4 系列 id 迁移到 GPT-5、Claude 5 和 OpenRouter 模型的组合。
+
+**9 月 25 日。** **`/v1/chat/completions` 上的工具调用。** `tools` 映射到智能体的函数调用模式，`tool_choice` 得到应用，`tool_calls` 随消息返回并带有 `finish_reason: "tool_calls"`，`role: "tool"` 消息和携带工具调用的助手轮次可通过历史回放。输出达到 `max_tokens` 时 `finish_reason` 也会是 `length`。此前这些字段被静默丢弃，返回的是纯文本调用结果。
+
+## 10 月
+
+截至 10 月 22 日 131 次提交，两个新端点族，计费模型完成。
+
+**10 月 3 日。** **决策模型。** `POST /v1/decision/completions` 接受一个模型、一个 JSON `state` 和一组类型为 choice、score 或 noul 的 `questions`，返回经过校准的答案、作答的模型版本，以及带费用的 token 用量。`GET /v1/decision/models` 列出模型及其每百万 token 的价格。`POST /v1/systemone` 的输入输出与 TypeSafe 的端点完全一致，因此官方 TypeSafe SDK 只需把 base URL 指向本 API 即可工作；当请求携带 SDK 头时，`GET /v1/models` 会以 TypeSafe 的形态作答。按供应商价格乘以 1.15 计费，失败时不收费。这些端点于 10 月 8 日从 `/v1/decision-model/*` 重命名，旧路径同日移除。随附八个可运行的示例。
+
+**10 月 5 日。** 批量 grid 上的 `imgs` 返回 422；grid 无法转发图片，而带图片的请求此前会按纯文本运行并收费。
+
+**10 月 8 日。** 构建迁移到 uv，使用 Python 3.13 上锁定的 `pyproject.toml`。镜像从 905 MB 缩小到 540 MB，冷构建从 64 秒缩短到 11 秒。健康检查路由不再经过限速器。
+
+**10 月 10 日。** 决策模型的供应商返回非 JSON 响应体时为 502，而不是携带解析错误的 400。
+
+**10 月 12 日。** **计费完成。**
+
+- **按模型计价。** 每个智能体由供应商报告的 token 按其自身模型的价格乘以 15% 服务费计费：`openrouter/` 模型来自每小时刷新的 OpenRouter 目录，其他来自 LiteLLM 的目录，只有两者都未列出该模型时才使用固定费率作为有日志记录的兜底。混合模型的 swarm 按智能体计费。`GET /v1/models/available` 返回带价格的对象，`GET /v1/models` 每个条目带有 `pricing` 对象，`GET /v1/models/pricing` 给出单个模型的价格。swarm 为自身构建的智能体（层级调度器、多数投票的共识智能体、委员会聚合器或主席）按各自的模型计费。
+- **MCP 服务器和 `web_scraper` 免费。** 只对 token 计费。
+- **`auto_search` 费用计入 `usage.total_cost`**，仅在运行成功时收取。它此前在智能体运行前单独扣除，因此响应少报了 $0.04 的费用，失败的运行也照样付费。
+- 决策模型读取共享的服务费设置，而不是自己的副本。
+- 计费在事件循环之外的专用线程池上运行。在一次计费的 OpenRouter 请求期间，同一 worker 上 `/health` 的最差延迟从 3.2 秒降到 110 毫秒以内。
+- 服务费系数和按智能体的明细从每个响应的 `usage` 中移除；它们属于内部信息。
+- 失败的流式智能体运行会发送供应商的错误，而不是正常结束并收费。没有 `name` 的 grid 运行返回 200，而不是已收费的 500。来自市场的 429 保留其 `Retry-After`。订阅查询失败返回 503。
+
+**10 月 14 日。** 9 月的按线程 Supabase 客户端因工厂上的一个缓存而未生效；现在已经生效。
+
+**10 月 15 日。** **只有已购买的额度才能支付 API 用量。** 扣费和检查最低余额时不再读取免费额度和推荐额度，两条 402 消息都会说明这一点并附上充值链接。另外：chat 调用上的 `stop` 会被转发，接受一个字符串或最多四个字符串；此前它被静默丢弃。拒绝 `stop` 的模型会返回供应商的原因，而不是以 `finish_reason: "stop"` 结束的空流。
+
+**10 月 16 日。**
+
+- **OpenRouter 免费模型不收费**：无 token 费用、无单智能体费、永不使用兜底费率。免费运行仍计入速率限制并出现在你的日志中。
+- **`GET /v1/job/{job_id}`** 通过响应携带的 `job_id` 返回历史调用的存储结果。其他账户的任务和不存在的任务都返回同样的 404。格式错误的 id 在任何查询之前返回 422。
+- 有一个智能体失败的批量 grid 会把该智能体作为错误条目返回，`status` 为 `"partial"`，而不是已收费的 500；所有智能体都失败的 grid 返回 502 且不收费。
+- graph 工作流的阵容以 swarm 上限约束。
+- `/v1/models` 返回其 SDK 客户端预期的 OpenAI 错误形态。
+
+**10 月 19 日。**
+
+- 在数据库层失败的任务查询返回要求重试的 503，而不是可能导致客户端再次运行并再次付费的 404。
+- `selected_tools` 得到校验：单个名称视为列表，未知名称返回 422 并列出允许的工具。
+- 所有节点都失败的 graph 工作流返回供应商的错误且不收费。部分节点失败时只对节点有应答的智能体计费，错误文本不计入输出 token。
+
+**10 月 21 日。** `GET /v1/job/{job_id}` 也能通过 `batch_id` 返回智能体批量运行的结果。
+
+**10 月 22 日。**
+
+- **夜间折扣仅限付费套餐。** 太平洋时间晚 8 点至早 6 点 token 费用的五折优惠现在需要 Pro、Ultra 或 Premium 层级，或处于有效订阅中。套餐只在夜间检查，查询失败时按全价计费，而不是让已完成的运行未被计费。
+- **API 运行在 ECS Fargate 的四个区域**，`api.swarms.world` 上启用延迟路由，提供固定的区域主机名，三个非主区域在当地时间凌晨 1 点至 7 点夜间休眠，期间其流量转往下一个最近的区域。
+- **`POST /v1/messages`**，Anthropic Messages 格式，用于非流式文本请求。流式、图片与文档块、工具、thinking 和 `stop_sequences` 会以 Anthropic 形态的 400 拒绝，而不是被忽略。
+- **`POST /v1/responses`**，OpenAI Responses 形态，非流式，其请求与响应模式已发布到 API 参考中。
+- 超过 8 MiB 的 `GET /v1/account/logs` 响应体现在会被压缩，因此存储了超大输出的账户不会再在历史页面上收到 413。
+
+## 接下来
+
+收尾这段时间的部署工作尚未完成。四个区域已经上线，但请求仍要经过一个会在 30 秒时终止请求、并把负载限制在 10 MB 的网关；迁移到公共负载均衡器以解除这两个限制的工作已经分阶段准备并经过测试，将作为独立的变更上线。日志端点今天在一个响应体中返回最新的 1,000 条调用，一旦上述工作落地，它将是分页的首个候选。
+
+## 结语
+
+八个月前，API 只有一种请求形态，所有模型只有一个价格，而且有不少地方会把失败的运行当作已收费的成功返回。今天，它能以主流 SDK 已经在用的形态作答，按每个模型自身的价格加上一笔你能看见的费用计费，在请求产生任何成本之前就拒绝那些它无法运行的请求，随着生成逐 token 流式输出，并从离你最近的区域提供服务。本记录中的 352 次提交大多很小，而这正是重点：表面积没有变，但几乎每一条边缘都更锋利了。
+
+接下来的工作在这份日志的末尾已经可见。网关限制将被解除，日志端点将支持分页，兼容端点将扩展到流式和工具。每一项都会和这里一样，带着日期和前后对比出现在下一份更新日志中。
+
+## 开始使用
+
+如果你还没有用过这个 API，现在是个不错的时机。在 [cloud.swarms.world](https://cloud.swarms.world) 注册即可获得 **$5 免费额度**，可用于本文中的任何端点，按上文描述的按模型价格计费，开始时无需绑卡。
+
+1. **创建账户**：在 [cloud.swarms.world](https://cloud.swarms.world) 注册，并在 [cloud.swarms.world/api-keys](https://cloud.swarms.world/api-keys) 复制一个 API key。
+2. **运行一个智能体。** 完整的请求就是这样：
+
+```bash
+curl -X POST https://api.swarms.world/v1/agent/completions \
+  -H "x-api-key: $SWARMS_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "agent_config": {
+      "agent_name": "Analyst",
+      "model_name": "claude-sonnet-5"
+    },
+    "task": "总结在生产环境中部署 LLM 智能体的三大风险。"
+  }'
+```
+
+3. **或者继续用你已有的 SDK。** 把 OpenAI SDK 指向 `https://api.swarms.world/v1`，用你的 Swarms key 作为 API key，`chat.completions.create` 无需改动即可工作，包括工具和流式。Anthropic SDK 对 `/v1/messages` 也是同样的用法。
+4. **然后扩展它。** 把同样的智能体配置放进 `SwarmSpec` 提交到 `/v1/swarm/completions`，使用 [api.swarms.world/v1/swarms/available](https://api.swarms.world/v1/swarms/available) 列出的任意架构，或者让 `/v1/auto-agent-builder/completions` 为你设计阵容。
+
+每次运行都会出现在 [cloud.swarms.world/history](https://cloud.swarms.world/history)，附带 token 用量与费用，每个响应上的 `usage.total_cost` 会准确告诉你它收了多少钱。[文档](https://docs.swarms.ai)为每个端点提供一页说明，[Discord](https://discord.gg/VapjxpSyHC) 是团队回答问题的地方。
+
+## 链接与资源
+
+| 资源 | 链接 |
+| --- | --- |
+| API 参考 | [docs.swarms.ai](https://docs.swarms.ai) |
+| 交互式文档 | [api.swarms.world/docs](https://api.swarms.world/docs) |
+| Swarms Cloud | [cloud.swarms.world](https://cloud.swarms.world) |
+| 调用历史 | [cloud.swarms.world/history](https://cloud.swarms.world/history) |
+| 定价 | [cloud.swarms.world/pricing](https://cloud.swarms.world/pricing) |
+| 已发布费率 | [api.swarms.world/v1/usage/costs](https://api.swarms.world/v1/usage/costs) |
+| 模型与价格 | [api.swarms.world/v1/models/available](https://api.swarms.world/v1/models/available) |
+| Swarm 架构 | [api.swarms.world/v1/swarms/available](https://api.swarms.world/v1/swarms/available) |
+| 源代码 | [github.com/The-Swarm-Corporation/Swarms-API](https://github.com/The-Swarm-Corporation/Swarms-API) |
+| 上一份 Cloud 更新日志 | [8 月 3 日至 9 月 19 日](/zh/blog/swarms-cloud-changelog-august-september) |
+| 服务状态 | [status.swarms.ai](https://status.swarms.ai) |
+| Discord 社区 | [discord.gg/VapjxpSyHC](https://discord.gg/VapjxpSyHC) |
+
+---
+
+*有问题或反馈？欢迎加入我们的 [Discord 社区](https://discord.gg/VapjxpSyHC)，或查阅[文档](https://docs.swarms.ai)。*

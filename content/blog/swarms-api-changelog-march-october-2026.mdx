@@ -1,0 +1,416 @@
+---
+title: "Swarms API Changelog: March to October 2026"
+description: "Eight months of API work in one place: OpenAI, Anthropic and TypeSafe compatible endpoints, per-model pricing with a flat service fee, real token streaming, decision models, fallback models, tool calling, a job lookup endpoint, a four-region deployment, and a long run of fixes to billing, validation and error handling, with a section on what changed for existing clients."
+date: "2026-10-22"
+author: "Swarms Team"
+categories: ["Product"]
+readTime: "32 min read"
+featured: true
+image: "/swarms_api_changelog.png"
+---
+
+# Swarms API Changelog: March to October 2026
+
+This is the full record of what shipped on the Swarms API at [api.swarms.world](https://api.swarms.world) between March 1 and October 22, 2026: 352 commits across 206 merged pull requests. It covers the API only. The console at [cloud.swarms.world](https://cloud.swarms.world) has its own changelogs, the most recent covering [August 3 to September 19](/blog/swarms-cloud-changelog-august-september).
+
+The window splits cleanly in two. March through June was quiet, under 60 commits, and mostly about compatibility: the OpenAI-shaped chat endpoint arrived, streaming became real per-token streaming, and the swarm router gained the tuning parameters the framework already had. Then the pace changed. July alone had more commits than the four months before it, and August, September and October each had over a hundred. That second half is where billing was rebuilt, where the API stopped charging for runs that produced nothing, where new endpoint families landed, and where the service moved onto a four-region deployment.
+
+Two notes on how this is written. It lists what is live today, so work that shipped and was later replaced is described in its final form, with the earlier step mentioned only where it matters. And the fixes are described from the client's side: what you would have seen before, and what you see now.
+
+## Overview
+
+Three things happened to the API this year, and almost every entry below belongs to one of them.
+
+**It became a drop-in for the SDKs people already have.** In March the API spoke one shape, its own. By October it also answers in the OpenAI chat and responses shapes, the Anthropic messages shape and the TypeSafe system shape, all on the same agent path with the same billing, so a client written against any of those SDKs works by changing a base URL. The same push reached inside the requests: tool calling, stop sequences, multi-turn history, multimodal content and streaming all now behave the way those SDKs expect.
+
+**Billing was rebuilt from the ground up.** The charge used to be computed in a copy of the same arithmetic inside every endpoint, at one flat rate for every model, and published under three different keys. It is now computed in one module, at each model's own price plus a fixed service fee, published under one key, and spent from purchased credits only. Along the way the API stopped charging for the things it should never have charged for: runs that produced nothing, models that do not exist, requests the provider rejected, prompts counted twice as output, and fees on runs that failed.
+
+**The service got faster and more honest about failure.** Pools sized for network waits instead of CPU cores, pure ASGI middleware, real token streaming, orjson and zstd on the wire, and billing and telemetry taken off the event loop add up to a server that handles several times the concurrency it did in March. And a long list of requests that used to fail deep inside a run, or run as something you did not ask for, now fail at the door with a 422 that names the valid values, while a provider error comes back as the provider's own reason and status.
+
+Beneath those three, the API grew two endpoint families, decision models and the auto agent builder, gained a job lookup, a priced model list and a self-describing swarm catalog, and moved onto a four-region deployment with latency routing. The section after the highlights lists every change an existing client can see, with dates.
+
+## Highlights
+
+The ten changes most worth knowing about, in the order they shipped.
+
+1. **OpenAI-compatible `POST /v1/chat/completions` (March 27).** A drop-in base URL swap for the OpenAI SDKs, with `Authorization: Bearer` accepted alongside `x-api-key`, multimodal content parts, the OpenAI error envelope, and, since then, `max_loops`, `tools`, `tool_choice`, `stop`, real token streaming and correct multi-turn history.
+2. **Per-token streaming (May 8 to 13).** Agent completions and the two streamable swarm types send SSE chunks as tokens arrive.
+3. **`/v1/swarms/available` describes every architecture (July 29).** Name, description, category, best-for use cases, the `SwarmSpec` parameters specific to that architecture, and a docs link, generated from the framework's own type list so it cannot go stale.
+4. **Fallback models (August 3).** `fallback_models` and `fallback_model_name` on every agent spec. When the primary model errors, the agent retries on the next model in the list, and each fallback is validated to the same rules as the primary.
+5. **`POST /v1/auto-agent-builder/completions` (August 6).** Describe a task and a builder agent returns a roster of complete agent configurations that post unmodified to the swarm endpoints.
+6. **`usage.total_cost` everywhere (August 30).** One key for the per-run charge on every endpoint. Four endpoints had published it under other names, which is why the console showed $0 for them.
+7. **Tool calling on the OpenAI endpoint (September 25).** `tools` and `tool_choice` are honoured, `tool_calls` come back on the message, `finish_reason` is `tool_calls`, `length` or `stop`, and `role: "tool"` messages replay through history.
+8. **Decision models (October 3).** A new endpoint family with its own priced model list and a TypeSafe-compatible route.
+9. **Per-model pricing (October 12).** Provider price times 1.15, with `/v1/models/available`, `/v1/models` and the new `GET /v1/models/pricing` all publishing the rates the billing uses.
+10. **`GET /v1/job/{job_id}` (October 16).** Fetch the stored result of any past completion by the `job_id` its response returned, or an agent batch by its `batch_id`.
+
+## What to know if you already use the API
+
+This section collects every change that an existing client can see, grouped by what it affects. Dates are the day the change went live.
+
+### Billing
+
+| What | Now | Since |
+| --- | --- | --- |
+| Token price | Each model's provider price times 1.15. Fallback of $6.50 input and $18.50 output per million tokens only when a model has no listed price | October 12 |
+| Per-agent fee | $0.01 per agent on swarm, graph, grid and builder runs. Agents that fell back from a free model to a paid one still pay it | unchanged |
+| Images | $0.25 per image, counted across `img` and `imgs` | September 22 |
+| `auto_search` | $0.04 per completion that enables it, included in `usage.total_cost`, charged only when the run succeeds | October 12 |
+| MCP servers and `web_scraper` | Free. Only the tokens are billed | October 12 |
+| OpenRouter free models | $0: no token cost, no per-agent fee, never the fallback rate. Runs still count toward rate limits | October 16 |
+| Night-time discount | 50% off token costs from 8 PM to 6 AM Pacific, for paid plans only | October 22 |
+| Reasoning agent completions | Billed like every other endpoint. They were never deducted before August 16 | August 16 |
+| Failed runs | Nothing is charged when the model is unknown, the provider rejects the request, or no output is produced | September 24 |
+
+The service fee multiplier and the per-agent model breakdown that briefly appeared in `usage` are internal and no longer serialized. `GET /v1/usage/costs` lists the published rates, and `GET /v1/models/pricing?model_name=...` prices a single model.
+
+### Credits
+
+- **Only purchased credits are spent.** `free_credit` and `referral_credits` are no longer read when a charge is made or when the balance is checked. The 402 says so and links to [cloud.swarms.world/settings](https://cloud.swarms.world/settings). Since October 15.
+- **A $1.00 minimum balance** is checked before any billable request runs. Since July 11.
+- **The credit ledger records the exact charge.** It used to truncate each entry to a whole number. Since August 6.
+
+### Response shapes
+
+- `usage.total_cost` is the per-run charge on every endpoint. On graph workflows, batched grids and the auto agent builder it was `usage.token_cost`; on swarm completions it was nested in `billing_info`, which stays for the breakdown.
+- Swarm completions echo `tasks` and `messages` back when the request carried them.
+- A batched grid run with one failed agent returns that agent as an `{"error": ...}` entry with `status: "partial"` instead of a 500. If every agent fails, the response is a 502 and nothing is charged.
+- A graph workflow where some nodes fail returns every node's output, including the error text, and bills only the agents whose node answered.
+- Streamed agent and chat completions that fail send the provider's reason as an error frame instead of ending with `finish_reason: "stop"`.
+
+### Endpoints that moved or went away
+
+| Old | Now |
+| --- | --- |
+| `GET /v1/swarm/logs` | `GET /v1/account/logs`. The old path still works and is marked deprecated |
+| `GET /v1/metrics/summary` | `GET /v1/account/metrics/summary`. The old path still works and is marked deprecated |
+| `GET /v1/premium/endpoints` | `GET /v1/account/premium-endpoints` |
+| `POST /v1/decision-model/completions`, `GET /v1/decision-model/models` | `POST /v1/decision/completions`, `GET /v1/decision/models`. The old paths return 404 since October 8 |
+| `POST /v1/marketplace/agents` | Removed June 21. `marketplace_prompt_id` on an agent spec still works |
+| `/v1/advanced-research/*` | Removed June 15 |
+| Auto swarm builder | Removed June 19. Its successor is `POST /v1/auto-agent-builder/completions` |
+| `POST /v1/swarm/types` | Removed March 23. Use `GET /v1/swarms/available` |
+
+### Requests that are now rejected up front
+
+Each of these used to be accepted and then fail mid-run, run as something you did not ask for, or run and bill. They now return a 4xx before any model call or charge.
+
+- An unknown model name is a 404 naming the model. OpenAI clients get `model_not_found`.
+- Ollama and Hugging Face model ids are a 400 that points at OpenRouter, which serves the same open-weight models.
+- `temperature` outside 0 to 2, `reasoning_effort` outside the supported set, and a `heavy_swarm_variant` other than `default`, `medium` or `heavy` are 422s.
+- `max_loops` below 1 or above the ceiling, on swarms, agents, reasoning agents and chat completions, is a 422. `"auto"` still passes.
+- Batch bodies are capped at 50 items on all three batch endpoints, and the agent batch endpoint really accepts 50 now. It said 50 and rejected anything over 10 until August 19.
+- Swarm rosters, graph rosters and handoff lists are capped at the same roster ceiling.
+- `swarm_type` on the reasoning agent endpoint accepts only `AgentJudge`, `ReflexionAgent`, `self-consistency` and `consistency-agent`. The default is `self-consistency`.
+- `selected_tools` with an unknown name is a 422 listing the allowed tools. A single name passed as a string is treated as a one-item list; it used to be iterated character by character.
+- Sending `tasks` alongside `task` or `messages` is rejected instead of silently running one task.
+- A graph edge missing `source` or `target` is rejected instead of being dropped.
+- `imgs` on a batched grid is a 422, since the grid cannot forward images.
+- `stop` on chat completions accepts a string or up to four strings.
+
+### Authentication and errors
+
+- An unknown, revoked or malformed API key returns 401 on every route. It used to be 400 on some routes, 403 on others and 500 for a malformed key.
+- A database fault during key lookup is a retryable 5xx, not a 403 that made clients rotate keys.
+- A subscription lookup failure is a 503 instead of silently treating a paid account as free tier.
+- `/v1/models` and `/v1/chat/completions` return the OpenAI error envelope on every error, including 500s.
+- A 429 forwards the upstream `Retry-After`, and the API's own 429 reports the window that actually blocked you, so an hour-blocked caller is no longer told to retry in 60 seconds.
+- Every validation error links to the docs page for that field.
+
+### Defaults
+
+- The default agent model is `claude-sonnet-5`. The reasoning agent default moved there too, from a retired Claude Sonnet 4 id.
+- `temperature` is omitted unless you set it, so the provider's default applies. `top_p` is available. `dynamic_temperature_enabled` defaults to false.
+- `reasoning_effort` is passed only when you set it. The accepted ladder runs from `low` through `max` where the provider supports it, and the default `max_tokens` is 16,000.
+- Reasoning params are dropped for Claude 5-family models until the pinned LiteLLM can send them in the shape Anthropic accepts, so those models run without extended thinking instead of returning nothing.
+- `GET /v1/account/logs` returns the 1,000 newest completions newest first, and `count` is the true total across every key on the account, including rotated keys.
+
+### Rate limits
+
+- Every authenticated response carries `X-RateLimit-Limit-Minute`, `X-RateLimit-Remaining-Minute`, hour and day equivalents, `X-RateLimit-Reset` and `X-RateLimit-Tier`.
+- The free tier allows 100 requests per minute, 350 per hour and 1,200 per day, with 200,000 tokens per agent. Paid tiers allow 2,000 per minute and 2,000,000 tokens per agent.
+- Only billable work counts toward the limit. Telemetry rows written for every request used to count, so an idle dashboard could exhaust the per-minute limit.
+- Free-tier model restrictions apply only to each lab's current top tier. Mid-tier and small models are open to free keys.
+
+### Where the API runs
+
+Since October 22 the API runs on ECS Fargate in four regions: `us-east-1` (Virginia), `us-west-1` (California), `ap-southeast-1` (Singapore) and `eu-central-1` (Frankfurt). `api.swarms.world` routes to the nearest region whose health check passes, and each region has a pinned hostname of the form `<region>.api.swarms.world` for clients that want to stay in one place. Responses are compressed with zstd or gzip according to `Accept-Encoding`.
+
+## March
+
+The month the OpenAI-compatible endpoint arrived.
+
+- **March 23.** The request path stopped creating a thread pool per request and reused one module-level executor, and the redundant token counts that ran several times per agent during a request were collapsed into one. The unused `POST /v1/swarm/types` route was removed.
+- **March 24.** LiteLLM was pinned to a specific version so a dependency update could not change model behaviour under a deploy.
+- **March 26.** Hugging Face model ids were rejected, since they cannot be served through the API.
+- **March 27.** **`POST /v1/chat/completions` shipped**, OpenAI-compatible, so an OpenAI SDK client works by changing its base URL. `Authorization: Bearer <key>` is accepted alongside `x-api-key`. Three days of follow-up fixes made it hold up against the real SDK: multimodal content parts are parsed instead of stringified, image URLs map onto the agent's image fields, errors come back as `{"error": {"message": ...}}` rather than FastAPI's `{"detail": ...}`, `n > 1` and requests with no user message are rejected with a clear error, and the non-streaming path no longer blocks the event loop.
+
+## April
+
+- **April 1.** `max_loops` on the OpenAI-compatible endpoint, sent through the SDK's `extra_body`, so multi-loop agent reasoning is reachable from OpenAI clients. It had been hardcoded to 1.
+- **April 13.** Compression negotiation was fixed in two places: a wildcard `Accept-Encoding` always picked the first codec in the server's list, and codecs that were not installed were still offered. Validation errors stopped leaking Pydantic's internal fields, a catch-all handler turned escaped exceptions into clean 500s, and HTTP and validation errors are logged server-side.
+- **April 21.** **`X-RateLimit-*` headers on every authenticated response**, with `Retry-After` on 429s. The same day, the telemetry insert moved to after the response is sent, so it stopped adding a database round trip to every request's latency.
+- **April 26.** Agent and swarm completions were moved off the event loop into a thread pool. Measured at 3.7 times the throughput under four concurrent requests. Seven route handlers that were declared async but wrapped synchronous work were corrected, and a provider test suite covering OpenAI, Anthropic, Gemini, xAI and Groq was added.
+
+## May
+
+- **May 5.** The default reasoning effort dropped to `low`, and persistent memory was disabled on the agent instance the API builds, so one request's state cannot leak into another.
+- **May 8.** **Real per-token streaming on `POST /v1/agent/completions`.** The streaming path hooks the agent's token callback, so SSE chunks arrive as the model produces them instead of after the run finishes.
+- **May 13.** **Per-token streaming on `POST /v1/swarm/completions`** for `SequentialWorkflow` and `AgentRearrange`, the two architectures the framework can stream. Other swarm types keep the run-then-send behaviour.
+- **May 28.** `temperature` became optional. When you do not set it, nothing is sent and the provider's default applies. The OpenAI-compatible endpoint forwards the request's temperature as given.
+
+## June
+
+- **June 10.** Streaming `SequentialWorkflow` and `AgentRearrange` on a framework build without the streaming method returned a 200 with an SSE error event and no chunks. The path now checks for the method and falls back to a complete, non-streamed response when it is missing.
+- **June 11.** The OpenAI-compatible endpoint extracted assistant text only from string results, so non-OpenAI providers that return message dicts or lists came back as a raw repr. All result shapes are handled.
+- **June 13.** **Four swarm router tuning parameters on `SwarmSpec`:** `council_judge_model_name` for `CouncilAsAJudge`, `chairman_model` for `LLMCouncil`, `heavy_swarm_variant` for `HeavySwarm`, and `multi_agent_collab_prompt`. Defaults match the framework, so omitting them changes nothing.
+- **June 15.** The advanced research endpoints were removed. The swarm router logic moved into its own module and started forwarding the spec's router parameters. A `HeavySwarm` request with no agents list no longer crashes on a length check. The interactive API docs at `/docs` were enabled.
+- **June 18.** **Rate limits count only billable work.** The counter had included the telemetry row written for every request, so a dashboard polling in the background used up the per-minute allowance in seconds and real completions got 429. Reasoning agent runs are logged as completions so they count correctly, and full workflow and streaming outputs are now logged, which is what the console's history pages read.
+- **June 19.** The auto swarm builder endpoint was removed.
+- **June 21.** `POST /v1/marketplace/agents` was removed. `marketplace_prompt_id` on an agent spec is an agent parameter and stays.
+
+## July
+
+The month the pace changed: 82 commits.
+
+**July 2.** Streaming a swarm with batch `tasks` crashed in the fallback path with a `'list' object has no attribute 'get'`. Fixed.
+
+**July 3.** `GET /v1/models` in the OpenAI shape, so `client.models.list()` works from an OpenAI SDK.
+
+**July 3 to 6: Freedom Mode.** Every API request was free and every account had paid-tier endpoints, models and rate limits unlocked through July 6 at 11:59 PM Pacific, for Independence Day. The promo expired on schedule and the code was removed the following day.
+
+**July 6.** The free-tier hourly limit rose to 350 requests. `GET /v1/metrics/summary` shipped, a per-account summary of completions, tokens and cost; it moved under `/v1/account/` in August. The completion count behind it reads the database total rather than stopping at the first 1,000 rows.
+
+**July 7 to 9.** Model listing was rebuilt: OpenRouter models are fetched and cached alongside LiteLLM's, the two lists are deduplicated, the response carries a model count, and a failed OpenRouter fetch retries with a capped delay instead of hanging. `GET /v1/agents/list` and `POST /v1/reasoning-agent/completions` gained typed response models, so their shapes appear in the API reference.
+
+**July 11.** **A $1.00 minimum balance is checked before any billable request runs**, so a run cannot start that the account cannot pay for. The auth checks behind every request were made concurrent, the compression middleware was rewritten as pure ASGI with a cap on how much it buffers, and the middleware order was corrected. `GET /v1/reasoning-agent/types` gained a typed response that matches what it returns; its description had advertised fields it never sent.
+
+**July 14 and 15.** Three request fields that used to fail deep inside a run now fail at parse time with a 422 that names the valid values: `temperature` is bounded to 0 to 2, `reasoning_effort` to the values the backend honours, and `heavy_swarm_variant` to `default`, `medium` or `heavy`. The OpenAPI spec enumerates each.
+
+**July 17.** A dense day.
+
+- `GET /v1/swarm/logs` returns the newest 1,000 entries newest first, `count` is populated with the true total, and the documented response shape matches the real one.
+- Rate limiting moved to a single database procedure for the window counts, fixed a count that stopped at 1,000 rows, and dropped a duplicate subscription lookup per request.
+- An invalid API key returned 500 instead of 400, which made SDKs retry a permanently bad key. Fixed.
+- Batch bodies are capped at 50 items on the three batch endpoints at the schema layer. A 10,000-task batch used to pass validation and fail downstream.
+- Telemetry became pure ASGI middleware that records caller data only, and the pricing model is built once and memoized.
+- `POST /v1/swarm/batch/completions` gained a typed response model.
+
+**July 19 and 20.**
+
+- A dedicated pool for agent creation removed a deadlock that could stall large swarm batches, and one failed swarm in a batch no longer fails the whole batch.
+- `SwarmSpec` fields are forwarded to the router dynamically, computed as the intersection of the spec and the router's signature, so a new router parameter reaches the API without a hand-maintained list. `director_model_name` and `director_settings` were added for `HierarchicalSwarm`; they had been silently dropped.
+- Blocking calls were taken off the streaming event loop, and SSE events are serialized with orjson.
+- Every error message links to the specific docs page for the field or endpoint involved.
+
+**July 21.** The free-tier restricted model list was updated for the July 2026 lineup.
+
+**July 29.** **`GET /v1/swarms/available` describes every swarm type:** name, description, category, best-for use cases, the `SwarmSpec` parameters specific to that architecture, and a docs link, in a new `swarm_types_metadata` array. The existing `swarm_types` string list is unchanged. The same day, the reasoning effort ladder was widened to run from `low` through `max`, with the default effort at `medium` and the default `max_tokens` at 16,000.
+
+## August
+
+117 commits, and the month billing was rebuilt.
+
+**August 1.** **Free-tier gating narrowed to frontier models only**: GPT-5.6, Claude Fable 5, Opus 5 and Opus 4.8, Gemini 3.1 Pro and Deep Think, and Grok 4.5. Sonnet, Haiku, Gemini Flash and the GPT mini and nano models are open to free keys. The alternatives suggested in the 403 were checked against the live catalog; four of them pointed at retired models. **`claude-sonnet-5` became the default agent model.** `top_p` was added to the agent spec and `dynamic_temperature_enabled` now defaults to false. The `swarms` framework was pinned to version 14.
+
+**August 3.** **Fallback models.** `fallback_models` takes an ordered list and `fallback_model_name` a single model; the agent switches to the next one when the primary errors. Each fallback is validated with the same rules as the primary.
+
+**August 4.** Ollama and Hugging Face ids are rejected with a 400 while the request body is parsed, on every model field including the swarm-level ones that had bypassed validation. The message points at OpenRouter.
+
+**August 6.**
+
+- **`POST /v1/auto-agent-builder/completions` shipped.** A builder agent designs a roster for the task you describe. Each entry maps onto the agent spec, so the response's `agents` list posts unmodified to any multi-agent endpoint. It is billed as one agent run, never by the size of the roster it designs, and `max_agents` and `num_agents` cap at the largest roster a swarm accepts.
+- Billing arithmetic that had been copied into every endpoint, and had drifted, was consolidated into one module. A 200,000-combination sweep confirmed every endpoint charges the same amounts as before, to the bit.
+- The credit ledger stopped truncating charges to whole numbers.
+
+**August 7.** The remaining direct deductions were routed through the same module, so a charge is computed in exactly one place, and a test fails the suite if any endpoint bypasses it.
+
+**August 11.** `max_loops` below 1 and non-positive `max_tokens` are rejected. A request that ran nothing used to be billed.
+
+**August 12.** **Multi-turn chat on `/v1/chat/completions` was reading history out of order.** Each assistant reply was placed before the question it answered, so a normal conversation reached the model scrambled and was billed. Fixed. Also that day, telemetry inserts for unregistered keys stopped being logged as emergencies.
+
+**August 13.**
+
+- **An agent that produced no output returned `"success": true` and was billed.** It now returns a 400 before any charge or log row.
+- **Claude 5-family agents returned empty output whenever reasoning was involved**, because two bugs stacked: a default reasoning effort was applied even when the request set none, and LiteLLM sent it in a shape Anthropic rejects. Reasoning params are now resolved explicitly and dropped for those models until the LiteLLM pin can send the accepted shape.
+- The two log inserts on the swarm completion path were taken off the event loop. One blocked request had been stalling every other request on the worker for the length of a database round trip.
+
+**August 14.** **Concurrent agent creation reordered the pipeline you asked for.** Agents were collected in completion order, so a `SequentialWorkflow` requested as Researcher, Writer, Editor could run as Writer, Editor, Researcher, with a 200 and nothing to show it. Results are collected in submission order now, on swarms and on swarm batches. Separately, a wildcard `Accept-Encoding` resolves to gzip and large bodies are compressed off the event loop.
+
+**August 16.** **Reasoning agent completions started being billed.** The endpoint had never deducted credits. Its `usage` block was also fixed; a fractional cost failed response validation and the endpoint returned 500 on any real charge.
+
+**August 17.** Streamed chat completions no longer pause about a second after the answer is already computed. One failing agent in an agent batch returns a per-agent error entry instead of failing the batch, and the other agents are no longer billed for a failure that was not theirs. `GET /v1/premium/endpoints` lists every premium-only route with its feature description.
+
+**August 18.** Account-scoped routes moved under `/v1/account/`: `/v1/account/logs` (with `/v1/swarm/logs` kept as a deprecated alias) and `/v1/account/premium-endpoints`. A marketplace prompt fetch that fails upstream maps to a 429 that forwards `Retry-After`, or a 502, instead of a 500 blaming your request.
+
+**August 19 and 20.** Swarm rosters and loop counts gained hard ceilings, on the swarm, on each agent inside it, on reasoning agents and on chat completions. The agent batch endpoint accepts the 50 items its spec advertised; it had rejected anything over 10. `imgs` on an agent completion now reaches the agent; it was accepted, documented, billed and dropped, so a multi-image request ran as text. A batched grid that omitted `max_loops` returned 400 on the documented default usage; it now defaults to 1.
+
+**August 21.** Five defects found while investigating why `/v1/account/logs` reported 3,600 completions for an account with 27,800.
+
+- Rotating an API key erased its history from the count. The scope now spans revoked keys, so the account that surfaced this went from 13% of its real usage to all of it.
+- The log query counted rows of unknown categories as completions, which is why the logs and the metrics summary disagreed. It uses an allowlist that a test keeps equal to the billable categories.
+- A database fault during key verification was reported as a 403 bad key. It passes through as a retryable 5xx.
+- `max_loops: "auto"` returned a 500 on a value its own description documents. It validates.
+- `/v1/metrics/summary` moved to `/v1/account/metrics/summary`, with the old path kept and deprecated.
+
+**August 22.** One log row with a null timestamp took `/v1/agents/list` down for the whole account. Requesting `auto_search` and `web_scraper` together silently gave the agent only the first. Both fixed.
+
+**August 24.** Supplying `messages` and `task` together on a swarm dropped the messages while the response claimed they were part of the run. Swarm validation looked up the account's rate limit once per agent, so a 25-agent swarm made 50 identical queries before any work started: 885 ms became 35 ms. Telemetry runs on its own pool so it cannot delay authentication.
+
+**August 26.** The caller's plan is resolved once per request instead of once per restricted model, per fallback and per handoff. A ten-agent premium swarm with one fallback each had spent 6.2 seconds asking the database the same question forty times; it now spends 0.3 seconds asking twice. **The MCP fields on the agent spec were realigned with the framework**: `mcp_urls` is new for several servers at once, `mcp_url` accepts a connection object as well as a string, and `mcp_configs` is a plain list. This followed a framework release that had changed the schema under the API.
+
+**August 30.** **`usage.total_cost` on every endpoint.** Graph workflows, batched grids and the auto agent builder had published the charge as `token_cost`; swarm completions had nested it in `billing_info`. The console's cost column was blank for four endpoint families because of it.
+
+## September
+
+162 commits, the busiest month. Much of it was performance and correctness work with a visible result: fewer 500s, faster responses, and several places where the API had been quietly billing something it should not have.
+
+**September 2 to 6.** A test now fails the suite if any `/v1` route forgets authentication, and another fails it if any module under `api/` stops importing, which is how the August 26 outage happened. Both CI workflows had been pointing at a test path that moved in July; fixed. The auth middleware was ported off Starlette's `BaseHTTPMiddleware`, which had been spawning a task group and bridging every response through two streams.
+
+**September 8.** Swarm completions echo `tasks` and `messages` back. Billing uses the usage the provider reports for each agent.
+
+**September 9.** Referral credits could pass the pre-flight balance check but could not pay the charge, so an account funded by referrals ran the swarm, paid the provider, and got a 402 with its balance untouched. Fixed, then superseded on October 15 by the purchased-credits-only rule. The per-worker thread ceiling for authentication rose from 40 to 200.
+
+**September 10.** A performance day with nine merged changes.
+
+- **OpenAI-compatible streaming streams real tokens.** It had run the agent to completion and sliced the finished string into about twenty pieces, so the first token arrived when the whole answer did.
+- Each thread gets its own Supabase client. With one shared HTTP/2 connection, a single connection reset failed every in-flight request at once: 11 of 20 concurrent completions returned 500 before any agent work began.
+- The two remaining header middlewares were ported to plain ASGI. They had been buffering every response, including streaming ones, just to set headers.
+- The agent-run and agent-creation pools are sized for network waits rather than CPU cores. A 12-core box had run at most 13 completions at once, with the 14th queued behind a request that can take 30 seconds. Twenty concurrent 2-second calls went from two waves to one.
+- `uvicorn[standard]` brought uvloop and httptools: about 19% more throughput, p95 from 192 ms to 157 ms on the same app.
+- SSE payloads are serialized with orjson on every streaming path, 8 to 16 times faster per chunk.
+- **zstd compression**, negotiated ahead of gzip when the client rates them equally.
+- Every app log line carries the worker PID, the per-worker startup chatter dropped to debug, and a debug line that had shipped with every compressed response was silenced.
+- The examples tree was reorganized by endpoint and swarm type.
+
+**September 15 and 16.** `img` on a swarm spec is forwarded to every swarm run call. A 402 from a charge inside a swarm run is preserved instead of becoming a 500. Swarm batches run on their own executor rather than the shared request pool.
+
+**September 21 and 22.**
+
+- **The agent `description` field never reached the agent.** The framework names the parameter differently, so every agent ran with the library's default description. Fixed.
+- **Synchronous swarm and batch runs billed your prompt a second time.** The router returns the caller's own task beside the agents' answers, and the sync path counted it as output tokens. Streaming had already stripped it; both paths now share one strip.
+- Handoff lists are bounded at the roster ceiling.
+- A timestamp supplied to the night-time check is converted to Pacific before its hour is read.
+- The image fee counts every image across `img` and `imgs`.
+- Sending `tasks` alongside `task` or `messages` is rejected instead of running one task.
+- A graph edge missing `source` or `target` is rejected instead of being dropped, which had run and billed a graph you did not describe.
+- An empty non-streaming chat result returns a 400 instead of a billed 200 with `finish_reason: "stop"`.
+
+**September 24.** The single largest correctness day.
+
+- **Unknown models return a 404 before any charge**, on every completion endpoint. The name is checked against LiteLLM's registry and, for `openrouter/` names, OpenRouter's catalog. Previously an unknown model ran to an empty result.
+- **When a known model fails, you get the provider's reason:** 404 when the provider does not serve the model, 400 with the provider's message when it rejected the request, 429 when rate limited, 502 for an outage. Nothing is charged in any of these cases. The old message was "produced no output".
+- A request with no task and no history is a 400 instead of a 500.
+- **Bad API keys return 401 on every route.**
+- `POST /v1/reasoning-agent/completions` accepts four `swarm_type` values: `AgentJudge`, `ReflexionAgent`, `self-consistency` and `consistency-agent`. The default is `self-consistency`; the old default was not a valid type. `num_knowledge_items` was removed with the GKP type.
+- A chat request with two images was sending the first image twice and billing for three. Each image goes in one field and is billed once.
+- A `HierarchicalSwarm` whose director returns no orders is a 502, not a 500.
+- Every example and docstring moved off GPT-4 series ids onto a mix of GPT-5, Claude 5 and OpenRouter models.
+
+**September 25.** **Tool calling on `/v1/chat/completions`.** `tools` map onto the agent's function-calling schema, `tool_choice` is applied, `tool_calls` come back on the message with `finish_reason: "tool_calls"`, and `role: "tool"` messages and assistant turns carrying tool calls replay through history. `finish_reason` is also `length` when output hits `max_tokens`. Previously these fields were silently dropped and a plain text completion came back.
+
+## October
+
+131 commits through October 22, with two new endpoint families and the billing model finished.
+
+**October 3.** **Decision models.** `POST /v1/decision/completions` takes a model, a JSON `state` and a list of `questions` of type choice, score or noul, and returns calibrated answers with the model version that answered and token usage with cost. `GET /v1/decision/models` lists the models with their price per million tokens. `POST /v1/systemone` takes and returns exactly what TypeSafe's endpoint does, so the official TypeSafe SDKs work with their base URL set to this API, and `GET /v1/models` answers in TypeSafe's shape when the request carries the SDK header. Billed at the provider price times 1.15, with nothing charged on failure. The endpoints were renamed from `/v1/decision-model/*` on October 8 and the old paths removed the same day. Eight runnable examples shipped with them.
+
+**October 5.** `imgs` on a batched grid is a 422; the grid cannot forward images, and a request with them had run as text and been billed.
+
+**October 8.** The build moved to uv with a locked `pyproject.toml` on Python 3.13. The image went from 905 MB to 540 MB and a cold build from 64 seconds to 11. The health route no longer passes through the rate limiter.
+
+**October 10.** A decision model provider replying with a non-JSON body is a 502 rather than a 400 carrying a parse error.
+
+**October 12.** **Billing finished.**
+
+- **Per-model pricing.** Every agent's provider-reported tokens are billed at its own model's price times a 15% service fee: `openrouter/` models from OpenRouter's catalog, refreshed hourly, and everything else from LiteLLM's, with the flat rate as a logged fallback only when neither lists the model. Mixed-model swarms are billed per agent. `GET /v1/models/available` returns priced objects, `GET /v1/models` carries a `pricing` object per entry, and `GET /v1/models/pricing` prices one model. The agents a swarm builds for itself, a hierarchical director, a majority-voting consensus agent, a council aggregator or chairman, are billed at their own models.
+- **MCP servers and `web_scraper` are free.** Only tokens are billed.
+- **The `auto_search` fee is part of `usage.total_cost`** and charged only when the run succeeds. It had been deducted separately before the agent ran, so the response under-reported the charge by $0.04 and a failed run still paid it.
+- Decision models read the shared service fee setting instead of their own copy.
+- Billing runs off the event loop on its own pool. During a billed OpenRouter request, the worst `/health` latency on the same worker fell from 3.2 seconds to under 110 ms.
+- The service fee multiplier and per-agent breakdown were removed from every response's `usage`; they are internal.
+- A streamed agent run that fails sends the provider's error instead of ending normally and billing. A grid run with no `name` returns 200 instead of a billed 500. A 429 from the marketplace keeps its `Retry-After`. A failed subscription lookup is a 503.
+
+**October 14.** The per-thread Supabase client from September had not taken effect because of a cache on the factory; it does now.
+
+**October 15.** **Only purchased credits pay for API usage.** Free and referral credits are no longer read when a charge is made or when the minimum balance is checked, and both 402 messages say so with a link to top up. Also: `stop` on chat completions is forwarded, as a string or up to four strings; it had been dropped silently. Models that reject `stop` return the provider's reason instead of an empty stream that ends in `finish_reason: "stop"`.
+
+**October 16.**
+
+- **OpenRouter free models cost nothing**: no token cost, no per-agent fee, never the fallback rate. Free runs still count toward rate limits and appear in your logs.
+- **`GET /v1/job/{job_id}`** returns the stored result of a past completion by the `job_id` its response carried. Another account's job and a missing job both return the same 404. A malformed id is a 422 before any lookup.
+- A batched grid with one failed agent returns that agent as an error entry with `status: "partial"` instead of a billed 500, and a grid where every agent fails is a 502 with nothing charged.
+- Graph workflow rosters are capped at the swarm ceiling.
+- `/v1/models` returns the OpenAI error shape its SDK clients expect.
+
+**October 19.**
+
+- A job lookup that fails at the database is a 503 asking you to retry, not a 404 that could lead a client to run and pay for the job again.
+- `selected_tools` is validated: one name is treated as a list, unknown names are a 422 listing the allowed tools.
+- A graph workflow where every node fails returns the provider's error and is not billed. One where some nodes fail bills only the agents whose node answered, and the error text is not counted as output tokens.
+
+**October 21.** `GET /v1/job/{job_id}` also returns an agent batch result by its `batch_id`.
+
+**October 22.**
+
+- **The night-time discount applies to paid plans only.** The 50% reduction on token costs between 8 PM and 6 AM Pacific now requires a Pro, Ultra or Premium tier or an active subscription. The plan is checked only at night, and a failed lookup bills at full price rather than leaving a finished run unbilled.
+- **The API runs on ECS Fargate in four regions** with latency routing on `api.swarms.world`, pinned regional hostnames, and nightly sleep for the three non-primary regions between 1 AM and 7 AM local time, during which their traffic goes to the next-nearest region.
+- **`POST /v1/messages`** in the Anthropic Messages format, for non-streaming text requests. Streaming, image and document blocks, tools, thinking and `stop_sequences` are rejected with an Anthropic-shaped 400 rather than ignored.
+- **`POST /v1/responses`** in the OpenAI Responses shape, non-streaming, with its request and response schemas published in the API reference.
+- `GET /v1/account/logs` bodies over 8 MiB are now compressed, so an account with very large stored outputs no longer gets a 413 from the history page.
+
+## What comes next
+
+The deployment work that closed the window is not finished. The four regions are live, but requests still pass through a gateway that ends them at 30 seconds and caps payloads at 10 MB; the move onto public load balancers that lifts both limits is staged and tested, and will ship as its own change. The logs endpoint, which today returns the 1,000 newest completions in one body, is the first candidate for pagination once that lands.
+
+## Conclusion
+
+Eight months ago the API had one request shape, one price for every model, and a fair number of places where a failed run came back as a billed success. Today it answers in the shapes the major SDKs already speak, bills each model at its own price with a fee you can see, refuses the requests it cannot run before they cost anything, streams tokens as they are produced, and serves from the region nearest to you. Most of the 352 commits in this record are small, and that is the point: the surface area is the same, but almost every edge of it is now sharper.
+
+The work ahead is already visible at the end of this log. The gateway limits come off, the logs endpoint gets pages, and the compatibility endpoints grow into streaming and tools. Every one of those will appear in the next changelog with a date and a before-and-after, the same as here.
+
+## Get started
+
+If you have not used the API yet, this is a good moment to try it. Sign up at [cloud.swarms.world](https://cloud.swarms.world) and you get **$5 in free credits** to spend on any endpoint in this post, at the per-model prices described above, with no card required to start.
+
+1. **Create an account** at [cloud.swarms.world](https://cloud.swarms.world) and copy an API key from [cloud.swarms.world/api-keys](https://cloud.swarms.world/api-keys).
+2. **Run one agent.** This is the whole request:
+
+```bash
+curl -X POST https://api.swarms.world/v1/agent/completions \
+  -H "x-api-key: $SWARMS_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "agent_config": {
+      "agent_name": "Analyst",
+      "model_name": "claude-sonnet-5"
+    },
+    "task": "Summarize the three biggest risks of deploying LLM agents in production."
+  }'
+```
+
+3. **Or keep the SDK you already have.** Point the OpenAI SDK at `https://api.swarms.world/v1` with your Swarms key as the API key, and `chat.completions.create` works unchanged, tools and streaming included. The Anthropic SDK works the same way against `/v1/messages`.
+4. **Then scale it.** Post the same agent config inside a `SwarmSpec` to `/v1/swarm/completions` with any of the architectures listed at [api.swarms.world/v1/swarms/available](https://api.swarms.world/v1/swarms/available), or let `/v1/auto-agent-builder/completions` design the roster for you.
+
+Every run shows up at [cloud.swarms.world/history](https://cloud.swarms.world/history) with its tokens and cost, and `usage.total_cost` on each response tells you exactly what it charged. The [documentation](https://docs.swarms.ai) has a page per endpoint, and the [Discord](https://discord.gg/VapjxpSyHC) is where the team answers questions.
+
+## Links and Resources
+
+| Resource | Link |
+| --- | --- |
+| API reference | [docs.swarms.ai](https://docs.swarms.ai) |
+| Interactive docs | [api.swarms.world/docs](https://api.swarms.world/docs) |
+| Swarms Cloud | [cloud.swarms.world](https://cloud.swarms.world) |
+| Completion history | [cloud.swarms.world/history](https://cloud.swarms.world/history) |
+| Pricing | [cloud.swarms.world/pricing](https://cloud.swarms.world/pricing) |
+| Published rates | [api.swarms.world/v1/usage/costs](https://api.swarms.world/v1/usage/costs) |
+| Models and prices | [api.swarms.world/v1/models/available](https://api.swarms.world/v1/models/available) |
+| Swarm architectures | [api.swarms.world/v1/swarms/available](https://api.swarms.world/v1/swarms/available) |
+| Source | [github.com/The-Swarm-Corporation/Swarms-API](https://github.com/The-Swarm-Corporation/Swarms-API) |
+| Previous cloud changelog | [August 3 to September 19](/blog/swarms-cloud-changelog-august-september) |
+| Service status | [status.swarms.ai](https://status.swarms.ai) |
+| Discord community | [discord.gg/VapjxpSyHC](https://discord.gg/VapjxpSyHC) |
+
+---
+
+*Have questions or feedback? Join our [Discord community](https://discord.gg/VapjxpSyHC) or check out the [documentation](https://docs.swarms.ai).*

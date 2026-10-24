@@ -713,7 +713,7 @@ The swarm works. These are the changes worth making before it runs unattended.
 
 ### Get structured output with response_format
 
-A brief is for people. Downstream code usually wants fields. The [Structured Outputs docs](https://docs.swarms.ai/docs/documentation/capabilities/swarms_api_tools) pass a JSON schema through `llm_args.response_format` on any agent, including agents inside a swarm. Here a formatter agent is added to the end of the step 2 pipeline, so the last turn is JSON that matches the schema. The docs list `gpt-4.1`, `gpt-4.1-mini` and `gpt-4o` as models that support this mode, so the formatter uses `gpt-4.1`.
+A brief is for people. Downstream code usually wants fields. The [Structured Outputs docs](https://docs.swarms.ai/docs/documentation/capabilities/swarms_api_tools) pass a JSON schema through `llm_args.response_format` on any agent, including agents inside a swarm. Here a formatter agent is added to the end of the step 2 pipeline, so the last turn is JSON that matches the schema. The docs list `gpt-5.4` and `gpt-5.4-mini` as models that support this mode, so the formatter uses `gpt-5.4`.
 
 ```python
 # step6_structured.py: end the pipeline with a JSON scorecard (reuses common.py and step2_pipeline.py)
@@ -757,7 +757,7 @@ formatter = {
     "agent_name": "Scorecard Formatter",
     "description": "Converts the brief into a JSON scorecard",
     "system_prompt": "Convert the competitive brief you receive into the scorecard schema. Return only JSON.",
-    "model_name": "gpt-4.1",
+    "model_name": "gpt-5.4",
     "max_loops": 1,
     "max_tokens": 2048,
     "temperature": 0.0,

@@ -713,7 +713,7 @@ asyncio.run(main())
 
 ### 用 response_format 获取结构化输出
 
-简报是给人看的，下游代码通常需要字段。[结构化输出文档](https://docs.swarms.ai/docs/documentation/capabilities/swarms_api_tools)通过任意智能体上的 `llm_args.response_format` 传入 JSON schema，蜂群里的智能体也一样。这里在第 2 步流水线的末尾加了一个格式化智能体，所以最后一轮是符合 schema 的 JSON。文档列出 `gpt-4.1`、`gpt-4.1-mini` 和 `gpt-4o` 支持这种模式，因此格式化智能体使用 `gpt-4.1`。
+简报是给人看的，下游代码通常需要字段。[结构化输出文档](https://docs.swarms.ai/docs/documentation/capabilities/swarms_api_tools)通过任意智能体上的 `llm_args.response_format` 传入 JSON schema，蜂群里的智能体也一样。这里在第 2 步流水线的末尾加了一个格式化智能体，所以最后一轮是符合 schema 的 JSON。文档列出 `gpt-5.4` 和 `gpt-5.4-mini` 支持这种模式，因此格式化智能体使用 `gpt-5.4`。
 
 ```python
 # step6_structured.py: end the pipeline with a JSON scorecard (reuses common.py and step2_pipeline.py)
@@ -757,7 +757,7 @@ formatter = {
     "agent_name": "Scorecard Formatter",
     "description": "Converts the brief into a JSON scorecard",
     "system_prompt": "Convert the competitive brief you receive into the scorecard schema. Return only JSON.",
-    "model_name": "gpt-4.1",
+    "model_name": "gpt-5.4",
     "max_loops": 1,
     "max_tokens": 2048,
     "temperature": 0.0,

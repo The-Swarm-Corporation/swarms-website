@@ -116,7 +116,7 @@ client = OpenAI(
 )
 
 response = client.chat.completions.create(
-    model="gpt-4.1",
+    model="gpt-5.4",
     messages=[
         {"role": "system", "content": "You are a senior financial analyst."},
         {"role": "user", "content": "What are the top risks in emerging market bonds right now?"},
@@ -132,7 +132,7 @@ print(response.usage.total_tokens)
 Now switch labs by changing one string. The client, the retry middleware around it, the streaming UI, and the error handling all stay the same:
 
 ```python
-for model in ["gpt-4.1", "claude-sonnet-5", "claude-opus-5-5", "gpt-6-astra", "deepseek/deepseek-reasoner"]:
+for model in ["gpt-5.4", "claude-sonnet-5", "claude-opus-5-5", "gpt-6-astra", "deepseek/deepseek-reasoner"]:
     r = client.chat.completions.create(
         model=model,
         messages=[{"role": "user", "content": "Summarize the case for LFP batteries in two sentences."}],
@@ -154,7 +154,7 @@ Swarms adds one extension, `max_loops`, which lets the agent iterate on its own 
 
 ```python
 response = client.chat.completions.create(
-    model="gpt-4.1",
+    model="gpt-5.4",
     messages=[
         {"role": "system", "content": "Write a solution, critique it, then output the corrected version."},
         {"role": "user", "content": "Implement longest_palindromic_substring(s: str) -> str."},
@@ -194,7 +194,7 @@ from agents.extensions.models.litellm_model import LitellmModel
 researcher = Agent(
     name="Researcher",
     instructions="Research the topic thoroughly and cite what you find.",
-    model="gpt-4.1",
+    model="gpt-5.4",
 )
 
 reviewer = Agent(
@@ -228,7 +228,7 @@ payload = {
             "agent_name": "Researcher",
             "description": "Gathers and cites source material",
             "system_prompt": "Research the topic thoroughly and cite what you find.",
-            "model_name": "gpt-4.1",
+            "model_name": "gpt-5.4",
             "fallback_models": ["claude-sonnet-5", "gemini-3.8-flash"],
             "max_loops": 1,
         },
@@ -237,7 +237,7 @@ payload = {
             "description": "Audits the research for weak claims",
             "system_prompt": "Check the research for weak or unsupported claims.",
             "model_name": "claude-sonnet-5",
-            "fallback_models": ["gpt-4.1", "gemini-3.8-flash"],
+            "fallback_models": ["gpt-5.4", "gemini-3.8-flash"],
             "max_loops": 1,
         },
     ],
@@ -300,13 +300,13 @@ payload = {
                 "agent_name": "Billing-Specialist",
                 "description": "Handles invoices, refunds, and subscription changes",
                 "system_prompt": "Be precise with amounts and dates. Confirm changes before applying.",
-                "model_name": "gpt-4.1-mini",
+                "model_name": "gpt-5.4-mini",
             },
             {
                 "agent_name": "Technical-Support",
                 "description": "Debugs API errors and integration problems",
                 "system_prompt": "Ask for error messages and logs. Give step-by-step fixes.",
-                "model_name": "gpt-4.1",
+                "model_name": "gpt-5.4",
                 "fallback_models": ["claude-sonnet-5"],
             },
         ],
@@ -373,7 +373,7 @@ payload = {
         {
             "agent_name": "Reviewer-OpenAI",
             "system_prompt": "You are a strict senior code reviewer.",
-            "model_name": "gpt-4.1",
+            "model_name": "gpt-5.4",
         },
         {
             "agent_name": "Reviewer-Anthropic",
@@ -384,13 +384,13 @@ payload = {
             "agent_name": "Reviewer-Google",
             "system_prompt": "You are a strict senior code reviewer.",
             "model_name": "gemini-3.6-flash",
-            "fallback_models": ["gpt-4.1-mini"],
+            "fallback_models": ["gpt-5.4-mini"],
         },
     ],
 }
 ```
 
-When we ran it, the Google route happened to be returning errors. The third juror failed over to `gpt-4.1-mini` inside the same request, all three voted BLOCK (an empty list raises `ZeroDivisionError`), and the consensus agent ranked the three reviews. Total: **8.4 seconds, $0.039**. Nobody wrote retry code, and the caller never saw the outage.
+When we ran it, the Google route happened to be returning errors. The third juror failed over to `gpt-5.4-mini` inside the same request, all three voted BLOCK (an empty list raises `ZeroDivisionError`), and the consensus agent ranked the three reviews. Total: **8.4 seconds, $0.039**. Nobody wrote retry code, and the caller never saw the outage.
 
 ## Failover
 
@@ -401,7 +401,7 @@ On Swarms, every agent takes `fallback_models`, an ordered list of models tried 
 ```mermaid
 flowchart LR
     T["Agent step"] --> P["Primary: gemini-3.6-flash"]
-    P -->|"provider error"| F1["fallback_models[0]: gpt-4.1-mini"]
+    P -->|"provider error"| F1["fallback_models[0]: gpt-5.4-mini"]
     F1 -->|"provider error"| F2["fallback_models[1]: claude-sonnet-5"]
     P -->|"ok"| R["Result"]
     F1 -->|"ok"| R
@@ -427,7 +427,7 @@ Swarms Cloud bills every model at its provider's price plus a 15% service fee, o
 | Image input | $0.25 per image |
 | Night mode | 50% off tokens on swarm completions, 8 PM to 6 AM Pacific |
 
-At the time of writing, `gpt-4.1` costs $2.30 per million input tokens and $9.20 per million output tokens through Swarms (OpenAI's list price of $2.00 and $8.00 plus the fee), and `claude-sonnet-5` costs $2.30 and $11.50. Provider prices change, so look up any model's current price with `GET /v1/models/pricing?model_name=...`, or list every model with its price through `GET /v1/models/available`.
+At the time of writing, `gpt-5.4` costs $2.875 per million input tokens and $17.25 per million output tokens through Swarms (OpenAI's list price of $2.50 and $15.00 plus the fee), and `claude-sonnet-5` costs $2.30 and $11.50. Provider prices change, so look up any model's current price with `GET /v1/models/pricing?model_name=...`, or list every model with its price through `GET /v1/models/available`.
 
 A mixed-model swarm is billed per agent, each agent's tokens at its own model's price, so switching a step from one lab's model to another's reprices only that step, on the same key and the same bill.
 
@@ -595,7 +595,7 @@ Not today. For tools, MCP servers, handoffs, and structured output, use `/v1/age
 For agents without function tools or handoffs, yes, through `set_default_openai_client` and the Chat Completions API setting. Agents that use tools or handoffs should call the native Swarms endpoints instead.
 
 **How does Swarms pricing compare with calling providers directly?**
-Swarms bills each model at its provider's list price plus a 15% service fee (at the time of writing, `gpt-4.1` is $2.30 per million input tokens and $9.20 per million output, against OpenAI's $2.00 and $8.00), plus $0.01 per agent on swarm, graph, and grid workflows. Per token it costs more than calling the provider directly. In return you get one key and one bill across every provider, the cost of each run in its response, and 50% off swarm token costs from 8 PM to 6 AM Pacific. `GET /v1/models/pricing` returns any model's current price.
+Swarms bills each model at its provider's list price plus a 15% service fee (at the time of writing, `gpt-5.4` is $2.875 per million input tokens and $17.25 per million output, against OpenAI's $2.50 and $15.00), plus $0.01 per agent on swarm, graph, and grid workflows. Per token it costs more than calling the provider directly. In return you get one key and one bill across every provider, the cost of each run in its response, and 50% off swarm token costs from 8 PM to 6 AM Pacific. `GET /v1/models/pricing` returns any model's current price.
 
 **Is Swarms open source?**
 The Swarms framework is open source on [GitHub](https://github.com/kyegomez/swarms). Swarms Cloud is the hosted API that runs agents and swarms for you.

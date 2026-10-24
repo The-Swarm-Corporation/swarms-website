@@ -152,7 +152,7 @@ Streaming code usually needs no change. RouteHub yields OpenAI `ChatCompletionCh
 
 ```python
 stream = routehub.completion(
-    model="claude-sonnet-4-6",
+    model="claude-sonnet-5-5",
     messages=messages,
     stream=True,
     stream_options={"include_usage": True},
@@ -202,7 +202,7 @@ weather = {
 }
 
 messages = [{"role": "user", "content": "What's the weather in Paris?"}]
-response = routehub.completion(model="claude-sonnet-4-6", messages=messages, tools=[weather])
+response = routehub.completion(model="claude-sonnet-5-5", messages=messages, tools=[weather])
 message = response.choices[0].message
 
 messages.append(message.model_dump(exclude_none=True))
@@ -210,7 +210,7 @@ for call in message.tool_calls or []:
     args = json.loads(call.function.arguments)
     messages.append({"role": "tool", "tool_call_id": call.id, "content": get_weather(**args)})
 
-final = routehub.completion(model="claude-sonnet-4-6", messages=messages, tools=[weather])
+final = routehub.completion(model="claude-sonnet-5-5", messages=messages, tools=[weather])
 print(final.choices[0].message.content)
 ```
 
@@ -249,7 +249,7 @@ messages = [
     },
     {"role": "user", "content": "Which policies cover vendor onboarding?"},
 ]
-response = routehub.completion(model="claude-sonnet-4-6", messages=messages)
+response = routehub.completion(model="claude-sonnet-5-5", messages=messages)
 print(response.usage.prompt_tokens_details.cached_tokens)  # tokens read from cache
 print(response.usage.cache_creation_input_tokens)          # tokens written to cache
 ```
@@ -275,13 +275,13 @@ routehub.token_counter(model="gpt-5.4-mini", messages=messages)
 Model metadata is where RouteHub differs most from LiteLLM. LiteLLM ships a price map and, by default, downloads an updated copy from GitHub at import. RouteHub reads OpenRouter's live model list on the first lookup and caches it for five minutes:
 
 ```python
-info = routehub.get_model_info("claude-sonnet-4-6")
+info = routehub.get_model_info("claude-sonnet-5-5")
 info["max_input_tokens"]
 info["input_cost_per_token"]
 
 routehub.get_max_tokens("gpt-5.4-mini")
 routehub.supports_vision("gpt-5.4-mini")
-"claude-sonnet-4-6" in routehub.model_list
+"claude-sonnet-5-5" in routehub.model_list
 ```
 
 `get_model_info` raises `ModelNotMappedError` for unknown models, and the `supports_*` functions return `False`. Private, fine-tuned or self-hosted models go in with `register_model`, in LiteLLM's model-info shape. Registered entries take priority and never expire:
@@ -331,7 +331,7 @@ def complete_with_fallbacks(models, **kwargs):
             last_error = error
     raise last_error
 
-response = complete_with_fallbacks(["gpt-5.4-mini", "claude-sonnet-4-6"], messages=messages)
+response = complete_with_fallbacks(["gpt-5.4-mini", "claude-sonnet-5-5"], messages=messages)
 ```
 
 **Cost tracking.** RouteHub has no `completion_cost`. Prices come from `get_model_info`, so a basic version is a few lines. This one prices cached input at the full input rate, so it overstates the cost of cached prompts:

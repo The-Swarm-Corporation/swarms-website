@@ -89,7 +89,7 @@ Two things to check before adopting it: the current PyPI release (0.2.0) pins `o
 
 [OpenRouter](https://openrouter.ai) is a hosted API with one key and one OpenAI-compatible endpoint for models from many providers. There is nothing to run. OpenRouter passes through provider prices without markup and [charges a 5.5% fee (minimum $0.80) when you buy credits by card](https://openrouter.ai/docs/faq), with a bring-your-own-key option. If a provider returns an error, OpenRouter falls back to the next provider for that model.
 
-**Best for:** teams that want access to many models without managing provider accounts. It also combines with a library: RouteHub, any-llm and aisuite can all call OpenRouter, for example `routehub.completion(model="openrouter/anthropic/claude-sonnet-4.6", ...)`.
+**Best for:** teams that want access to many models without managing provider accounts. It also combines with a library: RouteHub, any-llm and aisuite can all call OpenRouter, for example `routehub.completion(model="openrouter/anthropic/claude-sonnet-5.5", ...)`.
 
 ## LiteLLM Alternatives Compared
 
@@ -158,7 +158,7 @@ from routehub import completion, acompletion
 from routehub.exceptions import RateLimitError
 
 response = completion(
-    model="claude-sonnet-4-6",
+    model="claude-sonnet-5-5",
     messages=[{"role": "user", "content": "Summarize our Q3 risks in three bullets."}],
     num_retries=3,
 )

@@ -89,7 +89,7 @@ RouteHub 的设计目标是开销和它所封装的提供商 SDK 相当。`impor
 
 [OpenRouter](https://openrouter.ai) 是一个托管 API，用一个 key 和一个兼容 OpenAI 的端点访问多家提供商的模型，不需要运行任何服务。OpenRouter 按提供商原价收费，不加价，[用银行卡购买额度时收取 5.5% 的手续费（最低 0.80 美元）](https://openrouter.ai/docs/faq)，也支持使用你自己的 key。如果某个提供商返回错误，OpenRouter 会自动切换到该模型的下一个提供商。
 
-**适合：** 想访问大量模型、又不想管理各家提供商账号的团队。它也可以和库搭配使用：RouteHub、any-llm 和 aisuite 都能调用 OpenRouter，例如 `routehub.completion(model="openrouter/anthropic/claude-sonnet-4.6", ...)`。
+**适合：** 想访问大量模型、又不想管理各家提供商账号的团队。它也可以和库搭配使用：RouteHub、any-llm 和 aisuite 都能调用 OpenRouter，例如 `routehub.completion(model="openrouter/anthropic/claude-sonnet-5.5", ...)`。
 
 ## LiteLLM 替代方案对比
 
@@ -158,7 +158,7 @@ from routehub import completion, acompletion
 from routehub.exceptions import RateLimitError
 
 response = completion(
-    model="claude-sonnet-4-6",
+    model="claude-sonnet-5-5",
     messages=[{"role": "user", "content": "Summarize our Q3 risks in three bullets."}],
     num_retries=3,
 )

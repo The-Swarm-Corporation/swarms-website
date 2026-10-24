@@ -132,7 +132,7 @@ from swarms import Agent, GraphWorkflow
 
 wf = GraphWorkflow(auto_compile=True)
 for name in ["research", "summarize", "critique", "editor"]:
-    wf.add_node(Agent(agent_name=name, model_name="gpt-4.1", max_loops=1))
+    wf.add_node(Agent(agent_name=name, model_name="gpt-5.4", max_loops=1))
 
 wf.add_edge("research", "summarize")
 wf.add_edge("research", "critique")
@@ -215,7 +215,7 @@ from langgraph.graph import END, START, StateGraph
 from pydantic import BaseModel
 from typing_extensions import TypedDict
 
-llm = ChatOpenAI(model="gpt-4.1")
+llm = ChatOpenAI(model="gpt-5.4")
 ```
 
 ## Concept mapping
@@ -359,7 +359,7 @@ print(out["fr"], out["de"], out["ja"])
 ```python
 languages = ["French", "German", "Japanese"]
 translators = [
-    agent(f"Translator-{lang}", f"Translate the copy you receive into {lang}. Keep the tone.", model="gpt-4.1-mini")
+    agent(f"Translator-{lang}", f"Translate the copy you receive into {lang}. Keep the tone.", model="gpt-5.4-mini")
     for lang in languages
 ]
 
@@ -603,7 +603,7 @@ print(graph.invoke({"topic": "renewable energy markets"})["report"])
 **GraphWorkflow**
 
 ```python
-collectors = [agent(f"DataCollector{i}", f"Gather data on the topic from source {i}.", model="gpt-4.1-mini") for i in range(1, 4)]
+collectors = [agent(f"DataCollector{i}", f"Gather data on the topic from source {i}.", model="gpt-5.4-mini") for i in range(1, 4)]
 analysts = [agent(f"Analyst{i}", "Analyze the data you receive and extract key insights.") for i in range(1, 4)]
 validators = [agent(f"Validator{i}", "Check the analyses you receive for accuracy and completeness.") for i in range(1, 3)]
 synthesis = agent("SynthesisAgent", "Combine the validated analyses you receive into a final report.")
@@ -691,8 +691,8 @@ result = run_graph(
     "Acquisition of a 40-person robotics startup",
     agents=[
         agent("Legal", "Review the deal for legal exposure."),
-        agent("Financial", "Review the deal's valuation and financial risk.", model="gpt-4.1"),
-        agent("Technical", "Review the target's technology and team.", model="gpt-4.1"),
+        agent("Financial", "Review the deal's valuation and financial risk.", model="gpt-5.4"),
+        agent("Technical", "Review the target's technology and team.", model="gpt-5.4"),
         agent("ExecSummary", "Write a one-page executive summary from the reviews you receive."),
         agent("RiskRegister", "Build a risk register table from the reviews you receive."),
     ],
@@ -773,7 +773,7 @@ mappers = [
     agent(
         f"Memo-{i}",
         f"Write a one-paragraph investment memo on {company}: moat, risks, recent news.",
-        model="gpt-4.1-mini",
+        model="gpt-5.4-mini",
     )
     for i, company in enumerate(companies)
 ]
@@ -798,7 +798,7 @@ The same question goes to jurors on three different vendors in parallel, and a j
 
 ```mermaid
 graph LR
-    G["Juror on GPT-4.1"] --> J[Judge]
+    G["Juror on GPT-5.4"] --> J[Judge]
     C["Juror on Claude Sonnet 5"] --> J
     M["Juror on Gemini 3.8 Flash"] --> J
 ```
@@ -810,8 +810,8 @@ from langchain_anthropic import ChatAnthropic
 from langchain_google_genai import ChatGoogleGenerativeAI
 
 jurors = {
-    "gpt": ChatOpenAI(model="gpt-4.1"),
-    "claude": ChatAnthropic(model="claude-sonnet-5").with_fallbacks([ChatOpenAI(model="gpt-4.1")]),
+    "gpt": ChatOpenAI(model="gpt-5.4"),
+    "claude": ChatAnthropic(model="claude-sonnet-5").with_fallbacks([ChatOpenAI(model="gpt-5.4")]),
     "gemini": ChatGoogleGenerativeAI(model="gemini-3.8-flash"),
 }
 
@@ -850,8 +850,8 @@ print(graph.invoke({"question": "Is this clause enforceable in California?"})["r
 ```python
 juror_prompt = "Answer the question and justify your answer. End with a one-line verdict."
 jurors = [
-    agent("Juror-GPT", juror_prompt, model="gpt-4.1", fallback_models=["gpt-4.1-mini"]),
-    agent("Juror-Claude", juror_prompt, model="claude-sonnet-5", fallback_models=["gpt-4.1"]),
+    agent("Juror-GPT", juror_prompt, model="gpt-5.4", fallback_models=["gpt-5.4-mini"]),
+    agent("Juror-Claude", juror_prompt, model="claude-sonnet-5", fallback_models=["gpt-5.4"]),
     agent("Juror-Gemini", juror_prompt, model="gemini-3.8-flash", fallback_models=["claude-sonnet-5"]),
 ]
 judge = agent(
@@ -937,9 +937,9 @@ result = run_graph(
     "Debate",
     "Motion: cities should ban gas-powered leaf blowers.",
     agents=[
-        agent("Pro", "Argue for the motion in five strong points.", model="gpt-4.1"),
+        agent("Pro", "Argue for the motion in five strong points.", model="gpt-5.4"),
         agent("Con", "Argue against the motion in five strong points.", model="claude-sonnet-5"),
-        agent("ProRebuttal", "You argue for the motion. Rebut the opposing argument you receive, point by point.", model="gpt-4.1"),
+        agent("ProRebuttal", "You argue for the motion. Rebut the opposing argument you receive, point by point.", model="gpt-5.4"),
         agent("ConRebuttal", "You argue against the motion. Rebut the opposing argument you receive, point by point.", model="claude-sonnet-5"),
         agent("Judge", "You receive a rebuttal from each side of a debate. Decide which side argued better and explain why.", model="gemini-3.8-flash"),
     ],
@@ -1104,11 +1104,11 @@ result = run_graph(
     "Unrolled reflection",
     "Write a 120-word product description for a home battery.",
     agents=[
-        agent("Draft", "Write the requested copy.", model="gpt-4.1"),
+        agent("Draft", "Write the requested copy.", model="gpt-5.4"),
         agent("Critic1", "List the three biggest weaknesses of the copy you receive.", model="claude-sonnet-5"),
-        agent("Revise1", "You receive a draft and a critique. Rewrite the draft to fix every weakness.", model="gpt-4.1"),
+        agent("Revise1", "You receive a draft and a critique. Rewrite the draft to fix every weakness.", model="gpt-5.4"),
         agent("Critic2", "List any remaining weaknesses in the copy you receive. Be strict.", model="claude-sonnet-5"),
-        agent("Final", "You receive copy and a critique. Produce the final copy with every issue fixed.", model="gpt-4.1"),
+        agent("Final", "You receive copy and a critique. Produce the final copy with every issue fixed.", model="gpt-5.4"),
     ],
     edges=[
         edge("Draft", "Critic1"),
@@ -1188,7 +1188,7 @@ result = run_graph(
         agent(
             "Triage",
             "Restate the customer's message, then end with exactly one line: ROUTE: BILLING, ROUTE: TECHNICAL, or ROUTE: GENERAL.",
-            model="gpt-4.1-mini",
+            model="gpt-5.4-mini",
         )
     ]
     + [
@@ -1196,7 +1196,7 @@ result = run_graph(
             name,
             f"You handle {scope}. If the input you receive does not end with ROUTE: {name.upper()}, "
             "reply with the single word SKIPPED. Otherwise, answer the customer.",
-            model="gpt-4.1-mini",
+            model="gpt-5.4-mini",
         )
         for name, scope in routes.items()
     ],
@@ -1274,8 +1274,8 @@ print(graph.invoke({"topic": "sodium-ion batteries"})["findings"][-1])
 ```python
 def research_team(prefix, focus):
     workers = [
-        agent(f"{prefix}-web", f"Research {focus} using public web sources.", model="gpt-4.1-mini"),
-        agent(f"{prefix}-filings", f"Research {focus} using filings and papers.", model="gpt-4.1-mini"),
+        agent(f"{prefix}-web", f"Research {focus} using public web sources.", model="gpt-5.4-mini"),
+        agent(f"{prefix}-filings", f"Research {focus} using filings and papers.", model="gpt-5.4-mini"),
     ]
     lead = agent(f"{prefix}-lead", f"Merge your team's {focus} research into one briefing.")
     return {

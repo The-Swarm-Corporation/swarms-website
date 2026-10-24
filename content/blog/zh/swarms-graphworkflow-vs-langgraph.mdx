@@ -34,7 +34,7 @@ from typing import Annotated, TypedDict
 from langchain_openai import ChatOpenAI
 from langgraph.graph import StateGraph, START, END
 
-llm = ChatOpenAI(model="gpt-4o-mini")
+llm = ChatOpenAI(model="gpt-5.4-mini")
 
 # Parallel branches both write to `notes`, so it needs a reducer or
 # LangGraph raises InvalidUpdateError on the concurrent write.
@@ -98,7 +98,7 @@ def node(name, prompt):
     return Agent(
         agent_name=name,
         system_prompt=prompt,
-        model_name="gpt-4o-mini",
+        model_name="gpt-5.4-mini",
         max_loops=1,
     )
 
@@ -169,10 +169,10 @@ workflow = {
     "name": "Analysis",
     "task": "Assess the EV battery market",
     "agents": [
-        {"agent_name": "Research",  "system_prompt": "Research the given topic thoroughly.",           "model_name": "gpt-4.1"},
-        {"agent_name": "Summarize", "system_prompt": "Summarize the research into key points.",         "model_name": "gpt-4.1"},
-        {"agent_name": "Critique",  "system_prompt": "Critique the research and flag weak claims.",      "model_name": "gpt-4.1"},
-        {"agent_name": "Final",     "system_prompt": "Write the final brief from summary and critique.", "model_name": "gpt-4.1"},
+        {"agent_name": "Research",  "system_prompt": "Research the given topic thoroughly.",           "model_name": "gpt-5.4"},
+        {"agent_name": "Summarize", "system_prompt": "Summarize the research into key points.",         "model_name": "gpt-5.4"},
+        {"agent_name": "Critique",  "system_prompt": "Critique the research and flag weak claims.",      "model_name": "gpt-5.4"},
+        {"agent_name": "Final",     "system_prompt": "Write the final brief from summary and critique.", "model_name": "gpt-5.4"},
     ],
     "edges": [
         {"source": "Research",  "target": "Summarize"},

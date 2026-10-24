@@ -79,7 +79,7 @@ researcher = Agent(
 analyst = Agent(
     agent_name="Analyst",
     system_prompt="Write a one-page brief. Flag weak claims.",
-    model_name="gpt-4.1",
+    model_name="gpt-5.4",
     max_loops=1,
 )
 
@@ -185,7 +185,7 @@ from swarms import Agent
 
 agent = Agent(
     agent_name="Researcher",
-    model_name="gpt-4.1",
+    model_name="gpt-5.4",
     max_loops="auto",
     tools=[...],          # fifty tools registered
     dynamic_tools=True,   # one schema sent, the rest searchable
@@ -220,7 +220,7 @@ Model Context Protocol support is built into the `Agent` class, not bolted on:
 ```python
 agent = Agent(
     agent_name="MCP-Agent",
-    model_name="gpt-4.1",
+    model_name="gpt-5.4",
     mcp_url="http://localhost:8000/mcp",
     max_loops=1,
 )
@@ -231,7 +231,7 @@ Several servers at once, with auth, headers and a timeout:
 ```python
 agent = Agent(
     agent_name="Multi-MCP-Agent",
-    model_name="gpt-4.1",
+    model_name="gpt-5.4",
     mcp_urls=[
         "http://localhost:8000/mcp",
         "https://tools.internal.example.com/mcp",
@@ -249,7 +249,7 @@ OAuth flows are supported with token storage, for servers that require them. Com
 Every agent names its own model as a plain string, and the framework is provider-agnostic: OpenAI, Anthropic, Google, DeepSeek, Mistral, Together, OpenRouter, AWS Bedrock, Azure OpenAI, Hugging Face, and local models through LM Studio or Ollama.
 
 ```python
-writer = Agent(agent_name="Writer", model_name="gpt-4.1", system_prompt="...")
+writer = Agent(agent_name="Writer", model_name="gpt-5.4", system_prompt="...")
 critic = Agent(agent_name="Critic", model_name="claude-sonnet-5", system_prompt="...")
 
 SequentialWorkflow(agents=[writer, critic]).run(task)

@@ -158,10 +158,10 @@ Change the model string to change providers. The call and the response type stay
 ```python
 messages = [{"role": "user", "content": "Summarize our Q3 risks in three bullets."}]
 
-routehub.completion(model="claude-sonnet-4-6", messages=messages)
-routehub.completion(model="gemini/gemini-3-flash-preview", messages=messages)
-routehub.completion(model="groq/llama-3.3-70b-versatile", messages=messages)
-routehub.completion(model="openrouter/anthropic/claude-sonnet-4.6", messages=messages)
+routehub.completion(model="claude-sonnet-5-5", messages=messages)
+routehub.completion(model="gemini/gemini-3.8-flash", messages=messages)
+routehub.completion(model="groq/openai/gpt-oss-120b", messages=messages)
+routehub.completion(model="openrouter/anthropic/claude-sonnet-5.5", messages=messages)
 ```
 
 Stream, run async or call tools with the same function:
@@ -182,7 +182,7 @@ weather = {
     },
 }
 
-for chunk in routehub.completion(model="claude-sonnet-4-6", messages=messages, stream=True):
+for chunk in routehub.completion(model="claude-sonnet-5-5", messages=messages, stream=True):
     print(chunk.choices[0].delta.content or "", end="")
 
 response = asyncio.run(

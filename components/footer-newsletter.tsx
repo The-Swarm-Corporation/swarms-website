@@ -53,11 +53,7 @@ export function FooterNewsletter() {
           <span className="h-1 w-1 rounded-full bg-neutral-600 sm:h-1.5 sm:w-1.5" />
           Sign up for our monthly newsletter
         </h3>
-        <p className="mt-1.5 text-xs leading-relaxed text-gray-500 sm:text-sm">
-          Product updates, releases, and research. Once a month.
-        </p>
-      </div>
-
+        </div>
       {isSubscribed ? (
         <p className="flex items-center gap-2 text-sm text-gray-300">
           <CheckCircle className="h-4 w-4 shrink-0 text-white/70" />

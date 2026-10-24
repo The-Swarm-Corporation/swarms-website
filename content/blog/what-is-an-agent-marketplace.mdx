@@ -100,7 +100,7 @@ export SWARMS_API_KEY="your-api-key-here"
 from swarms import Agent
 
 agent = Agent(
-    model_name="gpt-4o-mini",
+    model_name="gpt-5.4-mini",
     marketplace_prompt_id="75fc0d28-b0d0-4372-bc04-824aa388b7d2",
 )
 
@@ -115,7 +115,7 @@ from swarms import Agent
 agent = Agent(
     agent_name="Compliance Checker",
     agent_description="Reviews documents for regulatory compliance issues",
-    model_name="gpt-4o",
+    model_name="gpt-5.4",
     publish_to_marketplace=True,
     use_cases=[
         {"title": "Contract review", "description": "Flag non-compliant clauses in contracts"},

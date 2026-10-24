@@ -152,7 +152,7 @@ payload = response.model_dump_json()
 
 ```python
 stream = routehub.completion(
-    model="claude-sonnet-4-6",
+    model="claude-sonnet-5-5",
     messages=messages,
     stream=True,
     stream_options={"include_usage": True},
@@ -202,7 +202,7 @@ weather = {
 }
 
 messages = [{"role": "user", "content": "What's the weather in Paris?"}]
-response = routehub.completion(model="claude-sonnet-4-6", messages=messages, tools=[weather])
+response = routehub.completion(model="claude-sonnet-5-5", messages=messages, tools=[weather])
 message = response.choices[0].message
 
 messages.append(message.model_dump(exclude_none=True))
@@ -210,7 +210,7 @@ for call in message.tool_calls or []:
     args = json.loads(call.function.arguments)
     messages.append({"role": "tool", "tool_call_id": call.id, "content": get_weather(**args)})
 
-final = routehub.completion(model="claude-sonnet-4-6", messages=messages, tools=[weather])
+final = routehub.completion(model="claude-sonnet-5-5", messages=messages, tools=[weather])
 print(final.choices[0].message.content)
 ```
 
@@ -249,7 +249,7 @@ messages = [
     },
     {"role": "user", "content": "Which policies cover vendor onboarding?"},
 ]
-response = routehub.completion(model="claude-sonnet-4-6", messages=messages)
+response = routehub.completion(model="claude-sonnet-5-5", messages=messages)
 print(response.usage.prompt_tokens_details.cached_tokens)  # tokens read from cache
 print(response.usage.cache_creation_input_tokens)          # tokens written to cache
 ```
@@ -275,13 +275,13 @@ routehub.token_counter(model="gpt-5.4-mini", messages=messages)
 模型信息是 RouteHub 与 LiteLLM 差别最大的地方。LiteLLM 随包附带一份价格表，并默认在导入时从 GitHub 下载更新的版本。RouteHub 在第一次查询时读取 OpenRouter 的实时模型列表，并缓存五分钟：
 
 ```python
-info = routehub.get_model_info("claude-sonnet-4-6")
+info = routehub.get_model_info("claude-sonnet-5-5")
 info["max_input_tokens"]
 info["input_cost_per_token"]
 
 routehub.get_max_tokens("gpt-5.4-mini")
 routehub.supports_vision("gpt-5.4-mini")
-"claude-sonnet-4-6" in routehub.model_list
+"claude-sonnet-5-5" in routehub.model_list
 ```
 
 对于未知模型，`get_model_info` 会抛出 `ModelNotMappedError`，`supports_*` 函数返回 `False`。私有模型、微调模型或自托管模型可以用 `register_model` 注册，格式与 LiteLLM 的模型信息相同。注册的条目优先级最高，而且永不过期：
@@ -331,7 +331,7 @@ def complete_with_fallbacks(models, **kwargs):
             last_error = error
     raise last_error
 
-response = complete_with_fallbacks(["gpt-5.4-mini", "claude-sonnet-4-6"], messages=messages)
+response = complete_with_fallbacks(["gpt-5.4-mini", "claude-sonnet-5-5"], messages=messages)
 ```
 
 **费用统计。** RouteHub 没有 `completion_cost`。价格来自 `get_model_info`，所以一个基础版本只需要几行代码。这个版本按完整的输入单价计算缓存输入，因此会高估使用缓存的提示的费用：

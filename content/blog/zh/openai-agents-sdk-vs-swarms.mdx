@@ -116,7 +116,7 @@ client = OpenAI(
 )
 
 response = client.chat.completions.create(
-    model="gpt-4.1",
+    model="gpt-5.4",
     messages=[
         {"role": "system", "content": "You are a senior financial analyst."},
         {"role": "user", "content": "What are the top risks in emerging market bonds right now?"},
@@ -132,7 +132,7 @@ print(response.usage.total_tokens)
 现在只改一个字符串就能切换实验室。客户端、外层的重试中间件、流式 UI 和错误处理全都保持不变：
 
 ```python
-for model in ["gpt-4.1", "claude-sonnet-5", "claude-opus-5-5", "gpt-6-astra", "deepseek/deepseek-reasoner"]:
+for model in ["gpt-5.4", "claude-sonnet-5", "claude-opus-5-5", "gpt-6-astra", "deepseek/deepseek-reasoner"]:
     r = client.chat.completions.create(
         model=model,
         messages=[{"role": "user", "content": "Summarize the case for LFP batteries in two sentences."}],
@@ -154,7 +154,7 @@ Swarms 增加了一个扩展参数 `max_loops`，让智能体在回答前对自�
 
 ```python
 response = client.chat.completions.create(
-    model="gpt-4.1",
+    model="gpt-5.4",
     messages=[
         {"role": "system", "content": "Write a solution, critique it, then output the corrected version."},
         {"role": "user", "content": "Implement longest_palindromic_substring(s: str) -> str."},
@@ -194,7 +194,7 @@ from agents.extensions.models.litellm_model import LitellmModel
 researcher = Agent(
     name="Researcher",
     instructions="Research the topic thoroughly and cite what you find.",
-    model="gpt-4.1",
+    model="gpt-5.4",
 )
 
 reviewer = Agent(
@@ -228,7 +228,7 @@ payload = {
             "agent_name": "Researcher",
             "description": "Gathers and cites source material",
             "system_prompt": "Research the topic thoroughly and cite what you find.",
-            "model_name": "gpt-4.1",
+            "model_name": "gpt-5.4",
             "fallback_models": ["claude-sonnet-5", "gemini-3.8-flash"],
             "max_loops": 1,
         },
@@ -237,7 +237,7 @@ payload = {
             "description": "Audits the research for weak claims",
             "system_prompt": "Check the research for weak or unsupported claims.",
             "model_name": "claude-sonnet-5",
-            "fallback_models": ["gpt-4.1", "gemini-3.8-flash"],
+            "fallback_models": ["gpt-5.4", "gemini-3.8-flash"],
             "max_loops": 1,
         },
     ],
@@ -300,13 +300,13 @@ payload = {
                 "agent_name": "Billing-Specialist",
                 "description": "Handles invoices, refunds, and subscription changes",
                 "system_prompt": "Be precise with amounts and dates. Confirm changes before applying.",
-                "model_name": "gpt-4.1-mini",
+                "model_name": "gpt-5.4-mini",
             },
             {
                 "agent_name": "Technical-Support",
                 "description": "Debugs API errors and integration problems",
                 "system_prompt": "Ask for error messages and logs. Give step-by-step fixes.",
-                "model_name": "gpt-4.1",
+                "model_name": "gpt-5.4",
                 "fallback_models": ["claude-sonnet-5"],
             },
         ],
@@ -373,7 +373,7 @@ payload = {
         {
             "agent_name": "Reviewer-OpenAI",
             "system_prompt": "You are a strict senior code reviewer.",
-            "model_name": "gpt-4.1",
+            "model_name": "gpt-5.4",
         },
         {
             "agent_name": "Reviewer-Anthropic",
@@ -384,13 +384,13 @@ payload = {
             "agent_name": "Reviewer-Google",
             "system_prompt": "You are a strict senior code reviewer.",
             "model_name": "gemini-3.6-flash",
-            "fallback_models": ["gpt-4.1-mini"],
+            "fallback_models": ["gpt-5.4-mini"],
         },
     ],
 }
 ```
 
-我们运行时，Google 那条路由恰好在返回错误。第三位评审在同一个请求内切换到了 `gpt-4.1-mini`，三位评审都投了 BLOCK（空列表会触发 `ZeroDivisionError`），共识智能体对三份审查意见做了排序。总计：**8.4 秒，$0.039**。没有人写重试代码，调用方也完全没有感知到这次故障。
+我们运行时，Google 那条路由恰好在返回错误。第三位评审在同一个请求内切换到了 `gpt-5.4-mini`，三位评审都投了 BLOCK（空列表会触发 `ZeroDivisionError`），共识智能体对三份审查意见做了排序。总计：**8.4 秒，$0.039**。没有人写重试代码，调用方也完全没有感知到这次故障。
 
 ## 故障转移
 
@@ -401,7 +401,7 @@ Agents SDK 的重试需要主动开启，通过 `ModelSettings(retry=...)` 配�
 ```mermaid
 flowchart LR
     T["智能体步骤"] --> P["主模型：gemini-3.6-flash"]
-    P -->|"厂商报错"| F1["fallback_models[0]：gpt-4.1-mini"]
+    P -->|"厂商报错"| F1["fallback_models[0]：gpt-5.4-mini"]
     F1 -->|"厂商报错"| F2["fallback_models[1]：claude-sonnet-5"]
     P -->|"成功"| R["结果"]
     F1 -->|"成功"| R
@@ -427,7 +427,7 @@ Swarms Cloud 对每个模型按其厂商价格加 15% 服务费计费，一把�
 | 图片输入 | 每张图片 $0.25 |
 | 夜间模式 | 太平洋时间晚 8 点至早 6 点，swarm completions 的 token 费用五折 |
 
-撰写本文时，通过 Swarms 调用 `gpt-4.1` 的价格是每百万输入 token $2.30、每百万输出 token $9.20（即 OpenAI 标价 $2.00 和 $8.00 加上服务费），`claude-sonnet-5` 是 $2.30 和 $11.50。厂商价格会变动，所以请用 `GET /v1/models/pricing?model_name=...` 查询任意模型的当前价格，或通过 `GET /v1/models/available` 列出所有模型及其价格。
+撰写本文时，通过 Swarms 调用 `gpt-5.4` 的价格是每百万输入 token $2.875、每百万输出 token $17.25（即 OpenAI 标价 $2.50 和 $15.00 加上服务费），`claude-sonnet-5` 是 $2.30 和 $11.50。厂商价格会变动，所以请用 `GET /v1/models/pricing?model_name=...` 查询任意模型的当前价格，或通过 `GET /v1/models/available` 列出所有模型及其价格。
 
 混合模型的 swarm 按智能体计费，每个智能体的 token 按其所用模型的价格计算，所以把某一步从一家实验室的模型换成另一家，只会改变这一步的价格，密钥和账单都不变。
 
@@ -595,7 +595,7 @@ Swarms 的图引擎只编译一次工作流，之后复用冻结的执行计划�
 对于不使用函数工具和 handoff 的智能体，可以，通过 `set_default_openai_client` 加上 Chat Completions API 设置即可。使用工具或 handoff 的智能体应当直接调用 Swarms 的原生端点。
 
 **Swarms 的定价与直接调用厂商相比如何？**
-Swarms 对每个模型按厂商标价加 15% 服务费计费（撰写本文时，`gpt-4.1` 为每百万输入 token $2.30、每百万输出 token $9.20，OpenAI 标价为 $2.00 和 $8.00），swarm、图工作流和网格工作流另收每个智能体 $0.01。按 token 计，它比直接调用厂商更贵。换来的是所有厂商共用一把密钥和一张账单、每次运行的成本都写在响应里，以及太平洋时间晚 8 点至早 6 点 swarm token 费用五折。`GET /v1/models/pricing` 可以查询任意模型的当前价格。
+Swarms 对每个模型按厂商标价加 15% 服务费计费（撰写本文时，`gpt-5.4` 为每百万输入 token $2.875、每百万输出 token $17.25，OpenAI 标价为 $2.50 和 $15.00），swarm、图工作流和网格工作流另收每个智能体 $0.01。按 token 计，它比直接调用厂商更贵。换来的是所有厂商共用一把密钥和一张账单、每次运行的成本都写在响应里，以及太平洋时间晚 8 点至早 6 点 swarm token 费用五折。`GET /v1/models/pricing` 可以查询任意模型的当前价格。
 
 **Swarms 开源吗？**
 Swarms 框架在 [GitHub](https://github.com/kyegomez/swarms) 上开源。Swarms Cloud 是替你运行智能体和 swarm 的托管 API。

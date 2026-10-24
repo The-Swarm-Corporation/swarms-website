@@ -40,7 +40,7 @@ People also call this a unified LLM API for Python or a multi-provider LLM clien
 
 Most teams start with one provider's SDK and add a gateway when they need a second provider. A gateway lets you:
 
-- **Switch models by changing a string**, for example from `gpt-5.4-mini` to `claude-sonnet-4-6`, without touching the code around the call.
+- **Switch models by changing a string**, for example from `gpt-5.4-mini` to `claude-sonnet-5-5`, without touching the code around the call.
 - **Fall back to another provider** when one is rate limited or down.
 - **Compare models** on the same prompts with the same code.
 - **Track usage and cost** in one format across providers.
@@ -87,11 +87,11 @@ These are the criteria that separate the libraries in practice:
 
 ### any-llm
 
-[any-llm](https://github.com/mozilla-ai/any-llm), from Mozilla.ai, sends requests through each provider's official SDK. It offers module-level functions such as `completion()`, which build a new client per call, and an `AnyLLM` class, which reuses its client and is the approach its README recommends for production. Model strings look like `openai:gpt-4o`, or you pass `provider=` separately. Its response types subclass the OpenAI SDK's types. For budgets, key management and analytics, Mozilla.ai points to a separate project, the Otari gateway. any-llm requires Python 3.11 or newer.
+[any-llm](https://github.com/mozilla-ai/any-llm), from Mozilla.ai, sends requests through each provider's official SDK. It offers module-level functions such as `completion()`, which build a new client per call, and an `AnyLLM` class, which reuses its client and is the approach its README recommends for production. Model strings look like `openai:gpt-5.4`, or you pass `provider=` separately. Its response types subclass the OpenAI SDK's types. For budgets, key management and analytics, Mozilla.ai points to a separate project, the Otari gateway. any-llm requires Python 3.11 or newer.
 
 ### aisuite
 
-[aisuite](https://github.com/andrewyng/aisuite) is a lightweight library hosted under Andrew Ng's GitHub account. It has two layers: a unified Chat Completions API (`client.chat.completions.create` with model strings such as `anthropic:claude-3-5-sonnet-20240620`) and an Agents API with tools, toolkits and MCP support. Provider SDKs are installed as extras, and its `openai` extra requires `openai<2.0.0`, which can conflict with other packages that need the current SDK. It returns its own `ChatCompletionResponse` class shaped like OpenAI's.
+[aisuite](https://github.com/andrewyng/aisuite) is a lightweight library hosted under Andrew Ng's GitHub account. It has two layers: a unified Chat Completions API (`client.chat.completions.create` with model strings such as `anthropic:claude-sonnet-5-5`) and an Agents API with tools, toolkits and MCP support. Provider SDKs are installed as extras, and its `openai` extra requires `openai<2.0.0`, which can conflict with other packages that need the current SDK. It returns its own `ChatCompletionResponse` class shaped like OpenAI's.
 
 ### Side by side
 
@@ -100,7 +100,7 @@ These are the criteria that separate the libraries in practice:
 | Maintainer | The Swarm Corporation | BerriAI | Mozilla.ai | andrewyng/aisuite |
 | License | Apache 2.0 | MIT (outside its `enterprise/` folder) | Apache 2.0 | MIT |
 | Python | 3.10+ | 3.10+ | 3.11+ | 3.10+ |
-| Model string | `groq/llama-3.3-70b-versatile` | `openai/gpt-4o` | `openai:gpt-4o` | `openai:gpt-4o` |
+| Model string | `groq/openai/gpt-oss-120b` | `openai/gpt-5.4` | `openai:gpt-5.4` | `openai:gpt-5.4` |
 | Providers | 20+ | 100+ | Many, via official SDKs | OpenAI, Anthropic, Google, Mistral, AWS, Ollama and more |
 | Response type | OpenAI SDK's `ChatCompletion` | LiteLLM `ModelResponse` | Subclasses of OpenAI SDK types | aisuite `ChatCompletionResponse` |
 | Proxy server | No | LiteLLM Proxy | Separate project (Otari) | No |
@@ -220,9 +220,9 @@ print(response.choices[0].message.content)
 Change the model string to change providers. Settings such as retries and timeouts are arguments to the call:
 
 ```python
-routehub.completion(model="claude-sonnet-4-6", messages=messages, num_retries=3)
-routehub.completion(model="gemini/gemini-3-flash-preview", messages=messages)
-routehub.completion(model="openrouter/anthropic/claude-sonnet-4.6", messages=messages)
+routehub.completion(model="claude-sonnet-5-5", messages=messages, num_retries=3)
+routehub.completion(model="gemini/gemini-3.8-flash", messages=messages)
+routehub.completion(model="openrouter/anthropic/claude-sonnet-5.5", messages=messages)
 ```
 
 Streaming and async use the same function names:
@@ -230,11 +230,11 @@ Streaming and async use the same function names:
 ```python
 import asyncio
 
-for chunk in routehub.completion(model="claude-sonnet-4-6", messages=messages, stream=True):
+for chunk in routehub.completion(model="claude-sonnet-5-5", messages=messages, stream=True):
     print(chunk.choices[0].delta.content or "", end="")
 
 response = asyncio.run(
-    routehub.acompletion(model="groq/llama-3.3-70b-versatile", messages=messages)
+    routehub.acompletion(model="groq/openai/gpt-oss-120b", messages=messages)
 )
 ```
 

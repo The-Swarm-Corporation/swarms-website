@@ -1,0 +1,266 @@
+---
+title: "Swarms Marketplace 最新上架的 25 个 MCP 服务器：来自 Google、PayPal、Neon、Perplexity 等厂商的官方服务器"
+description: "swarms.world 的 MCP 市场一次性新增了 25 个商品页，全部由 mcp_depot 发布。它们是 Google Cloud、PayPal、Square、Neon、Prisma、ClickHouse、Perplexity、Jina AI、Canva、Miro、Box、Intercom、PagerDuty 等厂商官方托管的 MCP 服务器。本文逐一介绍每个服务器能让智能体做什么，以及在市场上的位置。"
+date: "2026-10-23"
+author: "Swarms 团队"
+categories: ["产品"]
+featured: false
+readTime: "10 分钟阅读"
+image: "/25_best_mcp_servers.png"
+---
+
+# Swarms Marketplace 最新上架的 25 个 MCP 服务器：来自 Google、PayPal、Neon、Perplexity 等厂商的官方服务器
+
+2026 年 10 月 20 日，[swarms.world 的 MCP 市场](https://swarms.world/mcp-servers)一次性新增了 25 个服务器。每一个都是官方的、由厂商自己托管的 Model Context Protocol 服务器：由公司本身运营的端点，而不是社区对其 API 的二次封装。它们覆盖数据库与分析、支付、网页搜索与抓取、基础设施与托管、项目管理、设计、语音、企业内容以及客户支持。
+
+这 25 个全部由同一位市场用户 [mcp_depot](https://swarms.world/users/mcp_depot) 发布。下面按发布顺序（最新在前）逐一介绍每个服务器，并附上它在市场上的商品页。每个商品页都带有 **Connect to this MCP server** 区块，包含服务器 URL、认证与传输方式徽标、工具列表，以及可直接粘贴到 Claude、Cursor、VS Code 和其他 MCP 客户端的配置，所以任何一个都只需一分钟就能进入你的智能体工具箱。
+
+## 1. Webflow MCP
+
+![Webflow MCP](https://db.swarms.world/storage/v1/object/public/images/public/agents/acb6810f-7536-4e7b-a60c-9a39fbf87a47/709f3eee-a6e3-4b7e-b8ba-ddab749ae8d5/webflow-mcp-1792531378146-709f3eee-a6e3-4b7e-b8ba-ddab749ae8d5.png)
+
+Webflow 为其可视化建站平台提供的官方服务器。智能体可以通过 Webflow 的 API，在登录用户的权限范围内管理站点、页面和 CMS 集合。托管端点已在 2025 年底从 SSE 迁移到 Streamable HTTP 并使用 OAuth，每次授权对应一个工作区。
+
+**Swarms 商品页:** [https://swarms.world/agent/0f69f495-67c7-4003-9443-58e959724d5c](https://swarms.world/agent/0f69f495-67c7-4003-9443-58e959724d5c)
+
+## 2. Fireflies.ai MCP
+
+![Fireflies.ai MCP](https://db.swarms.world/storage/v1/object/public/images/public/agents/acb6810f-7536-4e7b-a60c-9a39fbf87a47/dc859c88-7546-447c-9028-7bcb8e8313cf/fireflies-ai-mcp-1792531376326-dc859c88-7546-447c-9028-7bcb8e8313cf.png)
+
+Fireflies.ai 的官方会议智能托管服务器。智能体可以跨会议转录搜索，获取摘要、行动项和参会者信息，再把它们变成跟进事项和文档。支持 OAuth 或 API 密钥认证。
+
+**Swarms 商品页:** [https://swarms.world/agent/fe108223-193d-4789-958a-06574e38c433](https://swarms.world/agent/fe108223-193d-4789-958a-06574e38c433)
+
+## 3. Google Maps (Grounding Lite) MCP
+
+![Google Maps (Grounding Lite) MCP](https://db.swarms.world/storage/v1/object/public/images/public/agents/acb6810f-7536-4e7b-a60c-9a39fbf87a47/8ba355d0-1555-4816-af5b-c5c2f13519c4/google-maps--grounding-lite--mcp-1792531374583-8ba355d0-1555-4816-af5b-c5c2f13519c4.png)
+
+Google Maps Platform 的托管服务器，用于让回答基于位置数据。它的五个工具可以搜索地点、查询天气、计算驾车或步行路线，以及解析地名和 Maps URL。支持 Maps Platform API 密钥或 OAuth。路线不包含逐向导航和实时路况。
+
+**Swarms 商品页:** [https://swarms.world/agent/a3d41be5-bdc0-48d5-82df-87cddccd4e24](https://swarms.world/agent/a3d41be5-bdc0-48d5-82df-87cddccd4e24)
+
+## 4. Google BigQuery MCP
+
+![Google BigQuery MCP](https://db.swarms.world/storage/v1/object/public/images/public/agents/acb6810f-7536-4e7b-a60c-9a39fbf87a47/8b648742-16ae-4727-b936-c7430d03d1ae/google-bigquery-mcp-1792531372896-8b648742-16ae-4727-b936-c7430d03d1ae.png)
+
+Google Cloud 为 BigQuery 提供的托管远程服务器，项目启用 BigQuery API 后即可使用。智能体可以列出数据集和表、读取 schema 并运行 SQL，单次查询结果上限 3,000 行、时长上限三分钟。通过 OAuth 和 Google Cloud IAM 角色认证，商品页列出九个工具，包括只读和完整 SQL 执行。
+
+**Swarms 商品页:** [https://swarms.world/agent/6177c3bb-e14b-45d0-b84a-eed203ffc0d6](https://swarms.world/agent/6177c3bb-e14b-45d0-b84a-eed203ffc0d6)
+
+## 5. Pulumi MCP
+
+![Pulumi MCP](https://db.swarms.world/storage/v1/object/public/images/public/agents/acb6810f-7536-4e7b-a60c-9a39fbf87a47/528af678-db81-4a08-97a8-7cffa10a7c97/pulumi-mcp-1792531370853-528af678-db81-4a08-97a8-7cffa10a7c97.png)
+
+Pulumi 的官方基础设施即代码服务器。智能体可以查询 Pulumi Cloud 的栈和资源、搜索 Pulumi Registry，并协助编写和部署 Pulumi 程序。提供托管端点或 npx 本地包，使用你的 Pulumi 账户认证。
+
+**Swarms 商品页:** [https://swarms.world/agent/dd69d9e2-e0fd-46fd-b9ad-b69ed010e2e3](https://swarms.world/agent/dd69d9e2-e0fd-46fd-b9ad-b69ed010e2e3)
+
+## 6. Prisma Postgres MCP
+
+![Prisma Postgres MCP](https://db.swarms.world/storage/v1/object/public/images/public/agents/acb6810f-7536-4e7b-a60c-9a39fbf87a47/eff3e1d6-351f-4024-8252-fcba15f9dc86/prisma-postgres-mcp-1792531368551-eff3e1d6-351f-4024-8252-fcba15f9dc86.png)
+
+Prisma 为 Prisma Postgres 提供的官方服务器。智能体可以创建数据库、管理备份和连接字符串、查看 schema 并运行迁移。托管端点通过 OAuth 对接你的 Prisma 工作区，本地版本随 Prisma CLI 一起提供，可直接融入已在使用 Prisma ORM 的 TypeScript 项目。
+
+**Swarms 商品页:** [https://swarms.world/agent/a59d44c9-e1da-44cf-bfe9-d9732b343268](https://swarms.world/agent/a59d44c9-e1da-44cf-bfe9-d9732b343268)
+
+## 7. Square MCP
+
+![Square MCP](https://db.swarms.world/storage/v1/object/public/images/public/agents/acb6810f-7536-4e7b-a60c-9a39fbf87a47/f6cbdbcd-0dfb-4a5d-8c78-abca60de8030/square-mcp-1792531364861-f6cbdbcd-0dfb-4a5d-8c78-abca60de8030.png)
+
+Square 为其商家 API 提供的官方服务器，目前处于测试阶段。智能体可以处理支付、订单、商品目录、客户、库存等 Square 数据。托管端点只能访问生产数据，测试请使用沙盒模式下的本地服务器。可通过只读选项禁用写操作。
+
+**Swarms 商品页:** [https://swarms.world/agent/c467a1ab-426c-44bb-8086-2a57352b9807](https://swarms.world/agent/c467a1ab-426c-44bb-8086-2a57352b9807)
+
+## 8. Make MCP
+
+![Make MCP](https://db.swarms.world/storage/v1/object/public/images/public/agents/acb6810f-7536-4e7b-a60c-9a39fbf87a47/f2552987-0fda-4517-9689-d09d2c24eba9/make-mcp-1792531363167-f2552987-0fda-4517-9689-d09d2c24eba9.png)
+
+Make 的官方托管服务器把你的 Make 场景和自动化资源暴露为工具。智能体可以跨 Make 账户中连接的所有应用触发多步自动化。支持在 mcp.make.com 使用 OAuth，或使用带 MCP 令牌的区域专属 URL，旧的 SSE 风格 URL 已被 Make 标记为过时。
+
+**Swarms 商品页:** [https://swarms.world/agent/1c90c4e5-97b0-4ea0-9366-233d6fa3120b](https://swarms.world/agent/1c90c4e5-97b0-4ea0-9366-233d6fa3120b)
+
+## 9. Miro MCP
+
+![Miro MCP](https://db.swarms.world/storage/v1/object/public/images/public/agents/acb6810f-7536-4e7b-a60c-9a39fbf87a47/1791889e-21bd-4984-afbf-d004b2d18aa1/miro-mcp-1792531361367-1791889e-21bd-4984-afbf-d004b2d18aa1.png)
+
+Miro 为其协作白板提供的官方托管服务器，目前处于测试阶段。智能体使用用户已有的看板权限读取和操作 Miro 看板。采用带动态客户端注册的 OAuth 2.1，企业版需要管理员先行启用。
+
+**Swarms 商品页:** [https://swarms.world/agent/679b44d6-0433-4383-b47c-d094c4bfd8eb](https://swarms.world/agent/679b44d6-0433-4383-b47c-d094c4bfd8eb)
+
+## 10. Box MCP
+
+![Box MCP](https://db.swarms.world/storage/v1/object/public/images/public/agents/acb6810f-7536-4e7b-a60c-9a39fbf87a47/f593cae9-0289-4333-8352-77917144d5bd/box-mcp-1792531358987-f593cae9-0289-4333-8352-77917144d5bd.png)
+
+Box 面向企业内容的官方托管服务器。智能体可以搜索和处理 Box 文件与文件夹，并使用 Box AI，内容无需离开 Box。需管理员在 Box Admin Console 中启用，访问权限通过 OAuth 跟随每位用户，旧的自托管 Box 服务器已于 2026 年 4 月归档。
+
+**Swarms 商品页:** [https://swarms.world/agent/d9be111f-370e-4980-8142-dad96285f768](https://swarms.world/agent/d9be111f-370e-4980-8142-dad96285f768)
+
+## 11. Intercom MCP
+
+![Intercom MCP](https://db.swarms.world/storage/v1/object/public/images/public/agents/acb6810f-7536-4e7b-a60c-9a39fbf87a47/5cfc5c1e-d451-42e7-92a5-fb905d6405dc/intercom-mcp-1792531357047-5cfc5c1e-d451-42e7-92a5-fb905d6405dc.png)
+
+Intercom 的官方客户支持数据托管服务器。智能体可以搜索和阅读对话、联系人和工单，了解客户遇到的问题。支持 OAuth 或 Intercom API 令牌认证，欧盟工作区使用独立的 mcp.eu.intercom.com 端点，旧的 /sse 端点已弃用。
+
+**Swarms 商品页:** [https://swarms.world/agent/1af3bb96-7c7f-4935-9d2f-d24eb4ee7cbd](https://swarms.world/agent/1af3bb96-7c7f-4935-9d2f-d24eb4ee7cbd)
+
+## 12. PagerDuty MCP
+
+![PagerDuty MCP](https://db.swarms.world/storage/v1/object/public/images/public/agents/acb6810f-7536-4e7b-a60c-9a39fbf87a47/6c89aec6-bb9e-42cd-99c3-e0b413880f29/pagerduty-mcp-1792531355299-6c89aec6-bb9e-42cd-99c3-e0b413880f29.png)
+
+PagerDuty 的官方事件管理托管服务器。智能体可以读取和管理事件、服务、排班、值班轮换和升级策略。支持 API 令牌或 OAuth bearer 令牌认证，欧盟账户使用独立端点，早期的自托管服务器已归档。
+
+**Swarms 商品页:** [https://swarms.world/agent/9a35a229-4f26-4a1e-9437-a324d28b7179](https://swarms.world/agent/9a35a229-4f26-4a1e-9437-a324d28b7179)
+
+## 13. Jina AI MCP
+
+![Jina AI MCP](https://db.swarms.world/storage/v1/object/public/images/public/agents/acb6810f-7536-4e7b-a60c-9a39fbf87a47/7292dd48-2c22-42b1-a805-2123ec10d588/jina-ai-mcp-1792531352024-7292dd48-2c22-42b1-a805-2123ec10d588.png)
+
+Jina AI 的网页阅读与搜索托管服务器，商品页上有十二个工具。智能体可以把任意 URL 转成干净的 Markdown、截图、提取 PDF、搜索网页和 arXiv，并对结果重排或去重。读取 URL 无需密钥，搜索和重排需要 Jina API 密钥。
+
+**Swarms 商品页:** [https://swarms.world/agent/b699d6d6-2289-497f-8880-9a5dc2afcea6](https://swarms.world/agent/b699d6d6-2289-497f-8880-9a5dc2afcea6)
+
+## 14. ClickHouse MCP
+
+![ClickHouse MCP](https://db.swarms.world/storage/v1/object/public/images/public/agents/acb6810f-7536-4e7b-a60c-9a39fbf87a47/e7647dba-a196-4875-b6b4-463ff30e7486/clickhouse-mcp-1792531346225-e7647dba-a196-4875-b6b4-463ff30e7486.png)
+
+ClickHouse 为其分析数据库提供的官方服务器。智能体可以列出数据库和表并运行只读 SQL 查询，适合在大型数据集上做智能体驱动的分析。ClickHouse Cloud 按服务提供托管端点，本地服务器可用于任何 ClickHouse 部署。
+
+**Swarms 商品页:** [https://swarms.world/agent/02c6ddae-cddb-4c83-a120-646557ec3ed5](https://swarms.world/agent/02c6ddae-cddb-4c83-a120-646557ec3ed5)
+
+## 15. ElevenLabs MCP
+
+![ElevenLabs MCP](https://db.swarms.world/storage/v1/object/public/images/public/agents/acb6810f-7536-4e7b-a60c-9a39fbf87a47/b3d8f155-553e-4340-93ff-14b3d5fb3e9d/elevenlabs-mcp-1792531342034-b3d8f155-553e-4340-93ff-14b3d5fb3e9d.png)
+
+ElevenLabs 为其语音平台提供的官方托管服务器。智能体可以创建和管理 ElevenLabs 语音智能体、查看其对话并生成语音音频。使用 OAuth 认证，提供区域数据驻留端点，并取代了 2026 年 8 月弃用的本地服务器。
+
+**Swarms 商品页:** [https://swarms.world/agent/2c827136-7316-4e9d-a351-cb29fb299af0](https://swarms.world/agent/2c827136-7316-4e9d-a351-cb29fb299af0)
+
+## 16. PayPal MCP
+
+![PayPal MCP](https://db.swarms.world/storage/v1/object/public/images/public/agents/acb6810f-7536-4e7b-a60c-9a39fbf87a47/d4ab0156-a901-4159-bdf4-06a4a948baee/paypal-mcp-1792531338102-d4ab0156-a901-4159-bdf4-06a4a948baee.png)
+
+PayPal 为其商业 API 提供的官方服务器。智能体可以创建和管理发票、订单、付款、商品、订阅、物流追踪、争议和报告。提供托管端点（含独立沙盒端点）或 npx 本地包，通过 PayPal 登录（OAuth）或访问令牌认证。
+
+**Swarms 商品页:** [https://swarms.world/agent/0e44ff3d-9a75-47cb-97cc-fc432c45a29f](https://swarms.world/agent/0e44ff3d-9a75-47cb-97cc-fc432c45a29f)
+
+## 17. Netlify MCP
+
+![Netlify MCP](https://db.swarms.world/storage/v1/object/public/images/public/agents/acb6810f-7536-4e7b-a60c-9a39fbf87a47/b8bcf001-f223-4f31-921f-227bc81d50b0/netlify-mcp-1792531336305-b8bcf001-f223-4f31-921f-227bc81d50b0.png)
+
+Netlify 用于部署和管理站点的官方服务器。智能体可以创建和部署项目、管理环境变量、表单和扩展，并查询 Netlify 文档。提供托管端点或 npx 本地包，让编码智能体能够端到端地上线一个站点。
+
+**Swarms 商品页:** [https://swarms.world/agent/92da004f-2317-42f6-8334-38ddc8417d18](https://swarms.world/agent/92da004f-2317-42f6-8334-38ddc8417d18)
+
+## 18. ClickUp MCP
+
+![ClickUp MCP](https://db.swarms.world/storage/v1/object/public/images/public/agents/acb6810f-7536-4e7b-a60c-9a39fbf87a47/8068e1bb-3a04-4868-bdcd-7ff68ee72c40/clickup-mcp-1792531334061-8068e1bb-3a04-4868-bdcd-7ff68ee72c40.png)
+
+ClickUp 的官方托管服务器，所有套餐均可使用。智能体可以读取和管理任务、列表、文档等工作区数据。仅支持带 PKCE 的 OAuth 2.1，不支持 API 密钥或个人令牌，ClickUp 也提示限制和功能仍可能变化。
+
+**Swarms 商品页:** [https://swarms.world/agent/f634ba8f-d5ae-4721-b99c-9ebb57418139](https://swarms.world/agent/f634ba8f-d5ae-4721-b99c-9ebb57418139)
+
+## 19. monday.com MCP
+
+![monday.com MCP](https://db.swarms.world/storage/v1/object/public/images/public/agents/acb6810f-7536-4e7b-a60c-9a39fbf87a47/bfea578f-e1f1-4386-9dc6-3f013ed9db52/monday-com-mcp-1792531332408-bfea578f-e1f1-4386-9dc6-3f013ed9db52.png)
+
+monday.com 为其 Work OS 提供的官方服务器。智能体可以查询和更新看板、项目、列和工作区数据，让团队从 AI 助手中管理 monday.com 项目。托管端点支持 OAuth 或 API 令牌，另有 npx 本地版本。
+
+**Swarms 商品页:** [https://swarms.world/agent/2500ff65-0fd6-423e-a085-13bdd0825675](https://swarms.world/agent/2500ff65-0fd6-423e-a085-13bdd0825675)
+
+## 20. Apify MCP
+
+![Apify MCP](https://db.swarms.world/storage/v1/object/public/images/public/agents/acb6810f-7536-4e7b-a60c-9a39fbf87a47/73064cc2-36c4-4e70-8dc7-abbb2a781f33/apify-mcp-1792531330141-73064cc2-36c4-4e70-8dc7-abbb2a781f33.png)
+
+Apify 的官方服务器把 Apify Store 的 Actor 暴露为工具。智能体可以查找并运行数千个现成的爬虫，覆盖网站、社交媒体、地图和电商，还能搜索 Apify 文档。托管于 mcp.apify.com 或通过 npx 本地运行，支持 OAuth 或 Apify API 令牌认证。
+
+**Swarms 商品页:** [https://swarms.world/agent/a17a70da-78f9-4a53-bfa5-fff7ccb85b05](https://swarms.world/agent/a17a70da-78f9-4a53-bfa5-fff7ccb85b05)
+
+## 21. Perplexity MCP
+
+![Perplexity MCP](https://db.swarms.world/storage/v1/object/public/images/public/agents/acb6810f-7536-4e7b-a60c-9a39fbf87a47/15b47e66-f1af-4503-ab44-cdddc25442b0/perplexity-mcp-1792531328220-15b47e66-f1af-4503-ab44-cdddc25442b0.png)
+
+Perplexity 提供搜索和基于 Sonar 的回答的官方服务器。它的工具覆盖网页搜索、带引用的问答、深度研究和逐步推理。提供托管端点或 npx 本地包，按 Perplexity API 标准费率计费。
+
+**Swarms 商品页:** [https://swarms.world/agent/3fe30d9f-be13-4bd6-9a84-e6d92b4ff721](https://swarms.world/agent/3fe30d9f-be13-4bd6-9a84-e6d92b4ff721)
+
+## 22. Cloudflare Docs MCP
+
+![Cloudflare Docs MCP](https://db.swarms.world/storage/v1/object/public/images/public/agents/acb6810f-7536-4e7b-a60c-9a39fbf87a47/dc7c6581-534f-437b-9a81-4dc647854ed5/cloudflare-docs-mcp-1792531326214-dc7c6581-534f-437b-9a81-4dc647854ed5.png)
+
+Cloudflare 的托管文档服务器，是 Cloudflare 多个专项 MCP 服务器之一。它搜索 Workers、Pages、R2、D1、Zero Trust 等 Cloudflare 产品的最新开发者文档。无需认证，因此商品页提供一键安装到 Cursor 和 VS Code 的按钮。
+
+**Swarms 商品页:** [https://swarms.world/agent/b5b354da-08c1-46ec-9223-a4bcf0cfe715](https://swarms.world/agent/b5b354da-08c1-46ec-9223-a4bcf0cfe715)
+
+## 23. Canva MCP
+
+![Canva MCP](https://db.swarms.world/storage/v1/object/public/images/public/agents/acb6810f-7536-4e7b-a60c-9a39fbf87a47/05ad0d6b-fae5-457c-bdfb-06eea3a6d9e0/canva-mcp-1792531324196-05ad0d6b-fae5-457c-bdfb-06eea3a6d9e0.png)
+
+Canva 通过 Canva AI Connector 暴露的官方服务器。智能体可以搜索、创建、编辑、调整尺寸并导出设计和素材，包括自动填充品牌模板。需在 Canva Developer Portal 中为应用启用，用户通过 OAuth 登录。部分工具需要 Canva Pro 或更高套餐。
+
+**Swarms 商品页:** [https://swarms.world/agent/4adda8d9-117a-4f0d-ad9c-94763373ee40](https://swarms.world/agent/4adda8d9-117a-4f0d-ad9c-94763373ee40)
+
+## 24. Postman MCP
+
+![Postman MCP](https://db.swarms.world/storage/v1/object/public/images/public/agents/acb6810f-7536-4e7b-a60c-9a39fbf87a47/c02e244b-b7c2-4e5b-b316-e32187eb48f1/postman-mcp-1792531322139-c02e244b-b7c2-4e5b-b316-e32187eb48f1.png)
+
+Postman 面向 API 工作的官方服务器。智能体可以管理工作区、集合、环境、规范和 mock，并从集合生成客户端代码。托管服务器提供精简版、完整版和代码专用版，以及欧盟区域端点，本地版本可用于测试 localhost 上的 API。
+
+**Swarms 商品页:** [https://swarms.world/agent/6c04ef18-e16b-4d09-83fd-2cf4a31c3bbb](https://swarms.world/agent/6c04ef18-e16b-4d09-83fd-2cf4a31c3bbb)
+
+## 25. Neon MCP
+
+![Neon MCP](https://db.swarms.world/storage/v1/object/public/images/public/agents/acb6810f-7536-4e7b-a60c-9a39fbf87a47/3efb08ca-cb2b-4148-bca4-acc978688e6b/neon-mcp-1792531319689-3efb08ca-cb2b-4148-bca4-acc978688e6b.png)
+
+Neon 为 Serverless Postgres 提供的官方托管服务器。智能体可以创建项目和分支、运行 SQL，并在临时分支上测试 schema 迁移后再正式应用。支持 OAuth 或 API 密钥认证，Neon 已弃用旧的 SSE 端点和本地包，转向这个 Streamable HTTP 端点。
+
+**Swarms 商品页:** [https://swarms.world/agent/20135847-488b-4ed4-8b4c-10296045031f](https://swarms.world/agent/20135847-488b-4ed4-8b4c-10296045031f)
+
+## 25 个服务器一览
+
+| # | 服务器 | 端点 | 商品页 |
+| --- | --- | --- | --- |
+| 1 | Webflow MCP | `mcp.webflow.com/mcp` | [打开](https://swarms.world/agent/0f69f495-67c7-4003-9443-58e959724d5c) |
+| 2 | Fireflies.ai MCP | `api.fireflies.ai/mcp` | [打开](https://swarms.world/agent/fe108223-193d-4789-958a-06574e38c433) |
+| 3 | Google Maps (Grounding Lite) MCP | `mapstools.googleapis.com/mcp` | [打开](https://swarms.world/agent/a3d41be5-bdc0-48d5-82df-87cddccd4e24) |
+| 4 | Google BigQuery MCP | `bigquery.googleapis.com/mcp` | [打开](https://swarms.world/agent/6177c3bb-e14b-45d0-b84a-eed203ffc0d6) |
+| 5 | Pulumi MCP | `mcp.ai.pulumi.com/mcp` | [打开](https://swarms.world/agent/dd69d9e2-e0fd-46fd-b9ad-b69ed010e2e3) |
+| 6 | Prisma Postgres MCP | `mcp.prisma.io/mcp` | [打开](https://swarms.world/agent/a59d44c9-e1da-44cf-bfe9-d9732b343268) |
+| 7 | Square MCP | `mcp.squareup.com/mcp` | [打开](https://swarms.world/agent/c467a1ab-426c-44bb-8086-2a57352b9807) |
+| 8 | Make MCP | `mcp.make.com` | [打开](https://swarms.world/agent/1c90c4e5-97b0-4ea0-9366-233d6fa3120b) |
+| 9 | Miro MCP | `mcp.miro.com` | [打开](https://swarms.world/agent/679b44d6-0433-4383-b47c-d094c4bfd8eb) |
+| 10 | Box MCP | `mcp.box.com` | [打开](https://swarms.world/agent/d9be111f-370e-4980-8142-dad96285f768) |
+| 11 | Intercom MCP | `mcp.intercom.com/mcp` | [打开](https://swarms.world/agent/1af3bb96-7c7f-4935-9d2f-d24eb4ee7cbd) |
+| 12 | PagerDuty MCP | `mcp.pagerduty.com/mcp` | [打开](https://swarms.world/agent/9a35a229-4f26-4a1e-9437-a324d28b7179) |
+| 13 | Jina AI MCP | `mcp.jina.ai/v1` | [打开](https://swarms.world/agent/b699d6d6-2289-497f-8880-9a5dc2afcea6) |
+| 14 | ClickHouse MCP | `mcp.clickhouse.cloud/mcp` | [打开](https://swarms.world/agent/02c6ddae-cddb-4c83-a120-646557ec3ed5) |
+| 15 | ElevenLabs MCP | `api.elevenlabs.io/v1/mcp` | [打开](https://swarms.world/agent/2c827136-7316-4e9d-a351-cb29fb299af0) |
+| 16 | PayPal MCP | `mcp.paypal.com/http` | [打开](https://swarms.world/agent/0e44ff3d-9a75-47cb-97cc-fc432c45a29f) |
+| 17 | Netlify MCP | `netlify-mcp.netlify.app/mcp` | [打开](https://swarms.world/agent/92da004f-2317-42f6-8334-38ddc8417d18) |
+| 18 | ClickUp MCP | `mcp.clickup.com/mcp` | [打开](https://swarms.world/agent/f634ba8f-d5ae-4721-b99c-9ebb57418139) |
+| 19 | monday.com MCP | `mcp.monday.com/mcp` | [打开](https://swarms.world/agent/2500ff65-0fd6-423e-a085-13bdd0825675) |
+| 20 | Apify MCP | `mcp.apify.com` | [打开](https://swarms.world/agent/a17a70da-78f9-4a53-bfa5-fff7ccb85b05) |
+| 21 | Perplexity MCP | `api.perplexity.ai/mcp` | [打开](https://swarms.world/agent/3fe30d9f-be13-4bd6-9a84-e6d92b4ff721) |
+| 22 | Cloudflare Docs MCP | `docs.mcp.cloudflare.com/mcp` | [打开](https://swarms.world/agent/b5b354da-08c1-46ec-9223-a4bcf0cfe715) |
+| 23 | Canva MCP | `api.canva.com/connect/v1/mcp` | [打开](https://swarms.world/agent/4adda8d9-117a-4f0d-ad9c-94763373ee40) |
+| 24 | Postman MCP | `mcp.postman.com/mcp` | [打开](https://swarms.world/agent/6c04ef18-e16b-4d09-83fd-2cf4a31c3bbb) |
+| 25 | Neon MCP | `mcp.neon.tech/mcp` | [打开](https://swarms.world/agent/20135847-488b-4ed4-8b4c-10296045031f) |
+
+## 结语
+
+25 个官方 MCP 服务器在一个下午内登陆 Swarms Marketplace，每一个都是由 **[mcp_depot](https://swarms.world/users/mcp_depot)** 发布到 MCP 市场的。这一批发布后，他们的目录已达到 55 个 MCP 服务器，使 mcp_depot 成为 swarms.world 上最大的单一 MCP 服务器发布者。
+
+这个合集值得收藏的原因在于一致性。每个商品页都遵循同样的结构：用平实的语言说明厂商的服务器做什么、智能体能用它做什么、需要哪种认证、当前推荐的是托管端点还是本地包，以及厂商已弃用内容的说明。看完一个，你就知道如何阅读剩下的 24 个。
+
+你可以在 [mcp_depot 的个人主页](https://swarms.world/users/mcp_depot)关注整个目录，或在 [MCP 服务器页面](https://swarms.world/mcp-servers)上与其他所有 MCP 商品一起浏览，它们按最新发布排序。
+
+## 免费发布你自己的 MCP 服务器
+
+如果你运营着一个 MCP 服务器，它也应该出现在同一个页面上。发布是免费的，只需三步：
+
+1. 前往 [swarms.world/launch](https://swarms.world/launch)，打开 **MCP URL** 标签页。
+2. 粘贴服务器 URL，点击 **Inspect**。市场会连接你的服务器、读取它的工具、识别认证方式，并替你填好商品信息。
+3. 点击发布。你的服务器会出现在 [MCP 服务器页面](https://swarms.world/mcp-servers)上，和上面 25 个一样带有连接区块、客户端配置和一键安装。
+
+你可以保持免费访问或设置价格，[卖家门户](/blog/swarms-seller-portal)会追踪你的全部收入。[扩展 MCP 支持的那篇文章](/blog/expanded-mcp-support-swarms-marketplace)详细介绍了检查器和认证选项。
+
+[发布你的 MCP 服务器 →](https://swarms.world/launch)

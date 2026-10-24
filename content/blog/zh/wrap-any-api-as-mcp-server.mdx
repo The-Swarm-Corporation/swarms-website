@@ -1,0 +1,280 @@
+---
+title: "把任意 API 包装成 MCP 服务器并上架 Swarms"
+description: "一篇动手教程：用 FastMCP 和 Streamable HTTP 把无需密钥的 Open-Meteo 天气 API 包装成 Python MCP 服务器，测试它，加上 bearer token 校验，用 Docker 部署，然后发布到 Swarms Marketplace 的 MCP Portal，让智能体可以发现并调用它。"
+date: "2026-10-24"
+author: "Swarms 团队"
+categories: ["指南", "工程"]
+featured: false
+readTime: "11 分钟阅读"
+image: "/wrap_any_api_as_mcp_server.png"
+---
+
+# 把任意 API 包装成 MCP 服务器并上架 Swarms
+
+大多数值得拥有的 MCP 服务器都很薄。协议背后是一个普通的 HTTP API，服务器要做的只是把其中几个端点描述成工具：带类型的参数，加上清晰的 docstring，让模型能选对工具并正确调用。只要你会写一个调用 API 的 Python 函数，就能为它写一个 MCP 服务器。
+
+这篇指南从零开始构建一个，并一路做到市场上架。选用的 API 是 [Open-Meteo](https://open-meteo.com)，一个无需 API key 的公共天气服务，这样任何人都能跑通示例。服务器有三个工具，基于 Python MCP SDK 的 `FastMCP` 类，走 Streamable HTTP 传输，加上 bearer token 校验和一个 Dockerfile，最后发布到 [Swarms Marketplace](https://swarms.world) 的 [MCP Portal](https://swarms.world/mcp-servers)，由市场读取它的工具并为每种客户端生成连接说明。
+
+我们之前的指南[《如何用 Python 把 AI 智能体变成 MCP 服务器》](/blog/turn-ai-agent-into-mcp-server-python)讲的是工具背后是一个 Swarms 智能体、由 `MCPDeployer` 负责提供服务的情况。这一篇讲的是另一种常见情况：一个背后没有模型的普通 API，直接用 `mcp` 包来提供服务。下面每段代码都是完整的，整个项目不到 120 行。
+
+## 第 1 步：项目设置
+
+创建文件夹和虚拟环境，然后安装 MCP SDK、一个 HTTP 客户端和一个 ASGI 服务器：
+
+```bash
+mkdir open-meteo-mcp && cd open-meteo-mcp
+python -m venv .venv && source .venv/bin/activate
+pip install "mcp[cli]>=1.10,<2" httpx uvicorn
+```
+
+关于版本的说明。`mcp` 包有 1.x 和 2.x 两条线，部分导入路径不同（[Swarms Marketplace MCP 一文](/blog/swarms-marketplace-mcp-server)用的是 2.x 的客户端导入 `streamable_http_client`；[Swarms Cloud MCP 一文](/blog/mcp-server-live-swarms-cloud)用的是 1.x 的 `streamablehttp_client`）。本指南在独立环境中锁定 1.x，这样下面的导入和你实际运行的一致。如果你同时使用 `swarms` 16，请把它放在另一个环境里，因为 `MCPDeployer` 需要 `mcp>=2`。
+
+## 第 2 步：定义工具
+
+服务器写在 `server.py` 里。每个工具都是一个带类型注解和 docstring 的普通函数。FastMCP 把函数签名变成工具的 JSON 输入 schema，把 docstring 变成工具描述，也就是模型在决定是否调用它时读到的文字。
+
+```python
+import httpx
+from mcp.server.fastmcp import FastMCP
+from mcp.types import ToolAnnotations
+
+GEO = "https://geocoding-api.open-meteo.com/v1/search"
+FORECAST = "https://api.open-meteo.com/v1/forecast"
+READ_ONLY = ToolAnnotations(readOnlyHint=True)
+
+mcp = FastMCP("open-meteo", host="0.0.0.0", port=8000, stateless_http=True)
+
+
+def get(url: str, **params) -> dict:
+    r = httpx.get(url, params=params, timeout=10)
+    r.raise_for_status()
+    return r.json()
+
+
+@mcp.tool(annotations=READ_ONLY)
+def geocode(city: str, count: int = 3) -> list[dict]:
+    """Find a city's coordinates. Returns name, country, latitude and longitude for up to `count` matches."""
+    data = get(GEO, name=city, count=count, language="en", format="json")
+    keys = ("name", "country", "latitude", "longitude")
+    return [{k: r.get(k) for k in keys} for r in data.get("results", [])]
+
+
+@mcp.tool(annotations=READ_ONLY)
+def current_weather(latitude: float, longitude: float) -> dict:
+    """Current temperature (C), wind speed (km/h) and WMO weather code at a coordinate."""
+    data = get(FORECAST, latitude=latitude, longitude=longitude,
+               current="temperature_2m,wind_speed_10m,weather_code")
+    return data["current"]
+
+
+@mcp.tool(annotations=READ_ONLY)
+def daily_forecast(latitude: float, longitude: float, days: int = 3) -> dict:
+    """Daily max and min temperature (C) and precipitation (mm) for the next 1 to 16 days."""
+    data = get(FORECAST, latitude=latitude, longitude=longitude,
+               daily="temperature_2m_max,temperature_2m_min,precipitation_sum",
+               forecast_days=min(max(days, 1), 16))
+    return data["daily"]
+
+
+if __name__ == "__main__":
+    mcp.run(transport="streamable-http")
+```
+
+这个文件里有四个决定支撑着整体设计。
+
+**三个小工具。** Open-Meteo 接受的是坐标，而人们习惯用城市名思考，所以 `geocode` 作为独立的一步存在，模型可以把它串起来：查"Berlin"，取第一个结果的坐标，传给 `current_weather`。一个工具对应一个端点，每个 schema 都很短。如果只做一个 `weather(query)` 工具，解析的难题就会被推给模型。
+
+**带默认值的类型化参数。** `count: int = 3` 在 schema 里成为可选参数，`latitude: float` 成为必填参数。客户端会在调用到达你的代码之前按这个 schema 校验，市场上的列表页也会标出必填参数。上游会拒绝的值要在这里截断：Open-Meteo 最多允许 16 天预报，所以 `days` 被限制在这个范围内。
+
+**写明单位和返回形状的 docstring。** 每个 docstring 的第一行就是工具描述。摄氏度、km/h 和毫米都写明了，否则模型只能猜。返回值被精简也是同一个原因：`geocode` 每条匹配只返回四个字段，因为工具结果的每个字节都会进入模型的上下文。
+
+**只读提示和无状态 HTTP。** `ToolAnnotations(readOnlyHint=True)` 告诉客户端这些工具只读数据。Swarms Marketplace 会在列表页的工具清单上把它们显示为 **Read-only** 和 **destructive** 标记，所以会写入的工具要标上 `destructiveHint=True`。`stateless_http=True` 让每个请求独立成立，多个副本可以放在负载均衡器后面；`host="0.0.0.0"` 让服务器在容器外也能访问。
+
+## 第 3 步：本地运行并测试
+
+用 `python server.py` 启动服务器。它在 `http://127.0.0.1:8000/mcp` 提供 Streamable HTTP 服务。
+
+最快的检查方式是 MCP Inspector，官方的浏览器界面，用来探查服务器：运行 `npx @modelcontextprotocol/inspector`，选择 Streamable HTTP 传输，输入 URL 并连接。你会看到三个工具及其 schema，并且可以在表单里直接调用。第二种检查方式是脚本，这也是 CI 里需要的。创建 `client.py`：
+
+```python
+import asyncio
+from mcp import ClientSession
+from mcp.client.streamable_http import streamablehttp_client
+
+URL = "http://127.0.0.1:8000/mcp"
+
+
+async def main():
+    async with streamablehttp_client(URL) as (read, write, _):
+        async with ClientSession(read, write) as session:
+            await session.initialize()
+            tools = await session.list_tools()
+            print([t.name for t in tools.tools])
+            res = await session.call_tool("geocode", {"city": "Berlin", "count": 1})
+            print(res.content[0].text)
+            res = await session.call_tool("current_weather", {"latitude": 52.52, "longitude": 13.41})
+            print(res.content[0].text)
+
+
+asyncio.run(main())
+```
+
+在第二个终端运行 `python client.py`。你应该会得到三个工具名、一条 Berlin 的地理编码匹配，以及一个包含温度、风速和天气代码的当前天气对象。工具结果以 JSON 编码的文本形式出现在 `res.content[0].text` 里。也试一次错误调用，比如不带 `city` 调用 `geocode`：SDK 会在你的函数运行之前按 schema 拒绝它。
+
+## 第 4 步：加上 bearer token 校验
+
+到这里服务器还是开放的。在笔记本上这没问题，放到互联网上就不行了：任何人找到 URL 都能使用你的服务器，而付费上架也需要一种方式区分买家和其他人。
+
+最简单的校验是共享的 bearer token。MCPDeployer 指南从一个逗号分隔的环境变量读取密钥，没有密钥就拒绝启动；缺失的秘密应该在启动时就失败，而不是提供一个开放的端点。它还用 `401` 加 `WWW-Authenticate: Bearer` 头回应被拒绝的请求，这一点之后很重要，因为市场的 inspector 会把 `401` 理解为"这个服务器需要 API key"。FastMCP 通过 `streamable_http_app()` 把服务器暴露为 ASGI 应用，所以这个校验就是一个小小的包装层。创建 `app.py`：
+
+```python
+import hmac
+import os
+
+import uvicorn
+from starlette.responses import JSONResponse
+
+from server import mcp
+
+KEYS = [k for k in os.environ.get("MCP_SERVER_KEYS", "").split(",") if k]
+if not KEYS:
+    raise SystemExit("Set MCP_SERVER_KEYS to one or more comma-separated keys")
+
+
+@mcp.custom_route("/health", methods=["GET"])
+async def health(request):
+    return JSONResponse({"status": "ok"})
+
+
+inner = mcp.streamable_http_app()
+
+
+async def app(scope, receive, send):
+    if scope["type"] == "http" and scope["path"] != "/health":
+        header = dict(scope["headers"]).get(b"authorization", b"").decode()
+        token = header.removeprefix("Bearer ").strip()
+        if not any(hmac.compare_digest(token, k) for k in KEYS):
+            reply = JSONResponse({"error": "unauthorized"}, status_code=401,
+                                 headers={"WWW-Authenticate": "Bearer"})
+            return await reply(scope, receive, send)
+    await inner(scope, receive, send)
+
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", "8000")))
+```
+
+带着密钥启动，检查两条路径：
+
+```bash
+MCP_SERVER_KEYS="sk-local-dev" python app.py
+curl -s http://127.0.0.1:8000/health
+curl -s -o /dev/null -w "%{http_code}\n" -X POST http://127.0.0.1:8000/mcp
+```
+
+健康检查路由返回 `{"status":"ok"}`，而不带凭据直接 POST `/mcp` 得到 `401`。`hmac.compare_digest` 以常数时间比较。要让 `client.py` 使用带认证的服务器，传入请求头即可：`streamablehttp_client(URL, headers={"Authorization": "Bearer sk-local-dev"})`。
+
+保持 `/health` 开放：托管平台会探测它，而一个返回 `401` 的探测看起来就像服务器挂了。其余所有请求，包括 `tools/list`，都需要 token。如果需要 OAuth 或按租户的规则，[MCPDeployer 指南的认证部分](/blog/turn-ai-agent-into-mcp-server-python)讲了自定义认证函数和带 scope 的 token 校验器，同样的思路在这里也适用。
+
+## 第 5 步：部署到 https 之后
+
+市场只会检查公开 https URL 上的服务器。私有、回环和链路本地地址都会被拒绝，所以 `localhost` 和局域网 IP 不行，纯 http 也不行。先部署，再检查；试跑一次的话，用 https 隧道把本机暴露出去也可以。可移植的部署方式是容器。创建 `Dockerfile`：
+
+```dockerfile
+FROM python:3.13-slim
+WORKDIR /app
+RUN pip install --no-cache-dir "mcp>=1.10,<2" httpx uvicorn
+COPY server.py app.py ./
+CMD ["python", "app.py"]
+```
+
+构建并运行，密钥在启动时传入，绝不打进镜像：
+
+```bash
+docker build -t open-meteo-mcp .
+docker run --rm -p 8000:8000 -e MCP_SERVER_KEYS="sk-local-dev" open-meteo-mcp
+```
+
+任何能拉取镜像的人都能读到镜像里的一切，所以秘密属于运行时环境，就像 [Swarms Docker 指南](/blog/swarms-docker-hub-official-image)传入模型提供商密钥的方式一样；同时用 `.dockerignore` 把 `.env` 文件挡在构建上下文之外。
+
+从这里开始，任何容器托管都可以：一台装了 Docker 和反向代理的虚拟机、一个托管容器平台，或者一个 Kubernetes 集群。inspector 的限制正好可以当作检查清单：
+
+1. **一个公开的 https URL。** 在平台或反向代理处终止 TLS；服务器本身在 `PORT` 上说的是纯 HTTP。
+2. **20 秒内唤醒。** 这是 inspector 给整次检查的时间预算，足够免费套餐从冷启动中醒来。
+3. **响应保持在 1 MB 以内。** 这是 inspector 的限制，对工具结果来说也是一个合理的上限。
+4. **`/health` 返回 200，缺少 token 时 `/mcp` 返回 401。** 前者让健康检查保持正常；后者是市场检测你认证类型的方式。
+
+记下平台给你的 URL，末尾带上 `/mcp`，例如 `https://open-meteo-mcp.example.com/mcp`。这个字符串就是你的上架内容。
+
+## 第 6 步：发布到 Swarms Marketplace
+
+发布只需要一个 URL 和几个表单字段。其余工作由市场完成：连接到你的服务器，读取它暴露的内容，具体过程见[《Swarms Marketplace 扩展 MCP 支持》](/blog/expanded-mcp-support-swarms-marketplace)。
+
+1. **登录**并打开 [swarms.world/launch](https://swarms.world/launch)。
+2. 在 **What would you like to publish?** 下选择 **Agent**。
+3. 在 **Agent Implementation** 中打开 **MCP URL** 标签页，粘贴你的服务器 URL。
+4. 点击 **Inspect**。市场会与你的服务器建立一次真实的 MCP 会话，先尝试 Streamable HTTP，再回退到 SSE。对第 4 步的服务器，它会收到 `401`，找不到 OAuth 元数据，于是报告该服务器需要 API key。
+5. **设置 Authentication。** 选择器会预选 **API key**。保持请求头名称为 `Authorization`，"Bearer"选项保持开启，这正是 `app.py` 期望的。在 **Where users get a key** 里填上你分发 token 的页面；它会以 **Get an API key** 的形式出现在你的列表页上。然后添加一个 **test key** 并再次检查。市场只用它一次来读取你的三个工具、它们的 schema 和只读提示，并且不会保存它。
+6. **完成细节。** 检查会用服务器的信息填充空的名称和描述，并添加 **MCP** 分类。用你自己的话重写描述，因为买家搜索的就是它：任意坐标的当前天气和逐日预报，支持城市查询，无需上游密钥。添加一张图片和其他合适的分类。
+7. **选择定价。** 选 **Free** 或 **Paid**。付费列表通过 **Crypto (SOL)** 或 **Card / Fiat (Stripe)** 结算，价格从 $0.01 起。发布免费；只有在产生销售时 Swarms 才收取 10% 的费用，你保留 90%。
+8. **发布。** 市场会用测试密钥再读取一次你的工具，并随列表一起保存。这一步发生在列表创建之后，所以即使服务器短暂宕机，列表也会正常发布，并在之后被查看时补全。
+
+你的列表会出现在 [MCP 服务器页面](https://swarms.world/mcp-servers)和[注册表](https://swarms.world/platform/registry?type=agents,prompts,tools&industry=mcp)中，因为它带有 MCP 服务器 URL，所以会被自动打上 MCP 标签。
+
+### 列表页显示什么
+
+每个 MCP 列表的 Overview 标签页都有一个 **Connect to this MCP server** 区块，由 inspector 读到的内容生成：
+
+- 带复制按钮的服务器 URL。
+- 认证（这里是 *API key required*）、传输（*Streamable HTTP*）和工具数量的标记，以及你的 **Get an API key** 链接。
+- **Claude、Cursor、VS Code 和 Other apps** 的客户端标签页，每个都带有包含 `Authorization: Bearer YOUR_API_KEY` 请求头的配置。
+- 工具清单：`geocode`、`current_weather` 和 `daily_forecast`，各自的参数、必填项标记，以及来自第 2 步注解的 **Read-only** 标记。
+
+一键 **Add to Cursor** 和 **Add to VS Code** 按钮只出现在不需要密钥的服务器上，因为保存一份没有密钥的配置在手动编辑之前都会失败。把第 2 步那个开放的服务器作为免费列表发布，你就能得到这些按钮。
+
+列表会保持最新。当有人打开你的列表、而上次检查已超过一天时，市场会重新检查服务器，所以新增第四个工具不需要重新发布。这些刷新不携带密钥，所以需要 API key 的列表会保留上一次带密钥检查读到的工具；改动工具集后，用测试密钥重新检查一次。
+
+MCP 列表没有自动化的安全评分。买家看到的是你的服务器通过协议对自身的描述（只读和破坏性提示、参数）以及你写的描述，所以提示要如实设置。个人资料上的 [Verified 徽章](/blog/get-verified-swarms-marketplace)再添一个信号：列表背后的账户有活跃的 Pro 或 Premium 套餐。
+
+### 给包装层定价
+
+免费上游 API 配免费列表是自然的默认选择。当你增加了东西时付费才有意义：需要付费的上游 API 密钥、缓存、更高的速率限制，或者把多次调用合成一个答案的工具。付费列表的买家在获得访问权后能看到连接区块，而你的 **Get an API key** 链接就是他们为你的服务器获取 token 的地方，因为市场不会为它上架的服务器发放密钥。销售和结算在 [Seller Portal](/blog/swarms-seller-portal) 中查看，卡支付和加密货币的费用同为 10%，详见[法币支付一文](/blog/fiat-payments-live-swarms-marketplace)。
+
+## 第 7 步：买家如何连接
+
+列表页的客户端标签页覆盖了桌面和 IDE 客户端。对 Claude Code 来说配置只有一行：
+
+```bash
+claude mcp add --transport http open-meteo https://open-meteo-mcp.example.com/mcp --header "Authorization: Bearer YOUR_API_KEY"
+```
+
+Cursor 在 `mcp.json` 里使用同样的 URL 和请求头，Claude Desktop 则通过 `mcp-remote` 桥接连接。这些配置列表页都会为你生成。
+
+**从 Swarms 智能体连接。** Swarms 智能体通过 `mcp_url` 调用 MCP 服务器。`MCPConnection` 默认把 `api_key` 以 `Authorization: Bearer <key>` 的形式发送，正是 `app.py` 检查的内容：
+
+```python
+from swarms import Agent, MCPConnection
+
+agent = Agent(
+    agent_name="Weather-Agent",
+    model_name="gpt-5.4-mini",
+    max_loops=1,
+    output_type="final",
+    mcp_url=MCPConnection(url="https://open-meteo-mcp.example.com/mcp", api_key="YOUR_API_KEY"),
+)
+print(agent.run("What is the weather in Berlin right now, and will it rain tomorrow?"))
+```
+
+智能体在启动时拉取工具列表，模型会自行串联 `geocode`、`current_weather` 和 `daily_forecast`。托管的 Swarms API 上也一样，智能体配置接受 `mcp_url`，或者一个 `mcp_urls` 列表，每个服务器配一个 `authorization_token`。
+
+**通过 Swarms Marketplace MCP 连接。** 市场本身就是位于 `https://swarms.world/mcp` 的 MCP 服务器，每个市场 REST 操作对应一个工具。用 Swarms API key 连接它的智能体可以按分类搜索目录（其中包括 MCP 服务器），并按 id 获取某个列表。免费列表完整返回；付费列表返回元数据加一个 `access_info` 对象，直到持有该密钥的账户购买为止。所以智能体可以在任务进行中发现你的服务器，读取它的工具，然后连接上去，不需要人打开浏览器。连接细节见[市场 MCP 一文](/blog/swarms-marketplace-mcp-server)。
+
+## 更进一步
+
+这个模式适用于任何 HTTP API。把两个 Open-Meteo URL 换成你关心的端点，每个操作写一个函数，并保持让包装层便于模型使用的习惯：简短的类型化签名、写明单位和返回形状的 docstring、精简的返回值。
+
+- **上游密钥。** 如果你包装的 API 需要自己的密钥，从容器的环境变量读取，绝不要把它作为工具参数接收。你的 bearer token 保护的是你的服务器；上游密钥留在你这一侧。
+- **超时与错误。** `httpx.get(..., timeout=10)` 限制了每次上游调用。上游不可用时返回清晰的错误信息，让模型可以告知用户，而不是盲目重试。
+- **写操作。** 标上 `destructiveHint=True`，用动词命名，例如 `create_booking`，并考虑加一个 `confirm: bool` 参数，让一次不完整的调用无法触发它们。
+
+一旦服务器说起了这个协议，列表页标签里的每种客户端、每个 Swarms 智能体，以及每个通过市场 MCP 浏览的智能体，都能以同样的方式使用它。到 [swarms.world/launch](https://swarms.world/launch) 发布它。

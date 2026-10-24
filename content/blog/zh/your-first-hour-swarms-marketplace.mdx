@@ -1,0 +1,209 @@
+---
+title: "在 Swarms Marketplace 的第一个小时：找到、试用并运行一个智能体"
+description: "面向 swarms.world 新访客的一小时上手指南：用自主筛选搜索找到一个智能体，读懂它的商品页，在 Swarms Chat 中试用，通过 Marketplace MCP 和 Swarms API 把它接入自己的代码，再用银行卡、SOL 或 USDC 购买一个付费商品。"
+date: "2026-10-24"
+author: "Swarms 团队"
+categories: ["指南", "产品"]
+featured: false
+readTime: "9 分钟阅读"
+image: "/your_first_hour_swarms_marketplace.png"
+---
+
+# 在 Swarms Marketplace 的第一个小时：找到、试用并运行一个智能体
+
+你有一个浏览器和一个小时。一小时结束时，你将找到一个能完成你关心的任务的智能体，把它的商品页读得足够透彻以决定是否信任它，和它对话，从自己的代码中运行它，并学会如何购买一个付费商品。每个时间段都链接到深入介绍该功能的文章。时间划分只是参考，已经熟悉的部分可以直接跳过。
+
+## 第 0 到 10 分钟：熟悉环境
+
+[Swarms Marketplace](https://swarms.world) 是一个可复用 AI 组件的目录，你可以浏览、购买、发布和运行这些组件。每个商品都是一个可以直接放进你自己工作流的构建块。创作者从每一笔销售中获得收入，买家则不必重复构建其他团队已经做好的东西。更完整的介绍见[什么是智能体市场？](/blog/what-is-an-agent-marketplace)。
+
+市场上有四种商品类型，了解它们能让每一次搜索更快：
+
+- **智能体（Agents）** 是带有可执行代码的自主实体。一个商品打包了逻辑、依赖包以及运行所需的环境变量。
+- **提示词（Prompts）** 是不附带代码的纯文本指令。任何可以使用系统提示词的地方都能用，无需编程。
+- **工具（Tools）** 是带类型标注的 Python 函数，用于单一操作，设计上供智能体调用。
+- **MCP 服务器** 是暴露了 Model Context Protocol 端点的智能体，其他智能体和 MCP 客户端可以把它们当作工具调用。
+
+想了解市场的规模，打开 [Explorer](https://swarms.world/explorer)。这是一个公开页面，由一组卡片组成，每张卡片对应一个核心数字（商品、智能体、提示词、工具、卖家、新上架、付费与代币化商品、MCP 智能体），每张都带有 30 天趋势图。它在十月上线时，市场共列出来自 808 位卖家的 6,400 个商品：5,576 个智能体、773 个提示词和 46 个工具，其中 214 个付费、996 个已代币化。点击智能体、提示词或工具卡片，会打开按该类型筛选的注册表。[Explorer 介绍文章](/blog/swarms-marketplace-explorer)解释了每个数字的计算方式。
+
+浏览不需要账号。Chat、安全扫描和购买需要，所以请在第 30 分钟之前到 [swarms.world/signin](https://swarms.world/signin) 免费注册一个。
+
+## 第 10 到 20 分钟：用自主筛选搜索找到目标
+
+[注册表](https://swarms.world/platform/registry)是完整的目录，前面有七个筛选控件。你可以自己学会它们，也可以让一个智能体替你操作。
+
+搜索框右侧边缘有一个 AI 按钮。点击它，搜索框就切换到智能体模式，以双边框和闪光图标作为标志。用一句话说出你想要什么："这个月排名靠前的免费研究类智能体"，或者"营销类的付费提示词"。按下回车。状态行显示"Asking the agent"，随后筛选条件逐个落地，并配有实时解说（"Setting show agents"、"Setting pricing: free"），对应的筛选标签同时出现，最后以类似"Done, applied 5 filters"的总结结束。
+
+有三点让它值得在第一天就用起来：
+
+- **它了解真实的词汇。** 智能体每小时刷新一次对目录中最热门标签的了解，所以"solana 机器人"会被映射到真正能匹配到商品的词汇上。
+- **你可以查看并修改它的操作。** 智能体操作的正是你手动使用的那些筛选标签。移除其中一个，或者再次点击 AI 按钮输入后续要求，比如"只要付费的"。它记得上一次的请求，并在当前状态上修改。
+- **空页面不会让你止步。** 如果筛选条件匹配不到任何结果，智能体会从最不重要的条件开始放宽：日期范围先扩大到全部时间，然后去掉行业限制，再去掉关键词。每一步都有解说，一旦出现结果就立即停止。定价和排除类筛选承载着你的意图，永远不会被改动。
+
+从结果中打开一个智能体和一个提示词，接下来的时间都会用到它们。完整介绍见[推出自主筛选搜索](/blog/autonomous-filter-search-agent)。
+
+## 第 20 到 30 分钟：读懂商品页
+
+商品页告诉你这个产品做什么，并提供多种方式帮你判断是否值得信任。
+
+### 横幅
+
+标签位于顶部，代币化商品会有 FRENZY、VAULTED 之类的标记。付费商品带有 Premium 徽章并以美元显示价格。已完成扫描的提示词页面上，`Security Score: N` 标签与它们并列，扫描器建议为 `SAFE` 时显示绿色，否则显示红色。
+
+### 安全标签页（提示词）
+
+每个提示词页面在 Main Prompt 之后都有一个**安全**（Security）标签页，由 [SkillScanner](https://github.com/The-Swarm-Corporation/SkillScanner) 提供支持。它显示 0 到 100 的安全评分（100 减去风险分数，所以分数越高越安全）、一条建议（`SAFE`、`CAUTION` 或 `DO_NOT_INSTALL`）、一个由通读整个提示词的 Swarms 智能体给出的结论（`APPROVE`、`CAUTION` 或 `REJECT`），以及每一条发现，附带行号和精确匹配到的文本。
+
+80 分及以上是你想要的起点。遵循扫描器自己的策略：使用 `SAFE` 和 `APPROVE` 的提示词，`CAUTION` 的交给人工确认，`DO_NOT_INSTALL` 或 `REJECT` 的不要运行。如果没有徽章，登录后打开该标签页即可运行首次扫描，最多需要一分钟。[每个提示词现在都有安全评分](/blog/prompt-security-scores-swarms-marketplace)介绍了评分规则。
+
+### 评价
+
+商品页有一个 Ratings 标签页，里面是社区评价。凡是打算付费的商品，先读几条。
+
+### 创作者
+
+点击创作者的名字，会打开位于 `swarms.world/users/<username>` 的个人主页。用户名旁的蓝色 **Verified** 徽章只表示一件事：该账号拥有有效的 Pro 或 Premium 套餐。它既不是身份核验，也不是质量评级，但在一个几秒钟就能注册账号的市场里，它告诉你这个人为留在平台上付费，并且仍然活跃。详情见[在 Swarms Marketplace 上获得认证](/blog/get-verified-swarms-marketplace)。
+
+### 智能体商品页
+
+智能体页面展示带语法高亮的代码、它声明的依赖、所需的环境变量，以及创作者列出的用例。对于尚未购买的付费智能体，你看到的是元数据和预览，购买后代码归你使用。
+
+## 第 30 到 40 分钟：在 Swarms Chat 中试用
+
+市场上的每个提示词都有一个 **Chat** 按钮。点击它，你就在与一个以该提示词作为系统提示词的智能体对话，背后由 Swarms API 驱动。这是在购买或在其基础上构建之前，了解一个商品究竟擅长什么的最快方式。Chat 附属于提示词商品页，所以如果你在第 20 分钟选的是智能体，就让筛选搜索智能体帮你找做同样工作的提示词。
+
+Chat 以独立的全屏页面打开，页头有一个 **Back to product** 按钮。大约三秒后，会出现三个开场问题，由一个读过该提示词的小型智能体生成。点击其中一个，或者输入你自己的问题。
+
+第一次运行时值得关注的功能：
+
+- **模型选择器**列出 Swarms API 报告的每一个模型，最近一次统计接近 2,000 个，Claude 5 系列、GPT-5.4 及更新版本、GLM 5 和 Kimi K3 固定在顶部。输入即可搜索，对话中途也能切换模型。
+- **Try another model** 用另一个模型重跑同一轮对话，这是判断一个糟糕回答是提示词的问题还是模型的问题的方法。**Retry** 原地重跑，**Continue** 接着被截断的回复继续生成。
+- **Token 计数**显示在每条回复的复制按钮旁边，让你看清哪些提示词和设置更费钱。
+- **Settings** 打开一个分标签页的对话框，暴露 completions 端点接受的每一个 `AgentSpec` 参数，除了属于商品本身的提示词名称、描述和系统提示词，以及属于模型选择器的模型。温度、最大 token 数、最大循环数（包括 `auto`）、推理强度、MCP 服务器、工具、后备模型和流式输出都由你决定。设置按提示词保存在你的浏览器中，所以调整一个提示词不会影响另一个。
+
+[全新的 Swarms Chat 体验](/blog/swarms-chat-improvements)和[Swarms Chat 的全部更新](/blog/swarms-chat-updates)介绍了其余内容，包括网页搜索、移动端布局和输入框快捷键。
+
+## 第 40 到 50 分钟：接入代码
+
+这一段的所有内容都使用同一把 Swarms API 密钥。在 [swarms.world/platform/api-keys](https://swarms.world/platform/api-keys) 创建，密钥只显示一次，请立即保存。同一把密钥可用于市场 REST API、Marketplace MCP，以及位于 `api.swarms.world` 的 Swarms API。
+
+### 连接 Marketplace MCP
+
+swarms.world 是一个 Model Context Protocol 服务器。把 MCP 客户端指向 `https://swarms.world/mcp`，整个目录就变成了你的编程智能体可以调用的工具：按名称、标签、分类、用例或价格搜索智能体、提示词和工具，按 id 获取单个商品，发布和编辑你自己的作品，撰写评价。免费智能体会连同可运行的源码一起返回，免费提示词返回完整正文。付费商品在你的账号购买之前只返回元数据和一个 `access_info` 对象。
+
+在 Claude Code 中：
+
+```bash
+claude mcp add --transport http swarms https://swarms.world/mcp \
+  --header "Authorization: Bearer $SWARMS_API_KEY"
+```
+
+在会话中运行 `/mcp` 确认连接。这些工具会以 `mcp__swarms__<tool>` 的形式出现。
+
+在 Cursor 中，把下面的内容加入你的 MCP 配置：
+
+```json
+{
+  "mcpServers": {
+    "swarms": {
+      "url": "https://swarms.world/mcp",
+      "headers": { "Authorization": "Bearer sk-..." }
+    }
+  }
+}
+```
+
+然后用自然语言提问："找评分最高、价格低于十美元的金融类智能体"，或者"获取我刚才看的那个智能体，把源码给我看"。更多客户端示例见[开发者页面](https://swarms.world/developers)和[Swarms Marketplace MCP 正式上线](/blog/swarms-marketplace-mcp-server)。
+
+### 用 Swarms Python 框架运行
+
+框架可以按 id 加载市场提示词，并将其安装为系统提示词：
+
+```bash
+pip install -U swarms
+export SWARMS_API_KEY="your-api-key-here"
+```
+
+```python
+from swarms import Agent
+
+agent = Agent(
+    model_name="gpt-4o-mini",
+    marketplace_prompt_id="75fc0d28-b0d0-4372-bc04-824aa388b7d2",
+)
+
+response = agent.run("Summarize the key risks in this quarterly filing.")
+```
+
+对于智能体商品，页面（或 MCP）会给你它的代码、依赖和环境变量。安装依赖、设置变量，然后按创作者编写的方式运行。
+
+### 用 Swarms API 运行
+
+如果你更愿意只发一次 HTTP 请求，把商品的系统提示词发送到 `POST /v1/agent/completions`。请求由一个 `agent_config` 对象加一个 `task` 组成：
+
+```python
+import asyncio
+import os
+
+import aiohttp
+
+HEADERS = {"x-api-key": os.environ["SWARMS_API_KEY"], "Content-Type": "application/json"}
+
+payload = {
+    "agent_config": {
+        "agent_name": "Research Assistant",
+        "description": "Runs a marketplace research prompt",
+        "system_prompt": "<paste the prompt text from the listing here>",
+        "model_name": "claude-sonnet-5",
+        "max_loops": 1,
+        "max_tokens": 4096,
+        "temperature": 0.4,
+    },
+    "task": "Summarize the key risks in this quarterly filing.",
+}
+
+
+async def main():
+    async with aiohttp.ClientSession(headers=HEADERS) as session:
+        async with session.post("https://api.swarms.world/v1/agent/completions", json=payload) as resp:
+            result = await resp.json()
+    print(result["outputs"][-1]["content"])
+    print(result["usage"])
+
+
+asyncio.run(main())
+```
+
+`outputs` 是一个消息列表，最后一条就是智能体的最终回答。`usage` 包含 token 计数和 `total_cost`。[如何用 Python 构建智能体集群](/blog/build-agent-swarm-python)把这一次调用扩展成流水线、并行专家和分层集群。
+
+以这种方式运行过一个智能体之后，Swarms Cloud 会在 [cloud.swarms.ai/agents](https://cloud.swarms.ai/agents) 为它生成[专属页面](/blog/agent-detail-pages-swarms-cloud)：运行次数、费用、完整的系统提示词、全部 34 个配置字段及其实时默认值，以及每次运行占用了多少上下文窗口。
+
+## 第 50 到 58 分钟：购买一个付费商品
+
+付费商品带有 Premium 徽章和美元价格。点击 **Buy**，购买对话框会显示该商品接受哪种支付方式，因为创作者为每个商品单独选择支付渠道。
+
+- **银行卡。** 选择 **Pay with card**，你会被跳转到 Stripe 托管的结账页面。可以用银行卡、Apple Pay、Google Pay、支付宝、Klarna，或 Stripe 在你所在地区提供的任何方式，以当地货币支付。你的卡片信息不会经过 Swarms 的基础设施。
+- **SOL。** 你的钱包签署一笔 Solana 交易，其中同时包含打给创作者注册钱包的份额和打给国库的平台费用。结算即时完成，且不经托管。
+- **USDC。** 付费商品也可以用 Solana 钱包中的 USDC 购买；Explorer 的付费商品卡片把三种渠道一并计入。
+
+无论哪种渠道，支付完成的那一刻你就回到商品页，并获得完整访问权限：完整的提示词文本，或智能体的代码和配置。访问权限是永久的，没有订阅，付费提示词的安全标签页此时也会向你显示完整报告。你的[购买记录标签页](https://swarms.world/platform/account?tab=purchases)和[交易历史](https://swarms.world/platform/account/transactions)记录每一笔购买，每一行都链接回对应的商品。如果商品看起来仍然锁定，先刷新页面，然后带着购买时间和商品名称联系[客服](https://swarms.world/support)。
+
+无论买家用卡还是加密货币支付，卖家都保留每笔销售的 90%，发布则是免费的。[智能体经济现在支持银行卡](/blog/fiat-payments-live-swarms-marketplace)从买卖双方的视角完整讲解了这一流程。
+
+## 第 58 到 60 分钟：现在发布你自己的作品
+
+这一小时里你看到的每一样东西，都是由一个曾经和你站在同一起点的人发布的。[swarms.world/launch](https://swarms.world/launch) 的发布页面能在一个流程里把提示词或智能体变成公开商品，免费或付费都可以。
+
+接下来有两篇文章。[发布你的第一个提示词](/blog/publish-your-first-prompt)从头到尾讲解发布表单。[如何写出让人找得到的商品页](/blog/how-to-write-a-listing-people-find)讨论标题、标签和描述，这比听起来更重要：筛选搜索智能体每小时学习一次目录中的标签，所以你在发布时选用的词，就是买家搜索时会命中的词。
+
+## 一小时后你拥有了什么
+
+- 一个 swarms.world 的免费账号，以及通过 Explorer 对目录规模的认识。
+- 一个搜索习惯：向筛选搜索智能体描述你想要的东西，然后修改它的筛选标签。
+- 一套读懂任何商品页的方法：安全评分与结论、评价、Premium 徽章，以及创作者的 Verified 状态。
+- 一个你已经在 Swarms Chat 中对话过的提示词，以及一组适合它的模型和设置。
+- 一把 Swarms API 密钥、已连接到你编程工具的 Marketplace MCP，以及两种可用的 Python 运行方式。
+- 对用银行卡、SOL 或 USDC 购买的清晰认识，以及购买和交易记录的位置。
+- 下一步：发布一个属于你自己的作品。
+
+一路上有任何问题，欢迎到 [Discord](https://discord.gg/EamjgSaEQf) 交流，更新会发布在 [@swarms_corp](https://x.com/swarms_corp)。

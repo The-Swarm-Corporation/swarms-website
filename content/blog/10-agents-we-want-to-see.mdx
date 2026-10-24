@@ -1,0 +1,170 @@
+---
+title: "10 Agents We Want to See on the Swarms Marketplace"
+description: "A builder's wishlist: ten under-served agents the Swarms Marketplace is missing, each with a spec, the MCP servers it should use, the swarm architecture that fits, and a pricing model. Build one and launch it in a competition."
+date: "2026-10-24"
+author: "Swarms Team"
+categories: ["Product"]
+featured: false
+readTime: "9 min read"
+image: "/10_agents_we_want_to_see.png"
+---
+
+# 10 Agents We Want to See on the Swarms Marketplace
+
+The [Swarms Marketplace](https://swarms.world) has more agents than anyone could read in a week, and a large share of them do the same few things. Meanwhile [25 official MCP servers](/blog/25-new-mcp-servers-mcp-depot) from Google, PayPal, Neon, PagerDuty, Perplexity and others landed in one drop on October 20. The servers are there. The agents that put them to work mostly are not.
+
+This is a wishlist: ten agents we think should exist and do not, each with a short spec, the MCP servers it should use, and the [Swarms API architecture](/blog/swarm-architectures-explained) that fits. These are the listings we feature, and the kind of work our [competitions](/blog/agent-competitions-swarms-marketplace) exist to put in front of people. Build one and we want to see it.
+
+## What the catalog has today
+
+The [Explorer](/blog/swarms-marketplace-explorer) gives the live numbers. When that post was written, on October 17, 2026, the marketplace listed 6,400 products from 808 sellers: 5,576 agents, 773 prompts and 46 tools. 214 products were paid, 996 were tokenized, and 24 agents exposed an MCP server.
+
+Agents outnumber tools by more than a hundred to one, so the agent type is where the crowd is. And only 24 agents serve an MCP server, so the link between the marketplace's agents and the systems people run their businesses on is thin. The Explorer counts by type, so this part is our impression from browsing the registry: plenty of general assistants, personas and trading-adjacent agents, and very few that log into a specific system of record and do one bounded job.
+
+The infrastructure for that second kind arrived in bulk. [mcp_depot](https://swarms.world/users/mcp_depot) published 25 vendor-hosted servers on October 20, bringing its catalog to 55, across databases, payments, search, incident management, project management, meetings, content and infrastructure. Every agent below uses at least one.
+
+## The ten agents
+
+Each one has a buyer with a budget and an output that can be checked. The [Auto Agent Builder](/blog/introducing-auto-agent-builder) turns any problem statement below into a first-draft roster in one call.
+
+### 1. Codebase Migration Planner
+
+**Problem.** Every team has a migration it keeps postponing: a framework major version, a database move, a CI swap. The hard part is the plan that names every affected file, orders the steps so the system keeps working, and says how to roll back. Nobody wants to write it, so the migration slips.
+
+- **Inputs:** a repository, the source and target, and constraints such as zero downtime.
+- **Outputs:** a step-ordered plan with per-step risk, a file-level inventory, a rollback section, and an estimate in engineering days.
+- **MCP servers:** Jina AI to read the target's docs and changelogs; Neon to try each schema migration on a temporary branch before it goes in the plan; Postman to diff API collections.
+- **Architecture:** `PlannerWorkerSwarm`. The steps cannot be listed in advance, and the built-in judge keeps re-planning until the plan covers the goal.
+
+**Demo:** point it at a public repo and publish the plan, including the step where a dry run on a Neon branch failed.
+
+**Pricing:** one-time paid listing by card. A plan that saves two days of a senior engineer's time is worth well above the usual agent price.
+
+### 2. Invoice Reconciliation Agent
+
+**Problem.** A business that invoices through PayPal and takes counter payments through Square ends the month with three records that disagree. Someone matches rows by hand. The matches are easy; the exceptions are the job.
+
+- **Inputs:** a date range, a bank statement export, and access to the payment accounts.
+- **Outputs:** a matched ledger, an exceptions list grouped by cause (partial payment, refund, fee mismatch, duplicate), and a plain summary for the owner.
+- **MCP servers:** PayPal for invoices, payments, disputes and reports; Square for payments and orders (read-only mode for the demo); Box for the accountant's statement folder.
+- **Architecture:** `SequentialWorkflow`. Extract, normalize, match, explain. Each step needs the one before it, and one turn per agent doubles as an audit trail.
+
+**Demo:** a synthetic month of 200 transactions with a dozen planted exceptions, shown next to the agent's list.
+
+**Pricing:** one-time paid listing by card. The [fiat rail](/blog/fiat-payments-live-swarms-marketplace) exists for this buyer: someone who expenses a tool and never thinks about a wallet.
+
+### 3. On-Call Incident Summarizer
+
+**Problem.** The incident ends at 3 a.m. and the writeup is due at the 10 a.m. standup. What exists is a PagerDuty timeline, a pile of chat and a few support tickets, and turning that into a report lands on the most tired person in the room.
+
+- **Inputs:** a PagerDuty incident ID and, optionally, a chat export.
+- **Outputs:** a timestamped timeline, a customer-impact section, a probable cause marked as a hypothesis, and follow-ups filed in the tracker.
+- **MCP servers:** PagerDuty for the incident, service, on-call and escalation path; Intercom for the support conversations that mention the outage; ClickUp or monday.com to file follow-ups.
+- **Architecture:** `MixtureOfAgents`. Timeline, impact and follow-up agents read the same evidence in parallel, and the aggregator writes the one report that gets pasted into standup.
+
+**Demo:** a sandbox incident turned into a two-page report, with follow-ups visible on a board.
+
+**Pricing:** paid by card, or tokenized with Vault Mode so the on-call rotation holds the token and gets access ([how Vault Mode works](/blog/vaulted-tokenized-agents-competition)).
+
+### 4. SQL Review Agent
+
+**Problem.** Analytics queries get written once and run forever. A query that scans a whole ClickHouse table every five minutes, or a BigQuery job that reads a terabyte to return ten rows, is a quiet bill nobody reviews.
+
+- **Inputs:** a SQL statement or dbt model, plus a connection to the target database.
+- **Outputs:** three independent reviews (correctness, cost, safety), a rewritten query where warranted, and the schema facts each reviewer relied on.
+- **MCP servers:** ClickHouse and Neon for schemas and read-only execution; Google BigQuery for the same.
+- **Architecture:** `ConcurrentWorkflow`. The reviews are independent and the buyer wants them separately, so there is nothing to merge and no reason to run them in a line.
+
+**Demo:** ten public-dataset queries before and after, with bytes scanned reported by the database itself.
+
+**Pricing:** free listing with a tokenized launch. Developers will run it on every query, which suits a creator share of every trade better than a one-time price.
+
+### 5. Research Synthesizer
+
+**Problem.** Most research agents return links with a paragraph under each. A decision maker needs a position: what the evidence says, where sources disagree, which claims were checked against a primary source, and what is unknown.
+
+- **Inputs:** a question, a depth setting, and optionally sources that must be included.
+- **Outputs:** a brief with numbered citations, a disagreements table, a list of unverifiable claims, and the source list as Markdown.
+- **MCP servers:** Perplexity for search, cited answers and deep research; Jina AI to read URLs as Markdown, extract PDFs and search arXiv; Apify for sources that need a scraper.
+- **Architecture:** `HeavySwarm`. Research, analysis, alternatives and verification run as separate workers, and the synthesis agent writes the brief. The most expensive shape here, and the right one.
+
+**Demo:** one contested technical question where the top results disagree, with the disagreements table doing the work.
+
+**Pricing:** one-time paid listing by card, with a free companion prompt showing the output format.
+
+### 6. Prompt Compliance Checker
+
+**Problem.** Every prompt on the marketplace now carries a [Security Score](/blog/prompt-security-scores-swarms-marketplace) that catches malicious instructions. Nothing checks a prompt against a company's own rules: regulated language, claims it may not make, data it must not request, disclosure requirements. Finance, healthcare and legal teams do this by hand today.
+
+- **Inputs:** a prompt and a policy document or rule set ("no investment advice", "no health data", "disclose AI involvement").
+- **Outputs:** pass or fail per rule with the offending span quoted, a redline with compliant wording, and a short rationale per finding.
+- **MCP servers:** Box to read policy documents in place; Jina AI to pull the regulatory text a rule cites.
+- **Architecture:** `MajorityVoting`. Each rule is a yes or no question, independent voters cut single-model variance, and the vote count is the evidence. CouncilAsAJudge's six fixed dimensions are the wrong rubric here.
+
+**Demo:** twenty prompts from the public registry run against one published policy, with the results table and redlines.
+
+**Pricing:** one-time paid listing by card, for compliance and platform teams.
+
+### 7. Meeting-to-Tickets Agent
+
+**Problem.** A product meeting produces eight decisions and five action items. Two reach the tracker. Recording tools already summarize; the missing step turns a summary into tickets that fit the board without duplicating work already filed.
+
+- **Inputs:** a transcript or recording ID and the target list or board.
+- **Outputs:** draft tickets with title, description, owner and due date, each linked to its transcript passage, plus the items skipped because a matching ticket existed.
+- **MCP servers:** Fireflies.ai for the transcript, summary, action items and attendees; ClickUp or monday.com to read the board and create tickets.
+- **Architecture:** `SequentialWorkflow`. Extract decisions, draft, dedupe against the board, file. The order is fixed and every step depends on the last.
+
+**Demo:** a 40-minute meeting, the board before and after, and the duplicate it refused to create.
+
+**Pricing:** one-time paid listing by card at the low end of the agent range, so a team lead can buy it without approval.
+
+### 8. Localization QA Agent
+
+**Problem.** Translating a site is the easy half. Checking it is where the cost sits: strings overflow buttons, product names get translated when they should not, one term gets three renderings. Human QA for ten languages costs more than the translation did.
+
+- **Inputs:** source and target content (CMS collections or string files), a glossary of protected terms, the target locale.
+- **Outputs:** an issues list by page and string (terminology, register, length, untranslated protected terms), a fix per issue, and a per-locale summary.
+- **MCP servers:** Webflow to read pages and CMS collections directly; Box for glossaries and string files; Canva where marketing assets carry text.
+- **Architecture:** `GroupChat`. A linguist, a terminology agent and a layout-constraints agent review one page together, and a length constraint changes the linguist's fix. Keep it to three or four agents.
+
+**Demo:** one public Webflow site in two languages, with the issues list and at least one protected term it caught.
+
+**Pricing:** one-time paid listing, or a tokenized launch quoted in USDC. The [USDC Launch Championship](/blog/usdc-launch-championship) post explains why dollar pricing suits buyers with budgets.
+
+### 9. Data Pipeline Monitor
+
+**Problem.** Pipelines fail quietly. A table stops updating, row counts halve, a column goes null, and nobody notices until a dashboard looks wrong. The expensive failures are the ones where every job reported success.
+
+- **Inputs:** tables or views with expected freshness and volume, and a schedule.
+- **Outputs:** a daily health report and, when something is off, a diagnosis from the right specialist (freshness, volume, schema drift, distribution shift) plus an incident where the rules call for one.
+- **MCP servers:** Google BigQuery and ClickHouse to inspect schemas and run checks; PagerDuty to open and annotate incidents; Pulumi to name the resource that owns the broken table.
+- **Architecture:** `MultiAgentRouter`. Each anomaly type has a specialist and most runs trip only one, so agents the router skips never run.
+
+**Demo:** a public dataset with one planted freshness failure and one planted volume drop, and the two different diagnoses.
+
+**Pricing:** free listing with a tokenized launch. The teams that adopt it are the people who will hold the token.
+
+### 10. Grant and RFP Drafter
+
+**Problem.** Nonprofits, labs and small vendors answer 60-page funding calls that ask the same twenty questions in new words every time. The answers already exist in past proposals in a shared folder, and adapting them is a week of a grant writer's time per submission.
+
+- **Inputs:** the RFP document, the folder of past proposals, and a one-paragraph brief of this proposal.
+- **Outputs:** a requirements matrix mapping every question to a draft answer, a full draft in the funder's section order, the questions nobody has answered before, and a formatting checklist.
+- **MCP servers:** Jina AI to extract the RFP PDF; Box to search past proposals in place; Perplexity to research the funder's priorities and recent awards.
+- **Architecture:** `HierarchicalSwarm`. The director reads the call, splits it into sections, hands each to a writer with the relevant past material, and integrates the result. Splitting a 60-page call is itself a judgment call, which is what a director is for.
+
+**Demo:** a real public RFP answered from a synthetic set of past proposals, with the requirements matrix shown in full.
+
+**Pricing:** one-time paid listing by card at the top of the agent range. One funded proposal pays for it.
+
+## How to get one in front of us
+
+There is no separate submission form. The path is the one every competition post describes.
+
+1. **Build it and get a real demo output.** Lead with that.
+2. **Publish at [swarms.world/launch](https://swarms.world/launch).** Pick the matching category and tags. Add the MCP server URL if it uses one; the marketplace tags it MCP automatically and lists it on the [MCP servers page](https://swarms.world/mcp-servers). The framework can also publish for you with `publish_to_marketplace=True` and `tags` set ([example here](/blog/what-is-an-agent-marketplace)).
+3. **Price it.** Paid listings take card or crypto, with a flat 10% fee and lifetime access for the buyer. Tokenized listings pay a share of every trade, and Vault Mode gates access to holders. The [Seller Portal](/blog/swarms-seller-portal) shows what each earns.
+4. **Launch inside a competition window.** Competitions run weekly, entry is automatic when a launch meets that week's rule, and the board is public at [swarms.world/competitions](https://swarms.world/competitions). The first Frenzy competition drew more than 23 launches and over $250,000 in trading volume in a week, and each one since has measured something different. An agent with a real buyer is what those boards exist to surface.
+5. **Tell us.** Post the listing in the [Swarms Discord](https://discord.gg/VapjxpSyHC) and tag [@swarms_corp](https://x.com/swarms_corp) on X. We read both, and listings that solve a problem on this list are the ones we feature.
+
+The marketplace has 5,576 agents and 25 new official MCP servers waiting for them. The next few hundred agents decide whether the catalog reads as a pile of demos or a set of tools people pay for. Build one of these ten.

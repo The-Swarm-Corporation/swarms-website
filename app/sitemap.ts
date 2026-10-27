@@ -52,6 +52,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/privacy", priority: 0.3, changeFrequency: "yearly" },
     { path: "/terms", priority: 0.3, changeFrequency: "yearly" },
     { path: "/data-policy", priority: 0.3, changeFrequency: "yearly" },
+    { path: "/sitemap", priority: 0.3, changeFrequency: "monthly" },
   ]
 
   const activeEntries: MetadataRoute.Sitemap = activeRoutes.map((route) => ({

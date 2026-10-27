@@ -235,6 +235,7 @@ export function Footer() {
                   { name: "Privacy Policy", url: "/privacy" },
                   { name: "Terms of Service", url: "/terms" },
                   { name: "Data Policy", url: "/data-policy" },
+                  { name: "Sitemap", url: "/sitemap" },
                 ].map((item) => (
                   <Link
                     key={item.url}

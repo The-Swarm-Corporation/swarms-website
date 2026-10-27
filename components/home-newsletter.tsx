@@ -7,6 +7,7 @@ import { motion } from "framer-motion"
 import { ArrowRight, CheckCircle, Mail } from "lucide-react"
 import type { BlogPostMeta } from "@/lib/blog"
 import { BlogCard } from "@/components/blog/blog-card"
+import { EmailInput } from "@/components/ui/email-input"
 
 export const NEWSLETTER_SUBSCRIBED_KEY = "swarms-newsletter-subscribed"
 export const POPUP_SEEN_KEY = "swarms-newsletter-popup-seen"
@@ -103,18 +104,12 @@ export function HomeNewsletter({
     <>
       <div className="relative flex-1">
         <Mail className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-white/35" />
-        <input
-          type="email"
+        <EmailInput
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder={t.placeholder}
           aria-label={t.emailAria}
           required
-          autoComplete="email"
-          data-lpignore="true"
-          data-1p-ignore=""
-          data-bwignore="true"
-          data-form-type="other"
           className="w-full rounded-full border border-white/15 bg-white/[0.03] py-3 pl-11 pr-4 text-sm text-white placeholder-white/35 outline-none transition-colors duration-300 focus:border-white/40"
         />
       </div>

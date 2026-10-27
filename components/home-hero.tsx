@@ -6,6 +6,7 @@ import { ArrowRight, ArrowUpRight, Github } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { HomeAnnouncementBanner } from "@/components/home-announcement-banner"
+import { HomeLogoMarquee } from "@/components/home-logo-marquee"
 import { StackDiagram } from "@/components/stack/stack-diagram"
 import type { ProductId } from "@/components/stack/stack-data"
 
@@ -120,7 +121,7 @@ export function HomeHero() {
           >
             <StackDiagram
               onSelect={openLayer}
-              className="mx-auto w-full max-w-[560px] lg:max-w-[min(540px,calc((96dvh_-_330px)*0.92))]"
+              className="mx-auto w-full max-w-[560px] lg:max-w-[min(540px,calc((96dvh_-_440px)*0.92))]"
             />
           </motion.div>
         </div>
@@ -143,6 +144,16 @@ export function HomeHero() {
             </li>
           ))}
         </ul>
+      </motion.div>
+
+      {/* Companies whose developers star the repo */}
+      <motion.div
+        className="relative"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.7, delay: 0.4, ease }}
+      >
+        <HomeLogoMarquee />
       </motion.div>
     </section>
   )

@@ -4,9 +4,9 @@ import { useState } from "react"
 import { motion } from "framer-motion"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Navigation } from "@/components/navigation"
 import { CheckCircle, Loader2, Mail } from "lucide-react"
+import { EmailInput } from "@/components/ui/email-input"
 
 const ease: [number, number, number, number] = [0.22, 1, 0.36, 1]
 
@@ -148,10 +148,9 @@ export default function NewsletterPage() {
               >
                 <div className="relative w-full min-w-0 flex-1">
                   <Mail className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-white/40 sm:h-5 sm:w-5" />
-                  <Input
-                    type="email"
+                  <EmailInput
+                    styled
                     inputMode="email"
-                    autoComplete="email"
                     placeholder="Enter your email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}

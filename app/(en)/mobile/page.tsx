@@ -4,9 +4,9 @@ import { useState } from "react"
 import { motion } from "framer-motion"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Navigation } from "@/components/navigation"
 import { CheckCircle, Loader2 } from "lucide-react"
+import { EmailInput } from "@/components/ui/email-input"
 
 const ease: [number, number, number, number] = [0.22, 1, 0.36, 1]
 
@@ -157,10 +157,9 @@ export default function MobileWaitlistPage() {
                 onSubmit={handleSubmit}
                 className="mt-10 flex w-full max-w-lg flex-col gap-3 sm:flex-row"
               >
-                <Input
-                  type="email"
+                <EmailInput
+                  styled
                   inputMode="email"
-                  autoComplete="email"
                   placeholder="Enter email address"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}

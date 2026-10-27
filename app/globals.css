@@ -760,3 +760,26 @@
     animation: swarms-loader-breathe 1.8s ease-in-out infinite !important;
   }
 }
+
+/* Hero company logo strip: two identical rows slide left by one row width */
+@keyframes logo-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.logo-marquee-track {
+  animation: logo-marquee 45s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .logo-marquee-track {
+    animation: none;
+  }
+  .logo-marquee {
+    overflow-x: auto;
+  }
+}

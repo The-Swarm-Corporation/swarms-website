@@ -4,6 +4,7 @@ import type React from "react"
 import { useEffect, useState } from "react"
 import { ArrowRight, CheckCircle } from "lucide-react"
 import { NEWSLETTER_SUBSCRIBED_KEY, POPUP_SEEN_KEY } from "@/components/home-newsletter"
+import { EmailInput } from "@/components/ui/email-input"
 
 export function FooterNewsletter() {
   const [email, setEmail] = useState("")
@@ -65,18 +66,12 @@ export function FooterNewsletter() {
             onSubmit={handleSubmit}
             className="flex h-11 items-center rounded-full border border-neutral-800 bg-neutral-950 p-1 pl-4 transition-colors duration-300 focus-within:border-neutral-600"
           >
-            <input
-              type="email"
+            <EmailInput
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@company.com"
               aria-label="Email address"
               required
-              autoComplete="email"
-              data-lpignore="true"
-              data-1p-ignore=""
-              data-bwignore="true"
-              data-form-type="other"
               className="min-w-0 flex-1 bg-transparent text-sm text-white placeholder-neutral-600 outline-none"
             />
             <button

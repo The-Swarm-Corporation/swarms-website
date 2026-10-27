@@ -5,7 +5,6 @@ import Link from "next/link"
 import { motion } from "framer-motion"
 import {
   ArrowRight,
-  ArrowUpRight,
   CheckCircle,
   Code,
   ChevronDown,
@@ -108,7 +107,7 @@ const tiers: PricingTier[] = [
       "Custom agent development",
       "White-label options",
     ],
-    cta: { label: "Talk to sales", href: "https://cal.com/swarms/swarms-strategy-session" },
+    cta: { label: "Talk to sales", href: "/contact-sales" },
   },
 ]
 
@@ -377,10 +376,10 @@ export default function PricingPage() {
                   className="h-12 w-full rounded-full border-white/[0.14] bg-[#0a0a0a] px-8 text-base font-medium text-white hover:border-white/30 hover:bg-white/[0.06] hover:text-white sm:h-14 sm:w-auto sm:text-lg"
                   asChild
                 >
-                  <a href="https://cal.com/swarms/swarms-strategy-session" target="_blank" rel="noopener noreferrer">
+                  <Link href="/contact-sales">
                     Talk to sales
-                    <ArrowUpRight className="ml-2 h-5 w-5 text-white/50" />
-                  </a>
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </Link>
                 </Button>
               </motion.div>
             </div>
@@ -449,7 +448,7 @@ export default function PricingPage() {
                     variant={tier.highlight ? "default" : "outline"}
                     asChild
                   >
-                    <a href={tier.cta.href} target="_blank" rel="noopener noreferrer">
+                    <a href={tier.cta.href} {...(tier.cta.href.startsWith("http") ? { target: "_blank", rel: "noopener noreferrer" } : {})}>
                       {tier.cta.label}
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </a>
@@ -593,10 +592,10 @@ export default function PricingPage() {
                   </div>
                   <div className="flex flex-col gap-3 sm:flex-row">
                     <Button className="rounded-full border border-[#27272a] bg-[#121214] shadow-none hover:shadow-none font-medium text-white hover:border-[#3f3f46] hover:bg-[#1a1a1d]" asChild>
-                      <a href="https://cal.com/swarms/swarms-strategy-session" target="_blank" rel="noopener noreferrer">
+                      <Link href="/contact-sales">
                         Talk to sales
                         <ArrowRight className="ml-2 h-4 w-4" />
-                      </a>
+                      </Link>
                     </Button>
                     <Button
                       variant="outline"
@@ -714,10 +713,10 @@ export default function PricingPage() {
                   className="h-11 w-full rounded-full border-white/[0.14] bg-black px-6 text-sm font-medium text-white hover:border-white/30 hover:bg-white/[0.06] hover:text-white sm:w-auto"
                   asChild
                 >
-                  <a href="https://cal.com/swarms/swarms-strategy-session" target="_blank" rel="noopener noreferrer">
+                  <Link href="/contact-sales">
                     Talk to sales
-                    <ArrowUpRight className="ml-2 h-4 w-4 text-white/50" />
-                  </a>
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
                 </Button>
               </div>
             </motion.div>

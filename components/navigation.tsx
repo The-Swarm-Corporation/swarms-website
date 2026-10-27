@@ -488,6 +488,9 @@ export function Navigation() {
                               <FuturisticMenuItem icon={Calendar} href="https://lu.ma/swarms_calendar" iconColor="red">
                                 Events Calendar
                               </FuturisticMenuItem>
+                              <FuturisticMenuItem icon={Briefcase} href="/contact-sales" iconColor="red">
+                                Contact Sales
+                              </FuturisticMenuItem>
                               <FuturisticMenuItem icon={Phone} href="https://cal.com/swarms" iconColor="red">
                                 Book a Call
                               </FuturisticMenuItem>
@@ -544,6 +547,9 @@ export function Navigation() {
                               </FuturisticMenuItem>
                               <FuturisticMenuItem icon={Calendar} href="https://lu.ma/swarms_calendar" iconColor="red">
                                 Events Calendar
+                              </FuturisticMenuItem>
+                              <FuturisticMenuItem icon={Briefcase} href="/contact-sales" iconColor="red">
+                                Contact Sales
                               </FuturisticMenuItem>
                               <FuturisticMenuItem icon={Phone} href="https://cal.com/swarms" iconColor="red">
                                 Book a Call
@@ -1119,6 +1125,18 @@ export function Navigation() {
                           <span className="text-sm font-semibold text-white block">Events Calendar</span>
                         </div>
                       </a>
+                      <Link
+                        href="/contact-sales"
+                        className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
+                        onClick={() => setIsOpen(false)}
+                      >
+                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-white/25 transition-all duration-200">
+                          <Briefcase className="h-4 w-4 text-neutral-300" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <span className="text-sm font-semibold text-white block">Contact Sales</span>
+                        </div>
+                      </Link>
                       <a
                         href="https://cal.com/swarms"
                         target="_blank"
@@ -1311,6 +1329,18 @@ export function Navigation() {
                           <span className="text-sm font-semibold text-white block">Events Calendar</span>
                         </div>
                       </a>
+                      <Link
+                        href="/contact-sales"
+                        className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
+                        onClick={() => setIsOpen(false)}
+                      >
+                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-white/25 transition-all duration-200">
+                          <Briefcase className="h-4 w-4 text-neutral-300" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <span className="text-sm font-semibold text-white block">Contact Sales</span>
+                        </div>
+                      </Link>
                       <a
                         href="https://cal.com/swarms"
                         target="_blank"

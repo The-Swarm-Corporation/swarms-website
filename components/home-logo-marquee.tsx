@@ -24,7 +24,7 @@ import {
 type Icon = ComponentType<SVGProps<SVGSVGElement> & { size?: number | string; title?: string }>
 
 // Simple Icons does not ship the Microsoft mark, so draw the four squares.
-function MicrosoftIcon(props: SVGProps<SVGSVGElement> & { size?: number | string }) {
+export function MicrosoftIcon(props: SVGProps<SVGSVGElement> & { size?: number | string }) {
   const { size, ...rest } = props
   return (
     <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" {...rest}>
@@ -37,7 +37,7 @@ function MicrosoftIcon(props: SVGProps<SVGSVGElement> & { size?: number | string
 // kyegomez/swarms on GitHub. Logos with a `wordmark` size already spell the
 // name, so they render alone at that size (Simple Icons pads wordmarks into a
 // square 24x24 box, hence the larger box and negative margin).
-const COMPANIES: { name: string; icon: Icon; wordmark?: number }[] = [
+export const COMPANIES: { name: string; icon: Icon; wordmark?: number }[] = [
   { name: "Google", icon: SiGoogle },
   { name: "Microsoft", icon: MicrosoftIcon },
   { name: "OpenAI", icon: SiOpenai },

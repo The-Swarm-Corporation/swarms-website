@@ -27,6 +27,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/routehub", priority: 0.9, changeFrequency: "weekly" },
     { path: "/framework", priority: 0.9, changeFrequency: "weekly" },
     { path: "/pricing", priority: 0.9, changeFrequency: "weekly" },
+    { path: "/contact-sales", priority: 0.8, changeFrequency: "monthly" },
     { path: "/api", priority: 0.8, changeFrequency: "weekly" },
     { path: "/installation", priority: 0.8, changeFrequency: "weekly" },
     { path: "/applications", priority: 0.8, changeFrequency: "weekly" },

@@ -66,6 +66,7 @@ const SECTIONS: Section[] = [
       { name: "About Us", url: "/about" },
       { name: "Our Story", url: "/story" },
       { name: "Careers", url: "/hiring" },
+      { name: "Contact Sales", url: "/contact-sales" },
     ],
   },
   {

@@ -690,10 +690,10 @@ export function Navigation() {
             </a>
           </Button>
 
-          <Button variant="outline" className="hidden lg:inline-flex rounded-xl text-xs sm:text-sm px-3 sm:px-4" asChild>
+          <Button className="hidden lg:inline-flex rounded-xl border border-red-500 bg-red-600 text-xs font-semibold text-white shadow-none hover:bg-red-500 hover:shadow-none sm:text-sm px-3 sm:px-4" asChild>
             <a href="https://swarms.world" target="_blank" rel="noopener noreferrer">
               <ShoppingBag className="mr-2 h-4 w-4" />
-              Marketplace
+              Sell your agents
             </a>
           </Button>
 

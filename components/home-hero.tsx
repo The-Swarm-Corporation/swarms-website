@@ -60,7 +60,7 @@ export function HomeHero() {
 
             <motion.h1
               id="hero-title"
-              className="bg-gradient-to-b from-white from-30% to-[#5a5a60] bg-clip-text pb-1 font-bold leading-[1.02] tracking-tighter text-transparent"
+              className="bg-gradient-to-b from-white from-30% to-[#5a5a60] bg-clip-text pb-1 pr-[0.08em] font-bold leading-[1.02] tracking-tighter text-transparent"
               style={{ fontSize: "clamp(2.75rem, 6vw, 5.25rem)" }}
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}

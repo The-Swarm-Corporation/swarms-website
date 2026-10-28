@@ -93,6 +93,12 @@ const CUBE_FACES = (() => {
 
 const STEP_MS = [1400, 1400, 1500, 1700, 700]
 
+// Captions under the diagram: one per tier for the loop, one per block on hover.
+const CAPTIONS = [
+  ...JOBS.map((j) => ({ key: j.id as string, title: j.label, text: j.caption, inFlow: true })),
+  ...BLOCKS.map((b) => ({ key: b.id as string, title: productById[b.id].name, text: productById[b.id].role, inFlow: false })),
+]
+
 export function StackDiagram({
   compact = false,
   highlight,
@@ -164,9 +170,7 @@ export function StackDiagram({
   const [px, py] = packetAnchor(tier, cycle, elevation)
 
   const activeJob = hovered ? productById[hovered].job : TIERS[tier]
-  const caption = hovered
-    ? { title: productById[hovered].name, text: productById[hovered].role }
-    : { title: JOBS[tier].label, text: JOBS[tier].caption }
+  const caption = { key: hovered ?? TIERS[tier] }
 
   const viewBox = compact ? "-214 -196 428 446" : "-222 -318 540 572"
 
@@ -307,21 +311,28 @@ export function StackDiagram({
               />
             ))}
           </div>
-          <AnimatePresence mode="wait" initial={false}>
-            <motion.div
-              key={caption.title}
-              initial={{ opacity: 0, y: 4 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -4 }}
-              transition={{ duration: 0.2 }}
-              className="min-w-0"
-            >
-              <p className="text-sm font-semibold text-white">{caption.title}</p>
-              <p className="mt-0.5 text-sm font-normal leading-relaxed text-white/55">
-                {caption.text}
-              </p>
-            </motion.div>
-          </AnimatePresence>
+          {/* The loop captions share one grid cell, so the box is always as
+              tall as the longest and swapping them never shifts the layout
+              around the diagram (the hero centers its copy against it). Hover
+              captions are out of flow and overlay the space below. */}
+          <div className="relative grid min-w-0 flex-1">
+            {CAPTIONS.map(({ key, title, text, inFlow }) => {
+              const shown = key === caption.key
+              return (
+                <motion.div
+                  key={key}
+                  aria-hidden={!shown}
+                  initial={false}
+                  animate={{ opacity: shown ? 1 : 0, y: shown ? 0 : 4 }}
+                  transition={{ duration: 0.2, delay: shown ? 0.1 : 0 }}
+                  className={`pointer-events-none min-w-0 ${inFlow ? "[grid-area:1/1]" : "absolute inset-x-0 top-0"}`}
+                >
+                  <p className="text-sm font-semibold text-white">{title}</p>
+                  <p className="mt-0.5 text-sm font-normal leading-relaxed text-white/55">{text}</p>
+                </motion.div>
+              )
+            })}
+          </div>
         </div>
       )}
     </div>

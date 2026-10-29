@@ -1,12 +1,9 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { Resend } from "resend"
-
 import { apiError } from "@/lib/api-error"
 import { salesProductLabel } from "@/lib/contact-sales"
 import { confirmationEmail, escapeHtml, notificationEmail } from "@/lib/contact-sales-emails"
 import { rateLimit } from "@/lib/rate-limit"
-
-const resend = new Resend(process.env.RESEND_API_KEY)
+import { getResend } from "@/lib/resend"
 
 const FROM = "Swarms <notifications@swarms.world>"
 const SALES_INBOX = "kye@swarms.world"
@@ -62,6 +59,11 @@ export async function POST(request: NextRequest) {
     const cleanName = name.trim()
     const [firstName, ...rest] = cleanName.split(/\s+/)
     const lastName = rest.join(" ") || undefined
+
+    const resend = getResend()
+    if (!resend) {
+      return apiError(503, "email_unavailable", "We couldn't send your request. Please try again.", "If it keeps failing, email kye@swarms.world.")
+    }
 
     // 1. Add them as a Resend contact. An existing contact is fine.
     try {

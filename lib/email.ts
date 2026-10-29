@@ -1,6 +1,4 @@
-import { Resend } from 'resend';
-
-const resend = new Resend(process.env.RESEND_API_KEY);
+import { getResend } from './resend';
 
 interface WelcomeEmailData {
   email: string;
@@ -24,6 +22,11 @@ export async function sendWelcomeEmail({ email, firstName, lastName }: WelcomeEm
   const name = escapeHtml(rawName);
   
   try {
+    const resend = getResend();
+    if (!resend) {
+      throw new Error('RESEND_API_KEY is not set');
+    }
+
     // Add contact to audience first
     const audienceId = process.env.RESEND_AUDIENCE_ID;
     

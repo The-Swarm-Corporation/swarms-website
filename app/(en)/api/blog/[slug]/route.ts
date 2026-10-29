@@ -4,10 +4,11 @@ import { getPostBySlug } from '@/lib/blog'
 
 export async function GET(
   request: Request,
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
-    const post = getPostBySlug(params.slug)
+    const { slug } = await params
+    const post = getPostBySlug(slug)
     
     if (!post) {
       return apiError(404, 'not_found', 'Post not found', 'List all posts at /api/blog or browse https://www.swarms.ai/blog.')

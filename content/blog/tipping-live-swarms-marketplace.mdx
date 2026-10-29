@@ -1,0 +1,159 @@
+---
+title: "Tipping Is Live on the Swarms Marketplace"
+description: "Every free agent, prompt, tool and bundle on the Swarms Marketplace can now take tips. Users can thank a publisher by card, USDC or SOL without leaving the listing, and publishers get paid through Stripe or straight to their Solana wallet."
+date: "2026-10-29"
+author: "Kye Gomez"
+categories: ["Product"]
+readTime: "9 min read"
+featured: true
+image: "/swarms_blog_tips_cover.png"
+---
+
+# Tipping Is Live on the Swarms Marketplace
+
+Most of the best work on the [Swarms Marketplace](https://swarms.world) is free. Thousands of agents, prompts, tools and bundles are published by builders who chose to give their work away so more people could use it. Until today, the only way to say thank you was an upvote or a review.
+
+Starting today, you can say it with money. Every free listing on the marketplace can now carry a **Tip** button. Anyone who found a listing useful can send its publisher a few dollars by card, USDC or SOL, in a couple of clicks, without leaving the page.
+
+## Why Tips
+
+The marketplace already supports paid listings, by card through Stripe and by crypto on Solana. But plenty of builders don't want to put their work behind a paywall. They publish free because they want reach, feedback and a reputation. Free shouldn't have to mean unpaid.
+
+Tips close that gap:
+
+- **For users**, a tip is a direct way to support the people whose agents and prompts save them hours, and to keep that work coming.
+- **For publishers**, tips turn a free listing into a source of income without changing how anyone uses it. Nothing gets locked and nothing changes for users who don't tip.
+- **For the agent economy**, tips reward the open, generous work that makes the marketplace worth visiting in the first place.
+
+A tip is a thank-you, not a purchase. It never unlocks anything, never grants access to a paid listing, and never adds account credit. Paid listings keep their normal purchase flow and never show a Tip button.
+
+## What's Launching
+
+- **A Tip button on free listings.** It appears in the sidebar of every free agent, prompt, tool and bundle whose publisher has set up to receive tips.
+- **Card tips through Stripe.** Pay with a card in Stripe's checkout form, which loads inside the tip window, so you never leave the listing.
+- **Crypto tips in USDC or SOL.** Connect a Solana wallet and send the tip in one transaction that goes straight to the publisher's wallet.
+- **Any amount from $1 to $500.** Pick $5, $10 or $20, or type your own amount.
+- **An optional note.** Add a message of up to 280 characters so the publisher knows what helped.
+- **Clear numbers before you pay.** The tip window shows exactly how much reaches the publisher before you confirm.
+
+## How It Works for Users
+
+Sending a tip takes under a minute.
+
+### 1. Open a free listing and press Tip
+
+Browse the [marketplace](https://swarms.world) and open any free agent, prompt, tool or bundle. If the publisher accepts tips, you'll see a **Tips** section in the sidebar with a **Tip** button. You need to be signed in to swarms.world. If you're signed out, pressing Tip asks you to sign in first.
+
+### 2. Pick an amount and add a note
+
+Choose **$5**, **$10** or **$20**, or type any amount from $1 to $500. Add an optional note, such as "Thanks for building this!", of up to 280 characters. Below the amount, the window shows **Publisher receives** with the exact amount that will reach them.
+
+### 3. Pay by card or crypto
+
+If the publisher accepts both, a **Card / Crypto** switch at the top lets you choose. If they set up only one, the window shows only that option.
+
+**By card.** Press **Continue to card payment**. Stripe's secure checkout form loads inside the tip window. Pay there and you stay on the listing the whole time. Your card details go straight to Stripe, and Swarms never sees your card number.
+
+**By crypto.** Connect a Solana wallet such as Phantom or Solflare, then choose **USDC** or **SOL**. You sign one transaction that pays the publisher and Swarms together. USDC tips are the exact dollar amount, and SOL tips are converted at the live price when you pay. You also pay the small Solana network fee.
+
+### 4. Done
+
+You'll see **Thanks for the tip**, and the money is on its way to the publisher.
+
+If the Solana network is slow to confirm a crypto tip, the window keeps your payment and shows a **Finish tip** button. Pressing it records the payment you already sent. You're never charged twice.
+
+## How It Works for Publishers
+
+Publishers can accept card tips, crypto tips or both. Setup takes a few minutes and you only do it once.
+
+### 1. Publish a free listing
+
+Tips are for listings people can use for free. [Launch an agent, prompt, tool or bundle](https://swarms.world/launch) as free. Paid listings sell through the normal purchase flow instead, so they never take tips.
+
+### 2. Press Get Tips on your listing
+
+When you view one of your own free listings, the sidebar shows a **Get Tips** button instead of Tip. Pressing it starts the setup for card tips. You can't tip your own listing.
+
+### 3. Set up your Stripe seller account for card tips
+
+If you don't have a Stripe seller account yet, Get Tips takes you to the [Seller tab](https://swarms.world/platform/account?tab=seller) in your account. Choose your country there, because Stripe can't change it later. You'll then go through Stripe's hosted onboarding to add your identity and bank details. If you already started, Get Tips takes you straight back to Stripe to finish.
+
+Once Stripe approves the account, the Tip button appears on all your free listings. Card tips are paid into your Stripe balance and out to your bank on Stripe's normal payout schedule.
+
+If you already sell paid listings by card, your Stripe account is already set up, and your free listings are ready to take card tips.
+
+### 4. Connect a wallet for crypto tips
+
+To also accept USDC and SOL, connect your Solana wallet under [Account → Billing](https://swarms.world/platform/account?tab=billing). Crypto tips go straight to that wallet, in the same transaction the tipper signs. Swarms never holds the money.
+
+You can offer card tips, crypto tips or both. The more options you offer, the easier it is for people to tip you.
+
+## Fees
+
+Publishing is free, and tipping has no subscription or listing fee. Swarms keeps 10% of every tip, and that 10% comes out of the tip rather than being added on top.
+
+On card tips, Stripe's card processing fee (2.9% + 30¢) also comes out of the tip. On crypto tips, the tipper pays the Solana network fee separately, so the publisher receives the full 90%.
+
+| Tip     | Publisher receives by card | Publisher receives by crypto |
+| ------- | -------------------------- | ---------------------------- |
+| $5.00   | $4.05                      | $4.50                        |
+| $10.00  | $8.41                      | $9.00                        |
+| $20.00  | $17.12                     | $18.00                       |
+| $100.00 | $86.80                     | $90.00                       |
+
+The tip window always shows the exact amount before you pay, so there are no surprises.
+
+## Under the Hood
+
+**Card tips** use Stripe Connect, the same infrastructure behind card sales on the marketplace. Each tip is a destination charge: the tipper pays, Stripe routes the publisher's share to their connected account, and Swarms' fee is collected as an application fee in the same transaction. Stripe's checkout runs embedded inside the tip window, and the tip is recorded from Stripe's confirmed-payment webhook, so a tip only counts once Stripe says it's paid.
+
+**Crypto tips** are a single Solana transaction with two transfers: 90% to the publisher's wallet and 10% to the platform. Before a tip is recorded, the server checks the transaction on-chain to confirm both transfers landed with the right amounts. Each transaction can only be recorded once, which is what makes **Finish tip** safe to press.
+
+The server checks every tip, whichever way it's paid:
+
+- The listing must exist and be free.
+- You can't tip your own listing.
+- The publisher must be able to receive that kind of tip.
+- Amounts must be between $1 and $500.
+- Notes are capped at 280 characters.
+
+Repeated attempts are rate-limited.
+
+## Frequently Asked Questions
+
+**Who can send a tip?**
+Anyone signed in to swarms.world.
+
+**Which listings take tips?**
+Free agents, prompts, tools and bundles whose publisher has set up card tips, crypto tips or both. Paid listings never show a Tip button.
+
+**Does a tip unlock anything?**
+No. A tip is a thank-you. It never grants access to a paid listing and never adds account credit.
+
+**How much can I tip?**
+Anything from $1 to $500 per tip, with an optional note of up to 280 characters.
+
+**Which cryptocurrencies can I tip with?**
+USDC and SOL on Solana.
+
+**Does Swarms see my card number?**
+No. The card form is rendered by Stripe, and your card details go straight to Stripe.
+
+**When do publishers get paid?**
+Card tips go to the publisher's Stripe account and pay out to their bank on Stripe's payout schedule. Crypto tips land in the publisher's wallet in the same transaction the tipper signs.
+
+**Do I need a Stripe account to receive tips?**
+You need one for card tips. For crypto tips you only need a connected Solana wallet. You can set up either or both.
+
+**Can I tip my own listing?**
+No. On your own free listings you see Get Tips instead, which sets you up to receive tips.
+
+## Get Started
+
+Tipping is live for everyone on the Swarms Marketplace today.
+
+- **Users:** open any free listing you've found useful and press **Tip**.
+- **Publishers:** open one of your free listings and press **Get Tips**, or connect a wallet under [Account → Billing](https://swarms.world/platform/account?tab=billing).
+- **Everyone:** read the full walkthrough at [swarms.world/tips](https://swarms.world/tips).
+
+Free work deserves support. Now it's one click away.

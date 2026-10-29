@@ -5,7 +5,6 @@ import { ArrowRight, ArrowUpRight, Star } from "lucide-react"
 import Link from "next/link"
 import { useEffect, useRef, useState, type ReactNode } from "react"
 
-import { CodeBlock } from "@/components/code-block"
 import { CopyButton } from "@/components/copy-button"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -18,12 +17,17 @@ import { useReducedMotionSafe } from "./use-reduced-motion-safe"
 
 const ease: [number, number, number, number] = [0.22, 1, 0.36, 1]
 
+/** Each product's highlighted code sample, rendered by the server page. */
+export type StackCodeBlocks = Partial<Record<ProductId, ReactNode>>
+
 export function StackExplorer({
   value,
   onValueChange,
+  codeBlocks,
 }: {
   value: ProductId
   onValueChange: (id: ProductId) => void
+  codeBlocks: StackCodeBlocks
 }) {
   const stars = useGithubStars()
 
@@ -97,6 +101,7 @@ export function StackExplorer({
                   product={product}
                   animateIn={switched}
                   starCount={product.github ? stars[product.github] : undefined}
+                  codeBlock={codeBlocks[product.id]}
                 />
               </TabsContent>
             ))}
@@ -111,10 +116,12 @@ function ProductPanel({
   product,
   animateIn,
   starCount,
+  codeBlock,
 }: {
   product: StackProduct
   animateIn: boolean
   starCount?: number
+  codeBlock?: ReactNode
 }) {
   const job = JOBS.find((j) => j.id === product.job)!
 
@@ -196,7 +203,7 @@ function ProductPanel({
           <CloudTelemetry />
         ) : (
           <>
-            <CodePanel file={product.artifact.file} code={product.artifact.code} />
+            <CodePanel file={product.artifact.file} code={product.artifact.code} block={codeBlock} />
             {product.artifact.kind === "sale" && <SaleSplit />}
           </>
         )}
@@ -228,7 +235,7 @@ function SmartLink({
   )
 }
 
-function CodePanel({ file, code }: { file: string; code: string }) {
+function CodePanel({ file, code, block }: { file: string; code: string; block: ReactNode }) {
   return (
     <div className="overflow-hidden rounded-lg border border-white/[0.08] bg-black">
       <div className="flex items-center gap-1.5 border-b border-white/[0.08] px-4 py-3">
@@ -238,13 +245,7 @@ function CodePanel({ file, code }: { file: string; code: string }) {
         <span className="ml-3 font-mono text-[11px] font-normal text-white/40">{file}</span>
         <CopyButton value={code} className="ml-auto" />
       </div>
-      <div className="p-4 sm:p-5">
-        <CodeBlock
-          code={code}
-          file={file}
-          className="font-mono text-[11px] font-normal leading-relaxed sm:text-[12.5px]"
-        />
-      </div>
+      <div className="p-4 sm:p-5">{block}</div>
     </div>
   )
 }

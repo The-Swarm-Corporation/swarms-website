@@ -1,3 +1,9 @@
+// Shiki is about 1.1 MB of grammars and theme. The marker import makes the
+// build fail if a client component ever imports this file, so the highlighter
+// can only run on the server and never reaches the browser bundle. Next
+// resolves "server-only" itself; it is not a package.json dependency.
+import "server-only"
+
 import { createHighlighterCoreSync } from "shiki/core"
 import { createJavaScriptRegexEngine } from "shiki/engine/javascript"
 import theme from "shiki/themes/github-dark-default.mjs"
@@ -15,11 +21,11 @@ import typescript from "shiki/langs/typescript.mjs"
 import yaml from "shiki/langs/yaml.mjs"
 
 import { CopyButton } from "@/components/copy-button"
-import { cn } from "@/lib/utils"
+import { preTransformer } from "@/components/shiki-transformer"
 
 // One Shiki highlighter shared by every code block on the site. The sync core
-// keeps this usable from server and client components alike without any async
-// plumbing, and only the languages we actually ship are bundled.
+// keeps this usable from any server component without async plumbing, and only
+// the languages we actually ship are bundled.
 const highlighter = createHighlighterCoreSync({
   engine: createJavaScriptRegexEngine(),
   themes: [theme],
@@ -97,19 +103,7 @@ export function CodeBlock({
   const html = highlighter.codeToHtml(code.replace(/\s+$/, ""), {
     lang: resolved,
     theme: "github-dark-default",
-    transformers: [
-      {
-        pre(node) {
-          // Drop Shiki's own background so the surrounding card styling wins.
-          node.properties.style = ""
-          node.properties.class = cn(
-            node.properties.class as string,
-            "overflow-x-auto",
-            className,
-          )
-        },
-      },
-    ],
+    transformers: [preTransformer(className)],
   })
 
   const block = <div dangerouslySetInnerHTML={{ __html: html }} />

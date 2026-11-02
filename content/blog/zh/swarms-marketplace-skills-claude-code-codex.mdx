@@ -1,0 +1,336 @@
+---
+title: "Swarms Skills：在 Claude Code、Codex、VS Code 及任意智能体中使用 Swarms Marketplace"
+description: "Swarms Marketplace 现已以智能体技能（Skills）和插件的形式发布。通过 skills.sh、Claude Code 或 Codex 一条命令即可安装，也可以将 Swarms Marketplace MCP 服务器接入 VS Code、Cursor、Claude Desktop 以及你自己的智能体。本教程涵盖所有接入方式，并附上可直接复制的示例。"
+date: "2026-11-02"
+author: "Kye Gomez"
+categories: ["指南", "产品"]
+readTime: "10 分钟阅读"
+featured: false
+image: "/swarms_skills_banner.png"
+---
+
+# Swarms Skills：在 Claude Code、Codex、VS Code 及任意智能体中使用 Swarms Marketplace
+
+[Swarms Marketplace](https://swarms.world) 收录了 6,000 多个 AI 智能体、提示词、工具和 MCP 服务器。在此之前，想在编程智能体中使用它，需要手动配置 MCP 服务器或阅读 API 文档。今天我们发布 **Swarms Skills**：一个开源软件包，只需一条安装命令，就能把 Swarms Marketplace 带进开发者已经在用的智能体里。
+
+Swarms Skills 托管在 [github.com/The-Swarm-Corporation/swarms-skills](https://github.com/The-Swarm-Corporation/swarms-skills)，采用 Apache-2.0 许可证。它支持 [skills.sh](https://skills.sh/The-Swarm-Corporation/swarms-skills)、Claude Code、Codex、VS Code、Cursor、Claude Desktop，以及任何支持模型上下文协议（MCP）的客户端。
+
+本文是一篇教程，会逐一介绍每种接入方式，并提供可直接复制的示例。
+
+## 本次发布包含什么
+
+这个仓库包含三部分：
+
+- **两个智能体技能：**
+  - `swarms-marketplace-mcp` 教你的智能体如何使用 Swarms Marketplace MCP 服务器，涵盖连接、认证、全部工具、返回格式和错误处理。
+  - `swarms-marketplace-api` 介绍 REST API，包括智能体、提示词、代币化和手续费领取。
+- **适用于 Claude Code 和 Codex 的插件：** 一步安装两个技能，并连接位于 `https://swarms.world/mcp` 的 MCP 服务器。
+- **插件市场清单：** 你可以把这个仓库添加为 Claude Code 和 Codex 的插件来源，并随时获取我们发布的更新。
+
+技能是一组指令，只有在相关时才会被智能体加载。当你提出 Swarms Marketplace 能够解答的需求时，智能体会读取技能、了解 Swarms Marketplace 的用法，并调用正确的工具。
+
+## 你的智能体能做什么
+
+安装完成后，你的智能体可以：
+
+- **为当前任务找到合适的智能体、提示词或工具。** 按名称、类别、标签或价格搜索，并对比不同选项。
+- **完整读取商品内容。** 免费智能体会返回可直接运行的源代码，免费提示词会返回完整正文，可以直接放进你的项目。
+- **查看价格和评价**，再决定是否购买付费商品。
+- **发布和更新你自己的产品。** 发布智能体、提示词和捆绑包，并编辑你名下的商品。
+- **撰写评价**，管理你的商品和创作者手续费。
+
+所有操作都以你的账户身份、通过你的 Swarms API 密钥执行。
+
+## 开始之前：获取 API 密钥
+
+浏览工具列表无需密钥，但调用工具需要 Swarms API 密钥。
+
+1. 登录 [swarms.world](https://swarms.world)。
+2. 打开 [swarms.world/platform/api-keys](https://swarms.world/platform/api-keys) 并创建一个密钥。
+3. 在终端中导出密钥，方便下面的示例读取：
+
+```bash
+export SWARMS_API_KEY="sk-..."
+```
+
+请像对待密码一样保管密钥。每一次工具调用都会以密钥所属账户的身份执行。
+
+## 方式一：任意智能体，通过 skills.sh
+
+[skills.sh](https://skills.sh) 是一个开放的智能体技能目录和命令行工具。一条命令即可把两个 Swarms 技能安装到你的项目中：
+
+```bash
+npx skills add The-Swarm-Corporation/swarms-skills
+```
+
+该命令会把技能复制到 `.agents/skills/`（许多智能体都会读取这个共享目录），并为检测到的智能体（例如 Claude Code）创建链接。`skills-lock.json` 会记录技能的来源，方便日后更新。
+
+常用变体：
+
+```bash
+# 为这台机器上的所有项目安装，而不只是当前项目
+npx skills add The-Swarm-Corporation/swarms-skills -g
+
+# 只安装 MCP 技能
+npx skills add The-Swarm-Corporation/swarms-skills --skill swarms-marketplace-mcp
+
+# 为指定的智能体安装
+npx skills add The-Swarm-Corporation/swarms-skills -a claude-code
+```
+
+技能告诉智能体*如何*使用 Swarms Marketplace。要让它真正*调用* Swarms Marketplace，还需要按下面任一方式连接 MCP 服务器，或者直接使用插件（两者兼得）。
+
+## 方式二：Claude Code
+
+### 安装插件（推荐）
+
+插件会安装两个技能并连接 MCP 服务器。在 Claude Code 会话中运行：
+
+```
+/plugin marketplace add The-Swarm-Corporation/swarms-skills
+/plugin install swarms-marketplace@swarms
+```
+
+启用插件时，Claude Code 会请你输入 Swarms API 密钥，并把它保存在系统的安全凭据存储中，密钥不会出现在任何配置文件里。
+
+也可以在终端中完成同样的操作：
+
+```bash
+claude plugin marketplace add The-Swarm-Corporation/swarms-skills
+claude plugin install swarms-marketplace@swarms
+```
+
+### 或者只连接 MCP 服务器
+
+如果你只需要工具，可以直接添加服务器：
+
+```bash
+claude mcp add --transport http swarms https://swarms.world/mcp \
+  --header "Authorization: Bearer $SWARMS_API_KEY"
+```
+
+在会话中运行 `/mcp` 确认连接成功。工具会以 `mcp__swarms__<tool>` 的形式出现，例如 `mcp__swarms__get_get-agents`。
+
+### 试一试
+
+用自然语言向 Claude Code 提问：
+
+```
+在 Swarms Marketplace 上找三个免费的研究类智能体，并比较它们的功能。
+```
+
+```
+获取 swarms.world 上最受欢迎的、用于编写技术文档的免费提示词的完整内容。
+```
+
+```
+把 ./agents/summarizer.py 中的智能体以免费智能体的形式发布到 Swarms Marketplace 的 Research 类别。
+```
+
+## 方式三：Codex
+
+### 安装插件
+
+把这个仓库添加为 Codex 的插件市场：
+
+```bash
+codex plugin marketplace add The-Swarm-Corporation/swarms-skills
+```
+
+然后在 Codex 中打开插件列表，安装 **Swarms Marketplace**，并在提示时输入你的 Swarms API 密钥。插件会同时带来两个技能和 MCP 服务器。
+
+### 或者只连接 MCP 服务器
+
+在 `~/.codex/config.toml` 中添加服务器。Codex 会从你指定的环境变量中读取密钥，因此密钥不会写进文件：
+
+```toml
+[mcp_servers.swarms]
+url = "https://swarms.world/mcp"
+bearer_token_env_var = "SWARMS_API_KEY"
+```
+
+导出 `SWARMS_API_KEY` 后启动 Codex，然后像在 Claude Code 中一样让它搜索 Swarms Marketplace。
+
+## 方式四：VS Code
+
+[swarms-skills 的 README](https://github.com/The-Swarm-Corporation/swarms-skills) 中有一个 **Install in VS Code** 按钮。点击后会添加服务器，并在隐藏输入框中请你填写密钥。
+
+如果想手动配置，或者通过代码仓库与团队共享，可以创建 `.vscode/mcp.json`：
+
+```json
+{
+  "inputs": [
+    {
+      "type": "promptString",
+      "id": "swarms-api-key",
+      "description": "Swarms API key (https://swarms.world/platform/api-keys)",
+      "password": true
+    }
+  ],
+  "servers": {
+    "swarms": {
+      "type": "http",
+      "url": "https://swarms.world/mcp",
+      "headers": {
+        "Authorization": "Bearer ${input:swarms-api-key}"
+      }
+    }
+  }
+}
+```
+
+服务器首次启动时，VS Code 会请你输入密钥并安全保存。之后即可在 Copilot 的智能体模式中使用 Swarms Marketplace 的工具。
+
+## 方式五：Cursor
+
+把服务器添加到项目中的 `.cursor/mcp.json`，或者添加到 `~/.cursor/mcp.json` 让所有项目都能使用：
+
+```json
+{
+  "mcpServers": {
+    "swarms": {
+      "url": "https://swarms.world/mcp",
+      "headers": { "Authorization": "Bearer sk-..." }
+    }
+  }
+}
+```
+
+如果文件中包含密钥，请不要把它提交到版本控制。
+
+## 方式六：Claude Desktop 及其他 stdio 客户端
+
+只能启动本地服务器的客户端，可以通过 `mcp-remote` 桥接访问 Swarms Marketplace：
+
+```json
+{
+  "mcpServers": {
+    "swarms": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "https://swarms.world/mcp",
+        "--header",
+        "Authorization: Bearer sk-..."
+      ]
+    }
+  }
+}
+```
+
+在 Claude Desktop 中，这段配置放在 `claude_desktop_config.json` 里。保存后重启应用。
+
+## 方式七：你自己的智能体
+
+同一个服务器也可以在代码中使用。每个工具都以文本形式返回 JSON，解析第一个内容块即可。
+
+### Python
+
+使用官方 `mcp` SDK（2.x）：
+
+```python
+import asyncio, json, os
+import httpx2
+from mcp import ClientSession
+from mcp.client.streamable_http import streamable_http_client
+
+URL = "https://swarms.world/mcp"
+HEADERS = {"Authorization": f"Bearer {os.environ['SWARMS_API_KEY']}"}
+
+async def main():
+    async with httpx2.AsyncClient(headers=HEADERS, timeout=60) as http:
+        async with streamable_http_client(URL, http_client=http) as streams:
+            async with ClientSession(streams[0], streams[1]) as session:
+                await session.initialize()
+
+                tools = await session.list_tools()
+                print([t.name for t in tools.tools])
+
+                result = await session.call_tool(
+                    "get_get-prompts", {"limit": 5, "is_free": True, "name": "research"}
+                )
+                page = json.loads(result.content[0].text)
+                for row in page["data"]:
+                    print(row["id"], row["name"])
+
+asyncio.run(main())
+```
+
+如果使用 `mcp` 1.x，请改为导入 `streamablehttp_client`，并直接向它传入 `headers=`。
+
+### TypeScript
+
+使用 `@modelcontextprotocol/sdk`：
+
+```ts
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
+
+const transport = new StreamableHTTPClientTransport(
+  new URL("https://swarms.world/mcp"),
+  { requestInit: { headers: { Authorization: `Bearer ${process.env.SWARMS_API_KEY}` } } },
+);
+
+const client = new Client({ name: "my-agent", version: "1.0.0" });
+await client.connect(transport);
+
+const { tools } = await client.listTools();
+console.log(tools.map((t) => t.name));
+
+const result = await client.callTool({
+  name: "get_get-agents",
+  arguments: { limit: 3, category: "Finance" },
+});
+const page = JSON.parse((result.content as any)[0].text);
+console.log(page);
+```
+
+### curl
+
+服务器通过 HTTP 提供标准的 JSON-RPC，因此可以直接在终端里测试：
+
+```bash
+# 列出所有工具（无需密钥）
+curl -s -X POST https://swarms.world/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
+
+# 调用一个工具
+curl -s -X POST https://swarms.world/mcp \
+  -H "Authorization: Bearer $SWARMS_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"get_get-prompts","arguments":{"limit":2,"is_free":true}}}'
+```
+
+## 该选哪种方式？
+
+| 你使用的工具 | 推荐方式 | 你将获得 |
+| --- | --- | --- |
+| Claude Code | 插件 | 一次安装即可获得技能、MCP 服务器和安全的密钥存储 |
+| Codex | 插件 | 一次安装即可获得技能和 MCP 服务器 |
+| 任意支持技能的智能体 | `npx skills add` | 技能，MCP 服务器需另行配置 |
+| VS Code | 安装按钮或 `.vscode/mcp.json` | 在 Copilot 智能体模式中使用 MCP 工具 |
+| Cursor | `.cursor/mcp.json` | MCP 工具 |
+| Claude Desktop | `mcp-remote` 桥接 | MCP 工具 |
+| 你自己的智能体 | Python 或 TypeScript SDK | 完整的编程访问 |
+
+## 常见问题排查
+
+- **工具调用返回 401。** 密钥缺失或无效。请确认启动智能体的终端中已导出 `SWARMS_API_KEY`，并且请求头为 `Authorization: Bearer <key>`。
+- **看不到任何工具。** 确认 URL 为 `https://swarms.world/mcp`，并且你的客户端支持 Streamable HTTP。只支持 stdio 的客户端请使用 `mcp-remote` 桥接。
+- **智能体没有使用 Swarms Marketplace。** 在提问时直接点名，例如“在 Swarms Marketplace 上搜索……”。当请求与技能匹配时，技能才会被加载。
+- **技能在代码仓库中显示为新文件。** `npx skills add` 会安装到当前项目。请把 `.agents/skills/`、`.claude/skills/` 和 `skills-lock.json` 加入 `.gitignore`，或者使用 `-g` 全局安装。
+
+## 下一步
+
+我们正在为 MCP 服务器开发 OAuth 登录，让客户端可以显示“使用 Swarms 登录”按钮，无需再粘贴密钥；同时也在推进将服务器收录到官方 MCP Registry 以及更多智能体目录中。欢迎为[代码仓库](https://github.com/The-Swarm-Corporation/swarms-skills)点星关注进展；如果你希望我们编写新的技能，也欢迎提交 issue。
+
+## 相关链接
+
+- **Swarms Skills（GitHub）：** [The-Swarm-Corporation/swarms-skills](https://github.com/The-Swarm-Corporation/swarms-skills)
+- **skills.sh 页面：** [skills.sh/The-Swarm-Corporation/swarms-skills](https://skills.sh/The-Swarm-Corporation/swarms-skills)
+- **MCP 服务器：** `https://swarms.world/mcp`（[完整参考文档](https://swarms.world/mcp-skill.md)）
+- **API 密钥：** [swarms.world/platform/api-keys](https://swarms.world/platform/api-keys)
+- **Swarms Marketplace：** [swarms.world](https://swarms.world)
+- **社区：** [Discord](https://discord.gg/EamjgSaEQf) 和 [X @swarms_corp](https://x.com/swarms_corp)

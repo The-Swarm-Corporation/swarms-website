@@ -1,0 +1,336 @@
+---
+title: "Swarms Skills: Use the Swarms Marketplace from Claude Code, Codex, VS Code and Any Agent"
+description: "The Swarms Marketplace now ships as agent skills and a plugin. Install it with one command on skills.sh, Claude Code or Codex, or connect the Swarms Marketplace MCP server to VS Code, Cursor, Claude Desktop and your own agents. This tutorial covers every setup with copy-paste examples."
+date: "2026-11-02"
+author: "Kye Gomez"
+categories: ["Guides", "Product"]
+readTime: "10 min read"
+featured: false
+image: "/swarms_skills_banner.png"
+---
+
+# Swarms Skills: Use the Swarms Marketplace from Claude Code, Codex, VS Code and Any Agent
+
+The [Swarms Marketplace](https://swarms.world) holds more than 6,000 AI agents, prompts, tools and MCP servers. Until now, reaching it from a coding agent meant wiring up the MCP server by hand or reading the API docs. Today we are releasing **Swarms Skills**, an open-source package that brings the marketplace into the agents developers already use, with one install command.
+
+Swarms Skills lives at [github.com/The-Swarm-Corporation/swarms-skills](https://github.com/The-Swarm-Corporation/swarms-skills) under the Apache-2.0 license. It works with [skills.sh](https://skills.sh/The-Swarm-Corporation/swarms-skills), Claude Code, Codex, VS Code, Cursor, Claude Desktop, and any client that speaks the Model Context Protocol.
+
+This post is a tutorial. It walks through every way to connect, with examples you can copy.
+
+## What's in the Release
+
+The repository bundles three things:
+
+- **Two agent skills.**
+  - `swarms-marketplace-mcp` teaches your agent how to use the Swarms Marketplace MCP server: connecting, authentication, every tool, response shapes and errors.
+  - `swarms-marketplace-api` covers the REST API: agents, prompts, tokenization and fee claims.
+- **A plugin for Claude Code and Codex.** It installs both skills and connects the MCP server at `https://swarms.world/mcp` in one step.
+- **Marketplace manifests,** so you can add the repository as a plugin source in Claude Code and Codex and receive updates as we ship them.
+
+Skills are instructions your agent loads only when they're relevant. When you ask for something the marketplace can answer, the agent reads the skill, learns how the marketplace works, and calls the right tools.
+
+## What Your Agent Can Do
+
+Once installed, your agent can:
+
+- **Find an agent, prompt or tool for the task at hand.** Search by name, category, tag or price, and compare options.
+- **Read a listing in full.** Free agents come back with their runnable source, and free prompts with their full text, ready to drop into your project.
+- **Check pricing and reviews** before you commit to a paid listing.
+- **Publish and update your own products.** Publish agents, prompts and bundles, and edit the ones you own.
+- **Leave reviews** and manage your listings and creator fees.
+
+All of it runs as your account, through your Swarms API key.
+
+## Before You Start: Get an API Key
+
+Browsing the tool list is open, but calling a tool needs a Swarms API key.
+
+1. Sign in at [swarms.world](https://swarms.world).
+2. Open [swarms.world/platform/api-keys](https://swarms.world/platform/api-keys) and create a key.
+3. Export it in your shell so the examples below can read it:
+
+```bash
+export SWARMS_API_KEY="sk-..."
+```
+
+Treat the key like a password. Every tool call acts as the account that owns it.
+
+## Option 1: Any Agent, with skills.sh
+
+[skills.sh](https://skills.sh) is an open directory and CLI for agent skills. One command installs both Swarms skills into your project:
+
+```bash
+npx skills add The-Swarm-Corporation/swarms-skills
+```
+
+The CLI copies the skills into `.agents/skills/`, the shared folder many agents read, and links them for the agents it detects, such as Claude Code. A `skills-lock.json` records where they came from, so you can update them later.
+
+Useful variations:
+
+```bash
+# Install for every project on this machine instead of just this one
+npx skills add The-Swarm-Corporation/swarms-skills -g
+
+# Install only the MCP skill
+npx skills add The-Swarm-Corporation/swarms-skills --skill swarms-marketplace-mcp
+
+# Install for a specific agent
+npx skills add The-Swarm-Corporation/swarms-skills -a claude-code
+```
+
+Skills tell your agent *how* to use the marketplace. To let it *call* the marketplace, also connect the MCP server using one of the options below, or use the plugin, which does both.
+
+## Option 2: Claude Code
+
+### Install the plugin (recommended)
+
+The plugin installs both skills and connects the MCP server. In a Claude Code session, run:
+
+```
+/plugin marketplace add The-Swarm-Corporation/swarms-skills
+/plugin install swarms-marketplace@swarms
+```
+
+Claude Code asks for your Swarms API key when the plugin is enabled and keeps it in your system's secure credential store, so the key never sits in a config file.
+
+You can do the same from your shell:
+
+```bash
+claude plugin marketplace add The-Swarm-Corporation/swarms-skills
+claude plugin install swarms-marketplace@swarms
+```
+
+### Or connect the MCP server only
+
+If you only want the tools, add the server directly:
+
+```bash
+claude mcp add --transport http swarms https://swarms.world/mcp \
+  --header "Authorization: Bearer $SWARMS_API_KEY"
+```
+
+Run `/mcp` in a session to confirm the connection. The tools appear as `mcp__swarms__<tool>`, for example `mcp__swarms__get_get-agents`.
+
+### Try it
+
+Ask Claude Code in plain language:
+
+```
+Find three free research agents on the Swarms Marketplace and compare what they do.
+```
+
+```
+Get the full text of the most popular free prompt for writing technical documentation on swarms.world.
+```
+
+```
+Publish the agent in ./agents/summarizer.py to the Swarms Marketplace as a free agent in the Research category.
+```
+
+## Option 3: Codex
+
+### Install the plugin
+
+Add the repository as a Codex plugin marketplace:
+
+```bash
+codex plugin marketplace add The-Swarm-Corporation/swarms-skills
+```
+
+Then open the plugin list in Codex, install **Swarms Marketplace**, and enter your Swarms API key when asked. The plugin brings both skills and the MCP server.
+
+### Or connect the MCP server only
+
+Add the server to `~/.codex/config.toml`. Codex reads the key from the environment variable you name, so it stays out of the file:
+
+```toml
+[mcp_servers.swarms]
+url = "https://swarms.world/mcp"
+bearer_token_env_var = "SWARMS_API_KEY"
+```
+
+Start Codex with `SWARMS_API_KEY` exported, then ask it to search the marketplace the same way you would in Claude Code.
+
+## Option 4: VS Code
+
+The [swarms-skills README](https://github.com/The-Swarm-Corporation/swarms-skills) has an **Install in VS Code** button. It adds the server and prompts for your key in a masked field.
+
+To set it up by hand, or to share it with your team through the repository, create `.vscode/mcp.json`:
+
+```json
+{
+  "inputs": [
+    {
+      "type": "promptString",
+      "id": "swarms-api-key",
+      "description": "Swarms API key (https://swarms.world/platform/api-keys)",
+      "password": true
+    }
+  ],
+  "servers": {
+    "swarms": {
+      "type": "http",
+      "url": "https://swarms.world/mcp",
+      "headers": {
+        "Authorization": "Bearer ${input:swarms-api-key}"
+      }
+    }
+  }
+}
+```
+
+VS Code asks for the key the first time the server starts and stores it securely. The marketplace tools are then available in Copilot's agent mode.
+
+## Option 5: Cursor
+
+Add the server to `.cursor/mcp.json` in your project, or to `~/.cursor/mcp.json` for every project:
+
+```json
+{
+  "mcpServers": {
+    "swarms": {
+      "url": "https://swarms.world/mcp",
+      "headers": { "Authorization": "Bearer sk-..." }
+    }
+  }
+}
+```
+
+Keep this file out of version control if it contains your key.
+
+## Option 6: Claude Desktop and Other stdio Clients
+
+Clients that only launch local servers can reach the marketplace through the `mcp-remote` bridge:
+
+```json
+{
+  "mcpServers": {
+    "swarms": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "https://swarms.world/mcp",
+        "--header",
+        "Authorization: Bearer sk-..."
+      ]
+    }
+  }
+}
+```
+
+In Claude Desktop this goes in `claude_desktop_config.json`. Restart the app after saving.
+
+## Option 7: Your Own Agents
+
+The same server works from code. Every tool returns JSON as text, so you parse the first content block.
+
+### Python
+
+Using the official `mcp` SDK (2.x):
+
+```python
+import asyncio, json, os
+import httpx2
+from mcp import ClientSession
+from mcp.client.streamable_http import streamable_http_client
+
+URL = "https://swarms.world/mcp"
+HEADERS = {"Authorization": f"Bearer {os.environ['SWARMS_API_KEY']}"}
+
+async def main():
+    async with httpx2.AsyncClient(headers=HEADERS, timeout=60) as http:
+        async with streamable_http_client(URL, http_client=http) as streams:
+            async with ClientSession(streams[0], streams[1]) as session:
+                await session.initialize()
+
+                tools = await session.list_tools()
+                print([t.name for t in tools.tools])
+
+                result = await session.call_tool(
+                    "get_get-prompts", {"limit": 5, "is_free": True, "name": "research"}
+                )
+                page = json.loads(result.content[0].text)
+                for row in page["data"]:
+                    print(row["id"], row["name"])
+
+asyncio.run(main())
+```
+
+With `mcp` 1.x, import `streamablehttp_client` instead and pass `headers=` to it directly.
+
+### TypeScript
+
+Using `@modelcontextprotocol/sdk`:
+
+```ts
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
+
+const transport = new StreamableHTTPClientTransport(
+  new URL("https://swarms.world/mcp"),
+  { requestInit: { headers: { Authorization: `Bearer ${process.env.SWARMS_API_KEY}` } } },
+);
+
+const client = new Client({ name: "my-agent", version: "1.0.0" });
+await client.connect(transport);
+
+const { tools } = await client.listTools();
+console.log(tools.map((t) => t.name));
+
+const result = await client.callTool({
+  name: "get_get-agents",
+  arguments: { limit: 3, category: "Finance" },
+});
+const page = JSON.parse((result.content as any)[0].text);
+console.log(page);
+```
+
+### curl
+
+The server speaks plain JSON-RPC over HTTP, so you can test it from a terminal:
+
+```bash
+# List every tool (no key needed)
+curl -s -X POST https://swarms.world/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
+
+# Call a tool
+curl -s -X POST https://swarms.world/mcp \
+  -H "Authorization: Bearer $SWARMS_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"get_get-prompts","arguments":{"limit":2,"is_free":true}}}'
+```
+
+## Which Option Should You Pick?
+
+| You use | Best option | What you get |
+| --- | --- | --- |
+| Claude Code | Plugin | Skills, MCP server and secure key storage in one install |
+| Codex | Plugin | Skills and MCP server in one install |
+| Any skills-compatible agent | `npx skills add` | Skills, plus the MCP server set up separately |
+| VS Code | Install button or `.vscode/mcp.json` | MCP tools in Copilot agent mode |
+| Cursor | `.cursor/mcp.json` | MCP tools |
+| Claude Desktop | `mcp-remote` bridge | MCP tools |
+| Your own agent | Python or TypeScript SDK | Full programmatic access |
+
+## Troubleshooting
+
+- **401 on a tool call.** The key is missing or invalid. Check that `SWARMS_API_KEY` is exported in the shell that started your agent, and that the header reads `Authorization: Bearer <key>`.
+- **No tools appear.** Confirm the URL is exactly `https://swarms.world/mcp` and that your client supports Streamable HTTP. For stdio-only clients, use the `mcp-remote` bridge.
+- **The agent doesn't use the marketplace.** Mention it by name, for example "search the Swarms Marketplace for...". The skill loads when the request matches.
+- **Skills show up as new files in your repository.** `npx skills add` installs into the current project. Add `.agents/skills/`, `.claude/skills/` and `skills-lock.json` to `.gitignore`, or install with `-g`.
+
+## What's Next
+
+We're working on OAuth sign-in for the MCP server, so clients can show a "Sign in with Swarms" button in place of pasting a key, and on listing the server in the official MCP Registry and more agent directories. Star the [repository](https://github.com/The-Swarm-Corporation/swarms-skills) to follow along, and open an issue if you want a skill we haven't written yet.
+
+## Links
+
+- **Swarms Skills on GitHub:** [The-Swarm-Corporation/swarms-skills](https://github.com/The-Swarm-Corporation/swarms-skills)
+- **skills.sh page:** [skills.sh/The-Swarm-Corporation/swarms-skills](https://skills.sh/The-Swarm-Corporation/swarms-skills)
+- **MCP server:** `https://swarms.world/mcp` ([full reference](https://swarms.world/mcp-skill.md))
+- **API keys:** [swarms.world/platform/api-keys](https://swarms.world/platform/api-keys)
+- **Marketplace:** [swarms.world](https://swarms.world)
+- **Community:** [Discord](https://discord.gg/EamjgSaEQf) and [X @swarms_corp](https://x.com/swarms_corp)

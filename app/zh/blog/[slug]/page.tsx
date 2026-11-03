@@ -8,6 +8,8 @@ import { BlogCard } from "@/components/blog/blog-card"
 import { BlogMarkdown } from "@/components/blog/blog-markdown"
 import { ShareButtons } from "@/components/blog/share-buttons"
 import { CopyPageButton } from "@/components/blog/copy-page-button"
+import { BlogToc } from "@/components/blog/blog-toc"
+import { extractHeadings } from "@/lib/blog-toc"
 import { LanguageToggle } from "@/components/language-toggle"
 import { formatPostMarkdown, getAllPostMeta, getAllPosts, getPostBySlug } from "@/lib/blog"
 import { siteConfig } from "@/app/metadata"
@@ -35,6 +37,8 @@ export default async function ZhBlogPostPage({ params }: ZhBlogPostPageProps) {
   // The frontmatter title is already rendered above as the page H1 — drop a
   // duplicate leading "# Title" heading from the markdown body if present.
   const bodyContent = post.content.replace(/^\s*#\s+.+(\r?\n)+/, "")
+  const headings = extractHeadings(bodyContent)
+  const showToc = headings.length >= 2
 
   return (
     <div className="min-h-screen bg-black">
@@ -138,23 +142,37 @@ export default async function ZhBlogPostPage({ params }: ZhBlogPostPageProps) {
             </div>
           )}
 
-          <div className="mx-auto max-w-6xl py-14 sm:py-16">
-            <div className="prose-blog">
-              <BlogMarkdown content={bodyContent} />
-            </div>
+          <div
+            className={`mx-auto max-w-6xl py-14 sm:py-16 ${
+              showToc ? "lg:grid lg:grid-cols-[minmax(0,1fr)_14rem] lg:gap-14" : ""
+            }`}
+          >
+            <div className="min-w-0">
+              <div className="prose-blog" id="blog-post-body">
+                <BlogMarkdown content={bodyContent} />
+              </div>
 
-            <div className="mt-16 border-t border-white/[0.08] pt-10">
-              <h2 className="text-sm font-medium uppercase tracking-[0.15em] text-white/45">
-                分享本文
-              </h2>
-              <div className="mt-5">
-                <ShareButtons
-                  title={post.title}
-                  description={post.description}
-                  url={`${siteConfig.url}/zh/blog/${post.slug}`}
-                />
+              <div className="mt-16 border-t border-white/[0.08] pt-10">
+                <h2 className="text-sm font-medium uppercase tracking-[0.15em] text-white/45">
+                  分享本文
+                </h2>
+                <div className="mt-5">
+                  <ShareButtons
+                    title={post.title}
+                    description={post.description}
+                    url={`${siteConfig.url}/zh/blog/${post.slug}`}
+                  />
+                </div>
               </div>
             </div>
+
+            {showToc && (
+              <aside className="hidden lg:block">
+                <div className="sticky top-28 max-h-[calc(100vh-8rem)] overflow-y-auto pb-8">
+                  <BlogToc headings={headings} containerId="blog-post-body" title="本页目录" />
+                </div>
+              </aside>
+            )}
           </div>
 
           {relatedPosts.length > 0 && (

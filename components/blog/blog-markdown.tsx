@@ -6,6 +6,7 @@ import rehypeRaw from "rehype-raw"
 import { MermaidDiagram } from "@/components/blog/mermaid-diagram"
 import { AppLink } from "@/components/app-link"
 import { CodeBlock } from "@/components/code-block"
+import { rehypeHeadingIds } from "@/lib/blog-toc"
 
 // Shared article renderer for the English and Chinese blog post pages so the
 // markdown styling stays identical across locales.
@@ -13,7 +14,7 @@ export function BlogMarkdown({ content }: { content: string }) {
   return (
     <ReactMarkdown
       remarkPlugins={[remarkGfm]}
-      rehypePlugins={[rehypeRaw]}
+      rehypePlugins={[rehypeRaw, rehypeHeadingIds]}
       components={{
         video: ({ children, node, ...props }) => (
           <video
@@ -48,13 +49,15 @@ export function BlogMarkdown({ content }: { content: string }) {
             {children}
           </h1>
         ),
-        h2: ({ children }) => (
-          <h2 className="mb-5 mt-10 text-2xl font-semibold tracking-tighter text-white sm:text-3xl">
+        // ids come from rehypeHeadingIds; scroll-mt clears the fixed navbar
+        // when a sidebar link jumps to the heading.
+        h2: ({ children, id }) => (
+          <h2 id={id} className="mb-5 mt-10 scroll-mt-28 text-2xl font-semibold tracking-tighter text-white sm:text-3xl">
             {children}
           </h2>
         ),
-        h3: ({ children }) => (
-          <h3 className="mb-4 mt-8 text-xl font-semibold tracking-tight text-white sm:text-2xl">
+        h3: ({ children, id }) => (
+          <h3 id={id} className="mb-4 mt-8 scroll-mt-28 text-xl font-semibold tracking-tight text-white sm:text-2xl">
             {children}
           </h3>
         ),

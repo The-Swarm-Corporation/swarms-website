@@ -1,0 +1,389 @@
+---
+title: "多智能体系统的回退机制：处理 LLM 故障，杜绝静默错误"
+description: "LLM 智能体错误处理与回退：失败的 swarm 现在会抛出异常，SwarmRouter 的 fallback_swarms 因此真正生效。为生产环境的智能体设计重试和回退模型。"
+date: "2026-11-04"
+author: "Kye Gomez"
+categories: ["指南", "工程"]
+readTime: "11 分钟阅读"
+featured: false
+image: "/multi_agent_fallbacks_error_handling.png"
+---
+
+# 多智能体系统的回退机制：处理 LLM 故障，杜绝静默错误
+
+每个生产环境中的智能体迟早都会遇到 429、超时或服务商宕机。好的 LLM 智能体错误处理决定接下来发生什么：重试同一个模型，回退到另一个模型或服务商，回退到另一种多智能体结构，或者停下来告诉调用方。不过，回退要发挥作用，前提是故障可见。一个 swarm 如果捕获了异常，再把错误文本当作"答案"返回，它上层的每一级回退就都无从反应。
+
+本指南介绍你需要预先考虑的故障类型、静默错误字符串为什么危险，以及回退机制在 [Swarms v17「InterLink」](/zh/blog/swarms-v17-interlink-release) 中如何工作。在这个版本里，失败的结构会抛出异常，所以 `SwarmRouter(fallback_swarms=...)` 终于能真正触发。你将为单个智能体配置重试和跨服务商的回退模型，搭建 swarm 级的回退链，让一个投票 swarm 在某个服务商宕机时照样完成，并为错误输出写一个校验循环。每个代码块都针对 Swarms 17.0.0 实际运行过，其中服务商调用是模拟的，这样我们可以按需让指定模型失败。
+
+## 智能体系统必须处理的 LLM 故障
+
+模型调用失败的方式有几种，各自需要不同的应对：
+
+- **限流（HTTP 429）。** 服务商正常，但你的账号超出了请求数或 token 额度。带退避的重试往往有效；在持续高负载下，换第二个服务商效果更好。
+- **超时。** 请求挂起，或者一次长生成超过了你的截止时间。重试同一个模型可能再次挂起，所以通常的做法是限制单次请求时长，再加一个回退模型。
+- **服务商宕机（HTTP 5xx）。** 端点对所有人都不可用。对同一个服务商重试只是浪费时间；能救下这次运行的是另一个服务商上的模型。
+- **错误输出。** 调用成功并返回了文本，但文本不符合程序的要求：JSON 无效、缺少字段、模型拒答。这时不会抛出异常，除非你自己检查，否则不会有任何自动回退。
+- **结构内部的故障。** 扇出中的一个工作者、一名投票者或流水线中的一个阶段失败了，其他部分却成功了。结构需要判断这次运行整体算不算失败。
+
+前三种会以服务商客户端的异常形式出现。后两种正是静默错误的来源。
+
+## 静默错误字符串为什么会让回退失效
+
+回退是对异常的反应。如果某个组件捕获了异常，返回一个看起来像结果的字符串，调用方就分不清成功和失败，上面的每一层都会带着错误数据继续往下走。
+
+Swarms v16 已经让失败的 LLM 调用抛出 `AgentLLMError`。InterLink 沿着这个错误向上追查各个结构，发现有几个会捕获它，再返回一个看起来像答案的东西。由于 `SwarmRouter(fallback_swarms=...)` 只在 swarm 抛出异常时才回退，下面这些情况里回退一次都没有触发：
+
+| 结构 | v16 中的行为 | v17 |
+|---|---|---|
+| `HeavySwarm` | 把 `"Failed to generate questions in loop 1: ..."` 当作答案返回，并把这次运行自动保存为 `"completed"` | 抛出异常；路由器回退（[#2768](https://github.com/kyegomez/swarms/pull/2768)） |
+| `MixtureOfAgents` | 聚合器失败时把 `"Error: ..."` 当作答案返回 | 抛出异常（[#3063](https://github.com/kyegomez/swarms/pull/3063)） |
+| `MajorityVoting` | 把失败投票者的异常当成它的一票，交给共识智能体 | 抛出异常；共识智能体不会运行（[#3095](https://github.com/kyegomez/swarms/pull/3095)） |
+| `AuctionSwarm` | 所有中标者都失败时，返回出价表 `"Bids: A=0.9000, B=0.4000"` | 抛出异常，并链接到排名第一的中标者的错误（[#2493](https://github.com/kyegomez/swarms/pull/2493)） |
+| `AgentRearrange` | 并行步骤中失败智能体的异常被写进对话，作为它的答案，下一步在此基础上继续 | 抛出异常，与顺序步骤原本的行为一致（[#2456](https://github.com/kyegomez/swarms/pull/2456)） |
+
+`MajorityVoting` 这个例子最能说明问题。一条异常消息变成了一票，共识智能体把它和真实答案放在一起权衡，调用方拿到的是一个部分建立在错误字符串之上、看起来很笃定的共识。日志里没有任何迹象表明这次运行已经降级。
+
+有两个结构仍然会把工作者的失败作为数据记录下来，这是有意为之，你需要知道是哪两个：`MixtureOfAgents` 某一层里失败的工作者会变成一条 `"Error: ..."` 答案，这样一个工作者出故障不会拖垮整个混合；`ConcurrentWorkflow` 默认 `on_error="store"`，会把失败的智能体记录在角色 `"<agent name> (failed)"` 之下，让其他智能体继续完成。下文都会讲到。
+
+## 安装
+
+```bash
+pip install -U swarms
+```
+
+示例混用了多个服务商，每个服务商都需要在环境变量中设置密钥：`OPENAI_API_KEY`、`ANTHROPIC_API_KEY`、`GEMINI_API_KEY`、`DEEPSEEK_API_KEY`、`MISTRAL_API_KEY` 和 `GROQ_API_KEY`。只需为你实际使用的服务商设置。
+
+## 单个智能体的重试与回退模型
+
+第一道防线是智能体本身。在 v17 中，`Agent` 接受一个 `fallback_models` 列表：第一项是主模型，模型失败时 `run()` 会沿列表往下走。`retry_attempts` 设置客户端在智能体换下一个模型之前对每个模型重试多少次。
+
+```python
+from swarms import Agent
+
+analyst = Agent(
+    agent_name="Analyst",
+    system_prompt="You are a financial analyst. Answer in three short bullet points.",
+    fallback_models=[
+        "anthropic/claude-sonnet-5-5",  # primary
+        "gpt-5.4",                      # different provider, similar strength
+        "gemini/gemini-2.5-pro",        # third provider, last resort
+    ],
+    retry_attempts=2,  # litellm retries each model twice before the agent moves on
+    max_loops=1,
+    output_type="final",
+    print_on=False,
+)
+
+answer = analyst.run("What are the main risks in a 60/40 portfolio right now?")
+print("served by:", analyst.model_name)
+print(answer)
+```
+
+`output_type="final"` 让 `run()` 只返回回复（`Agent` 默认返回整段对话）。我们让所有 Anthropic 调用都返回 429 来运行它。智能体记录了一条警告，然后由第二个模型作答：
+
+```
+WARNING | swarms.structs.agent:run - Agent 'Analyst': 'anthropic/claude-sonnet-5-5' failed, trying 'gpt-5.4': Agent 'Analyst': model 'anthropic/claude-sonnet-5-5' failed: litellm.RateLimitError: ...
+served by: gpt-5.4
+```
+
+运行结束后，`agent.model_name` 会给出实际提供服务的模型，便于记录日志和跟踪成本。下一次 `run()` 会重新从主模型开始，所以 Anthropic 偶尔出问题的一分钟不会让智能体永久停留在回退模型上。
+
+### 扁平模型循环如何计算调用次数
+
+在 v17 之前，失败的调用会在三层叠加的机制里重试：litellm 自身的 `num_retries`、`Agent._run` 里的尝试循环，以及 `LLMManager` 里的递归回退链。在默认 `retry_attempts=3` 下，一个挂掉的端点在智能体放弃之前，每个模型最多可能消耗 12 次调用（[#2811](https://github.com/kyegomez/swarms/pull/2811)）。
+
+现在只有一个扁平循环，规则清楚：
+
+- 重试由客户端负责。`retry_attempts` 作为 litellm 的 `num_retries` 随每个请求发送，遇到限流时按指数退避。默认值为 3 时，每个模型最多 4 次调用。
+- `Agent.run` 按顺序把 `fallback_models` 走一遍。三个模型加上默认设置，整次运行最坏情况是 12 次调用，而 v16 可能在每个模型上各花 12 次。
+- 只有 `AgentLLMError`（模型调用失败）会让循环转向下一个模型。其他任何错误，比如你某个工具里的 bug，都会立即抛出，绝不会在下一个模型上重跑。
+- 失败尝试产生的对话轮次会从智能体历史中删除，回退模型从干净的状态开始，调用方传入的 `messages` 也会送到回退模型（[#2806](https://github.com/kyegomez/swarms/pull/2806)）。
+- 旧的 `fallback_model_name="..."` 写法仍然可用，它会在构造时并入 `fallback_models`。
+
+### 超时，以及所有模型都失败时的错误
+
+当列表里最后一个模型也失败时，`run()` 会抛出 `AgentLLMError`，并链接到服务商自己的异常。要限制单次请求的时长，可以通过 `llm_args` 传入 litellm 的 `timeout`，智能体会把它转发给每一次补全调用：
+
+```python
+from swarms import Agent, AgentLLMError
+
+summarizer = Agent(
+    agent_name="Summarizer",
+    system_prompt="Summarize the text in two sentences.",
+    fallback_models=["gpt-5.4-mini", "anthropic/claude-haiku-5-5"],
+    retry_attempts=1,
+    llm_args={"timeout": 20},  # seconds per request, passed through to litellm
+    max_loops=1,
+    output_type="final",
+    print_on=False,
+)
+
+try:
+    print(summarizer.run("Summarize this incident report: ..."))
+except AgentLLMError as error:
+    # Raised only after the last model in fallback_models has failed.
+    print("every model failed:", error)
+    print("provider error:", type(error.__cause__).__name__)
+```
+
+这里两个模型都小而便宜，适合高调用量的摘要器。在我们的测试中，OpenAI 的请求超时，Anthropic 返回 500，于是运行进入了 `except` 分支：
+
+```
+every model failed: Agent 'Summarizer': model 'anthropic/claude-haiku-5-5' failed: litellm.InternalServerError: ...
+provider error: InternalServerError
+```
+
+超时会立即报告，并附带原始错误。在 v17 之前，网络故障会先花 3 秒探测 `8.8.8.8:53`，然后报告 "No internet connection"，把真正的原因藏了起来（[#2729](https://github.com/kyegomez/swarms/pull/2729)）。
+
+## 跨服务商回退：如何排列回退链
+
+同一个服务商上的回退模型能防住某个模型特有的问题。但在服务商宕机或整个账号被限流时它毫无用处，因为两个模型共用同一个端点和同一份额度。要真正覆盖这些情况，下一项应该放在另一个服务商上：
+
+- **先匹配能力。** 回退模型必须能完成这项工作。`anthropic/claude-sonnet-5-5` 回退到 `gpt-5.4` 或 `gemini/gemini-2.5-pro` 都很合适；从前沿模型回退到小模型，产出可能过不了下游的检查。
+- **再分散服务商。** 三个服务商上的三项，能扛住任何单一服务商的事故。
+- **保持提示词可移植。** 同一个系统提示词会发给列表里的每个模型。智能体可能发给回退模型的提示词里，避免使用特定服务商的功能。
+- **注意采样参数。** 当前的 Claude 模型不接受 `temperature` 和 `top_p`，所以列表中包含 Claude 模型的智能体不要设置这两个参数。
+
+## 用 SwarmRouter 的 fallback_swarms 做 swarm 级回退
+
+智能体级回退处理的是单次模型调用失败。有时候整个结构都会失败：比如一个内部模型全在同一服务商上的 `HeavySwarm`，或者一种在给定输入下无法运行的架构。`SwarmRouter` 接受 `fallback_swarms`，即主 swarm 抛出异常时按顺序尝试的 swarm 类型列表。每个回退都用相同的智能体和配置构建，第一个成功完成的胜出。
+
+```python
+from swarms import Agent, SwarmRouter
+
+# Your own agents, spread over three providers that are not Anthropic.
+analysts = [
+    Agent(
+        agent_name="Macro-Analyst",
+        system_prompt="Assess the macroeconomic picture in five bullet points.",
+        model_name="gpt-5.4-mini",
+        max_loops=1,
+        print_on=False,
+    ),
+    Agent(
+        agent_name="Sector-Analyst",
+        system_prompt="Assess the sector and company-level picture in five bullet points.",
+        model_name="gemini/gemini-2.5-pro",
+        max_loops=1,
+        print_on=False,
+    ),
+    Agent(
+        agent_name="Risk-Analyst",
+        system_prompt="List the five largest downside risks.",
+        model_name="deepseek/deepseek-v4-pro",
+        max_loops=1,
+        print_on=False,
+    ),
+]
+
+router = SwarmRouter(
+    name="market-brief",
+    agents=analysts,
+    swarm_type="HeavySwarm",  # primary: HeavySwarm's built-in question agent and workers
+    heavy_swarm_question_agent_model_name="anthropic/claude-opus-5-5",
+    heavy_swarm_worker_model_name="anthropic/claude-sonnet-5-5",
+    heavy_swarm_swarm_show_output=False,
+    fallback_swarms=["ConcurrentWorkflow"],  # your agents, on other providers
+    output_type="str-all-except-first",  # every analyst's answer
+)
+
+result = router.run("Write a one-page brief on the US semiconductor sector.")
+
+print("served by:", router.active_swarm_type)
+for attempt in router.fallback_attempts:
+    print("failed:", attempt["swarm_type"], "->", type(attempt["error"]).__name__)
+print(result)
+```
+
+主 swarm 是一个 `HeavySwarm`，由 Claude Opus 规划问题、Claude Sonnet 做研究，在 Anthropic 状态良好时这是更强的选项。回退是一个普通的 `ConcurrentWorkflow`，运行你分布在 OpenAI、Google 和 DeepSeek 上的三位分析师。在 Anthropic 返回 429 的情况下，HeavySwarm 的提问智能体在第一次调用时就失败了，路由器记录了 `SwarmRouter swarm 'HeavySwarm' failed: litellm.RateLimitError: ... Falling back to 'ConcurrentWorkflow'.`，运行输出：
+
+```
+served by: ConcurrentWorkflow
+failed: HeavySwarm -> RateLimitError
+```
+
+后面跟着三位分析师的回答。在 v16 中，同样的配置会把 `"Failed to generate questions in loop 1: ..."` 当作简报返回，回退根本不会运行。
+
+有两个属性告诉你发生了什么：`router.active_swarm_type` 是为最近一次运行提供服务的 swarm 类型，`router.fallback_attempts` 为每个失败的 swarm 保存一条 `{"swarm_type", "error"}` 记录。设置 `autosave=True` 时，运行元数据会同时记录这两项。如果不设置 `fallback_swarms`，主 swarm 的错误会原样向上传播。
+
+### 检查回退结构自身的失败
+
+`ConcurrentWorkflow` 在某个智能体失败时会继续运行：默认（`on_error="store"`）它把错误记录为该智能体的答案，角色为 `"<agent name> (failed)"`。路由器看到的是一次完成的运行，所以如果部分结果对你很重要，就去检查对话。下面接着上面的例子：
+
+```python
+# ConcurrentWorkflow records a failed agent as an "Error: ..." row instead of raising,
+# so check the fallback's conversation for those rows.
+failed = [
+    message["role"]
+    for message in router.conversation.conversation_history
+    if message["role"].endswith("(failed)")
+]
+print("failed inside the fallback:", failed)
+```
+
+在我们的测试中 Gemini 也返回了 500，这段代码输出 `failed inside the fallback: ['Sector-Analyst (failed)']`。直接使用 `ConcurrentWorkflow` 时，可以传入 `on_error="raise"`，让整次运行失败。在路由器里，更简单的办法是给每位分析师配置自己的 `fallback_models`，这样智能体会在工作流看到错误之前就恢复过来。
+
+### 所有 swarm 都失败时
+
+如果主 swarm 和每个回退都抛出异常，`run()` 会抛出 `SwarmRouterRunError`（从 `swarms.structs.swarm_router` 导入），并链接到最后一次尝试的错误，`router.fallback_attempts` 里仍然列出每一次尝试。这就是该通知值班人员，或者向用户返回明确错误的信号。
+
+## 投票中的回退：MajorityVoting
+
+投票和共识类结构是静默错误危害最大的地方，所以很适合用来观察 v17 的行为。三个分布在三个服务商上的投票者对一张支持工单做分诊：
+
+```python
+from swarms import Agent, AgentLLMError, MajorityVoting
+
+question = "Should this support ticket be escalated? Answer YES or NO with one reason."
+
+voters = [
+    Agent(
+        agent_name="Voter-Groq",
+        system_prompt="You triage support tickets.",
+        model_name="groq/openai/gpt-oss-120b",
+        max_loops=1,
+        print_on=False,
+    ),
+    Agent(
+        agent_name="Voter-Mistral",
+        system_prompt="You triage support tickets.",
+        model_name="mistral/mistral-large-latest",
+        max_loops=1,
+        print_on=False,
+    ),
+    Agent(
+        agent_name="Voter-OpenAI",
+        system_prompt="You triage support tickets.",
+        model_name="gpt-5.4-mini",
+        max_loops=1,
+        print_on=False,
+    ),
+]
+
+vote = MajorityVoting(
+    agents=voters,
+    consensus_agent_model_name="gemini/gemini-2.5-pro",
+    additional_consensus_agent_kwargs={"print_on": False},
+    output_type="final",
+)
+
+try:
+    print(vote.run(question))
+except AgentLLMError as error:
+    print("vote failed:", type(error).__name__, error)
+```
+
+投票者用的是快速、便宜的模型，因为投票会成倍增加调用次数；共识智能体是 Gemini 2.5 Pro，一个更强的裁判。（这里不要把 Claude 放在共识位置：`MajorityVoting` 内置的共识智能体开启了动态温度，请求中会带上随机的 `temperature`，当前的 Claude 模型会拒绝它。）
+
+在 Groq 返回 500 的情况下，运行输出 `vote failed: AgentLLMError Agent 'Voter-Groq': model 'groq/openai/gpt-oss-120b' failed: ...`，共识模型一次都没有被调用。当一个投票者无法恢复时，这就是正确的结果。在 v16 中，这段错误文本会被算作 Groq 的一票。
+
+要让投票扛过这次宕机，给容易出问题的投票者配置一个另一服务商上的回退。下面接着上一个代码块：
+
+```python
+voters[0] = Agent(
+    agent_name="Voter-Groq",
+    system_prompt="You triage support tickets.",
+    fallback_models=["groq/openai/gpt-oss-120b", "deepseek/deepseek-v4-pro"],
+    max_loops=1,
+    print_on=False,
+)
+
+vote = MajorityVoting(
+    agents=voters,
+    consensus_agent_model_name="gemini/gemini-2.5-pro",
+    additional_consensus_agent_kwargs={"print_on": False},
+    output_type="final",
+)
+print(vote.run(question))
+print("Voter-Groq answered with:", voters[0].model_name)
+```
+
+现在投票顺利完成，共识智能体基于三张真实的票运行，最后一行输出 `Voter-Groq answered with: deepseek/deepseek-v4-pro`。两层机制配合工作：智能体回退吸收服务商故障，结构只在某个智能体确实无法作答时才抛出异常。
+
+## 处理错误输出：先校验，再回退
+
+模型返回格式错误的输出时不会抛出异常，所以 `fallback_models` 帮不上忙。在你自己的代码里把"输出未通过校验"当作一种失败，自己遍历模型列表：
+
+```python
+import json
+
+from swarms import Agent, AgentLLMError
+
+REQUIRED = {"vendor", "total", "currency"}
+MODELS = ["gpt-5.4-mini", "anthropic/claude-haiku-5-5"]  # cheap first, then another provider
+
+
+def extract_invoice(text: str) -> dict:
+    problems = []
+    for model in MODELS:
+        agent = Agent(
+            agent_name="Invoice-Extractor",
+            system_prompt=(
+                "Extract vendor, total and currency from the invoice. "
+                "Reply with one JSON object and nothing else."
+            ),
+            model_name=model,
+            max_loops=1,
+            output_type="final",
+            print_on=False,
+        )
+        try:
+            data = json.loads(agent.run(text))
+            if not isinstance(data, dict):
+                raise ValueError("expected a JSON object")
+            missing = REQUIRED - data.keys()
+            if missing:
+                raise ValueError(f"missing fields {sorted(missing)}")
+            return data
+        except (AgentLLMError, ValueError) as error:  # json.JSONDecodeError is a ValueError
+            problems.append(f"{model}: {error}")
+    raise RuntimeError("no model produced a valid invoice:\n" + "\n".join(problems))
+
+
+print(extract_invoice("ACME Corp. Invoice 1043. Total due: 1,250.00 EUR."))
+```
+
+在我们的测试中，第一个模型把 JSON 包在一句客套话里，`json.loads` 失败，于是返回了第二个模型给出的有效对象：`{'vendor': 'ACME Corp.', 'total': 1250.0, 'currency': 'EUR'}`。两个模型都失败时，`RuntimeError` 会列出每个模型的问题；在我们的失败测试中，第一个模型是缺少字段，第二个模型是限流错误。这个函数每次尝试都新建一个智能体，这样第二个模型看不到第一个模型的错误答案。
+
+## LLM 智能体错误处理的生产检查清单
+
+- **关键路径上的每个智能体都配置一个跨至少两个服务商的 `fallback_models` 列表。** 这是防范 429 和宕机成本最低的手段。
+- **有意识地规划重试预算。** 每个模型的调用次数是 `retry_attempts + 1`，乘以模型数量就是最坏情况。对延迟敏感的路径可以调低 `retry_attempts`，更多依赖回退。
+- **设置请求超时**，用 `llm_args={"timeout": ...}`，让挂起的请求及时转到回退。
+- **用 `fallback_swarms` 处理结构级故障**，每次运行后读取 `router.active_swarm_type` 和 `router.fallback_attempts`，记录是哪条路径提供了服务。
+- **检查会把失败记录为数据的结构：** `ConcurrentWorkflow` 里的 `"(failed)"` 行，以及 `MixtureOfAgents` 里 `"Error: ..."` 形式的工作者答案。
+- **校验你要解析的输出。** 错误输出本身永远不会抛出异常。
+- **在应用边界捕获 `AgentLLMError` 和 `SwarmRouterRunError`**，返回明确的失败。避免返回占位字符串，那样会在更上一层重新制造静默错误问题。
+- **留意并发与限流的关系。** v17 会按智能体数量设置 `GroupChat` 的线程池大小；花名册很大时，如果开始出现 429，请设置 `max_workers` 或 `max_parallel_nodes`。
+
+这些 bug 背后更普遍的模式，即结构在出错时返回看似合理的输出，是 [多智能体系统的失败模式](/zh/blog/multi-agent-system-failure-modes) 一文的主题。如果你想持久记录一次运行中每个智能体说了什么（失败的运行不会写入任何内容），请看 [用 SQLite 作为 AI 智能体的共享记忆](/zh/blog/sqlite-shared-memory-ai-agents)。
+
+## 常见问题
+
+### 如何在 Swarms 中给 LLM 智能体添加回退模型？
+
+给 `Agent` 传入 `fallback_models`，主模型放在第一位：`Agent(fallback_models=["anthropic/claude-sonnet-5-5", "gpt-5.4", "gemini/gemini-2.5-pro"])`。模型调用失败时，`run()` 会尝试列表中的下一个模型，每次新的运行都会重新从第一个模型开始。
+
+### retry_attempts 和 fallback_models 有什么区别？
+
+`retry_attempts` 是客户端对同一个模型重试的次数（它作为 `num_retries` 发送给 litellm，遇到限流时按指数退避）。`fallback_models` 是有序的模型列表，某个模型用尽重试仍失败后，智能体会沿着它换到下一个模型。
+
+### 为什么在 v17 之前 SwarmRouter 的 fallback_swarms 不触发？
+
+`fallback_swarms` 只在主 swarm 抛出异常时运行。在 v16 中，`HeavySwarm`、`MixtureOfAgents`、`MajorityVoting`、`AuctionSwarm` 和 `AgentRearrange` 会捕获部分故障，把错误文本或出价表当作答案返回，所以路由器看到的是成功。在 v17 中它们会抛出异常，路由器随之回退。
+
+### 所有模型、所有 swarm 都失败时会怎样？
+
+智能体会抛出 `AgentLLMError`，并链接到最后一个服务商错误。配置了 `fallback_swarms` 的 `SwarmRouter` 会抛出 `SwarmRouterRunError`，`router.fallback_attempts` 会列出它尝试过的每种 swarm 类型的错误。
+
+### 回退模型应该放在另一个服务商上吗？
+
+通常应该。限流和宕机往往影响整个服务商或整个账号，同一服务商上的回退经常因为同样的原因失败。选择另一个服务商上能力相近的模型。
+
+## 开始使用
+
+```bash
+pip install -U swarms
+```
+
+完整的 v17 变更列表，包括本指南背后的每一项修复，请看 [Swarms v17「InterLink」更新日志](/zh/blog/swarms-v17-interlink-release)。API 参考在 [docs.swarms.world](https://docs.swarms.world)，源代码在 [GitHub](https://github.com/kyegomez/swarms)。

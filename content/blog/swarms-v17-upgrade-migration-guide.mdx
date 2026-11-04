@@ -1,0 +1,574 @@
+---
+title: "Upgrading to Swarms v17: Breaking Changes and Migration Guide"
+description: "Swarms v17 upgrade and migration guide: every removed class and parameter in InterLink, what to use instead, the changed defaults, and an upgrade checklist."
+date: "2026-11-04"
+author: "Kye Gomez"
+categories: ["Guides", "Engineering"]
+readTime: "15 min read"
+featured: false
+image: "/swarms_v17_migration_guide.png"
+---
+
+# Upgrading to Swarms v17: Breaking Changes and Migration Guide
+
+[Swarms v17 "InterLink"](/blog/swarms-v17-interlink-release) removes more code than it adds. More than forty parameters, methods, modules and classes that did nothing, or did the wrong thing, are gone, and several defaults changed: `Agent()` sends no system prompt unless you give it one, workflows no longer autosave, and failed swarms raise where they used to return an error string. This guide is the Swarms v17 upgrade and migration path, organized by what you will actually run into, with the v16 code you probably have and the v17 code to replace it with.
+
+The most important thing to know before you start: **many removed keyword arguments are absorbed by `**kwargs` and silently ignored.** Your code will often keep running after the upgrade and quietly stop doing what that argument used to do. Search for the names in this guide rather than waiting for a `TypeError`.
+
+Every v17 code block below was run against Swarms 17.0.0. Blocks marked **v16 (old)** show the code you are migrating away from and do not run on v17.
+
+## Before you upgrade: pin, branch and search
+
+Pin the version you are on now, so you can compare behavior side by side and roll back if you need to:
+
+```bash
+# see what you have
+python -c "import swarms; print(swarms.__version__)"
+
+# stay on v16 while you migrate (16.0.4 was the last v16 point release)
+pip install "swarms==16.0.4"
+
+# then, on a branch, move to v17
+pip install -U "swarms==17.0.0"
+# or with RouteHub and rustworkx, the optional speedups
+pip install -U "swarms[fast]==17.0.0"
+```
+
+In `requirements.txt` or `pyproject.toml`, pin a major version so a future release cannot change behavior under you: `swarms>=17,<18`.
+
+Then search your code for the removed names. This catches most of what the rest of this guide covers:
+
+```bash
+grep -rnE "SwarmRearrange|swarm_arrange|create_agents_from_yaml|CSVAgentLoader|MarkdownAgentLoader|MarkdownAgentConfig|AgentConfigDict|AgentValidator|ModelName|image_batch_processor|ImageAgentBatchProcessor|hierarchical_structured_communication_framework|Transcript|log_agent_data|generate_conversation_id|MAX_CONCURRENT_AGENTS|bulk_run|check_available_tokens|get_available_models|get_current_model|switch_to_next_model|reset_model_index|is_fallback_available|multi_modal=|sop=|sop_list=|output_cleaner|agents_config=|memory_system=|shared_memory=|idle_timeout=|auto_generate_prompts=|metadata_output_path=|output_metadata=|correct_answer=|basemodel|mcp_url=" --include="*.py" .
+```
+
+Expect some false positives (`Transcript` and `ModelName` are common words, and `mcp_url=` is still valid for HTTP servers). Calls to `agent.run(task, n=...)` are too generic to grep reliably; look for them by hand.
+
+## Removed classes and modules
+
+The changelog lists twelve removed modules. These are the ones with real callers and a direct replacement.
+
+### `SwarmRearrange` becomes `AgentRearrange` with swarms as steps
+
+`AgentRearrange` now accepts whole swarms in `agents=`, next to ordinary agents. Anything with a `name` and a `run(task)` method can appear in a flow, so `SwarmRearrange` and `swarm_arrange()` are deleted.
+
+**v16 (old):**
+
+```text
+from swarms import SwarmRearrange
+
+pipeline = SwarmRearrange(swarms=[research_team, review_team], flow="Research-Team -> Review-Team")
+```
+
+**v17:**
+
+```python
+from swarms import Agent, AgentRearrange, ConcurrentWorkflow
+
+def make(name, model, prompt):
+    return Agent(agent_name=name, model_name=model, system_prompt=prompt, max_loops=1, print_on=False)
+
+planner = make("Planner", "anthropic/claude-sonnet-5-5", "Break the question into two research angles.")
+analyst_a = make("Supply-Analyst", "groq/openai/gpt-oss-120b", "Research the supply side.")
+analyst_b = make("Demand-Analyst", "gpt-5.4-mini", "Research the demand side.")
+editor = make("Editor", "anthropic/claude-sonnet-5-5", "Merge the research into a five-line brief.")
+
+# A whole swarm can be one step. This output_type returns each analyst's answer, without the task.
+research_team = ConcurrentWorkflow(
+    name="Research-Team", agents=[analyst_a, analyst_b], output_type="str-all-except-first",
+)
+
+pipeline = AgentRearrange(
+    agents=[planner, research_team, editor],
+    flow="Planner -> Research-Team -> Editor",
+    output_type="final",
+)
+print(pipeline.run("What is the HBM memory supply outlook for 2027?"))
+```
+
+The planner and editor run on Claude Sonnet 5.5, because planning and merging reward a stronger model, while the two analysts run on cheaper, faster models (`gpt-oss-120b` on Groq and `gpt-5.4-mini`) since there are several of them. Each provider reads its own key: `ANTHROPIC_API_KEY`, `GROQ_API_KEY`, `OPENAI_API_KEY`, and likewise `GEMINI_API_KEY`, `DEEPSEEK_API_KEY` and `MISTRAL_API_KEY` for the other examples in this guide.
+
+A nested swarm receives the whole shared conversation so far as its task, and whatever it returns is written into the outer conversation. So give the inner swarm an output type that returns only what it produced. For a `ConcurrentWorkflow`, `"str-all-except-first"` returns every agent's answer without repeating the task it was handed. (`"final"` would keep only the last agent to finish, and drop the other analyst.) For an inner sequential team, `"final"` is the right choice. The original object stays reachable as `pipeline.agents[i].swarm`.
+
+### `create_agents_from_yaml`, `CSVAgentLoader` and `MarkdownAgentLoader` become `AgentLoader`
+
+Agent loading was spread across four entry points with overlapping schemas. v17 has one class, `AgentLoader`, with one pydantic schema whose field names are `Agent` parameters. Removed: `swarms.create_agents_from_yaml` (and its `return_type="tasks"`), `CSVAgentLoader`, `MarkdownAgentLoader`, `MarkdownAgentConfig`, `AgentConfigDict`, `AgentValidator`, `AgentValidationError` and `ModelName`. Validation errors are now `pydantic.ValidationError`.
+
+**v16 (old):**
+
+```text
+from swarms import create_agents_from_yaml
+from swarms.structs.agent_loader import CSVAgentLoader
+
+agents = create_agents_from_yaml("team.yaml", return_type="agents")
+csv_agents = CSVAgentLoader("team.csv").load_agents()
+```
+
+**v17:**
+
+```python
+from pathlib import Path
+
+from swarms import AgentLoader, load_agent_from_markdown
+
+Path("team.yaml").write_text("""
+agents:
+  - agent_name: Researcher
+    model_name: gemini/gemini-2.5-pro
+    system_prompt: You research the question and list the key facts.
+    max_loops: 1
+  - agent_name: Writer
+    model_name: anthropic/claude-haiku-5-5
+    system_prompt: You turn research notes into a short, plain answer.
+    max_loops: 1
+swarm_architecture:
+  name: Research-Pipeline
+  swarm_type: SequentialWorkflow
+  output_type: final
+  task: Why do bond prices fall when interest rates rise?
+""")
+
+Path("reviewer.md").write_text("""---
+name: Reviewer
+model_name: gpt-5.4
+max_loops: 1
+---
+You review an answer for factual errors and reply with a corrected version.
+""")
+
+loader = AgentLoader()
+
+agents = loader.load_agents_from_yaml("team.yaml", return_type="agents")
+print([a.agent_name for a in agents])
+
+answer = loader.load_agents_from_yaml("team.yaml", return_type="run_swarm")  # builds the SwarmRouter and runs its task
+print(answer)
+
+reviewer = load_agent_from_markdown("reviewer.md")
+print(reviewer.agent_name, reviewer.model_name)
+```
+
+For CSV and JSON, use `loader.load_agents_from_csv("team.csv")`, and `loader.auto(path)` picks the loader from the extension (`.md`, `.yaml`, `.yml`, `.csv`, `.json`). Two differences to check in existing files: unset fields now fall back to the `Agent` defaults (the v16 CSV loader turned `autosave` on, and the Markdown loader set `context_length=100000`), and any model name is accepted. The aliases `name`, `description`, `model`, `dynamic_temperature` and `streaming` keep older files loading.
+
+### Other removed modules and what replaces them
+
+| Removed | Use instead |
+|---|---|
+| `swarms/structs/transcript.py` (`Transcript`) | `Conversation.record_assistant`, `flush_tool_results`, `to_messages` |
+| `swarms/structs/hierarchical_structured_communication_framework.py` | `HierarchicalSwarm` |
+| `swarms.structs.image_batch_processor` (`ImageAgentBatchProcessor`) | Moved to `examples/single_agent/capabilities/vision/` in the repo |
+| `log_agent_data`, `swarms.state` spans | `swarms.conversation` on run spans |
+| `agent_id()`, `generate_conversation_id()` | `swarms.utils.generate_id.generate_id` |
+| `MAX_CONCURRENT_AGENTS` | `ConcurrentWorkflow(max_workers=...)` |
+| `output_type="basemodel"` | `output_type="json"` |
+| `swarms/prompts/debate.py`, `collaborative_utils.talk_to_agent`, `swarms/tools/function_util.py`, `MULTI_MODAL_AUTO_AGENT_SYSTEM_PROMPT*` and a few helpers | Nothing called them |
+
+`output_type="basemodel"` deserves a note: it was never a working output type, and in 17.0.0 it still raises `ValueError: Invalid type: basemodel`, after the model call has been made and paid for. Switch to `"json"`.
+
+### Removed `BaseTool` methods
+
+Half of `BaseTool` is gone: 26 methods that nothing called, 18 of them public, including `execute_tool`, `dynamic_run`, `execute_tool_from_text`, `execute_function_with_dict`, `dict_to_openai_schema_str`, `get_docs_from_callable`, `detect_api_response_format` and `convert_schema_between_providers`. What remains covers the real uses: `func_to_dict` to build a schema from a function, `execute_tool_by_name` to run one tool, and `execute_function_calls_from_api_response` to run the tool calls in a model response.
+
+## Removed parameters and methods
+
+This is the table to search against. "Ignored" means the argument lands in `**kwargs` and does nothing, with no warning.
+
+| Removed | What happens on 17.0.0 | Use instead |
+|---|---|---|
+| `Agent(multi_modal=...)` | Ignored | Nothing: vision is detected from `model_name` |
+| `Agent(sop=..., sop_list=...)` | Ignored | Skills: `Agent(skills_dir=...)` |
+| `Agent(output_cleaner=...)`, `output_cleaner_op` | Ignored | Post-process the value `run()` returns |
+| `Agent.run(n=...)` | No longer runs the task `n` times; lands in `**kwargs` and is passed on to the model request | Run the task in a loop |
+| `Agent.run(correct_answer=...)` | Lands in `**kwargs`; it was the 4th positional parameter, so pass `streaming_callback` and later arguments by keyword | Drop it |
+| `Agent.bulk_run` | `AttributeError` | `agent.run_batched(tasks)` |
+| `Agent.check_available_tokens` | `AttributeError` | `agent.input_tokens` |
+| `get_available_models`, `get_current_model`, `switch_to_next_model`, `reset_model_index`, `is_fallback_available`, `current_model_index` | `AttributeError` | `fallback_models` |
+| `LiteLLM(audio=...)`, constructor `max_completion_tokens`, `modalities`, `audio_processing`, `reasoning_check`, `get_media_base64`, `check_internet_connection` | Forwarded to the provider as ordinary kwargs, or `AttributeError` | `max_tokens`; explicit `messages` for audio |
+| `Conversation(output_metadata=...)` | `TypeError` | Drop it |
+| `GroupChat(idle_timeout=...)` | `TypeError` | `max_loops`, `threshold` |
+| `AgentRearrange(memory_system=...)` | `TypeError` | Query your store and pass the records in the task |
+| `SequentialWorkflow(shared_memory_system=...)`, `MultiAgentRouter(shared_memory_system=...)` | Ignored | Drop it |
+| `ForestSwarm(shared_memory=...)` | Ignored; `rules` and `verbose` move up one position | Drop it, pass later arguments by keyword |
+| `SwarmRouter(agents_config=...)`, `SwarmRouter.fetch_message_history_as_string` | Ignored, or `AttributeError` | `router.swarm.conversation` |
+| `ConcurrentWorkflow(auto_generate_prompts=...)`, `metadata_output_path` | `TypeError` | Drop them |
+| `mcp_url="python server.py"` as a stdio server | Raises `AgentMCPConnectionError` | `mcp_config=MCPConnection(command=..., args=[...])` |
+
+### `bulk_run`, `n` and `check_available_tokens`
+
+**v16 (old):**
+
+```text
+tags = agent.bulk_run([{"task": h} for h in headlines])
+samples = agent.run("Fed holds rates steady", n=3)
+agent.check_available_tokens()
+```
+
+**v17:**
+
+```python
+from swarms import Agent
+
+agent = Agent(
+    agent_name="Tagger",
+    model_name="gpt-5.4-mini",
+    system_prompt="Reply with one topic tag for the headline.",
+    max_loops=1,
+    output_type="final",
+    print_on=False,
+)
+
+headlines = ["Fed holds rates steady", "Chipmaker beats on datacenter revenue"]
+
+# was agent.bulk_run(...)
+tags = agent.run_batched(headlines)
+print(tags)
+
+# was agent.run(task, n=3): run it three times yourself, on a fresh conversation each time
+samples = []
+for _ in range(3):
+    agent.reset()
+    samples.append(agent.run("Fed holds rates steady"))
+print(len(samples), "samples")
+
+# was agent.check_available_tokens()
+print("next request would carry about", agent.input_tokens, "input tokens")
+```
+
+`run_batched` runs the tasks one after another on the same agent, so later tasks see the earlier ones in the conversation. When the runs must be independent, call `agent.reset()` between them, as the sampling loop does. `reset()` rebuilds the conversation the way the constructor does (system prompt, seeded messages, tool schemas) and keeps `agent.usage`. `input_tokens` counts what the next request would carry: system prompt, conversation and tool schemas.
+
+### The fallback-chain methods become `fallback_models`
+
+v16 retried a failed call in three stacked layers and exposed methods for stepping through models by hand. v17 has one flat loop: `retry_attempts` is passed to the client as retries per model, and `Agent.run` walks `fallback_models` in order. Only an `AgentLLMError` moves it to the next model; any other error raises at once. Every run starts again from the first model.
+
+```python
+from swarms import Agent
+from swarms.structs.agent import AgentLLMError
+
+agent = Agent(
+    agent_name="Analyst",
+    model_name="anthropic/claude-sonnet-5-5",
+    fallback_models=["anthropic/claude-sonnet-5-5", "gpt-5.4", "gemini/gemini-2.5-pro"],
+    retry_attempts=2,   # client retries per model, then the next model in the list
+    max_loops=1,
+    output_type="final",
+    print_on=False,
+)
+
+try:
+    print(agent.run("Summarise the risks of buying an ETF on margin in two sentences."))
+    print("answered by:", agent.model_name)
+except AgentLLMError as error:
+    # Every model failed. The provider's own exception is chained underneath.
+    print("every model failed:", type(error.__cause__).__name__, error.__cause__)
+```
+
+One detail that is easy to miss: **`fallback_models` is the whole chain, primary first.** When it is set, the agent's `model_name` is replaced by `fallback_models[0]`. If you list only the backups, the first backup becomes the primary and your `model_name` is never called. `fallback_model_name="..."` still works and is folded into the list as `[model_name, fallback_model_name]`.
+
+Provider errors arrive as `AgentLLMError`, with the provider's exception as `__cause__`. If you caught provider exception types (`RateLimitError`, `APIConnectionError` and so on) around `agent.run`, catch `AgentLLMError` instead.
+
+### Stdio MCP servers need `MCPConnection(command=...)`
+
+A scheme-less `mcp_url` used to be split on spaces and launched as a command with your full environment, which meant anyone who controlled an agent's `mcp_url` could run a command. v17 starts stdio servers only from an explicit `MCPConnection`, and gives them the MCP SDK's minimal default environment plus the `env` you pass.
+
+**v16 (old):**
+
+```text
+agent = Agent(model_name="gpt-5.4", mcp_url="python server.py")
+```
+
+A small stdio server to test against (`server.py`, built with the `mcp` 2.x SDK that Swarms installs):
+
+```python
+import os
+
+from mcp.server.mcpserver import MCPServer
+
+mcp = MCPServer("rates")
+
+
+@mcp.tool()
+def policy_rate(central_bank: str) -> str:
+    """Return the current policy rate for a central bank."""
+    # A stdio server in v17 sees only the env you pass it, plus a minimal default.
+    source = os.environ.get("RATES_API_KEY", "missing")
+    return f"{central_bank}: 4.25% (key {'set' if source != 'missing' else 'missing'})"
+
+
+if __name__ == "__main__":
+    mcp.run("stdio")
+```
+
+**v17**, run from the same directory:
+
+```python
+import sys
+
+from swarms import Agent, MCPConnection
+
+agent = Agent(
+    agent_name="Rates-Desk",
+    model_name="gpt-5.4",
+    system_prompt="Use the policy_rate tool to answer questions about interest rates.",
+    max_loops=1,
+    output_type="final",
+    print_on=False,
+    mcp_config=MCPConnection(
+        command=sys.executable,           # was mcp_url="python server.py"
+        args=["server.py"],
+        env={"RATES_API_KEY": "env:RATES_API_KEY"},  # pass what the server needs, explicitly
+    ),
+)
+print(agent.run("What is the ECB's policy rate?"))
+```
+
+The `4.25%` is a placeholder the toy server returns. The `env:` prefix reads the value from your environment when the connection starts. Leave the `env` line out and the tool reports `key missing`, which is exactly what will happen to a v16 server that relied on inheriting your shell's variables.
+
+## Behavior changes that do not raise
+
+These are the changes most likely to alter results without any error.
+
+### `Agent()` sends no system prompt unless you give one
+
+v16 sent a built-in 1,111-character persona, with the current minute stamped into it, whenever you passed no `system_prompt`. It changed what every agent said, and because it changed every minute it also broke provider prompt caching. In v17, an agent with no `system_prompt` and `max_loops=1` sends no system message at all.
+
+| `system_prompt` | `max_loops=1` | integer `max_loops >= 2` | `max_loops="auto"` |
+|---|---|---|---|
+| not passed | no system message | the loop prompt | the autonomous prompt |
+| your text | your text | your text, then the loop prompt | your text, then the autonomous prompt |
+
+```python
+from swarms import Agent
+from swarms.prompts.agent_system_prompts import build_agent_system_prompt
+
+# v17: no system_prompt means no system message at all
+plain = Agent(agent_name="Plain", model_name="gpt-5.4-mini", max_loops=1, output_type="final")
+
+# Your own prompt is sent as written
+analyst = Agent(
+    agent_name="Analyst",
+    model_name="anthropic/claude-sonnet-5-5",
+    system_prompt="You are a credit analyst. Answer in three bullet points.",
+    max_loops=1,
+    output_type="final",
+)
+
+# The v16 built-in persona, if your agents depended on it
+legacy = Agent(
+    agent_name="Legacy",
+    model_name="gemini/gemini-2.5-pro",
+    system_prompt=build_agent_system_prompt(),
+    max_loops=1,
+    output_type="final",
+)
+
+for agent in (plain, analyst, legacy):
+    print(agent.agent_name, "->", agent.run("What drives a company's interest coverage ratio?"))
+```
+
+If an agent's answers changed tone after the upgrade, this is the first thing to check. Writing a real system prompt for each agent is better than restoring the generic persona, but `build_agent_system_prompt()` is there if you need identical behavior while you migrate.
+
+### `output_type`: the reply or the conversation
+
+`Agent.run` returns according to `output_type`, and the default, `"str-all-except-first"`, is the conversation after the first input. On a fresh single-loop agent that looks like the reply. On the second call to the same agent, or with tools and multiple loops, it carries everything since the first task:
+
+```python
+from swarms import Agent
+
+default_agent = Agent(agent_name="Explainer", model_name="gpt-5.4-mini", max_loops=1, print_on=False)
+final_agent = Agent(
+    agent_name="Explainer", model_name="gpt-5.4-mini", max_loops=1, print_on=False,
+    output_type="final",  # only the newest reply
+)
+
+for agent in (default_agent, final_agent):
+    agent.run("In one sentence, what is a write-ahead log?")
+    second = agent.run("And in one sentence, what is a checkpoint?")
+    print(f"output_type={agent.output_type!r}:")
+    print(second)
+    print("---")
+```
+
+The default agent's second result contains the first answer, the second question and the second answer; the `"final"` agent's contains only the second answer. Seven structures and helpers in v16 recorded that raw return value as an agent's contribution, so their output grew with every step. In v17 `HeavySwarm`, `ReflexionAgent`, `IterativeReflectiveExpansion`, `handoff_task`, `ExpertPanelDiscussion`, `GKPAgent` and `SequentialWorkflow`'s drift detection record the answer. If you parsed transcripts out of any of them, `handoff_task` in particular, you now get the delegate's answer directly.
+
+Two related changes: `"str"`, `"string"` and `"all"` now return the whole conversation (they returned a view trimmed to 8,192 tokens and cut mid-word), and a `SwarmRouter` running `RoundRobin` returns the router's `output_type`, which defaults to `"dict"`. Pass `output_type="final"` for the old RoundRobin string.
+
+### Failed swarms raise, so `fallback_swarms` works
+
+`HeavySwarm`, `MixtureOfAgents`, `MajorityVoting`, `AuctionSwarm` and parallel steps in `AgentRearrange` used to catch a failed model call and return something that looked like an answer: an error string, a bid table, or an exception cast as a vote. `SwarmRouter(fallback_swarms=...)` only falls back when the swarm raises, so the fallback never fired. In v17 they raise.
+
+```python
+from swarms import Agent, SwarmRouter
+
+def make(name, model, prompt):
+    return Agent(agent_name=name, model_name=model, system_prompt=prompt, max_loops=1, print_on=False)
+
+agents = [
+    make("Bull", "deepseek/deepseek-v4-pro", "Argue the bull case in two sentences."),
+    make("Bear", "mistral/mistral-large-latest", "Argue the bear case in two sentences."),
+    # MixtureOfAgents uses the last agent as its aggregator
+    make("Judge", "anthropic/claude-opus-5-5", "Weigh both cases and give a one-line verdict."),
+]
+
+router = SwarmRouter(
+    name="Equity-Debate",
+    agents=agents,
+    swarm_type="MixtureOfAgents",
+    fallback_swarms=["SequentialWorkflow"],  # tried only if the primary swarm raises
+    output_type="final",
+)
+
+result = router.run("Should a long-term investor buy Nvidia at 40x earnings?")
+print("ran as:", router.active_swarm_type)
+for attempt in router.fallback_attempts:
+    print("failed first:", attempt["swarm_type"], "->", type(attempt["error"]).__name__)
+print(result)
+```
+
+The two debaters use DeepSeek and Mistral, so the two sides come from different model families, and the judge uses Claude Opus 5.5, the strongest model here, because its one call decides the output. If the judge's call fails inside `MixtureOfAgents`, the swarm now raises `AgentLLMError`, the router logs it in `fallback_attempts`, and the same agents run again as a `SequentialWorkflow`. With every swarm type failed, the router raises `SwarmRouterRunError`, chained to the last error. Without `fallback_swarms`, you get the original exception.
+
+What to change: anywhere you checked a swarm's return value for `"Error"` or `"Failed"`, wrap the call in `try`/`except` instead, or put the swarm under a router with `fallback_swarms`. Worker failures inside a `MixtureOfAgents` layer are still recorded as `"Error: ..."` answers on purpose, so one worker outage does not kill the mixture; only the aggregator raises. For fallback design in more depth, see [Fallbacks for Multi-Agent Systems](/blog/multi-agent-fallbacks-error-handling).
+
+### Nothing is written to disk unless you ask
+
+A v16 process that imported Swarms and ran a `SequentialWorkflow` left an `agent_workspace/` directory, an `error.txt`, log files and a `conversation_history.json` behind. v17 writes none of them by default:
+
+| What | v16 | v17 |
+|---|---|---|
+| `agent_workspace/` and `error.txt` | Created by `import swarms` | Created on the first real write |
+| Log files under `WORKSPACE_DIR/logs` | Always | Only with `SWARMS_LOG_FILES=True` |
+| `SequentialWorkflow`, `ConcurrentWorkflow`, `AgentRearrange` autosave | On | Off |
+| `SpreadSheetSwarm` CSV and JSON | On | Off |
+| Setting `WORKSPACE_DIR` after import | Ignored | Read on every call |
+
+If a downstream job reads those files, turn them back on explicitly:
+
+```python
+import os
+from pathlib import Path
+
+os.environ["WORKSPACE_DIR"] = str(Path("runs").resolve())  # read on every write in v17
+
+from swarms import Agent, SequentialWorkflow
+
+def make(name, model, prompt):
+    return Agent(agent_name=name, model_name=model, system_prompt=prompt, max_loops=1, print_on=False)
+
+workflow = SequentialWorkflow(
+    name="Release-Notes",
+    agents=[
+        make("Drafter", "deepseek/deepseek-v4-pro", "Draft release notes from the change list."),
+        make("Copyeditor", "anthropic/claude-haiku-5-5", "Tighten the draft. Keep every fact."),
+    ],
+    autosave=True,  # v17 default is False: nothing is written unless you ask
+    output_type="final",
+)
+workflow.run("Changes: faster import, channels, uncapped worker pools.")
+
+for path in sorted(Path("runs").rglob("*.json")):
+    print(path)
+```
+
+It prints one path, `runs/swarms/SequentialWorkflow/Release-Notes-<timestamp>/conversation_history.json`. In `SwarmRouter`, `autosave=False` now actually reaches the swarm it builds, and `AgentRearrange(autosave=True)` now actually saves.
+
+### Worker pools are uncapped
+
+`ConcurrentWorkflow` used to cap its pool at 32 agents and `GraphWorkflow` sized its pool to CPU cores, so a 100-node layer on a 12-core machine ran in waves of 11. v17 runs every agent, and every node in a layer, at once. That is much faster for network-bound model calls, and it can also hit provider rate limits that the old cap happened to protect you from. If you see 429s or connection-pool warnings, set a cap:
+
+```python
+from swarms import Agent, ConcurrentWorkflow
+
+tickers = ["AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "META", "TSLA", "AVGO", "JPM", "V", "XOM", "LLY"]
+
+screeners = [
+    Agent(
+        agent_name=f"Screener-{ticker}",
+        model_name="groq/openai/gpt-oss-120b",  # a cheap, fast model for many parallel workers
+        system_prompt=f"You screen {ticker}. Reply with one line: buy, hold or sell, and why.",
+        max_loops=1,
+        print_on=False,
+    )
+    for ticker in tickers
+]
+
+# v17 runs all 12 at once by default. Cap it if your provider rate-limits you.
+workflow = ConcurrentWorkflow(name="Screen", agents=screeners, max_workers=4, output_type="dict")
+results = workflow.run("Screen this stock for a 12-month horizon.")
+print(len(results), "messages recorded")
+```
+
+It prints `13 messages recorded`: the task plus one answer per screener. `MAX_CONCURRENT_AGENTS` is gone; `max_workers` replaces it. For graphs, the equivalent is `GraphWorkflow(max_parallel_nodes=16)`. [How to Run 100 AI Agents in Parallel in Python](/blog/run-ai-agents-in-parallel-python) covers when and how to cap them.
+
+### Telemetry records more, and off means off
+
+Telemetry is on by default, as in v16, but it records much more: every traced call's arguments, the full conversation of the structure that made it, token usage, and each model request and response. Dict keys that name credentials (ending in `key` or `token`, or containing `secret`, `password`, `authorization` or `oauth`, plus headers and `env`) are replaced with `<redacted>`. Message text and argument values are not scrubbed, so a secret pasted into a prompt is sent as written.
+
+To opt out:
+
+```bash
+export SWARMS_TELEMETRY_ON=False
+```
+
+With telemetry off, no OpenTelemetry module is imported and traced methods run undecorated. The switch is read when Swarms is imported, so set it in the environment or a `.env` file, before the import.
+
+### Smaller default changes
+
+- **`tool_call_summary` defaults to `False`.** v16 made a second model call after every tool call to summarize its output. Pass `tool_call_summary=True` to restore it.
+- **`stopping_token` defaults to `None`**, and when set it is now sent to the provider as a stop sequence.
+- **Model catalog warnings** (unknown model, `max_tokens` above the limit, no function calling) appear only with `SWARMS_STRICT_MODEL_CHECK=true`. Set it in development if you relied on them.
+- **Streaming callbacks receive tool-call and thinking text**, behind `[tool call]` and `[thinking]` headers. Return values are unchanged. Filter on the headers or on `token_info["type"]`.
+- **Model defaults moved to current models.** `ModelRouter` routes with `gpt-5.4`; `AgentJudge`, `ReflexionAgent` and `GKPAgent` default to `gpt-5.4` (they defaulted to the retired `openai/o1`); `ReasoningDuo`'s reasoning agent follows `model_name`; `top_p` and every built-in temperature are `None`, because current Claude models reject them.
+- **`SwarmRouter` with `MixtureOfAgents`** uses the last agent only as the aggregator (it also ran as a worker and judged its own answer), and `GroupChat`'s `max_loops` counts agent turns.
+- **Dependencies:** `asyncio` and `setuptools` are no longer installed. Install `setuptools` yourself if your own code needs `pkg_resources`.
+
+## Swarms v17 upgrade checklist
+
+1. **Pin** your current version, branch, and install `swarms==17.0.0` (or `swarms[fast]==17.0.0`).
+2. **Run the grep** from the top of this guide and fix every hit using the tables above.
+3. **Give every agent a system prompt.** Use `build_agent_system_prompt()` only if you need the old persona.
+4. **Set `output_type="final"`** wherever you treat `run()`'s return value as the agent's answer, and give nested swarms an output type that returns only their own output.
+5. **Replace error-string checks with exception handling.** Catch `AgentLLMError` around agents, and use `SwarmRouter(fallback_swarms=[...])` where you want a fallback structure.
+6. **Check `fallback_models`**: the list must start with the primary model.
+7. **Turn file output back on** where something downstream reads it: `autosave=True` and `SWARMS_LOG_FILES=True`.
+8. **Set `max_workers` or `max_parallel_nodes`** for large rosters on rate-limited providers.
+9. **Move stdio MCP servers** to `MCPConnection(command=..., args=[...], env={...})`.
+10. **Review telemetry**, and set `SWARMS_TELEMETRY_ON=False` if your prompts carry data that must not leave your network.
+11. **Check streaming consumers** for the new `[tool call]` and `[thinking]` text.
+12. **Install `swarms[fast]`** once everything passes. RouteHub and rustworkx are drop-in, and `SWARMS_LLM_BACKEND=litellm` switches model calls back to litellm.
+
+Upgrading also makes start-up much cheaper: `import swarms` went from 1.91 s to 0.28 s. If cold starts matter to you, [Why Your Python Agent Framework Takes 2 Seconds to Import](/blog/reduce-python-import-time-agent-framework) covers how to measure that in your own deployment.
+
+## FAQ
+
+### Will my v16 code break when I upgrade to Swarms v17?
+
+Some of it will raise (removed classes, `bulk_run`, a few constructor arguments like `idle_timeout` and `auto_generate_prompts`), and that part is easy to find. The riskier part keeps running: removed keyword arguments such as `multi_modal`, `sop` and `agents_config` are silently ignored, `Agent()` stops sending a default system prompt, and swarms that returned error strings now raise. Run the grep in this guide and read the behavior changes before you deploy.
+
+### What replaces `SwarmRearrange` in Swarms v17?
+
+`AgentRearrange`. Pass swarms in `agents=` next to ordinary agents and name them in `flow`, for example `flow="Planner -> Research-Team -> Editor"`. Give each nested swarm an `output_type` that returns only its own output.
+
+### Why did my agent's answers change after upgrading?
+
+Most likely the system prompt. v17 sends none unless you pass `system_prompt`, where v16 sent a generic built-in persona. Pass your own prompt, or `build_agent_system_prompt()` from `swarms.prompts.agent_system_prompts` to get the old one back.
+
+### How do I stop Swarms v17 from sending telemetry?
+
+Set `SWARMS_TELEMETRY_ON=False` in the environment or in a `.env` file before Swarms is imported. With it off, no OpenTelemetry module is loaded at all.
+
+### How do I roll back to Swarms v16?
+
+`pip install "swarms==16.0.4"`. Pin `swarms>=17,<18` once you have migrated, so the next major version is an explicit choice.
+
+## Get started
+
+```bash
+pip install -U swarms
+
+# RouteHub for model calls and rustworkx for graphs
+pip install -U "swarms[fast]"
+```
+
+- Full release notes, including every PR: [Swarms v17 "InterLink"](/blog/swarms-v17-interlink-release)
+- Start-up time and cold starts: [Why Your Python Agent Framework Takes 2 Seconds to Import](/blog/reduce-python-import-time-agent-framework)
+- Documentation: [docs.swarms.world](https://docs.swarms.world)
+- Source and issues: [github.com/kyegomez/swarms](https://github.com/kyegomez/swarms)

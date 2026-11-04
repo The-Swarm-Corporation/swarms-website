@@ -1,0 +1,359 @@
+---
+title: "通过电子邮件实现人机协同的 AI 智能体：在收件箱里回复你的智能体"
+description: "用电子邮件构建人机协同 AI 智能体：Swarms v17 把智能体的运行发到一个邮件线程，你可以用任何邮件客户端回复，支持 SmtpChannel 和 AgentMail。"
+date: "2026-11-04"
+author: "Kye Gomez"
+categories: ["指南", "工程"]
+readTime: "12 分钟阅读"
+featured: false
+image: "/human_in_the_loop_agents_email.png"
+---
+
+# 通过电子邮件实现人机协同的 AI 智能体：在收件箱里回复你的智能体
+
+大多数运行人机协同（human-in-the-loop）AI 智能体的团队，最后都会做出同一样东西：一个小网页，让某个人批准或修改智能体的产出。电子邮件是承载这个循环更简单的地方。每个人的电脑和手机上都已经有邮件客户端，邮件线程会按顺序保存历史，回复一封邮件也不需要登录、仪表盘或学习新工具。
+
+Swarms v17 "InterLink" 提供了两种频道，让一个邮件线程成为智能体读写的对话：`SmtpChannel` 通过 SMTP 和 IMAP 使用你自己的邮箱，`AgentMailChannel` 通过 REST API 使用 [AgentMail](https://agentmail.to) 收件箱。本文用这两种频道搭建一个审阅和审批工作流。不同模型服务商上的智能体起草并审阅一份内容，然后发邮件给你。你在 Gmail 或 Outlook 里回复。下一次运行读取你的回复并完成工作。下面每个 Python 文件在发布前都在 Swarms 17.0.0 上运行过；测试时邮件服务器被替换成了本地替身，详见文末。
+
+## 对 AI 智能体来说，人机协同是什么意思
+
+人机协同的智能体系统，是指由一个人在预先设定的节点上审阅、修改或批准智能体的产出，智能体在下一步使用这个人的输入。这个人是智能体所读对话的一部分，他的决定会改变接下来发生的事。
+
+三种模式覆盖了大多数情况：
+
+- **审批关口。** 智能体准备好某样东西（发布说明、客户回复、退款、pull request 描述），然后停下来，直到有人说可以。
+- **修改。** 这个人回复需要的改动，由一个智能体来执行。
+- **提问。** 智能体询问一个它查不到的事实，答案成为本次运行余下部分的上下文。
+
+三者需要同样的基础设施：把当前状态发给这个人的方式，让他回答的方式，以及让下一次智能体运行看到这个回答的方式。
+
+## 为什么电子邮件适合人机协同的智能体
+
+- **审阅者不需要安装或托管任何东西。** 审批人在任何设备上用他已经有的邮件客户端即可。
+- **邮件线程本身就是一段对话。** 邮件客户端按 `In-Reply-To` 和 `References` 头对回复分组，这正是智能体需要的有序历史。
+- **它是异步的。** 一个人可以十分钟后回复，也可以两天后回复。智能体等待时不需要保持进程打开；下一次运行会取到回复。
+- **天然留有记录。** 完整的往来，包括谁在什么时候批准了什么，都留在邮箱里。
+
+代价是延迟。电子邮件适合以分钟或小时计的决策，不适合需要在一秒内得到答案的循环。
+
+## Swarms 如何把邮件线程放进智能体循环
+
+在 Swarms v17 中，任何 `Agent`（以及九种结构，包括 `SequentialWorkflow`、`ConcurrentWorkflow` 和 `HierarchicalSwarm`）都接受 `channel=`。运行之前，智能体把频道内容读作先前的轮次。它只发布一次任务，所以共享频道的智能体只看到一份。运行成功后，它以自己的 `agent_name` 发布最终答案。运行失败则什么都不发布。
+
+使用邮件频道时，每次发布都是同一线程里的一封邮件。一个人的回复会被读作来自他地址的消息，下面引用的历史会被去掉。所以循环是：
+
+1. 智能体运行并发布到线程。每次发布你都会收到一封邮件。
+2. 你在邮件客户端里回复。
+3. 下一次智能体运行读取线程（包括你的回复）并据此行动。
+
+| 频道 | 线程保存在哪里 | 你需要 |
+|---|---|---|
+| `SmtpChannel` | 你已有的邮箱，通过 SMTP（发送）和 IMAP（读取） | SMTP 和 IMAP 主机以及密码；只用标准库 |
+| `AgentMailChannel` | 一个 AgentMail 收件箱，通过它的 REST API | 一个 AgentMail 收件箱和 `AGENTMAIL_API_KEY` |
+
+## 用你自己的邮箱配置 SmtpChannel
+
+`SmtpChannel` 把每次发布发送给 `to` 中的人，同时发给它自己的 `from_address`。之后它通过 IMAP 读取 `from_address` 的邮箱来重建线程。给智能体用一个专门的邮箱，例如 `release-agents@yourco.com`，这样它的线程搜索只会看到智能体相关的邮件。
+
+### Gmail 应用专用密码和凭据
+
+密码来自 `password` 参数或 `SMTP_PASSWORD` 环境变量；两者都没有时，构造函数会抛出 `ValueError`。用户名默认取 `SMTP_USERNAME`，其次是 `from_address`。如果用 Gmail，先为智能体的账号开启两步验证，创建一个应用专用密码，然后使用它：
+
+```bash
+export SMTP_PASSWORD="abcd efgh ijkl mnop"   # a Gmail app password (the normal account password is refused)
+```
+
+Microsoft 365 不受支持，因为它已经不再接受通过 IMAP 使用密码登录。这个频道需要一个仍然在 SMTP 和 IMAP 上都接受密码（普通密码或应用专用密码）的服务器。
+
+### SmtpChannel 的全部参数
+
+| 参数 | 默认值 | 作用 |
+|---|---|---|
+| `from_address` | 必填 | 智能体发信和读信所用的邮箱 |
+| `to` | 必填 | 一个地址或地址列表；每个人都会收到每次发布并可以回复 |
+| `smtp_host` | 必填 | SMTP 服务器，例如 `smtp.gmail.com` |
+| `imap_host` | 必填 | IMAP 服务器，例如 `imap.gmail.com` |
+| `username` | `SMTP_USERNAME`，其次 `from_address` | 两个服务器共用的登录名 |
+| `password` | `SMTP_PASSWORD` | 缺失时抛出 `ValueError` |
+| `smtp_port` | `587` | `465` 使用隐式 TLS；其他端口使用 STARTTLS |
+| `imap_port` | `993` | 基于 TLS 的 IMAP |
+| `mailbox` | `"INBOX"` | 存放线程的 IMAP 文件夹；Gmail 中如果发布的邮件没有进收件箱，使用 `"[Gmail]/All Mail"` |
+| `subject` | `"Swarms conversation"` | 线程的主题 |
+| `thread_id` | `None` | 线程第一封邮件的 `Message-ID`，用于加入已有线程 |
+| `timeout` | `30.0` | 每个服务器的等待秒数 |
+
+源码中有两个细节后面会用到。每次发布都带一个 `X-Swarms-Agent` 头标明说话者，正文以原始字节的 base64 发送，所以读回来的内容与写入时完全一致。另外，`thread_id` 必须形如 `<id@domain>`，否则抛出 `ValueError`，因为 IMAP 头搜索按子串匹配，而 `clear()` 会删除所有匹配项。
+
+## 第 1 步：智能体起草并审阅，然后发邮件给你
+
+工作流是这样的：一个起草者根据变更记录写发布说明，一个审阅者检查草稿并请你批准，两次发布都会进入你的收件箱。模型按任务挑选。`gpt-5.4-mini` 便宜又快，适合写初稿。`anthropic/claude-sonnet-5-5` 负责仔细审读。每个服务商都需要在环境里设置 API key（`OPENAI_API_KEY`、`ANTHROPIC_API_KEY`，后面的 AgentMail 示例还需要 `GEMINI_API_KEY`）。
+
+保存为 `request_review.py`：
+
+```python
+from pathlib import Path
+
+from swarms import Agent, SequentialWorkflow, SmtpChannel
+
+CHANGELOG = """
+- Added CSV export to the reports page
+- Fixed a crash when a project name contained an emoji
+- Removed the legacy v1 API (announced in March)
+"""
+
+channel = SmtpChannel(
+    from_address="release-agents@gmail.com",
+    to="you@yourco.com",
+    smtp_host="smtp.gmail.com",
+    imap_host="imap.gmail.com",
+    mailbox="[Gmail]/All Mail",
+    subject="Release notes 4.2: review needed",
+)
+
+drafter = Agent(
+    agent_name="Drafter",
+    system_prompt="You write short, plain customer-facing release notes from a changelog.",
+    model_name="gpt-5.4-mini",
+    max_loops=1,
+    print_on=False,
+)
+reviewer = Agent(
+    agent_name="Reviewer",
+    system_prompt=(
+        "You check the draft in the conversation against the changelog. "
+        "List anything wrong, missing or risky, then ask the approver to reply "
+        "APPROVE or describe the changes they want."
+    ),
+    model_name="anthropic/claude-sonnet-5-5",
+    max_loops=1,
+    print_on=False,
+)
+
+workflow = SequentialWorkflow(agents=[drafter, reviewer], max_loops=1, channel=channel)
+workflow.run(f"Write release notes for version 4.2 from this changelog:\n{CHANGELOG}")
+
+# The thread's first Message-ID: later runs pass it as thread_id to join the same thread.
+Path("review_thread.txt").write_text(channel.thread_id)
+print(f"Sent {len(channel.messages())} emails in thread {channel.thread_id}")
+```
+
+它会打印类似 `Sent 3 emails in thread <swarms-9dae...@gmail.com>` 的内容。三封邮件分别是任务、起草者的说明和审阅者的意见，主题都是 `Release notes 4.2: review needed`。第一封开启线程，它的 `Message-ID` 成为 `channel.thread_id`；之后的每次发布都会设置 `In-Reply-To` 和 `References`，所以你的邮件客户端会把它们显示为一段对话。
+
+频道归工作流所有，所以两个智能体不会单独发布，每条消息只发出一次。把 `thread_id` 保存到文件，是为了让几小时后另一个进程能加入同一个线程。
+
+## 第 2 步：在邮件客户端里回复
+
+打开线程，像回复同事一样回复：
+
+```text
+APPROVE, but say the v1 API removal happens on December 1, and drop the emoji line.
+
+On Wed, Nov 4, 2026 at 7:25 PM <release-agents@gmail.com> wrote:
+> ...
+```
+
+`SmtpChannel` 能找到你的回复，是因为它引用了线程的第一封邮件。它把这封邮件读作来自你地址的消息，并在智能体看到之前去掉引用的历史（`On ... wrote:` 段落、`From:` / `Sent:` 头部段落、`Original Message` 分隔线，以及末尾的 `>` 行）。上面的文本读回来是：
+
+```text
+APPROVE, but say the v1 API removal happens on December 1, and drop the emoji line.
+```
+
+去引用只作用于不带 `X-Swarms-Agent` 头的邮件，所以智能体自己答案里的 `>` 引用块会被保留。
+
+## 第 3 步：下一次智能体运行读取你的回复
+
+保存为 `check_replies.py`。它用保存的 `thread_id` 加入线程，查找审批人尚未处理的回复，只有找到时才运行一个使用 `anthropic/claude-opus-5-5` 的编辑智能体。编辑者每个决定只运行一次，它的产出会发给客户，所以给它最强的模型。
+
+```python
+from email.utils import parseaddr
+from pathlib import Path
+
+from swarms import Agent, SmtpChannel
+
+APPROVER = "you@yourco.com"
+
+
+def main():
+    channel = SmtpChannel(
+        from_address="release-agents@gmail.com",
+        to=APPROVER,
+        smtp_host="smtp.gmail.com",
+        imap_host="imap.gmail.com",
+        mailbox="[Gmail]/All Mail",
+        subject="Release notes 4.2: review needed",
+        thread_id=Path("review_thread.txt").read_text().strip(),
+    )
+
+    thread = channel.messages()
+    replies = [
+        i for i, m in enumerate(thread)
+        if parseaddr(m["agent_name"])[1].lower() == APPROVER
+    ]
+    if not replies:
+        print("No reply from the approver yet.")
+        return
+    last_reply = replies[-1]
+    if any(m["agent_name"] == "Editor" for m in thread[last_reply:]):
+        print("The latest reply is already handled.")
+        return
+
+    print(f"Approver wrote: {thread[last_reply]['content']!r}")
+
+    editor = Agent(
+        agent_name="Editor",
+        system_prompt=(
+            "The conversation holds a draft, a review, and the approver's email reply. "
+            "Apply exactly what the approver asked for and output the final release notes."
+        ),
+        model_name="anthropic/claude-opus-5-5",
+        max_loops=1,
+        output_type="final",
+        print_on=False,
+        channel=channel,
+    )
+    print(editor.run("Produce the final release notes, following the approver's latest reply."))
+
+
+main()
+```
+
+在你回复之前运行，它会打印 `No reply from the approver yet.`。回复之后运行，它会打印你的回复，然后是最终的发布说明，编辑者的任务和答案会作为同一线程里的邮件发给你。再运行一次，它会打印 `The latest reply is already handled.`。如果你再回复一次（"再短一点"），下一次运行会看到一条更新的审批人消息，之后没有编辑者的回答，于是再次运行编辑者。这就是由电子邮件驱动的完整人机协同循环。
+
+编辑者的模型依次收到：系统提示词、任务、起草者的说明、审阅者的意见、你的回复，以及它自己的任务。之前的消息作为先前轮次到达模型，不附带说话者的名字，这就是系统提示词要说明对话中有什么的原因。
+
+`parseaddr` 在这里很重要。回复的说话者是它的 `From` 地址，取决于频道，可能是 `you@yourco.com`，也可能是 `Kye <you@yourco.com>`；比较解析后的地址可以同时处理两种情况。
+
+要定时检查回复，可以用 cron 运行它（cron 任务里要设置同样的环境变量）：
+
+```bash
+*/10 * * * * cd /srv/release-review && python check_replies.py >> review.log 2>&1
+```
+
+## 在 AgentMail 上运行同样的工作流
+
+如果你不想运行或配置邮箱，`AgentMailChannel` 会把线程保存在一个 [AgentMail](https://agentmail.to) 收件箱里。每次发布都是从该收件箱发给 `to` 中各人的一封邮件；第一封开启线程，之后的都在线程中回复。
+
+| 参数 | 默认值 | 作用 |
+|---|---|---|
+| `inbox_id` | 必填 | 智能体发信所用的收件箱，例如 `release-review@agentmail.to` |
+| `to` | 必填 | 一个地址或地址列表；每个人都会收到每次发布并可以回复 |
+| `subject` | `"Swarms conversation"` | 第一封邮件的主题 |
+| `thread_id` | `None` | 要加入的已有 AgentMail 线程 |
+| `api_key` | `AGENTMAIL_API_KEY` | 缺失时抛出 `ValueError` |
+| `base_url` | `"https://api.agentmail.to"` | 欧盟主机使用 `https://api.agentmail.eu` |
+| `timeout` | `30.0` | 每次调用的等待秒数 |
+
+设置 `AGENTMAIL_API_KEY`，在 AgentMail 中创建收件箱，请求脚本只需要换一个频道。这个版本还把起草者换成了 `gemini/gemini-2.5-pro`，以说明每个智能体都可以用不同的服务商：
+
+```python
+from pathlib import Path
+
+from swarms import Agent, AgentMailChannel, SequentialWorkflow
+
+CHANGELOG = """
+- Added CSV export to the reports page
+- Fixed a crash when a project name contained an emoji
+- Removed the legacy v1 API (announced in March)
+"""
+
+channel = AgentMailChannel(
+    inbox_id="release-review@agentmail.to",
+    to="you@yourco.com",
+    subject="Release notes 4.2: review needed",
+)
+
+drafter = Agent(
+    agent_name="Drafter",
+    system_prompt="You write short, plain customer-facing release notes from a changelog.",
+    model_name="gemini/gemini-2.5-pro",
+    max_loops=1,
+    print_on=False,
+)
+reviewer = Agent(
+    agent_name="Reviewer",
+    system_prompt=(
+        "You check the draft in the conversation against the changelog. "
+        "List anything wrong, missing or risky, then ask the approver to reply "
+        "APPROVE or describe the changes they want."
+    ),
+    model_name="anthropic/claude-sonnet-5-5",
+    max_loops=1,
+    print_on=False,
+)
+
+workflow = SequentialWorkflow(agents=[drafter, reviewer], max_loops=1, channel=channel)
+workflow.run(f"Write release notes for version 4.2 from this changelog:\n{CHANGELOG}")
+
+Path("review_thread.txt").write_text(channel.thread_id)
+print(f"Sent {len(channel.messages())} emails in AgentMail thread {channel.thread_id}")
+channel.close()
+```
+
+回复检查脚本 `check_replies.py` 保持不变，只把 `SmtpChannel(...)` 构造（以及它的导入）换成下面这个：
+
+```python
+from pathlib import Path
+
+from swarms import AgentMailChannel
+
+channel = AgentMailChannel(
+    inbox_id="release-review@agentmail.to",
+    to="you@yourco.com",
+    subject="Release notes 4.2: review needed",
+    thread_id=Path("review_thread.txt").read_text().strip(),
+)
+```
+
+这里的 `thread_id` 是 AgentMail 自己的线程 id，频道在第一次发布后设置它。一个加入已有线程的频道第一次发布时，会回复线程中最新的一封邮件，通常就是你的回复。
+
+在底层，第一次发布是 `POST /v0/inboxes/{inbox_id}/messages/send`，之后的发布是 `POST .../messages/{message_id}/reply`，`messages()` 读取 `GET .../threads/{thread_id}`（跨页跟随 `next_page_token`），`clear()` 是 `DELETE .../threads/{thread_id}`。任何非 2xx 响应都会抛出 `httpx.HTTPStatusError`。
+
+[v17 更新日志](/zh/blog/swarms-v17-interlink-release)记录了对接真实 API 时做出的改动。AgentMail 会在每封邮件正文后加上自己的页脚和引用的线程，而它提取的文本保留了免费套餐的页脚，并且会在 `Sent from my iPhone` 这样的行处截断内容。所以频道会发送两个头：`X-Swarms-Agent` 和 `X-Swarms-Length`，读回智能体的发布时恰好取前 `X-Swarms-Length` 个字符。人的回复使用 AgentMail 的 `extracted_text`，不含引用的历史。另外，只有标记为 `sent` 的邮件上的智能体头才会被采信，所以一封带有伪造 `X-Swarms-Agent: Editor` 头的回复，仍然会被读作真正发件人的消息。
+
+## 邮件人机协同智能体的生产建议
+
+**持久保存线程 id。** 新进程只能通过 `thread_id` 找到线程。第一次发布返回后，立刻把它存起来（文件、数据库行，或者这次审阅所属的工单）。
+
+**投递延迟。** 通过同一个 `SmtpChannel` 实例发布的内容对该实例立即可见，因为它按 `Message-ID` 合并自己的发布。其他实例或进程只有在邮箱收到副本之后才能看到这次发布，在此之前它可能漏掉一个回答，或者再发一次任务。像上面那样每隔几分钟用 cron 检查回复，投递时间绰绰有余。
+
+**谁能在线程里发言。** 任何带着线程引用回复的人，都会成为智能体读到的一个轮次。把审批决定绑定到某个地址上，就像 `check_replies.py` 用 `APPROVER` 做的那样。使用 `SmtpChannel` 时，任何带 `X-Swarms-Agent` 头的邮件，其说话者都取自这个头，所以请使用只有智能体发信、外人不会写信进来的邮箱；`AgentMailChannel` 只在自己发出的邮件上信任这个头。
+
+**重新开始。** `clear()` 从邮箱中删除线程，下一次发布会开启新线程。在 `SmtpChannel` 上，它需要服务器支持 IMAP 的 `UIDPLUS` 扩展（不支持时会抛出异常），因为普通的 `EXPUNGE` 也会删掉其他已经标记为删除的无关邮件。在 `AgentMailChannel` 上，已经投递的邮件会留在收件人的邮箱里。
+
+**先用你的邮件服务器测试。** v17 发布说明提到，`SmtpChannel` 的线程搜索还没有在真实的 Gmail、Microsoft 365 或 Dovecot 服务器上运行过，`AgentMailChannel` 也还没有在付费套餐或欧盟主机上运行过。在审批依赖它之前，先用你自己的配置发一个测试线程。
+
+**多个收件人。** `to` 接受列表。列表里的每个人都会收到每次发布并可以回复；在代码中决定谁的回复算数，就像上面那样。
+
+**其他机器上的智能体。** 邮件线程就是共享状态，所以请求脚本和回复检查可以在不同主机上运行。如果智能体之间需要比邮件更快地共享对话，请看[如何让多台机器上的 AI 智能体共享同一段对话](/zh/blog/distributed-multi-agent-system-python)，它使用 `HttpChannel` 和一个你自己运行的小服务器。
+
+## 常见问题
+
+### 什么是人机协同的 AI 智能体？
+
+它是一种智能体工作流：由一个人在设定的节点上审阅、修改或批准智能体的产出，智能体在下一步使用这个输入。典型用途包括内容发给客户之前的审批关口、对草稿的修改，以及智能体无法独自回答的问题。
+
+### 怎样让 AI 智能体给我发邮件并读取我的回复？
+
+在 Swarms 中，把 `channel=SmtpChannel(...)`（你自己的邮箱）或 `channel=AgentMailChannel(...)`（一个 AgentMail 收件箱）传给一个智能体或一个工作流。每次发布都会成为同一线程里的一封邮件。你的回复会被读作来自你地址的消息，引用的历史会被去掉，下一次运行会把它看作先前的轮次。
+
+### SmtpChannel 能用 Gmail 吗？
+
+可以，需要使用应用专用密码：使用 `smtp.gmail.com` 和 `imap.gmail.com`，把 `SMTP_PASSWORD` 设为应用专用密码，如果发布的邮件没有进收件箱，就设置 `mailbox="[Gmail]/All Mail"`。Microsoft 365 不受支持，因为它已经不再接受通过 IMAP 使用密码登录。
+
+### SmtpChannel 和 AgentMailChannel 该选哪个？
+
+如果你已经有邮箱，并希望一切都在自己的邮件服务器上，用 `SmtpChannel`；它只用 Python 标准库。如果你不想配置 SMTP 和 IMAP，用 `AgentMailChannel`；你需要一个 AgentMail 收件箱和 `AGENTMAIL_API_KEY`。
+
+### 我做决定的时候，智能体要一直等着吗？
+
+不需要有进程一直开着。智能体发布后就退出。之后的一次运行（来自 cron 或任何调度器）用 `thread_id` 加入线程，读取你的回复并继续。
+
+## 开始使用
+
+```bash
+pip install -U swarms
+```
+
+设置 `SMTP_PASSWORD`（或 `AGENTMAIL_API_KEY`）和你的模型服务商 key，运行 `request_review.py`，回复邮件，然后运行 `check_replies.py`。[Swarms v17 InterLink 更新日志](/zh/blog/swarms-v17-interlink-release)介绍了全部六种频道和这次发布的其他内容，[多智能体协作模式](/zh/blog/multi-agent-collaboration-patterns)提供了更多围绕审批步骤安排智能体的方式。
+
+[文档](https://docs.swarms.world) · [GitHub](https://github.com/kyegomez/swarms) · [频道示例](https://github.com/kyegomez/swarms/tree/master/examples/channel_examples)

@@ -1,0 +1,389 @@
+---
+title: "Fallbacks for Multi-Agent Systems: Handling LLM Failures Without Silent Errors"
+description: "LLM agent error handling with fallbacks: failed swarms now raise, so SwarmRouter fallback_swarms fires. Design retries and fallback models for production agents."
+date: "2026-11-04"
+author: "Kye Gomez"
+categories: ["Guides", "Engineering"]
+readTime: "11 min read"
+featured: false
+image: "/multi_agent_fallbacks_error_handling.png"
+---
+
+# Fallbacks for Multi-Agent Systems: Handling LLM Failures Without Silent Errors
+
+Every production agent eventually hits a 429, a timeout or a provider outage. Good LLM agent error handling decides what happens next: retry the same model, fall back to another model or provider, fall back to a different multi-agent structure, or stop and tell the caller. A fallback can only do its job if the failure is visible, though. A swarm that catches an exception and returns the error text as its "answer" gives every fallback above it nothing to react to.
+
+This guide covers the failures you should plan for, why silent error strings are dangerous, and how fallbacks work in [Swarms v17 "InterLink"](/blog/swarms-v17-interlink-release), where failed structures now raise so `SwarmRouter(fallback_swarms=...)` actually kicks in. You will set up retries and cross-provider fallback models on a single agent, a swarm-level fallback chain, a voting swarm that survives one provider going down, and a validation loop for bad output. Every code block was run against Swarms 17.0.0, with the provider calls simulated so we could make specific models fail on demand.
+
+## The LLM failures an agent system has to handle
+
+Model calls fail in a handful of distinct ways, and they call for different responses:
+
+- **Rate limits (HTTP 429).** The provider is up but your account is over its request or token budget. Retrying with backoff often works; at sustained load, a second provider works better.
+- **Timeouts.** The request hangs or a long generation runs past your deadline. Retrying the same model may hang again, so a cap on time per request plus a fallback model is the usual fix.
+- **Provider outages (HTTP 5xx).** The endpoint is down for everyone. Retries against the same provider waste time; a model on a different provider is what saves the run.
+- **Bad output.** The call succeeds and returns text, but the text is wrong for your program: invalid JSON, missing fields, a refusal. No exception is raised, so no automatic fallback fires unless you check.
+- **Failures inside a structure.** One worker in a fan-out, one voter, or one phase of a pipeline fails while the others succeed. The structure has to decide whether the whole run failed.
+
+The first three surface as exceptions from the provider client. The last two are where silent errors come from.
+
+## Why silent error strings break fallbacks
+
+A fallback is a reaction to an exception. If a component catches the exception and returns a string that looks like a result, the caller cannot tell success from failure, and every layer above keeps going on bad data.
+
+Swarms v16 already made a failed LLM call raise `AgentLLMError`. InterLink followed that error up through the structures and found several that caught it and returned something answer-shaped. Since `SwarmRouter(fallback_swarms=...)` only falls back when the swarm raises, the fallback never fired in any of these cases:
+
+| Structure | What it did in v16 | v17 |
+|---|---|---|
+| `HeavySwarm` | Returned `"Failed to generate questions in loop 1: ..."` as the answer and autosaved the run as `"completed"` | Raises; the router falls back ([#2768](https://github.com/kyegomez/swarms/pull/2768)) |
+| `MixtureOfAgents` | An aggregator failure returned `"Error: ..."` as the answer | Raises ([#3063](https://github.com/kyegomez/swarms/pull/3063)) |
+| `MajorityVoting` | Cast a failed voter's exception as its vote and handed it to the consensus agent | Raises; the consensus agent never runs ([#3095](https://github.com/kyegomez/swarms/pull/3095)) |
+| `AuctionSwarm` | With every winner failed, returned the bid table, `"Bids: A=0.9000, B=0.4000"` | Raises, chained to the top winner's error ([#2493](https://github.com/kyegomez/swarms/pull/2493)) |
+| `AgentRearrange` | Wrote a failing parallel agent's exception into the conversation as its answer, and the next step built on it | Raises, as a sequential step already did ([#2456](https://github.com/kyegomez/swarms/pull/2456)) |
+
+The `MajorityVoting` case shows the damage clearly. An exception message became a vote, the consensus agent weighed it next to real answers, and the caller received a confident consensus built partly on an error string. Nothing in the logs said the run had degraded.
+
+Two structures still record worker failures as data, on purpose, and you should know which: a failed worker inside a `MixtureOfAgents` layer becomes an `"Error: ..."` answer so that one worker outage does not kill the mixture, and `ConcurrentWorkflow` defaults to `on_error="store"`, which records a failed agent under the role `"<agent name> (failed)"` and lets the others finish. Both are covered below.
+
+## Install
+
+```bash
+pip install -U swarms
+```
+
+The examples mix providers, and each provider needs its key in the environment: `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GEMINI_API_KEY`, `DEEPSEEK_API_KEY`, `MISTRAL_API_KEY` and `GROQ_API_KEY`. You only need keys for the providers you actually use.
+
+## Retries and fallback models on one agent
+
+The first line of defense is the agent itself. In v17 an `Agent` takes a `fallback_models` list: the first entry is the primary model, and `run()` walks down the list when a model fails. `retry_attempts` sets how many times the client retries each model before the agent moves on.
+
+```python
+from swarms import Agent
+
+analyst = Agent(
+    agent_name="Analyst",
+    system_prompt="You are a financial analyst. Answer in three short bullet points.",
+    fallback_models=[
+        "anthropic/claude-sonnet-5-5",  # primary
+        "gpt-5.4",                      # different provider, similar strength
+        "gemini/gemini-2.5-pro",        # third provider, last resort
+    ],
+    retry_attempts=2,  # litellm retries each model twice before the agent moves on
+    max_loops=1,
+    output_type="final",
+    print_on=False,
+)
+
+answer = analyst.run("What are the main risks in a 60/40 portfolio right now?")
+print("served by:", analyst.model_name)
+print(answer)
+```
+
+`output_type="final"` makes `run()` return only the reply (the `Agent` default returns the conversation). We ran this with every Anthropic call returning a 429. The agent logged one warning and answered from the second model:
+
+```
+WARNING | swarms.structs.agent:run - Agent 'Analyst': 'anthropic/claude-sonnet-5-5' failed, trying 'gpt-5.4': Agent 'Analyst': model 'anthropic/claude-sonnet-5-5' failed: litellm.RateLimitError: ...
+served by: gpt-5.4
+```
+
+After a run, `agent.model_name` names the model that served it, which is useful for logging and cost tracking. The next `run()` starts from the primary model again, so one bad minute at Anthropic does not leave the agent on the fallback for good.
+
+### How the flat model loop counts calls
+
+Before v17, a failed call was retried in three stacked layers: litellm's own `num_retries`, an attempt loop in `Agent._run`, and a recursive fallback chain in `LLMManager`. With the default `retry_attempts=3`, one dead endpoint could cost up to 12 calls per model before the agent gave up ([#2811](https://github.com/kyegomez/swarms/pull/2811)).
+
+Now there is one flat loop with clear rules:
+
+- The client owns retries. `retry_attempts` travels with every request as litellm's `num_retries`, and rate limits back off exponentially. With the default of 3, that is at most 4 calls per model.
+- `Agent.run` walks `fallback_models` once, in order. With three models and the default, the worst case is 12 calls for the whole run, where v16 could spend 12 on each model.
+- Only an `AgentLLMError` (a failed model call) moves the loop to the next model. Any other error, such as a bug in one of your tools, raises at once and is never re-run on the next model.
+- A failed attempt's turns are dropped from the agent's history, so the fallback model starts clean, and the caller's `messages` reach the fallback model too ([#2806](https://github.com/kyegomez/swarms/pull/2806)).
+- The older `fallback_model_name="..."` still works; it is folded into `fallback_models` at construction.
+
+### Timeouts and the error you get when every model fails
+
+When the last model in the list fails, `run()` raises `AgentLLMError`, chained to the provider's own exception. To cap how long a single request may take, pass litellm's `timeout` through `llm_args`, which the agent forwards to every completion call:
+
+```python
+from swarms import Agent, AgentLLMError
+
+summarizer = Agent(
+    agent_name="Summarizer",
+    system_prompt="Summarize the text in two sentences.",
+    fallback_models=["gpt-5.4-mini", "anthropic/claude-haiku-5-5"],
+    retry_attempts=1,
+    llm_args={"timeout": 20},  # seconds per request, passed through to litellm
+    max_loops=1,
+    output_type="final",
+    print_on=False,
+)
+
+try:
+    print(summarizer.run("Summarize this incident report: ..."))
+except AgentLLMError as error:
+    # Raised only after the last model in fallback_models has failed.
+    print("every model failed:", error)
+    print("provider error:", type(error.__cause__).__name__)
+```
+
+Here both models are small and cheap, which suits a high-volume summarizer. In our test the OpenAI request timed out and Anthropic answered with a 500, so the run ended in the `except` branch:
+
+```
+every model failed: Agent 'Summarizer': model 'anthropic/claude-haiku-5-5' failed: litellm.InternalServerError: ...
+provider error: InternalServerError
+```
+
+A timeout is reported immediately with the original error attached. Before v17 a network failure first waited 3 s probing `8.8.8.8:53` and then reported "No internet connection", which hid the real cause ([#2729](https://github.com/kyegomez/swarms/pull/2729)).
+
+## Cross-provider fallback: how to order the chain
+
+A fallback model on the same provider protects you from a model-specific problem. It does nothing during a provider outage or an account-wide rate limit, because both models share the same endpoint and the same quota. For real coverage, put the next entry on a different provider:
+
+- **Match capability first.** The fallback has to be able to do the job. `anthropic/claude-sonnet-5-5` falls back well to `gpt-5.4` or `gemini/gemini-2.5-pro`; falling back from a frontier model to a small one may produce output that fails your checks downstream.
+- **Then spread providers.** Three entries on three providers survive any single-provider incident.
+- **Keep prompts portable.** The same system prompt goes to every model in the list. Avoid provider-specific features in prompts an agent might send to a fallback.
+- **Watch sampling parameters.** Current Claude models reject `temperature` and `top_p`, so leave them unset on agents whose list includes a Claude model.
+
+## Swarm-level fallback with SwarmRouter fallback_swarms
+
+Agent-level fallbacks handle a failed model call. Sometimes the whole structure fails: a `HeavySwarm` whose internal models are all on one provider, or an architecture that cannot run with the inputs it got. `SwarmRouter` takes `fallback_swarms`, a list of swarm types to try in order when the primary raises. Each fallback is built from the same agents and configuration, and the first one to complete wins.
+
+```python
+from swarms import Agent, SwarmRouter
+
+# Your own agents, spread over three providers that are not Anthropic.
+analysts = [
+    Agent(
+        agent_name="Macro-Analyst",
+        system_prompt="Assess the macroeconomic picture in five bullet points.",
+        model_name="gpt-5.4-mini",
+        max_loops=1,
+        print_on=False,
+    ),
+    Agent(
+        agent_name="Sector-Analyst",
+        system_prompt="Assess the sector and company-level picture in five bullet points.",
+        model_name="gemini/gemini-2.5-pro",
+        max_loops=1,
+        print_on=False,
+    ),
+    Agent(
+        agent_name="Risk-Analyst",
+        system_prompt="List the five largest downside risks.",
+        model_name="deepseek/deepseek-v4-pro",
+        max_loops=1,
+        print_on=False,
+    ),
+]
+
+router = SwarmRouter(
+    name="market-brief",
+    agents=analysts,
+    swarm_type="HeavySwarm",  # primary: HeavySwarm's built-in question agent and workers
+    heavy_swarm_question_agent_model_name="anthropic/claude-opus-5-5",
+    heavy_swarm_worker_model_name="anthropic/claude-sonnet-5-5",
+    heavy_swarm_swarm_show_output=False,
+    fallback_swarms=["ConcurrentWorkflow"],  # your agents, on other providers
+    output_type="str-all-except-first",  # every analyst's answer
+)
+
+result = router.run("Write a one-page brief on the US semiconductor sector.")
+
+print("served by:", router.active_swarm_type)
+for attempt in router.fallback_attempts:
+    print("failed:", attempt["swarm_type"], "->", type(attempt["error"]).__name__)
+print(result)
+```
+
+The primary is a `HeavySwarm` with Claude Opus planning the questions and Claude Sonnet doing the research, the stronger option when Anthropic is healthy. The fallback is a plain `ConcurrentWorkflow` over your three analysts on OpenAI, Google and DeepSeek. With Anthropic returning 429s, HeavySwarm's question agent failed on its first call, the router logged `SwarmRouter swarm 'HeavySwarm' failed: litellm.RateLimitError: ... Falling back to 'ConcurrentWorkflow'.`, and the run printed:
+
+```
+served by: ConcurrentWorkflow
+failed: HeavySwarm -> RateLimitError
+```
+
+followed by the three analysts' answers. In v16 this same setup returned `"Failed to generate questions in loop 1: ..."` as the brief and the fallback never ran.
+
+Two attributes tell you what happened: `router.active_swarm_type` is the swarm type that served the most recent run, and `router.fallback_attempts` holds one `{"swarm_type", "error"}` entry per swarm that failed. With `autosave=True`, the run's metadata records both. If you leave `fallback_swarms` unset, the primary swarm's error propagates unchanged.
+
+### Check the fallback's own failures
+
+`ConcurrentWorkflow` keeps going when one of its agents fails: by default (`on_error="store"`) it records the error as that agent's answer under the role `"<agent name> (failed)"`. The router sees a completed run, so check the conversation if a partial result matters to you. This continues the example above:
+
+```python
+# ConcurrentWorkflow records a failed agent as an "Error: ..." row instead of raising,
+# so check the fallback's conversation for those rows.
+failed = [
+    message["role"]
+    for message in router.conversation.conversation_history
+    if message["role"].endswith("(failed)")
+]
+print("failed inside the fallback:", failed)
+```
+
+With Gemini also returning 500s in our test, this printed `failed inside the fallback: ['Sector-Analyst (failed)']`. When you use `ConcurrentWorkflow` directly you can pass `on_error="raise"` to fail the whole run instead. Inside a router, giving each analyst its own `fallback_models` is the simpler fix, because the agent recovers before the workflow ever sees an error.
+
+### When every swarm fails
+
+If the primary and every fallback raise, `run()` raises `SwarmRouterRunError` (import it from `swarms.structs.swarm_router`), chained to the last attempt's error, and `router.fallback_attempts` still lists every attempt. That is the signal to page someone or return an explicit error to your user.
+
+## Fallbacks inside a vote: MajorityVoting
+
+Voting and consensus structures are where silent errors hurt most, so they are a good place to see the v17 behavior. Three voters on three providers triage a support ticket:
+
+```python
+from swarms import Agent, AgentLLMError, MajorityVoting
+
+question = "Should this support ticket be escalated? Answer YES or NO with one reason."
+
+voters = [
+    Agent(
+        agent_name="Voter-Groq",
+        system_prompt="You triage support tickets.",
+        model_name="groq/openai/gpt-oss-120b",
+        max_loops=1,
+        print_on=False,
+    ),
+    Agent(
+        agent_name="Voter-Mistral",
+        system_prompt="You triage support tickets.",
+        model_name="mistral/mistral-large-latest",
+        max_loops=1,
+        print_on=False,
+    ),
+    Agent(
+        agent_name="Voter-OpenAI",
+        system_prompt="You triage support tickets.",
+        model_name="gpt-5.4-mini",
+        max_loops=1,
+        print_on=False,
+    ),
+]
+
+vote = MajorityVoting(
+    agents=voters,
+    consensus_agent_model_name="gemini/gemini-2.5-pro",
+    additional_consensus_agent_kwargs={"print_on": False},
+    output_type="final",
+)
+
+try:
+    print(vote.run(question))
+except AgentLLMError as error:
+    print("vote failed:", type(error).__name__, error)
+```
+
+The voters are fast, inexpensive models, since a vote multiplies calls, and the consensus agent is Gemini 2.5 Pro, a stronger judge. (Leave Claude out of the consensus seat here: `MajorityVoting`'s built-in consensus agent turns on dynamic temperature and sends a random `temperature` with its requests, which current Claude models reject.)
+
+With Groq returning 500s, the run printed `vote failed: AgentLLMError Agent 'Voter-Groq': model 'groq/openai/gpt-oss-120b' failed: ...`, and the consensus model was never called. That is the correct outcome when a voter has no way to recover. In v16 the error text would have been counted as Groq's vote.
+
+To let the vote survive the outage, give the vulnerable voter a fallback on another provider. This continues the previous block:
+
+```python
+voters[0] = Agent(
+    agent_name="Voter-Groq",
+    system_prompt="You triage support tickets.",
+    fallback_models=["groq/openai/gpt-oss-120b", "deepseek/deepseek-v4-pro"],
+    max_loops=1,
+    print_on=False,
+)
+
+vote = MajorityVoting(
+    agents=voters,
+    consensus_agent_model_name="gemini/gemini-2.5-pro",
+    additional_consensus_agent_kwargs={"print_on": False},
+    output_type="final",
+)
+print(vote.run(question))
+print("Voter-Groq answered with:", voters[0].model_name)
+```
+
+Now the vote completes, the consensus agent runs on three real votes, and the last line printed `Voter-Groq answered with: deepseek/deepseek-v4-pro`. The two layers work together: agent fallbacks absorb a provider failure, and the structure raises only when an agent truly cannot answer.
+
+## Handling bad output: validate, then fall back
+
+A model that returns malformed output does not raise, so `fallback_models` will not help. Treat "the output failed validation" as a failure in your own code and walk a model list yourself:
+
+```python
+import json
+
+from swarms import Agent, AgentLLMError
+
+REQUIRED = {"vendor", "total", "currency"}
+MODELS = ["gpt-5.4-mini", "anthropic/claude-haiku-5-5"]  # cheap first, then another provider
+
+
+def extract_invoice(text: str) -> dict:
+    problems = []
+    for model in MODELS:
+        agent = Agent(
+            agent_name="Invoice-Extractor",
+            system_prompt=(
+                "Extract vendor, total and currency from the invoice. "
+                "Reply with one JSON object and nothing else."
+            ),
+            model_name=model,
+            max_loops=1,
+            output_type="final",
+            print_on=False,
+        )
+        try:
+            data = json.loads(agent.run(text))
+            if not isinstance(data, dict):
+                raise ValueError("expected a JSON object")
+            missing = REQUIRED - data.keys()
+            if missing:
+                raise ValueError(f"missing fields {sorted(missing)}")
+            return data
+        except (AgentLLMError, ValueError) as error:  # json.JSONDecodeError is a ValueError
+            problems.append(f"{model}: {error}")
+    raise RuntimeError("no model produced a valid invoice:\n" + "\n".join(problems))
+
+
+print(extract_invoice("ACME Corp. Invoice 1043. Total due: 1,250.00 EUR."))
+```
+
+In our test the first model wrapped its JSON in a chatty sentence, `json.loads` failed, and the second model's valid object was returned: `{'vendor': 'ACME Corp.', 'total': 1250.0, 'currency': 'EUR'}`. When both models fail, the `RuntimeError` lists each model's problem; in our failure test that was a missing-fields error from the first model and a rate-limit error from the second. The function builds a fresh agent per attempt, which keeps the second model from seeing the first model's bad answer.
+
+## A production checklist for LLM agent error handling
+
+- **Give every agent on a critical path a `fallback_models` list that spans at least two providers.** It is the cheapest protection against 429s and outages.
+- **Budget retries on purpose.** Calls per model are `retry_attempts + 1`; multiply by the number of models for the worst case. Lower `retry_attempts` for latency-sensitive paths and lean on the fallback instead.
+- **Set a request timeout** with `llm_args={"timeout": ...}` so a hung request fails over instead of blocking.
+- **Use `fallback_swarms` for structure-level failures**, and read `router.active_swarm_type` and `router.fallback_attempts` after each run to log which path served it.
+- **Check structures that record failures as data:** `"(failed)"` rows in `ConcurrentWorkflow` and `"Error: ..."` worker answers in `MixtureOfAgents`.
+- **Validate output you parse.** Bad output never raises on its own.
+- **Catch `AgentLLMError` and `SwarmRouterRunError` at the edge of your app** and return an explicit failure. Avoid returning a placeholder string, which recreates the silent-error problem one layer up.
+- **Watch concurrency against rate limits.** v17 sizes `GroupChat`'s thread pool to the number of agents; with a large roster, set `max_workers` or `max_parallel_nodes` if you start seeing 429s.
+
+The broader pattern behind these bugs, structures that return plausible output instead of an error, is the subject of [Multi-Agent System Failure Modes](/blog/multi-agent-system-failure-modes). If you want a durable record of what each agent said in a run (a failed run posts nothing), see [Using SQLite as Shared Memory for AI Agents](/blog/sqlite-shared-memory-ai-agents).
+
+## FAQ
+
+### How do I add a fallback model to an LLM agent in Swarms?
+
+Pass `fallback_models` to `Agent`, with the primary model first: `Agent(fallback_models=["anthropic/claude-sonnet-5-5", "gpt-5.4", "gemini/gemini-2.5-pro"])`. When a model call fails, `run()` tries the next model in the list, and every new run starts from the first model again.
+
+### What is the difference between retry_attempts and fallback_models?
+
+`retry_attempts` is how many times the client retries the same model (it is sent to litellm as `num_retries`, with exponential backoff on rate limits). `fallback_models` is the ordered list of models the agent moves through once a model has failed all its retries.
+
+### Why didn't SwarmRouter fallback_swarms trigger before v17?
+
+`fallback_swarms` only runs when the primary swarm raises. In v16, `HeavySwarm`, `MixtureOfAgents`, `MajorityVoting`, `AuctionSwarm` and `AgentRearrange` caught some failures and returned error text or a bid table as if it were an answer, so the router saw a success. In v17 they raise, and the router falls back.
+
+### What happens when every model and every swarm fails?
+
+An agent raises `AgentLLMError`, chained to the last provider error. A `SwarmRouter` with `fallback_swarms` raises `SwarmRouterRunError`, and `router.fallback_attempts` lists the error from each swarm type it tried.
+
+### Should the fallback model be on a different provider?
+
+Usually, yes. Rate limits and outages tend to affect a whole provider or account, so a fallback on the same provider often fails for the same reason. Pick a model of similar capability on another provider.
+
+## Get started
+
+```bash
+pip install -U swarms
+```
+
+Read the full list of v17 changes, including every fix behind this guide, in the [Swarms v17 "InterLink" changelog](/blog/swarms-v17-interlink-release). The API reference is at [docs.swarms.world](https://docs.swarms.world), and the source is on [GitHub](https://github.com/kyegomez/swarms).

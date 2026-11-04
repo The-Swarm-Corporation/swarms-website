@@ -1,0 +1,352 @@
+---
+title: "The Orchestrator-Worker Pattern for LLM Agents: Fan Out to Hundreds of Workers"
+description: "The orchestrator worker pattern for LLM agents in Python: PhasedFanOutWorkflow has a lead agent plan and validate the work, then fan out to hundreds of workers."
+date: "2026-11-04"
+author: "Kye Gomez"
+categories: ["Guides", "Engineering"]
+readTime: "11 min read"
+featured: false
+image: "/orchestrator_worker_pattern_llm_agents.png"
+---
+
+# The Orchestrator-Worker Pattern for LLM Agents: Fan Out to Hundreds of Workers
+
+The orchestrator-worker pattern for LLM agents splits a job between one lead model that plans and many worker agents that each do one narrow piece. It is the right shape when you only learn how wide the work is at run time: "find every bug in these files, then verify each one", or "triage every ticket in this queue". This guide explains the pattern, then shows how to run it in Python with `PhasedFanOutWorkflow`, which shipped in [Swarms v17 "InterLink"](/blog/swarms-v17-interlink-release). A lead agent writes a plan, the plan is validated before any worker starts, the run fans out to as many fresh worker agents as the data needs (hundreds if you allow it), and the lead writes the final answer from the results. Every code block below was run against the Swarms 17.0.0 source before publishing.
+
+## What the orchestrator-worker pattern is
+
+The pattern has three moves:
+
+1. **Decompose.** An orchestrator (the lead) reads the task and decides how to split it: which units of work exist, which kind of worker handles each, and what has to happen in order.
+2. **Fan out.** Workers run in parallel, each with a small, self-contained prompt. A worker sees its own unit of work and nothing else, which keeps its context short and its answer focused.
+3. **Synthesize.** The orchestrator reads the workers' results and writes one answer.
+
+The value comes from isolation and width. A single agent asked to review 40 files reads all 40 in one context and starts skimming. Forty workers, each given one file, each read their file closely, and they run at the same time. A verifier per finding then checks each claim independently of the agent that made it.
+
+Fixed fan-outs, where you wire the width yourself, are a different tool. If you always run the same five analysts, a [`ConcurrentWorkflow` or `GraphWorkflow`](/blog/run-ai-agents-in-parallel-python) is simpler and cheaper, because no model has to plan anything. The orchestrator-worker pattern earns its extra planning call when the number of workers depends on the input. For the broader family of hierarchical designs, see [manager-worker agent architectures](/blog/manager-worker-agent-architectures) and [agent orchestration patterns](/blog/agent-orchestration-patterns).
+
+## How PhasedFanOutWorkflow runs the orchestrator-worker pattern
+
+`PhasedFanOutWorkflow` (in `swarms/structs/phased_fan_out_workflow.py`) runs four stages:
+
+1. **Plan.** The lead returns a `WorkflowPlan` as JSON: optional inline agents, an ordered list of phases, and the steps whose outputs it wants back. The plan is plain data. The runtime never executes anything the model writes.
+2. **Validate.** Before anything runs, the plan is checked for unknown agents, references to steps that are not in an earlier phase, `{item}` outside a fan-out, a `for_each` on a field the source step's `output_schema` does not declare as an array, steps with no placeholder (so their agent would see none of the material), duplicate steps in one phase, and the static agent count. A rejected plan goes back to the lead with the list of errors, up to `max_plan_attempts` times.
+3. **Execute.** Phases run in order. Steps inside a phase run in parallel, bounded by `max_concurrent_agents`. A `for_each` step starts one fresh agent per item of a list an earlier step returned.
+4. **Combine.** The lead reads only the outputs of the steps in `return_steps` and writes the final answer.
+
+### The WorkflowPlan schema
+
+| Field | What it holds |
+|---|---|
+| `name`, `description` | A short name and a one-sentence summary of the approach |
+| `inline_agents` | Agents the lead defines for this run: a `name` and a `system_prompt` each |
+| `phases` | Ordered list; each has a `title` and `steps` that run in parallel |
+| `return_steps` | Step ids whose outputs the lead reads when it combines |
+
+Each step has an `id`, an `agent` (a predefined or inline agent name), a `prompt`, and two optional fields:
+
+- `for_each`: `"<step_id>.<field>"`. Runs one agent per element of that list. If the source step is itself a fan-out, the lists from all its slots are joined into one.
+- `output_schema`: a JSON schema. The worker is told to return JSON matching it, and the reply is parsed before the next phase sees it. A step that another step fans out over must declare its list field here with `"type": "array"`.
+
+Prompts take three kinds of placeholder: `{task}` (the original task, word for word), `{item}` (the current item, only in a `for_each` step) and `{step_id}` (the output of a step in an earlier phase, inserted as JSON when it is structured).
+
+## Install and set API keys
+
+```bash
+pip install -U swarms
+# optional: RouteHub for lower per-call overhead, rustworkx for graphs
+pip install -U "swarms[fast]"
+```
+
+The examples mix providers, so each one needs its key in the environment: `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GEMINI_API_KEY`, `DEEPSEEK_API_KEY`, `MISTRAL_API_KEY` and `GROQ_API_KEY`, or only the ones for the models you keep.
+
+## Example: an orchestrator worker pattern LLM pipeline that finds and verifies bugs
+
+Three small files, each with one planted bug. The lead decides how to split the review; the workers do the reading.
+
+```python
+from swarms.structs.phased_fan_out_workflow import PhasedFanOutWorkflow
+
+FILES = {
+    "billing.py": """
+def apply_discount(price, percent):
+    # percent is 0-100, e.g. 15 for 15%
+    return price - price * percent
+""",
+    "dates.py": """
+from datetime import datetime
+
+def days_between(start, end):
+    delta = datetime.fromisoformat(end) - datetime.fromisoformat(start)
+    return delta.seconds // 86400
+""",
+    "cache.py": """
+def get_user(cache, user_id, load):
+    if user_id in cache:
+        return cache[user_id]
+    user = load(user_id)
+    return user
+""",
+}
+
+task = (
+    "Find every bug in these files, verify each one independently, "
+    "and report only the confirmed bugs with a one-line fix.\n\n"
+    + "\n\n".join(f"=== {name} ===\n{code}" for name, code in FILES.items())
+)
+
+workflow = PhasedFanOutWorkflow(
+    model_name="anthropic/claude-opus-5-5",  # lead: plans and combines
+    worker_model_name="gpt-5.4-mini",        # every inline worker agent
+    size_guideline="small",
+)
+
+print(workflow.run(task))
+```
+
+`model_name` builds the lead. `worker_model_name` is the model for every inline agent the lead defines; if you leave it out, workers use the lead's model, which is usually the expensive choice. The split here is deliberate: planning and synthesis are a handful of calls that decide the quality of the whole run, so they get a strong model (Claude Opus 5.5), and the many narrow worker calls go to a cheap, fast model from a different provider (`gpt-5.4-mini`). Using two providers also means the workers' burst of requests does not eat into the lead's rate limit.
+
+`run()` returns the lead's final answer as a string (the workflow's `output_type` defaults to `"final"`). Each agent also prints a panel as it finishes. A typical plan for this task has three phases: one agent lists the files, a fan-out reviews one file per agent, and a second fan-out verifies one reported bug per agent. That is seven worker agents for three files. The [v17 release notes](/blog/swarms-v17-interlink-release) report that the repository's bug-hunt example, run on real models, found and confirmed all three planted bugs in about 14,000 tokens.
+
+## Inspect the plan, the run and token usage
+
+The workflow keeps everything about its last run. Continue from the block above:
+
+```python
+plan = workflow.last_plan
+for phase in plan.phases:
+    for step in phase.steps:
+        fan = f" (one agent per item of {step.for_each})" if step.for_each else ""
+        print(f"{phase.title}: {step.id} -> {step.agent}{fan}")
+
+run = workflow.last_run
+print("worker agents:", run["agent_count"])
+print("failed slots:", run["failures"])
+print("verdicts:", [v["verdict"] for v in run["outputs"]["verify"]])
+print("tokens:", workflow.usage)
+```
+
+For the three-phase plan described above, this prints:
+
+```
+Discover: list_files -> indexer
+Hunt: hunt -> bug_hunter (one agent per item of list_files.files)
+Verify: verify -> verifier (one agent per item of hunt.bugs)
+worker agents: 7
+failed slots: []
+verdicts: ['confirmed', 'confirmed', 'confirmed']
+tokens: {'input_tokens': ..., 'output_tokens': ..., 'cached_tokens': ..., 'reasoning_tokens': ..., 'total_tokens': ...}
+```
+
+The step ids and agent names are whatever the lead chose, so yours will differ. What you can rely on:
+
+- `last_plan` is the validated `WorkflowPlan` (a Pydantic model), so `last_plan.model_dump_json(indent=2)` gives you the whole plan to log or diff between runs.
+- `last_run["outputs"]` maps every step id to its output. A step with an `output_schema` holds parsed JSON; a fan-out step holds a list with one entry per item.
+- `last_run["agent_count"]` counts worker agents started (the lead is not included). `last_run["agents"]` holds every agent instance used, the lead and retries included.
+- `last_run["failures"]` lists fan-out slots that still failed after retries, with phase, step, item and error.
+- `usage` sums provider-reported tokens over the lead and every worker instance, in the same shape as `Agent.usage`. To turn it into dollars, see [how to track LLM token usage and cost in Python](/blog/track-llm-token-usage-cost-python).
+
+## Use your own worker agents
+
+Inline agents are convenient, but sometimes you want workers you configured and tested yourself. Pass them with `agents=[...]`, and set `allow_inline_agents=False` to restrict the lead to them. The lead sees each agent's `agent_name` and `agent_description` when it plans, so write the description for the planner.
+
+```python
+from swarms import Agent
+from swarms.structs.phased_fan_out_workflow import PhasedFanOutWorkflow
+
+reader = Agent(
+    agent_name="Clause-Reader",
+    agent_description="Reads one contract and quotes every change-of-control clause.",
+    system_prompt=(
+        "You read a single contract and quote, word for word, every clause "
+        "triggered by a change of control. If there is none, return an empty list."
+    ),
+    model_name="deepseek/deepseek-v4-pro",
+    max_loops=1,
+)
+checker = Agent(
+    agent_name="Clause-Checker",
+    agent_description="Independently checks whether a quoted clause is a change-of-control clause.",
+    system_prompt=(
+        "You are a skeptical contracts lawyer. Decide whether the quoted clause "
+        "is really triggered by a change of control, and explain why."
+    ),
+    model_name="mistral/mistral-large-latest",
+    max_loops=1,
+)
+
+contracts = {
+    "acme_supply.txt": (
+        "12.1 Either party may terminate this Agreement on 30 days notice. "
+        "12.4 If Supplier undergoes a change of control, Buyer may terminate immediately."
+    ),
+    "globex_license.txt": (
+        "8.2 This license may not be assigned without consent, including by merger "
+        "or sale of a majority of the Licensee's shares."
+    ),
+}
+task = "Quote every change-of-control clause in these contracts and confirm each one.\n\n" + "\n\n".join(
+    f"=== {name} ===\n{text}" for name, text in contracts.items()
+)
+
+workflow = PhasedFanOutWorkflow(
+    model_name="gpt-5.4",
+    agents=[reader, checker],
+    allow_inline_agents=False,
+    size_guideline="small",
+)
+print(workflow.run(task))
+print(sorted({agent.model_name for agent in workflow.last_run["agents"]}))
+```
+
+The last line prints the three models the run used: `deepseek/deepseek-v4-pro`, `gpt-5.4` and `mistral/mistral-large-latest`. The reader and the checker come from different providers on purpose, so the verifier does not share the blind spots of the model that produced the claim.
+
+Predefined agents keep their own `model_name`; `worker_model_name` applies only to inline agents. Every use of a predefined agent gets a new instance rebuilt from its constructor arguments (an `Agent` cannot be deep-copied), so no conversation state carries between steps or between runs. The release notes report that this contract review, on real models, found and quoted both change-of-control clauses on three of three runs.
+
+## Fan out to hundreds of workers
+
+Width is where the pattern pays off. Here 200 support tickets each get their own triage agent. The lead is Gemini 2.5 Pro; the 200 workers run `gpt-oss-120b` on Groq, which is fast and cheap per call.
+
+```python
+import random
+
+from swarms.structs.phased_fan_out_workflow import (
+    PhasedFanOutWorkflow,
+    PhasedFanOutWorkflowError,
+)
+
+# A stand-in for a support-queue export: 200 one-line tickets.
+random.seed(7)
+issues = [
+    "Card was charged twice this month",
+    "Cannot log in after password reset",
+    "CSV export times out on large projects",
+    "Please add a dark mode",
+    "Invoice shows the wrong VAT rate",
+    "App crashes when uploading a photo",
+]
+tickets = [f"T-{n:03d}: {random.choice(issues)}" for n in range(1, 201)]
+
+task = (
+    "Triage every ticket below. Give each one a category (billing, auth, bug, "
+    "feature) and an urgency (low, medium, high), then summarise the queue.\n\n"
+    + "\n".join(tickets)
+)
+
+workflow = PhasedFanOutWorkflow(
+    model_name="gemini/gemini-2.5-pro",           # lead
+    worker_model_name="groq/openai/gpt-oss-120b",  # 200 cheap, fast workers
+    size_guideline="unrestricted",
+    max_agents=250,             # hard ceiling on workers per run
+    max_concurrent_agents=64,   # workers calling the model at once (1 to 256)
+    max_retries=1,              # one retry per worker, with a fresh agent
+    max_plan_attempts=3,
+)
+
+try:
+    print(workflow.run(task))
+except PhasedFanOutWorkflowError as error:
+    print("run stopped:", error)
+
+print("workers:", workflow.last_run["agent_count"])
+print("failed slots:", len(workflow.last_run["failures"]))
+```
+
+With a plan that splits the queue in one step and fans out over the result, this starts 201 workers: one splitter and 200 triagers. The knobs that matter at this width:
+
+| Parameter | Default | What it controls |
+|---|---|---|
+| `size_guideline` | `"medium"` | What the lead is told to aim for: `small` (under 5 agents), `medium` (under 10), `large` (under 50), `unrestricted` (as many as the task needs, within the hard limit) |
+| `max_agents` | `1000` | Hard limit on workers per run. A fan-out that would pass it stops before any of its agents start |
+| `max_concurrent_agents` | `16` | Workers running at once within a phase; must be between 1 and 256 |
+| `max_retries` | `2` | Retries for a failed worker, each with a fresh agent |
+| `max_plan_attempts` | `3` | Plans the lead may write before the run raises `PhasedFanOutWorkflowError` |
+
+The default `size_guideline="medium"` tells the lead to stay under 10 agents, so raise it when you want real width. `max_agents` is the safety net: with `max_agents=150`, this same run stops with `Phase 'Triage' needs 200 agents, which would pass max_agents=150 (1 already run)` before a single triage call is made. `max_concurrent_agents` is the throttle; set it from your provider's rate limit for the worker model, since all 200 workers hit the same account.
+
+Watch what you put in each worker's prompt. A worker that receives `{task}` gets the whole original task, so 200 workers each reading a 200-ticket queue multiplies your input tokens by 200. Here the splitter returns the tickets as a list and each triager receives only its own ticket through `{item}`. The lead's planning prompt tells it to prefer that shape.
+
+Failures behave differently by step type. A failed fan-out slot becomes `None` in the outputs and is listed in `last_run["failures"]`, and the run continues; the lead is told that null entries are failed agents and to report the gap. A failed single step (no `for_each`) raises `PhasedFanOutWorkflowError`, because later phases would be missing their input.
+
+## How plan validation catches bad plans before they cost money
+
+The validator is a normal method, so you can run it on a hand-written plan. This one makes several mistakes:
+
+```python
+from swarms.structs.phased_fan_out_workflow import (
+    PhasedFanOutWorkflow,
+    WorkflowPlan,
+)
+
+workflow = PhasedFanOutWorkflow(model_name="gpt-5.4", worker_model_name="gpt-5.4-mini")
+
+bad_plan = WorkflowPlan.model_validate({
+    "name": "broken",
+    "description": "A plan with several mistakes.",
+    "inline_agents": [{"name": "worker", "system_prompt": "You do one unit of work."}],
+    "phases": [
+        {"title": "List", "steps": [
+            {"id": "list", "agent": "worker", "prompt": "List the sections of {task}.",
+             "output_schema": {"type": "object", "properties": {"sections": {"type": "array"}}}},
+        ]},
+        {"title": "Work", "steps": [
+            {"id": "summarise", "agent": "worker", "prompt": "Summarise {item}."},
+            {"id": "check", "agent": "worker", "for_each": "list.pages", "prompt": "Check {item}."},
+            {"id": "polish", "agent": "editor", "prompt": "Polish the summary."},
+        ]},
+    ],
+    "return_steps": ["summarise", "check", "polish"],
+})
+
+for problem in workflow.validate_plan(bad_plan):
+    print("-", problem)
+```
+
+It makes no model calls and prints:
+
+```
+- Step 'summarise' uses {item} without for_each.
+- Step 'check' for_each field 'pages' is not declared in the output_schema of 'list'.
+- Step 'polish' uses unknown agent 'editor'.
+- Step 'polish' has no {task}, {item} or {step_id} placeholder, so its agent sees none of the task's material. Add {task} or an earlier step's output.
+```
+
+During `run()`, these messages are exactly what goes back to the lead: "Your plan was rejected for these reasons", followed by the list and the original planning request. The lead usually fixes them on the second attempt. JSON that fails to parse or does not match the schema counts as a rejected attempt too, and a reply with a code fence or a closing line of prose after the JSON is still accepted.
+
+## Production notes
+
+- **Pick the lead for judgment and the workers for volume.** The lead makes two calls per run (plus one per rejected plan) and decides how good the whole run can be. Workers make most of the calls. Claude Opus 5.5, GPT-5.4 or Gemini 2.5 Pro as the lead, with `gpt-5.4-mini`, Claude Haiku 5.5 or `gpt-oss-120b` on Groq as workers, keeps quality where it matters and cost where the volume is.
+- **Do not pass sampling parameters to Claude models.** Current Claude models reject `temperature` and `top_p`, and Opus 5.5 rejects every sampling parameter. The workflow's own lead and inline agents set none.
+- **Verification is only as good as its independence.** Give verifiers the claim and the original material, ask for a structured verdict, and when you can, put them on a different provider from the agents that made the claims.
+- **Images go to the lead.** `run(task, img=...)` passes the image to the lead when it plans; workers see only their prompts.
+- **Log the plan.** `last_plan` is the cheapest debugging tool you have. When a run gives a bad answer, the plan usually shows why: a fan-out over the wrong list, a verifier that never saw the evidence, a `return_steps` that skipped the verified results.
+
+## FAQ
+
+### What is the orchestrator-worker pattern in LLM agents?
+
+One orchestrator model breaks a task into units of work, many worker agents each handle one unit in parallel with a narrow prompt, and the orchestrator combines their results. It suits tasks whose width depends on the input, such as reviewing every file or checking every finding.
+
+### How is the orchestrator-worker pattern different from a manager-worker swarm?
+
+They are close relatives. In `PhasedFanOutWorkflow` the orchestrator writes its whole plan up front as validated data, and code moves outputs between phases, so the lead never reads intermediate results. A manager that delegates turn by turn can react to each result, and in exchange it reads every result, which grows its context with the width of the run.
+
+### How many worker agents can PhasedFanOutWorkflow run?
+
+Up to `max_agents` per run (default 1000), with at most `max_concurrent_agents` running at once inside a phase (default 16, maximum 256). The `size_guideline` tells the lead how many to aim for; set it to `"unrestricted"` for runs with hundreds of workers.
+
+### Can the orchestrator use a different model from the workers?
+
+Yes. `model_name` sets the lead and `worker_model_name` sets every inline worker. Predefined agents passed with `agents=[...]` keep their own models, so a single run can mix providers.
+
+### What happens when a worker fails?
+
+It is retried up to `max_retries` times with a fresh agent. A fan-out slot that still fails becomes `None` and is recorded in `last_run["failures"]` while the run continues. A single step that still fails raises `PhasedFanOutWorkflowError`.
+
+## Get started
+
+```bash
+pip install -U swarms
+```
+
+Then import `PhasedFanOutWorkflow` from `swarms.structs.phased_fan_out_workflow`, give it a strong lead and a cheap worker model, and check `last_plan` after the first run. The full feature notes, including the PRs behind validation and the JSON parsing fix, are in the [Swarms v17 "InterLink" changelog](/blog/swarms-v17-interlink-release). When you already know how many agents you need, read [how to run 100 AI agents in parallel in Python](/blog/run-ai-agents-in-parallel-python). The bug-hunt and contract-review examples live in `examples/multi_agent/phased_fan_out_workflow/` in the [Swarms repository](https://github.com/kyegomez/swarms), and the reference docs are at [docs.swarms.world](https://docs.swarms.world).

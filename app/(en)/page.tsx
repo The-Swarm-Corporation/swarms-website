@@ -1,3 +1,7 @@
+import type { ReactNode } from "react"
+
+import { CodeBlock } from "@/components/code-block"
+import { swarmsStack } from "@/components/home-products-data"
 import { Navigation } from "@/components/navigation"
 import { HomeHero } from "@/components/home-hero"
 import { HomeMission } from "@/components/home-mission"
@@ -16,6 +20,20 @@ import { getAllPostMeta } from "@/lib/blog"
 export default function Home() {
   const recentPosts = getAllPostMeta().slice(0, 3)
 
+  // The products section is a client component (loaded through next/dynamic),
+  // so its code samples are highlighted here and passed in as rendered nodes.
+  const productCodeBlocks: Record<string, ReactNode> = {}
+  for (const product of swarmsStack) {
+    if (!product.code) continue
+    productCodeBlocks[product.title] = (
+      <CodeBlock
+        code={product.code}
+        file={product.file}
+        className="font-mono text-[11px] font-normal leading-relaxed sm:text-[12.5px]"
+      />
+    )
+  }
+
   return (
     <div className="min-h-screen bg-black smooth-scroll">
       <Navigation />
@@ -24,7 +42,7 @@ export default function Home() {
         <HomeHero />
         <HomeMission />
         <HomeFeatures />
-        <HomeProducts />
+        <HomeProducts codeBlocks={productCodeBlocks} />
         <HomeEnterpriseInfrastructure />
         <HomeCookbook />
         <HomeNewsletter posts={recentPosts} />

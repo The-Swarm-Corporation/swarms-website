@@ -658,7 +658,7 @@ from swarms.structs.agent import AgentLLMError
 agent = Agent(
     agent_name="Analyst",
     model_name="claude-sonnet-5-5",
-    fallback_models=["gpt-5.4", "gemini/gemini-2.5-pro"],
+    fallback_models=["claude-sonnet-5-5", "gpt-5.4", "gemini/gemini-2.5-pro"],  # primary first
     retry_attempts=3,   # retries per model, made by the client: 4 calls at most
 )
 
@@ -668,7 +668,7 @@ except AgentLLMError as error:
     print("every model failed:", error.__cause__)
 ```
 
-Now the client owns retries (`retry_attempts` travels with every request as `num_retries`, and rate limits back off exponentially), and `Agent.run` walks `fallback_models` in one flat loop. Only an `AgentLLMError` moves it to the next model; any other error raises at once. Every run starts from the primary model again, where a successful fallback used to leave the agent switched for good. `fallback_model_name` is folded into `fallback_models` at construction, and the caller's `messages` now reach the fallback model ([#2806](https://github.com/kyegomez/swarms/pull/2806)).
+Now the client owns retries (`retry_attempts` travels with every request as `num_retries`, and rate limits back off exponentially), and `Agent.run` walks `fallback_models` in one flat loop. Only an `AgentLLMError` moves it to the next model; any other error raises at once. Every run starts from the primary model again, where a successful fallback used to leave the agent switched for good. `fallback_models` is the whole chain, so list the primary first: when it is set, `model_name` is replaced by its first entry. `fallback_model_name` is folded into `fallback_models` at construction, and the caller's `messages` now reach the fallback model ([#2806](https://github.com/kyegomez/swarms/pull/2806)).
 
 ---
 

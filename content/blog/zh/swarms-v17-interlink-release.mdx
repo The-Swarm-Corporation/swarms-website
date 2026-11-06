@@ -658,7 +658,7 @@ from swarms.structs.agent import AgentLLMError
 agent = Agent(
     agent_name="Analyst",
     model_name="claude-sonnet-5-5",
-    fallback_models=["gpt-5.4", "gemini/gemini-2.5-pro"],
+    fallback_models=["claude-sonnet-5-5", "gpt-5.4", "gemini/gemini-2.5-pro"],  # primary first
     retry_attempts=3,   # retries per model, made by the client: 4 calls at most
 )
 
@@ -668,7 +668,7 @@ except AgentLLMError as error:
     print("every model failed:", error.__cause__)
 ```
 
-现在由客户端负责重试（`retry_attempts` 会作为 `num_retries` 随每一次请求一起发送，遇到速率限制时按指数退避），`Agent.run` 则在一个扁平的循环中依次尝试 `fallback_models`。只有 `AgentLLMError` 会让它换到下一个模型；其他任何错误都会立即抛出。每次运行都会重新从主模型开始，而以前一次成功的回退会让智能体从此一直停留在回退模型上。`fallback_model_name` 会在构造时并入 `fallback_models`，调用方传入的 `messages` 现在也能送达回退模型了（[#2806](https://github.com/kyegomez/swarms/pull/2806)）。
+现在由客户端负责重试（`retry_attempts` 会作为 `num_retries` 随每一次请求一起发送，遇到速率限制时按指数退避），`Agent.run` 则在一个扁平的循环中依次尝试 `fallback_models`。只有 `AgentLLMError` 会让它换到下一个模型；其他任何错误都会立即抛出。每次运行都会重新从主模型开始，而以前一次成功的回退会让智能体从此一直停留在回退模型上。`fallback_models` 是整条链，所以要把主模型放在第一个：设置了它之后，`model_name` 会被替换成列表的第一项。`fallback_model_name` 会在构造时并入 `fallback_models`，调用方传入的 `messages` 现在也能送达回退模型了（[#2806](https://github.com/kyegomez/swarms/pull/2806)）。
 
 ---
 

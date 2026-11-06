@@ -30,13 +30,6 @@ export const metadata: Metadata = {
     description:
       "快速安装 Swarms 多智能体框架，支持通过 pip、uv、conda 或源码方式安装 Python 版本，并支持 Rust 版本的安装。",
     siteName: "Swarms AI",
-    images: [
-      {
-        url: "/seo_image.jpg",
-        width: 1200,
-        height: 630,
-      },
-    ],
   },
 }
 

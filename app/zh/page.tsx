@@ -63,13 +63,6 @@ export const metadata: Metadata = {
     description:
       "构建、部署和扩展 AI 智能体的企业级平台。Python/Rust 多智能体框架、托管智能体 API 与智能体市场，一站式完成智能体编排与规模化落地。",
     siteName: "Swarms AI",
-    images: [
-      {
-        url: "/seo_image.jpg",
-        width: 1200,
-        height: 630,
-      },
-    ],
   },
 }
 

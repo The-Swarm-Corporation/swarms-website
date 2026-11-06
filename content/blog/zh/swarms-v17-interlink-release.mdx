@@ -472,7 +472,7 @@ for token in agent.run_stream("Get the weather in Paris and London, then tell me
 
 [#2959](https://github.com/kyegomez/swarms/issues/2959) 中的计划，是让各个扇出结构都运行在 `Agent.arun` 之上，并提供一个由调用方设置的上限。其中三部分已经合入。
 
-`run_agents_concurrently_async` 现在会 await 每个智能体的 `arun`，而不是把 `run` 推到一个线程上，并且接受 `max_concurrency`（[#3093](https://github.com/kyegomez/swarms/pull/3093)）。结果保持输入顺序，第一个异常会向上传播。`None` 表示所有智能体同时运行；小于 1 的值会抛出 `ValueError`，因为 `asyncio.Semaphore(0)` 会永远等下去。
+`run_agents_concurrently_async` 现在会 await 每个智能体的 `arun`，而不是把 `run` 推到一个线程上，并且接受 `max_concurrency`（[#3093](https://github.com/kyegomez/swarms/pull/3093)）。结果保持输入顺序，第一个异常会向上传播。`None` 本身不设上限，但由于 `Agent.arun` 仍然运行在线程上（见下文），事件循环的默认执行器会把同时运行的智能体限制在 `min(32, os.cpu_count() + 4)` 个。想同时运行更多，可以在调用之前用 `asyncio.get_running_loop().set_default_executor(ThreadPoolExecutor(max_workers=len(agents)))` 给事件循环换一个更大的线程池。小于 1 的值会抛出 `ValueError`，因为 `asyncio.Semaphore(0)` 会永远等下去。
 
 ```python
 import asyncio
@@ -887,7 +887,7 @@ InterLink 删掉的比加进来的多。其中最大的几块：`BaseTool` 的�
 | `Agent(multi_modal=...)` | 被忽略 | 无需替代：视觉能力根据 `model_name` 检测 | [#2554](https://github.com/kyegomez/swarms/pull/2554)、[#2555](https://github.com/kyegomez/swarms/pull/2555) |
 | `Agent(sop=..., sop_list=...)` | 被忽略 | 技能：`Agent(skills_dir=...)` | [#2556](https://github.com/kyegomez/swarms/pull/2556) |
 | `Agent(output_cleaner=...)`、`output_cleaner_op` | 被忽略 | 对 `run()` 返回的值做后处理 | [#2801](https://github.com/kyegomez/swarms/pull/2801) |
-| `Agent.run(n=...)` | `TypeError` | `[agent.run(task) for _ in range(n)]` | [#2981](https://github.com/kyegomez/swarms/pull/2981) |
+| `Agent.run(n=...)` | 落入 `**kwargs` 并被传给模型请求 | `[agent.run(task) for _ in range(n)]` | [#2981](https://github.com/kyegomez/swarms/pull/2981) |
 | `Agent.run(correct_answer=...)` | 落入 `**kwargs`；它原本是第 4 个位置参数，所以 `streaming_callback` 及其后的参数请按关键字传入 | 删掉它：从来没有东西读取它 | [#2920](https://github.com/kyegomez/swarms/pull/2920) |
 | `Agent.bulk_run` | `AttributeError` | `agent.run_batched(tasks)` 或 `[agent.run(**item) for item in inputs]` | [#3035](https://github.com/kyegomez/swarms/pull/3035) |
 | `Agent.check_available_tokens` | `AttributeError` | `agent.input_tokens` | [#2891](https://github.com/kyegomez/swarms/pull/2891) |
@@ -895,7 +895,7 @@ InterLink 删掉的比加进来的多。其中最大的几块：`BaseTool` 的�
 | `LiteLLM(audio=...)`、构造函数的 `max_completion_tokens`、`modalities` 属性、`audio_processing`、`reasoning_check`、`get_media_base64`、`LiteLLM.check_internet_connection` | 作为普通 kwargs 转发给 provider，或者 `AttributeError` | `max_tokens`；音频请用显式的 `messages` | [#3038](https://github.com/kyegomez/swarms/pull/3038)、[#2729](https://github.com/kyegomez/swarms/pull/2729) |
 | `Conversation(output_metadata=...)` | `TypeError` | 删掉它：从来没有东西读取它 | [#2872](https://github.com/kyegomez/swarms/pull/2872) |
 | `GroupChat(idle_timeout=...)` | `TypeError` | `max_loops`、`threshold` | [#2918](https://github.com/kyegomez/swarms/pull/2918) |
-| `AgentRearrange(memory_system=...)` | 被忽略 | 自己查询你的存储，并把记录放进任务里传入 | [#2911](https://github.com/kyegomez/swarms/pull/2911) |
+| `AgentRearrange(memory_system=...)` | `TypeError` | 自己查询你的存储，并把记录放进任务里传入 | [#2911](https://github.com/kyegomez/swarms/pull/2911) |
 | `SequentialWorkflow(shared_memory_system=...)`、`MultiAgentRouter(shared_memory_system=...)` | 被忽略，或者被转发给路由器的 LLM | 从来没有东西读取它 | [#2912](https://github.com/kyegomez/swarms/pull/2912)、[#2917](https://github.com/kyegomez/swarms/pull/2917) |
 | `ForestSwarm(shared_memory=...)` | 被忽略；`rules` 和 `verbose` 前移一位 | 从来没有东西读取它 | [#3092](https://github.com/kyegomez/swarms/pull/3092) |
 | `SwarmRouter(agents_config=...)`、`SwarmRouter.fetch_message_history_as_string` | 被忽略，或者 `AttributeError` | `router.swarm.conversation` | [#3128](https://github.com/kyegomez/swarms/pull/3128)、[#2889](https://github.com/kyegomez/swarms/pull/2889) |
@@ -1645,7 +1645,7 @@ ShryukGrandhi 合入了 55 次提交，其中包括 MCP 的加固（stdio 服务
 2. **预期 swarm 会抛出异常。** `HeavySwarm`、`MixtureOfAgents`、`MajorityVoting`、`AuctionSwarm` 以及 `AgentRearrange` 的并行步骤，在以前返回错误字符串的地方现在会抛出异常。捕获这个异常，或者在 `SwarmRouter(fallback_swarms=[...])` 之下运行它们，后者现在真的会回退了。provider 错误以 `AgentLLMError` 的形式到达，原始错误作为 `__cause__`。
 3. **在需要的地方重新开启文件输出。** 给 `SequentialWorkflow`、`ConcurrentWorkflow`、`AgentRearrange` 或 `SpreadSheetSwarm` 传入 `autosave=True`，需要日志文件时设置 `SWARMS_LOG_FILES=True`。
 4. **替换已移除的结构和加载器。** `SwarmRearrange` 改为 `AgentRearrange(agents=[...swarms])`；`create_agents_from_yaml`、`CSVAgentLoader` 和 `MarkdownAgentLoader` 改为 `AgentLoader`；`ImageAgentBatchProcessor` 现在位于视觉示例中。
-5. **搜索已移除的关键字参数。** `multi_modal`、`sop`、`sop_list`、`output_cleaner`、`agents_config`、`memory_system`、`shared_memory_system` 和 `shared_memory` 现在会被静默忽略。`n`、`idle_timeout`、`auto_generate_prompts` 和 `output_metadata` 会抛出 `TypeError`。`bulk_run` 和回退链相关的方法都已不复存在。
+5. **搜索已移除的关键字参数。** `multi_modal`、`sop`、`sop_list`、`output_cleaner`、`agents_config`、`shared_memory_system` 和 `shared_memory` 现在会被静默忽略。`memory_system`、`idle_timeout`、`auto_generate_prompts` 和 `output_metadata` 会抛出 `TypeError`。`Agent.run(n=...)` 不再重复运行任务：`n` 会被传给模型请求。`bulk_run` 和回退链相关的方法都已不复存在。
 6. **如果你的 provider 对你限速，请设置并发上限。** `ConcurrentWorkflow` 和 `GraphWorkflow` 现在会让一层中的所有智能体同时运行：请使用 `max_workers` 和 `max_parallel_nodes`。
 7. **把 stdio MCP 服务器迁移到 `MCPConnection(command=..., args=[...])`**，并显式传入它们需要的环境变量。
 8. **检查流式消费者收到了什么。** 回调和 `run_stream` 现在会包含位于 `[tool call]` 和 `[thinking]` 标题之后的工具调用和思考文本。

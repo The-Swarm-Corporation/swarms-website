@@ -10,7 +10,7 @@ const collectionJsonLd = {
   description:
     "Swarms Academy courses teach the full multi-agent stack for free: a hands-on Swarms API course with live trials and quizzes, plus learning tracks for the Swarms Marketplace, the open-source Swarms framework, and more.",
   url,
-  image: `${siteConfig.url}/seo_image.jpg`,
+  image: `${siteConfig.url}${siteConfig.ogImage}`,
   isPartOf: {
     "@type": "WebSite",
     name: siteConfig.name,

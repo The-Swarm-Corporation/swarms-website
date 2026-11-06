@@ -39,14 +39,6 @@ export async function generateMetadata({ params }: ZhBlogPostLayoutProps): Promi
       publishedTime: post.date,
       authors: [post.author],
       tags: post.categories,
-      images: [
-        {
-          url: post.image ?? "/seo_image.jpg",
-          width: 1200,
-          height: 630,
-          alt: post.title,
-        },
-      ],
     },
     twitter: {
       card: "summary_large_image",
@@ -54,7 +46,6 @@ export async function generateMetadata({ params }: ZhBlogPostLayoutProps): Promi
       description: post.description,
       creator: "@swarms_corp",
       site: "@swarms_corp",
-      images: [post.image ?? "/seo_image.jpg"],
     },
     alternates: {
       canonical: url,

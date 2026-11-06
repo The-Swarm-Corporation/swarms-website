@@ -32,15 +32,6 @@ export const metadata: Metadata = {
     title,
     description,
     siteName: siteConfig.name,
-    images: [
-      {
-        url: "/agenthq_game_map.png",
-        width: 1473,
-        height: 881,
-        alt: title,
-        type: "image/png",
-      },
-    ],
   },
   twitter: {
     card: "summary_large_image",
@@ -48,14 +39,6 @@ export const metadata: Metadata = {
     description,
     creator: "@swarms_corp",
     site: "@swarms_corp",
-    images: [
-      {
-        url: "/agenthq_game_map.png",
-        width: 1473,
-        height: 881,
-        alt: title,
-      },
-    ],
   },
   robots: {
     index: true,

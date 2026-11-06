@@ -1,7 +1,6 @@
-import { ImageResponse } from "next/og"
+import { renderOgCard, size, contentType } from "@/lib/og/card"
 
-export const size = { width: 1200, height: 630 }
-export const contentType = "image/png"
+export { size, contentType }
 
 // A static copy of the page's isometric stack diagram. The diagram itself is
 // a "use client" component, so its geometry is repeated here in the few
@@ -45,7 +44,7 @@ function StackArt() {
   const top = elevation(3) + T
   const cloudTop = elevation(2) + T
   return (
-    <svg width="500" height="560" viewBox="-215 -230 430 482">
+    <svg width="372" height="417" viewBox="-215 -230 430 482">
       {BLOCKS.map((b, i) => {
         const z = elevation(b.tier)
         return (
@@ -105,58 +104,10 @@ function StackArt() {
 }
 
 export function renderStackCard() {
-  return new ImageResponse(
-    (
-      <div
-        style={{
-          width: "100%",
-          height: "100%",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          backgroundColor: "#000000",
-          backgroundImage:
-            "radial-gradient(circle at 78% 45%, rgba(255,255,255,0.09), transparent 50%)",
-          padding: "64px 56px 64px 72px",
-          fontFamily: "sans-serif",
-        }}
-      >
-        <div style={{ display: "flex", flexDirection: "column", width: 600 }}>
-          <span
-            style={{
-              display: "flex",
-              fontSize: 26,
-              fontWeight: 700,
-              color: "rgba(255,255,255,0.55)",
-              marginBottom: 28,
-            }}
-          >
-            The Swarms Stack
-          </span>
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              fontSize: 60,
-              fontWeight: 700,
-              lineHeight: 1.04,
-              color: "#ffffff",
-              letterSpacing: -1.5,
-              marginBottom: 28,
-            }}
-          >
-            {/* One span per line: satori ignores <br /> inside a flex row. */}
-            <span>One stack to build,</span>
-            <span>deploy, monitor, and</span>
-            <span>sell AI agents</span>
-          </div>
-          <span style={{ display: "flex", fontSize: 25, lineHeight: 1.4, color: "rgba(255,255,255,0.55)" }}>
-            Swarms Python and Rust, the Swarms API, Swarms Cloud, and the Swarms Marketplace.
-          </span>
-        </div>
-        <StackArt />
-      </div>
-    ),
-    size,
-  )
+  return renderOgCard({
+    eyebrow: "The Swarms Stack",
+    title: "One stack to build, deploy, monitor, and sell AI agents",
+    description: "Swarms Python and Rust, the Swarms API, Swarms Cloud, and the Swarms Marketplace.",
+    art: <StackArt />,
+  })
 }

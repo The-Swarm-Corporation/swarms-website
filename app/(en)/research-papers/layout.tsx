@@ -26,15 +26,6 @@ export const metadata: Metadata = {
     title,
     description,
     siteName: siteConfig.name,
-    images: [
-      {
-        url: "/seo_image.jpg",
-        width: 1200,
-        height: 630,
-        alt: title,
-        type: "image/jpeg",
-      },
-    ],
   },
   twitter: {
     card: "summary_large_image",
@@ -42,14 +33,6 @@ export const metadata: Metadata = {
     description,
     creator: "@swarms_corp",
     site: "@swarms_corp",
-    images: [
-      {
-        url: "/seo_image.jpg",
-        width: 1200,
-        height: 630,
-        alt: title,
-      },
-    ],
   },
   robots: {
     index: true,
@@ -70,7 +53,7 @@ const collectionJsonLd = {
   name: title,
   description,
   url,
-  image: `${siteConfig.url}/seo_image.jpg`,
+  image: `${siteConfig.url}${siteConfig.ogImage}`,
   isPartOf: {
     "@type": "WebSite",
     name: siteConfig.name,

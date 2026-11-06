@@ -78,7 +78,6 @@ export const metadata: Metadata = {
     title,
     description,
     siteName: siteConfig.name,
-    images: [image],
   },
   twitter: {
     card: "summary_large_image",
@@ -86,7 +85,6 @@ export const metadata: Metadata = {
     description,
     creator: "@swarms_corp",
     site: "@swarms_corp",
-    images: [image],
   },
   robots: {
     index: true,

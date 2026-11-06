@@ -65,7 +65,7 @@ const collectionJsonLd = {
   name: title,
   description,
   url,
-  image: `${siteConfig.url}/seo_image.jpg`,
+  image: `${siteConfig.url}${siteConfig.ogImage}`,
   isPartOf: {
     "@type": "WebSite",
     name: siteConfig.name,

@@ -71,7 +71,7 @@ const productJsonLd = {
   name: "Swarms Multi-Agent Platform",
   description,
   url,
-  image: `${siteConfig.url}/seo_image.jpg`,
+  image: `${siteConfig.url}${siteConfig.ogImage}`,
   brand: {
     "@type": "Organization",
     name: siteConfig.company.name,

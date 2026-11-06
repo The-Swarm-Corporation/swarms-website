@@ -174,7 +174,7 @@ export default async function FrameworkLayout({
     operatingSystem: "Any",
     url,
     description,
-    image: `${siteConfig.url}/seo_image.jpg`,
+    image: `${siteConfig.url}${siteConfig.ogImage}`,
     downloadUrl: "https://pypi.org/project/swarms/",
     codeRepository: "https://github.com/kyegomez/swarms",
     programmingLanguage: "Python",

@@ -72,7 +72,7 @@ const productJsonLd = {
   operatingSystem: "Cloud",
   description,
   url,
-  image: `${siteConfig.url}/seo_image.jpg`,
+  image: `${siteConfig.url}${siteConfig.ogImage}`,
   brand: {
     "@type": "Organization",
     name: siteConfig.company.name,

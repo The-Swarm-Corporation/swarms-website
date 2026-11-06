@@ -7,7 +7,7 @@ export const siteConfig = {
   // URLs at the apex makes Google crawl a redirect for every page on the site
   // and file them under "Page with redirect" instead of indexing them.
   url: "https://www.swarms.ai",
-  ogImage: "/seo_image.jpg", // Use seo_image.jpg for Open Graph and SEO
+  ogImage: "/seo_image.jpg", // Brand image for JSON-LD; social cards come from lib/og/card.tsx
   logo: "/logo.svg", // Use logo.svg for logo and favicon
   seoBackground: "/seo_image.jpg", // Custom field for SEO background
   links: {

@@ -31,13 +31,19 @@ The swarms.ai marketing site: Next.js App Router (Next 16, React 19, Tailwind), 
 - `lib/blog.ts` reads the filesystem at build time; slug = filename.
 - The `/blog` hero shows the newest post with `featured: true` (fallback: newest overall).
 - `image:` is a `/public` path or remote URL. Remote hosts must be allowlisted in `images.remotePatterns` in `next.config.mjs`. Sizing/safe-zone guidance: `docs/BLOG_IMAGE_GUIDELINES.md` (source banners at 1920×1080, 16:9).
-- Each post is also served as raw markdown at `/blog/<slug>/markdown` (noindexed, for AI agents/copy button) and gets generated OG/Twitter images from `og-shared.tsx`.
+- Each post is also served as raw markdown at `/blog/<slug>/markdown` (noindexed, for AI agents/copy button) and gets generated OG/Twitter images from `lib/og/blog-card.tsx` (EN and ZH).
 - **Renaming a published post's slug requires a 301** — add it to `renamedPosts` in `next.config.mjs`; removed routes go in `removedRoutes` there.
 
 ### Writing style for posts
 
 - No em dashes in blog prose (EN or ZH) — use commas, colons, or parentheses.
 - Avoid AI-slop phrasing: no "not X, Y" contrast headings, no stock AI vocabulary.
+
+## Social preview (OG/Twitter) images
+
+- Every indexable route has an `opengraph-image.tsx` and a `twitter-image.tsx`, thin wrappers around the shared 1200×630 card in `lib/og/card.tsx` (Swarms logo, eyebrow, title, description, `swarms.ai` footer). Copy for static routes lives in `lib/og/pages.ts`; route-specific art or footers (stack diagram, marketplace stats, release milestones) go in the card's `art` / `footer` slots.
+- A new page needs both wrapper files and an entry in `lib/og/pages.ts`. Don't set `openGraph.images` / `twitter.images` in route metadata: config set in a `page.tsx` overrides the generated card.
+- Cards load Montserrat (and Noto Sans SC for Chinese, subset per card) from Google Fonts at build time, and fall back to the bundled font if that fails.
 
 ## API routes and proxy.ts
 

@@ -38,28 +38,11 @@ export const metadata: Metadata = {
     title: siteConfig.name,
     description: siteConfig.description,
     siteName: siteConfig.name,
-    images: [
-      {
-        url: "/seo_image.jpg",
-        width: 1200,
-        height: 630,
-        alt: "Swarms AI — Multi-Agent Framework & Agent Marketplace",
-        type: "image/jpeg",
-      },
-    ],
   },
   twitter: {
     card: "summary_large_image",
     title: siteConfig.name,
     description: siteConfig.description,
-    images: [
-      {
-        url: "/seo_image.jpg",
-        width: 1200,
-        height: 630,
-        alt: "Swarms AI — Multi-Agent Framework & Agent Marketplace",
-      },
-    ],
     creator: "@swarms_corp",
     site: "@swarms_corp",
   },

@@ -4,9 +4,9 @@ import Link from "next/link"
 import { motion } from "framer-motion"
 import { ArrowRight, ArrowUpRight, Code, GraduationCap, Layers, Sparkles } from "lucide-react"
 
+import { AcademyHero } from "@/components/academy/academy-hero"
 import { CardCarousel } from "@/components/card-carousel"
 import { Navigation } from "@/components/navigation"
-import { Button } from "@/components/ui/button"
 import { academyFaq } from "@/lib/academy/academy-faq"
 import { academyJsonLd } from "@/lib/academy/academy-jsonld"
 
@@ -97,78 +97,7 @@ export default function AcademyPage() {
       <Navigation />
 
       <main className="pt-[64px] sm:pt-[80px] md:pt-[96px]">
-        {/* HERO */}
-        <section className="relative flex min-h-[60vh] items-center overflow-hidden border-b border-white/[0.08] bg-black">
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:72px_72px] [mask-image:radial-gradient(ellipse_75%_70%_at_50%_35%,black_25%,transparent_100%)]"
-          />
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute left-1/2 top-0 h-[480px] w-[880px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/[0.05] blur-3xl"
-          />
-
-          <div className="container relative w-full px-4 sm:px-6 lg:px-8">
-            <div className="mx-auto flex max-w-4xl flex-col items-center py-20 text-center sm:py-24">
-              <motion.div
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.7, ease }}
-                className="inline-flex items-center gap-2 rounded-full border border-white/[0.12] bg-white/[0.03] px-3 py-1.5 text-xs font-medium text-white/60 sm:text-sm"
-              >
-                <span className="h-1.5 w-1.5 rounded-full bg-white/70" />
-                Learn the multi-agent stack
-              </motion.div>
-
-              <motion.h1
-                className="mt-6 font-bold leading-[0.95] tracking-tighter text-white sm:mt-8"
-                style={{ fontSize: "clamp(3rem, 9vw, 7rem)" }}
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.7, delay: 0.05, ease }}
-              >
-                Swarms Academy
-              </motion.h1>
-
-              <motion.p
-                className="mt-6 max-w-3xl text-base font-normal leading-relaxed text-white/55 sm:mt-8 sm:text-lg md:text-xl"
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.7, delay: 0.12, ease }}
-              >
-                Free, structured courses for every Swarms product. Pick a track and go from
-                your first AI agent to production multi-agent systems.
-              </motion.p>
-
-              <motion.div
-                className="mt-10 flex w-full flex-col items-center justify-center gap-3 sm:w-auto sm:flex-row"
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.7, delay: 0.2, ease }}
-              >
-                <Button
-                  className="h-12 w-full rounded-full border border-[#27272a] bg-[#121214] shadow-none hover:shadow-none px-8 text-base font-medium text-white hover:border-[#3f3f46] hover:bg-[#1a1a1d] sm:h-14 sm:w-auto sm:text-lg"
-                  asChild
-                >
-                  <Link href="/academy/swarms-api">
-                    Start learning
-                    <ArrowRight className="ml-2 h-5 w-5" />
-                  </Link>
-                </Button>
-                <Button
-                  variant="outline"
-                  className="h-12 w-full rounded-full border-white/[0.14] bg-[#0a0a0a] px-8 text-base font-medium text-white hover:border-white/30 hover:bg-white/[0.06] hover:text-white sm:h-14 sm:w-auto sm:text-lg"
-                  asChild
-                >
-                  <a href="https://discord.gg/swarms" target="_blank" rel="noopener noreferrer">
-                    Join the community
-                    <ArrowUpRight className="ml-2 h-5 w-5 text-white/50" />
-                  </a>
-                </Button>
-              </motion.div>
-            </div>
-          </div>
-        </section>
+        <AcademyHero />
 
         {/* TRACKS */}
         <section className="border-b border-white/[0.08] bg-black py-16 sm:py-24 lg:py-32">
@@ -183,8 +112,8 @@ export default function AcademyPage() {
               <p className="mb-5 font-mono text-[11px] font-medium uppercase tracking-[0.2em] text-white/40">
                 Learning tracks
               </p>
-              <h2 className="max-w-3xl text-3xl font-semibold leading-[1.1] tracking-tighter text-white sm:text-4xl md:text-5xl">
-                Four tracks. One agent economy.
+              <h2 className="max-w-3xl text-2xl font-semibold leading-[1.15] tracking-tighter text-white sm:text-3xl">
+                Courses for every part of the Swarms stack
               </h2>
               <p className="mt-5 max-w-2xl text-base font-normal leading-relaxed text-white/50 sm:text-lg">
                 Each track teaches one surface of the Swarms stack, with docs, examples, and

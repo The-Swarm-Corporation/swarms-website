@@ -74,6 +74,7 @@ export function Footer() {
                 {[
                   { name: "Products Overview", icon: Package, url: "/products" },
                   { name: "The Stack", icon: Layers, url: "/stack" },
+                  { name: "Industries", icon: Building, url: "/industries" },
                   { name: "Simulations", icon: Network, url: "/simulations" },
                   { name: "Mobile App", icon: Smartphone, url: "/mobile" },
                   { name: "Swarms Python", icon: Github, url: "https://github.com/kyegomez/swarms" },

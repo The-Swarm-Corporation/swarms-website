@@ -3,6 +3,7 @@ import { siteConfig } from "./metadata"
 import { getAllPosts, hasZhTranslation } from "@/lib/blog"
 import { positions } from "@/lib/positions"
 import { courseParts } from "@/lib/academy/swarms-api-course"
+import { INDUSTRIES } from "@/lib/industries"
 
 type ChangeFrequency = MetadataRoute.Sitemap[0]["changeFrequency"]
 
@@ -31,6 +32,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/api", priority: 0.8, changeFrequency: "weekly" },
     { path: "/installation", priority: 0.8, changeFrequency: "weekly" },
     { path: "/applications", priority: 0.8, changeFrequency: "weekly" },
+    { path: "/industries", priority: 0.9, changeFrequency: "weekly" },
+    ...INDUSTRIES.map((industry) => ({
+      path: `/industries/${industry.slug}`,
+      priority: 0.8,
+      changeFrequency: "weekly" as ChangeFrequency,
+    })),
     { path: "/open-source", priority: 0.8, changeFrequency: "weekly" },
     { path: "/blog", priority: 0.8, changeFrequency: "daily" },
     { path: "/research", priority: 0.7, changeFrequency: "weekly" },

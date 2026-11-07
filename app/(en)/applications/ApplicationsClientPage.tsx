@@ -227,7 +227,7 @@ export default function ApplicationsClientPage() {
                   className="h-12 w-full rounded-full border-white/[0.14] bg-[#0a0a0a] px-8 text-base font-medium text-white hover:border-white/30 hover:bg-white/[0.06] hover:text-white sm:h-14 sm:w-auto sm:text-lg"
                   asChild
                 >
-                  <Link href="/products">View Our Products</Link>
+                  <Link href="/industries">Industry Landing Pages</Link>
                 </Button>
               </motion.div>
             </div>

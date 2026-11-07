@@ -473,6 +473,9 @@ export function Navigation() {
                               <FuturisticMenuItem icon={Sparkles} href="/applications" iconColor="red">
                                 Applications
                               </FuturisticMenuItem>
+                              <FuturisticMenuItem icon={Briefcase} href="/industries" iconColor="red">
+                                Industries
+                              </FuturisticMenuItem>
                             </TabsContent>
 
                             <TabsContent value="community" className="space-y-1 mt-0 h-full">
@@ -1064,6 +1067,18 @@ export function Navigation() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <span className="text-sm font-semibold text-white block">Applications</span>
+                        </div>
+                      </Link>
+                      <Link
+                        href="/industries"
+                        className="group flex cursor-pointer items-center rounded-xl hover:bg-white/[0.05] transition-all duration-200 p-3 relative"
+                        onClick={() => setIsOpen(false)}
+                      >
+                        <div className="mr-3 h-9 w-9 flex items-center justify-center rounded-lg bg-neutral-800/50 border border-neutral-700/30 group-hover:border-white/25 transition-all duration-200">
+                          <Briefcase className="h-4 w-4 text-neutral-300" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <span className="text-sm font-semibold text-white block">Industries</span>
                         </div>
                       </Link>
                     </TabsContent>

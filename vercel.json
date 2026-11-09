@@ -1,0 +1,35 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "routes": [
+    {
+      "src": "^/contact-sales/?$",
+      "methods": ["GET", "HEAD"],
+      "mitigate": { "action": "challenge" }
+    },
+    {
+      "src": "^/agenthq/?$",
+      "methods": ["GET", "HEAD"],
+      "mitigate": { "action": "challenge" }
+    },
+    {
+      "src": "^/mobile/?$",
+      "methods": ["GET", "HEAD"],
+      "mitigate": { "action": "challenge" }
+    },
+    {
+      "src": "^/api/contact-sales/?$",
+      "methods": ["POST"],
+      "mitigate": { "action": "challenge" }
+    },
+    {
+      "src": "^/api/agenthq/?$",
+      "methods": ["POST"],
+      "mitigate": { "action": "challenge" }
+    },
+    {
+      "src": "^/api/mobile/?$",
+      "methods": ["POST"],
+      "mitigate": { "action": "challenge" }
+    }
+  ]
+}

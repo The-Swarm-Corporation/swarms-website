@@ -23,38 +23,18 @@ Anthropic's description of the system fits in one paragraph. The lead researcher
 
 AdvancedResearch has the same four stages, implemented as four prompts and one shared source list:
 
-```
-                         [Research query]
-                                |
-                                v
-          +-------------------------------------------+
-          |  Lead researcher (Swarms API)             |
-          |  judges complexity, writes 1-N subtasks   |
-          +-------------------------------------------+
-                                | subtasks, in parallel
-          +---------------------+---------------------+
-          v                     v                     v
-   +-------------+       +-------------+       +-------------+
-   | Subagent 1  |       | Subagent 2  |       | Subagent N  |
-   | Exa search  |       | Exa search  |       | Exa search  |
-   | findings +  |       | findings +  |       | findings +  |
-   | follow-ups  |       | follow-ups  |       | follow-ups  |
-   +-------------+       +-------------+       +-------------+
-          +---------------------+---------------------+
-                                v  cited findings [n]
-          +-------------------------------------------+
-          |  Lead researcher (Swarms API)             |
-          |  writes the report, lists any gaps        |---- gaps? another round
-          +-------------------------------------------+     (up to max_loops)
-                                |
-                                v
-          +-------------------------------------------+
-          |  Citation agent (Swarms API)              |
-          |  checks every claim against the sources   |
-          +-------------------------------------------+
-                                |
-                                v
-                 [Report + references from cited sources]
+```mermaid
+graph TD
+    Q[Research query] --> P[Lead researcher<br/>judges complexity, writes 1 to N subtasks]
+    P --> S1[Subagent 1<br/>Exa search, findings, follow-ups]
+    P --> S2[Subagent 2<br/>Exa search, findings, follow-ups]
+    P --> SN[Subagent N<br/>Exa search, findings, follow-ups]
+    S1 --> W[Lead researcher<br/>writes the report, lists any gaps]
+    S2 --> W
+    SN --> W
+    W -->|gaps? another round, up to max_loops| P
+    W --> C[Citation agent<br/>checks every claim against the sources]
+    C --> R[Report + references from cited sources]
 ```
 
 | Anthropic's component | AdvancedResearch | Where in the code |

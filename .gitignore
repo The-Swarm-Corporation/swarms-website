@@ -12,7 +12,9 @@
 /pnpm-workspace.yaml
 
 # next.js
-.claude
+# Keep local Claude settings out of git but share the project skills in .claude/skills
+.claude/*
+!.claude/skills/
 secretive
 /.next/
 /out/

@@ -1,0 +1,296 @@
+---
+title: "Build Your Own Deep Research API with Multi-Agent Swarms"
+description: "A planner, parallel web-searching agents, a synthesizer and a fact-checking critic, wired together on the Swarms API in about 100 lines of Python and exposed as an HTTP endpoint with FastAPI. Real output, real costs, and a one-line cURL to try the research agent before you write any code."
+date: "2026-11-08"
+author: "Kye Gomez"
+categories: ["Guides", "Engineering"]
+featured: false
+readTime: "12 min read"
+image: "/build_deep_research_api_multi_agent_banner.png"
+---
+
+# Build Your Own Deep Research API with Multi-Agent Swarms
+
+Deep research features, where an assistant plans a set of searches, reads the results and writes a sourced report, are the most requested AI capability of the year and the one most teams assume they cannot build themselves. The pattern behind them is small: split the question, search in parallel, synthesise, check. Each of those is one call to the [Swarms API](https://docs.swarms.ai), which handles the agents, the web search tool and the orchestration.
+
+This guide builds a deep research API in two files. `deep_research.py` runs the pipeline and `research_api.py` wraps it in FastAPI so anything that can send a POST can request a report. Along the way we show what a real run produced, what it cost, and how it compares with asking one strong model the same question.
+
+## The pipeline
+
+Four stages, each a different agent with a different job:
+
+1. **Planner.** A small, fast model turns the question into four focused sub-questions. One call to `/v1/agent/completions`.
+2. **Searchers.** One agent per sub-question, run in parallel, each with the API's built-in `auto_search` web search and `web_scraper` tools enabled. They answer with sourced facts and cite URLs.
+3. **Synthesizer.** A strong writing model turns the findings into a structured report and tags every claim with the finding it came from.
+4. **Critic.** A second model reads the report against the findings, lists unsupported claims, missing deadlines and vague recommendations, and outputs a corrected report.
+
+Stages 3 and 4 run as one `SequentialWorkflow` swarm on `/v1/swarm/completions`, so the critic automatically receives the synthesizer's output. Stage 2 uses the agent endpoint because that is where the built-in web tools live, and a thread pool runs the four searchers at once.
+
+```
+question
+   │
+   ▼
+Planner (gpt-5.4-mini) ── 4 sub-questions
+   │
+   ├──▶ Searcher 1 (auto_search + web_scraper) ─┐
+   ├──▶ Searcher 2                              ├─ findings [F1..F4]
+   ├──▶ Searcher 3                              │
+   └──▶ Searcher 4 ─────────────────────────────┘
+                                                 │
+                                                 ▼
+                     SequentialWorkflow: Synthesizer (claude-sonnet-5-5) → Critic (gpt-5.4-mini)
+                                                 │
+                                                 ▼
+                                          corrected report
+```
+
+## The code
+
+```python
+# deep_research.py
+# A deep research pipeline on the Swarms API: a planner writes sub-questions,
+# searchers answer them in parallel with web search, then a synthesizer and a
+# critic produce the report. Requires: pip install requests
+import json
+import os
+import sys
+import time
+from concurrent.futures import ThreadPoolExecutor
+
+import requests
+
+API = "https://api.swarms.world"
+HEADERS = {"x-api-key": os.environ["SWARMS_API_KEY"], "Content-Type": "application/json"}
+
+
+def agent(name: str, system_prompt: str, task: str, model: str = "gpt-5.4-mini",
+          tools: list[str] | None = None, max_tokens: int = 900) -> tuple[str, float]:
+    """One call to /v1/agent/completions. Returns (text, cost_in_usd)."""
+    body = {
+        "agent_config": {
+            "agent_name": name,
+            "system_prompt": system_prompt,
+            "model_name": model,
+            "max_loops": 1,
+            "max_tokens": max_tokens,
+        },
+        "task": task,
+    }
+    if tools:
+        body["tools_enabled"] = tools
+    r = requests.post(f"{API}/v1/agent/completions", headers=HEADERS, json=body, timeout=180)
+    r.raise_for_status()
+    data = r.json()
+    # With tools on, outputs also contain tool-call entries whose content is a
+    # list. The agent's own prose is the string content under its name.
+    text = "\n".join(
+        m["content"] for m in data["outputs"] if m["role"] == name and isinstance(m["content"], str)
+    )
+    return text.strip(), data["usage"]["total_cost"]
+
+
+def plan(question: str) -> tuple[list[str], float]:
+    text, cost = agent(
+        "Research Planner",
+        "You are a research planner. Given a research question, return exactly 4 focused "
+        "sub-questions, one per line, with no numbering and no commentary. Each should be "
+        "answerable with a web search and together they should cover the question.",
+        question,
+        max_tokens=400,
+    )
+    return [line.strip() for line in text.splitlines() if line.strip()], cost
+
+
+def search(sub_question: str) -> tuple[str, float]:
+    return agent(
+        "Searcher",
+        "You are a research assistant with web search and a page scraper. Answer the question "
+        "with current, sourced facts in 150-250 words. Cite the URL of each source you rely on. "
+        "If sources conflict, say so.",
+        sub_question,
+        tools=["auto_search", "web_scraper"],
+    )
+
+
+def synthesize(question: str, findings: list[str]) -> tuple[str, float, float]:
+    """Synthesizer then critic, as one SequentialWorkflow swarm."""
+    task = f"Research question: {question}\n\nFindings from the search stage:\n\n" + "\n\n".join(
+        f"[F{i + 1}] {f}" for i, f in enumerate(findings)
+    ) + "\n\nWrite the final report."
+    body = {
+        "name": "Deep Research Synthesis",
+        "swarm_type": "SequentialWorkflow",
+        "task": task,
+        "max_loops": 1,
+        "agents": [
+            {
+                "agent_name": "Synthesizer",
+                "system_prompt": "You are a senior research writer. Turn the findings into a report with the sections: Summary, What changed, Who is affected, Deadlines, Recommended actions, Open questions. Tag every factual claim with the finding it comes from, like [F2]. Under 600 words.",
+                "model_name": "claude-sonnet-5-5",
+                "max_loops": 1,
+                "max_tokens": 1400,
+            },
+            {
+                "agent_name": "Critic",
+                "system_prompt": "You are a fact-checking editor. Review the report you receive. List any claim not supported by the findings, any missing deadline, and any vague recommendation, then output the corrected report in full. Under 700 words.",
+                "model_name": "gpt-5.4-mini",
+                "max_loops": 1,
+                "max_tokens": 1600,
+            },
+        ],
+    }
+    r = requests.post(f"{API}/v1/swarm/completions", headers=HEADERS, json=body, timeout=300)
+    r.raise_for_status()
+    data = r.json()
+    return data["output"][-1]["content"], data["usage"]["total_cost"], data["execution_time"]
+
+
+def deep_research(question: str) -> dict:
+    started = time.perf_counter()
+    sub_questions, plan_cost = plan(question)
+
+    with ThreadPoolExecutor(max_workers=len(sub_questions)) as pool:
+        results = list(pool.map(search, sub_questions))
+    findings = [text for text, _ in results]
+    search_cost = sum(cost for _, cost in results)
+
+    report, synth_cost, synth_seconds = synthesize(question, findings)
+
+    return {
+        "question": question,
+        "sub_questions": sub_questions,
+        "report": report,
+        "cost_usd": round(plan_cost + search_cost + synth_cost, 4),
+        "seconds": round(time.perf_counter() - started, 1),
+        "synthesis_seconds": round(synth_seconds, 1),
+    }
+
+
+if __name__ == "__main__":
+    q = sys.argv[1] if len(sys.argv) > 1 else "What changed in EU AI Act obligations for general-purpose AI model providers during 2026, and what should a startup shipping an LLM-based product do before the next deadline?"
+    print(json.dumps(deep_research(q), indent=2))
+```
+
+The `agent` helper does one thing worth explaining. When tools are enabled, the agent endpoint returns the whole trace in `outputs`: the user message, the agent's tool call (whose `content` is a list), the tool result, and the agent's final answer. Filtering to string content under the agent's own name gives you just the prose.
+
+Run it:
+
+```bash
+pip install requests
+export SWARMS_API_KEY=your_key
+python deep_research.py "What changed in EU AI Act obligations for general-purpose AI model providers during 2026?"
+```
+
+## Exposing it as an API
+
+```python
+# research_api.py
+# Exposes the pipeline as an HTTP API. Run: uvicorn research_api:app --port 8000
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel, Field
+
+from deep_research import deep_research
+
+app = FastAPI(title="Deep Research API")
+
+
+class ResearchRequest(BaseModel):
+    question: str = Field(min_length=10, max_length=500)
+
+
+@app.post("/research")
+def research(req: ResearchRequest) -> dict:
+    try:
+        return deep_research(req.question)
+    except Exception as exc:  # surfaces Swarms API errors as a 502 with the message
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+```
+
+```bash
+pip install fastapi uvicorn
+uvicorn research_api:app --port 8000
+
+curl -X POST http://localhost:8000/research \
+  -H "Content-Type: application/json" \
+  -d '{"question": "What changed in EU AI Act obligations for general-purpose AI model providers during 2026, and what should a startup shipping an LLM-based product do before the next deadline?"}'
+```
+
+The response is the dictionary from `deep_research`: the sub-questions the planner chose, the corrected report, the total cost and the wall-clock time. The `max_length` on the question is a cost control as much as a validation rule, since the question goes into six prompts.
+
+## What a run looks like
+
+We ran each stage against the EU AI Act question above. The planner, on `gpt-5.4-mini`, returned these four sub-questions for $0.0007:
+
+> How did the EU AI Act's obligations for general-purpose AI model providers change across 2026, including any phased-in requirements or guidance updates?
+> What specific compliance duties apply to providers of general-purpose AI models under the EU AI Act as of the next deadline, especially for transparency, documentation, and copyright policy?
+> What exemptions, reduced obligations, or special rules apply to startups or smaller providers shipping LLM-based products under the EU AI Act?
+> What practical steps should a startup with an LLM-based product take before the next EU AI Act deadline to assess, document, and mitigate compliance risk?
+
+That is a better decomposition than most people would write by hand, and it cost less than a tenth of a cent.
+
+Each searcher request carries the flat $0.04 web search fee plus its tokens, so the search stage costs about $0.17 for four sub-questions regardless of how many searches each agent runs. Searchers run in parallel, so the stage takes as long as its slowest member rather than the sum.
+
+The synthesis swarm is where the pattern earns its keep. We ran the Synthesizer and Critic on a set of six findings about the Act. The Synthesizer produced a tagged report; the Critic then flagged two claims that the findings did not support, including this one:
+
+> **Claim not supported by findings:** "Art. 50 is the most relevant duty for them" for startups that only call a model API. The findings say Art. 50 transparency duties are scheduled for 2 Aug 2026, but do not say they are the most relevant for API-only startups.
+
+It also rejected "Classify your role" as too vague a recommendation, rewrote it as a concrete step, and returned the corrected report with a deadlines table. That stage took 22.8 seconds and cost $0.0449 for 4,835 tokens across both agents. End to end, a report from this pipeline costs about $0.22 and takes roughly a minute, most of it in the search and synthesis stages.
+
+## Compared with one strong agent
+
+We also asked a single `claude-sonnet-5-5` agent the same question with no tools. It answered in one pass for $0.0175, opened with "my information may be out of date", gave no sources, and was cut off by its 1,500-token limit before finishing the deadlines table.
+
+| | Single agent | Deep research pipeline |
+|---|---|---|
+| Cost | $0.0175 | about $0.22 |
+| Time | a few seconds | about a minute |
+| Sources | none | a URL per finding |
+| Currency | model's training data | live web search |
+| Self-correction | none | critic pass with listed objections |
+| Output | truncated, hedged | structured report with deadlines table |
+
+The pipeline costs about twelve times more and takes about ten times longer. For a question where the answer changed this year and a wrong date has consequences, that is a cheap trade. For a question a model can answer from memory, use the single agent. The useful product decision is to offer both and let the user choose depth.
+
+## Making it production-ready
+
+- **Cache by question.** Identical questions within a day can return the stored report. The search fee is the largest cost component and it is wasted on repeats.
+- **Tune the fan-out.** Four sub-questions is a good default. Six gives broader coverage for about $0.09 more; two is enough for narrow questions.
+- **Handle the two common errors.** A `402` means the account's purchased credit balance is at or below $1; a `429` means you have hit the rate limit, which is 100 requests per minute on a free account. The pipeline makes six requests per report, so a free account supports about 16 reports per minute.
+- **Stream the synthesis stage** if the report is shown in a UI. Setting `stream: true` on the swarm request returns per-token events with the agent's name on each, so the user can watch the synthesizer write and the critic revise.
+- **Log `job_id` and cost.** Every response includes both, and `GET /v1/swarm/logs` lets you review runs later.
+
+## One line to try before you write any code
+
+The searcher stage on its own is a research agent. This single request asks a question with web search enabled and returns a sourced answer:
+
+```bash
+curl -X POST https://api.swarms.world/v1/agent/completions \
+  -H "x-api-key: $SWARMS_API_KEY" -H "Content-Type: application/json" \
+  -d '{"agent_config": {"agent_name": "Researcher", "system_prompt": "Answer with current, sourced facts and cite the URL of each source.", "model_name": "gpt-5.4-mini", "max_loops": 1, "max_tokens": 800}, "task": "What are the current EU AI Act deadlines for general-purpose AI model providers?", "tools_enabled": ["auto_search"]}'
+```
+
+## FAQ
+
+### How do I build a deep research agent with an API?
+
+Split the work into a planner that writes sub-questions, parallel searcher agents with web search, and a synthesizer followed by a critic. On the Swarms API the planner and searchers are calls to `/v1/agent/completions` with `tools_enabled: ["auto_search", "web_scraper"]`, and the synthesizer and critic run as one `SequentialWorkflow` on `/v1/swarm/completions`. The full pipeline in this guide is about 100 lines of Python.
+
+### What does a deep research report cost on the Swarms API?
+
+About $0.22 per report with four sub-questions: under a cent for planning, about $0.17 for four web-searching agents (a flat $0.04 search fee each plus tokens), and about $0.045 for the synthesizer and critic. Every response reports its exact cost in `usage.total_cost`.
+
+### Why add a critic agent instead of asking the synthesizer to be careful?
+
+Because a second model reading the report against the source findings catches things the author cannot see in its own text. In our run the critic flagged two unsupported claims and one vague recommendation and rewrote them. The cost of that pass was about two cents.
+
+### Can the searchers use my own search provider instead of the built-in one?
+
+Yes. Attach an MCP server to the agent with `mcp_url` and the agent can call your search or retrieval tools; MCP servers have no fee beyond tokens. The built-in `auto_search` is the quickest way to start because it needs no setup.
+
+### How long does the pipeline take?
+
+About a minute end to end in our runs: a few seconds for planning, the search stage in parallel, and 22.8 seconds for the synthesizer and critic. Streaming the synthesis stage makes the wait visible in a UI.
+
+## Get started
+
+Get a key at [swarms.world](https://swarms.world/platform/api-keys), run the one-line cURL above to see a sourced answer, then save the two files from this guide and start the API with `uvicorn`. The [Swarms API documentation](https://docs.swarms.ai) covers the agent endpoint, the built-in tools and every swarm architecture. For other patterns built the same way, the [industry pages](/industries) have research desks for finance, legal, life sciences and more, each with runnable code.

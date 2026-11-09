@@ -1,0 +1,296 @@
+---
+title: "用多智能体集群构建你自己的深度研究 API"
+description: "一个规划者、多个并行联网搜索的智能体、一个综合者和一个核查事实的批评者，在 Swarms API 上用大约 100 行 Python 串联起来，并通过 FastAPI 暴露为 HTTP 端点。真实输出、真实费用，以及一条在写任何代码之前就能试用研究智能体的 cURL 命令。"
+date: "2026-11-08"
+author: "Kye Gomez"
+categories: ["指南", "工程"]
+featured: false
+readTime: "12 分钟阅读"
+image: "/build_deep_research_api_multi_agent_banner.png"
+---
+
+# 用多智能体集群构建你自己的深度研究 API
+
+深度研究功能，即助手规划一组搜索、阅读结果并撰写一份带来源的报告，是今年最受欢迎的 AI 能力，也是大多数团队以为自己做不出来的能力。它背后的模式其实很小：拆分问题、并行搜索、综合、核查。其中每一步都是对 [Swarms API](https://docs.swarms.ai) 的一次调用，智能体、联网搜索工具和编排都由它处理。
+
+本指南用两个文件构建一个深度研究 API。`deep_research.py` 运行流水线，`research_api.py` 用 FastAPI 把它包装起来，这样任何能发送 POST 的东西都能请求一份报告。过程中我们会展示一次真实运行产生了什么、花了多少钱，以及与向一个强模型直接提问相比如何。
+
+## 流水线
+
+四个阶段，每个阶段是一个承担不同职责的不同智能体：
+
+1. **规划者。** 一个小而快的模型把问题变成四个聚焦的子问题。对 `/v1/agent/completions` 的一次调用。
+2. **搜索者。** 每个子问题一个智能体，并行运行，每个都启用了 API 内置的 `auto_search` 联网搜索和 `web_scraper` 工具。它们用带来源的事实作答并引用 URL。
+3. **综合者。** 一个强写作模型把发现整理成结构化报告，并给每个论断标注它来自哪条发现。
+4. **批评者。** 第二个模型对照发现审阅报告，列出没有依据的论断、缺失的截止日期和含糊的建议，然后输出修订后的报告。
+
+第 3 和第 4 阶段作为一个 `SequentialWorkflow` 集群运行在 `/v1/swarm/completions` 上，所以批评者会自动接收综合者的输出。第 2 阶段使用智能体端点，因为内置的联网工具就在那里，一个线程池让四个搜索者同时运行。
+
+```
+question
+   │
+   ▼
+Planner (gpt-5.4-mini) ── 4 sub-questions
+   │
+   ├──▶ Searcher 1 (auto_search + web_scraper) ─┐
+   ├──▶ Searcher 2                              ├─ findings [F1..F4]
+   ├──▶ Searcher 3                              │
+   └──▶ Searcher 4 ─────────────────────────────┘
+                                                 │
+                                                 ▼
+                     SequentialWorkflow: Synthesizer (claude-sonnet-5-5) → Critic (gpt-5.4-mini)
+                                                 │
+                                                 ▼
+                                          corrected report
+```
+
+## 代码
+
+```python
+# deep_research.py
+# A deep research pipeline on the Swarms API: a planner writes sub-questions,
+# searchers answer them in parallel with web search, then a synthesizer and a
+# critic produce the report. Requires: pip install requests
+import json
+import os
+import sys
+import time
+from concurrent.futures import ThreadPoolExecutor
+
+import requests
+
+API = "https://api.swarms.world"
+HEADERS = {"x-api-key": os.environ["SWARMS_API_KEY"], "Content-Type": "application/json"}
+
+
+def agent(name: str, system_prompt: str, task: str, model: str = "gpt-5.4-mini",
+          tools: list[str] | None = None, max_tokens: int = 900) -> tuple[str, float]:
+    """One call to /v1/agent/completions. Returns (text, cost_in_usd)."""
+    body = {
+        "agent_config": {
+            "agent_name": name,
+            "system_prompt": system_prompt,
+            "model_name": model,
+            "max_loops": 1,
+            "max_tokens": max_tokens,
+        },
+        "task": task,
+    }
+    if tools:
+        body["tools_enabled"] = tools
+    r = requests.post(f"{API}/v1/agent/completions", headers=HEADERS, json=body, timeout=180)
+    r.raise_for_status()
+    data = r.json()
+    # With tools on, outputs also contain tool-call entries whose content is a
+    # list. The agent's own prose is the string content under its name.
+    text = "\n".join(
+        m["content"] for m in data["outputs"] if m["role"] == name and isinstance(m["content"], str)
+    )
+    return text.strip(), data["usage"]["total_cost"]
+
+
+def plan(question: str) -> tuple[list[str], float]:
+    text, cost = agent(
+        "Research Planner",
+        "You are a research planner. Given a research question, return exactly 4 focused "
+        "sub-questions, one per line, with no numbering and no commentary. Each should be "
+        "answerable with a web search and together they should cover the question.",
+        question,
+        max_tokens=400,
+    )
+    return [line.strip() for line in text.splitlines() if line.strip()], cost
+
+
+def search(sub_question: str) -> tuple[str, float]:
+    return agent(
+        "Searcher",
+        "You are a research assistant with web search and a page scraper. Answer the question "
+        "with current, sourced facts in 150-250 words. Cite the URL of each source you rely on. "
+        "If sources conflict, say so.",
+        sub_question,
+        tools=["auto_search", "web_scraper"],
+    )
+
+
+def synthesize(question: str, findings: list[str]) -> tuple[str, float, float]:
+    """Synthesizer then critic, as one SequentialWorkflow swarm."""
+    task = f"Research question: {question}\n\nFindings from the search stage:\n\n" + "\n\n".join(
+        f"[F{i + 1}] {f}" for i, f in enumerate(findings)
+    ) + "\n\nWrite the final report."
+    body = {
+        "name": "Deep Research Synthesis",
+        "swarm_type": "SequentialWorkflow",
+        "task": task,
+        "max_loops": 1,
+        "agents": [
+            {
+                "agent_name": "Synthesizer",
+                "system_prompt": "You are a senior research writer. Turn the findings into a report with the sections: Summary, What changed, Who is affected, Deadlines, Recommended actions, Open questions. Tag every factual claim with the finding it comes from, like [F2]. Under 600 words.",
+                "model_name": "claude-sonnet-5-5",
+                "max_loops": 1,
+                "max_tokens": 1400,
+            },
+            {
+                "agent_name": "Critic",
+                "system_prompt": "You are a fact-checking editor. Review the report you receive. List any claim not supported by the findings, any missing deadline, and any vague recommendation, then output the corrected report in full. Under 700 words.",
+                "model_name": "gpt-5.4-mini",
+                "max_loops": 1,
+                "max_tokens": 1600,
+            },
+        ],
+    }
+    r = requests.post(f"{API}/v1/swarm/completions", headers=HEADERS, json=body, timeout=300)
+    r.raise_for_status()
+    data = r.json()
+    return data["output"][-1]["content"], data["usage"]["total_cost"], data["execution_time"]
+
+
+def deep_research(question: str) -> dict:
+    started = time.perf_counter()
+    sub_questions, plan_cost = plan(question)
+
+    with ThreadPoolExecutor(max_workers=len(sub_questions)) as pool:
+        results = list(pool.map(search, sub_questions))
+    findings = [text for text, _ in results]
+    search_cost = sum(cost for _, cost in results)
+
+    report, synth_cost, synth_seconds = synthesize(question, findings)
+
+    return {
+        "question": question,
+        "sub_questions": sub_questions,
+        "report": report,
+        "cost_usd": round(plan_cost + search_cost + synth_cost, 4),
+        "seconds": round(time.perf_counter() - started, 1),
+        "synthesis_seconds": round(synth_seconds, 1),
+    }
+
+
+if __name__ == "__main__":
+    q = sys.argv[1] if len(sys.argv) > 1 else "What changed in EU AI Act obligations for general-purpose AI model providers during 2026, and what should a startup shipping an LLM-based product do before the next deadline?"
+    print(json.dumps(deep_research(q), indent=2))
+```
+
+`agent` 辅助函数有一处值得解释。启用工具后，智能体端点会在 `outputs` 中返回完整轨迹：用户消息、智能体的工具调用（其 `content` 是一个列表）、工具结果，以及智能体的最终回答。只保留智能体自己名下的字符串内容，就得到了纯文本。
+
+运行：
+
+```bash
+pip install requests
+export SWARMS_API_KEY=your_key
+python deep_research.py "What changed in EU AI Act obligations for general-purpose AI model providers during 2026?"
+```
+
+## 把它暴露为 API
+
+```python
+# research_api.py
+# Exposes the pipeline as an HTTP API. Run: uvicorn research_api:app --port 8000
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel, Field
+
+from deep_research import deep_research
+
+app = FastAPI(title="Deep Research API")
+
+
+class ResearchRequest(BaseModel):
+    question: str = Field(min_length=10, max_length=500)
+
+
+@app.post("/research")
+def research(req: ResearchRequest) -> dict:
+    try:
+        return deep_research(req.question)
+    except Exception as exc:  # surfaces Swarms API errors as a 502 with the message
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+```
+
+```bash
+pip install fastapi uvicorn
+uvicorn research_api:app --port 8000
+
+curl -X POST http://localhost:8000/research \
+  -H "Content-Type: application/json" \
+  -d '{"question": "What changed in EU AI Act obligations for general-purpose AI model providers during 2026, and what should a startup shipping an LLM-based product do before the next deadline?"}'
+```
+
+响应就是 `deep_research` 返回的字典：规划者选出的子问题、修订后的报告、总费用和实际耗时。问题上的 `max_length` 既是校验规则也是成本控制，因为这个问题会进入六个提示词。
+
+## 一次运行的样子
+
+我们针对上面的欧盟 AI 法案问题运行了每个阶段。使用 `gpt-5.4-mini` 的规划者以 $0.0007 的费用返回了这四个子问题：
+
+> How did the EU AI Act's obligations for general-purpose AI model providers change across 2026, including any phased-in requirements or guidance updates?
+> What specific compliance duties apply to providers of general-purpose AI models under the EU AI Act as of the next deadline, especially for transparency, documentation, and copyright policy?
+> What exemptions, reduced obligations, or special rules apply to startups or smaller providers shipping LLM-based products under the EU AI Act?
+> What practical steps should a startup with an LLM-based product take before the next EU AI Act deadline to assess, document, and mitigate compliance risk?
+
+这比大多数人手写的拆分更好，而费用不到一美分的十分之一。
+
+每个搜索者请求都带有固定的 $0.04 联网搜索费加上它的 token，所以四个子问题的搜索阶段大约花费 $0.17，与每个智能体运行多少次搜索无关。搜索者并行运行，所以这一阶段的耗时取决于最慢的那个，而不是总和。
+
+综合集群是这个模式真正体现价值的地方。我们让综合者和批评者处理了一组关于该法案的六条发现。综合者产出了一份带标注的报告；批评者随后指出了两处发现中没有依据的论断，其中一处是：
+
+> **Claim not supported by findings:** "Art. 50 is the most relevant duty for them" for startups that only call a model API. The findings say Art. 50 transparency duties are scheduled for 2 Aug 2026, but do not say they are the most relevant for API-only startups.
+
+它还认为“Classify your role”这条建议过于含糊，将其改写为具体步骤，并返回了带截止日期表格的修订报告。这一阶段耗时 22.8 秒，两个智能体共 4,835 个 token，费用 $0.0449。端到端来看，这条流水线产出一份报告大约花费 $0.22、耗时约一分钟，大部分时间在搜索和综合阶段。
+
+## 与单个强模型智能体的比较
+
+我们还让一个不带工具的 `claude-sonnet-5-5` 智能体回答同一个问题。它一次性作答，费用 $0.0175，开头就写“my information may be out of date”，没有给出来源，并且在写完截止日期表格之前就被 1,500 token 的上限截断了。
+
+| | 单智能体 | 深度研究流水线 |
+|---|---|---|
+| 费用 | $0.0175 | 约 $0.22 |
+| 耗时 | 几秒 | 约一分钟 |
+| 来源 | 无 | 每条发现一个 URL |
+| 时效性 | 模型的训练数据 | 实时联网搜索 |
+| 自我修正 | 无 | 批评者一轮审阅并列出异议 |
+| 输出 | 截断、含糊 | 带截止日期表格的结构化报告 |
+
+流水线的费用约为十二倍，耗时约为十倍。对于一个答案在今年发生了变化、写错日期会有后果的问题，这是一笔划算的交易。对于模型凭记忆就能回答的问题，用单智能体。有价值的产品决策是两者都提供，让用户选择深度。
+
+## 让它可以投入生产
+
+- **按问题缓存。** 一天内相同的问题可以返回已存储的报告。搜索费是最大的成本项，重复问题上的搜索费是浪费。
+- **调整扇出数量。** 四个子问题是不错的默认值。六个能以多出约 $0.09 的代价覆盖更广；对于窄问题两个就够了。
+- **处理两种常见错误。** `402` 表示账户购买的积分余额不足 1 美元；`429` 表示触及速率限制，免费账户是每分钟 100 次请求。流水线每份报告发出六次请求，所以免费账户大约支持每分钟 16 份报告。
+- **流式输出综合阶段**，如果报告要在 UI 中展示。在集群请求上设置 `stream: true` 会返回逐 token 事件，每个都带智能体名称，用户可以看着综合者撰写、批评者修订。
+- **记录 `job_id` 和费用。** 每个响应都包含两者，`GET /v1/swarm/logs` 让你之后可以回顾运行。
+
+## 写任何代码之前先试一行
+
+搜索者阶段本身就是一个研究智能体。这一条请求在启用联网搜索的情况下提问，并返回带来源的答案：
+
+```bash
+curl -X POST https://api.swarms.world/v1/agent/completions \
+  -H "x-api-key: $SWARMS_API_KEY" -H "Content-Type: application/json" \
+  -d '{"agent_config": {"agent_name": "Researcher", "system_prompt": "Answer with current, sourced facts and cite the URL of each source.", "model_name": "gpt-5.4-mini", "max_loops": 1, "max_tokens": 800}, "task": "What are the current EU AI Act deadlines for general-purpose AI model providers?", "tools_enabled": ["auto_search"]}'
+```
+
+## 常见问题
+
+### 如何用 API 构建一个深度研究智能体？
+
+把工作拆成一个撰写子问题的规划者、多个带联网搜索的并行搜索智能体，以及一个综合者加一个批评者。在 Swarms API 上，规划者和搜索者是对 `/v1/agent/completions` 的调用，并设置 `tools_enabled: ["auto_search", "web_scraper"]`；综合者和批评者作为一个 `SequentialWorkflow` 运行在 `/v1/swarm/completions` 上。本指南的完整流水线大约 100 行 Python。
+
+### 在 Swarms API 上一份深度研究报告要花多少钱？
+
+四个子问题时每份报告约 $0.22：规划不到一美分，四个联网搜索智能体约 $0.17（每个固定 $0.04 搜索费加 token），综合者和批评者约 $0.045。每个响应都在 `usage.total_cost` 中报告准确费用。
+
+### 为什么要加一个批评者智能体，而不是要求综合者更小心？
+
+因为第二个模型对照源发现阅读报告，能发现作者在自己的文字里看不到的问题。在我们的运行中，批评者指出了两处无依据的论断和一条含糊的建议并重写了它们。这一轮的费用约两美分。
+
+### 搜索者可以用我自己的搜索服务，而不是内置的吗？
+
+可以。通过 `mcp_url` 给智能体接入一个 MCP 服务器，智能体就能调用你的搜索或检索工具；MCP 服务器除 token 外不收费。内置的 `auto_search` 是最快的起步方式，因为不需要任何配置。
+
+### 流水线需要多长时间？
+
+在我们的运行中端到端约一分钟：规划几秒，搜索阶段并行，综合者和批评者 22.8 秒。对综合阶段做流式输出可以让等待在 UI 中可见。
+
+## 开始使用
+
+在 [swarms.world](https://swarms.world/platform/api-keys) 获取密钥，运行上面那一行 cURL 看看带来源的答案，然后保存本指南的两个文件并用 `uvicorn` 启动 API。[Swarms API 文档](https://docs.swarms.ai)涵盖了智能体端点、内置工具和每种集群架构。想看用同样方式构建的其他模式，[行业页面](/industries)提供了金融、法律、生命科学等领域的研究台，每个都附带可运行代码。

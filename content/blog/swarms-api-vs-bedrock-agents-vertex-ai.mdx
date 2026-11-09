@@ -1,0 +1,301 @@
+---
+title: "Swarms API vs Amazon Bedrock Agents vs Vertex AI Agent Builder: Which Hosted Multi-Agent API Should You Pick in 2026?"
+description: "A hands-on comparison of the three ways to run multi-agent systems without hosting them yourself: the Swarms API, Amazon Bedrock Agents and AgentCore, and Google's Vertex AI Agent Builder with ADK. Same task on each, with architectures, model choice, streaming, batch, pricing and time to first result."
+date: "2026-11-08"
+author: "Kye Gomez"
+categories: ["Comparison", "Guides"]
+featured: false
+readTime: "12 min read"
+image: "/swarms_api_vs_bedrock_agents_vertex_ai_banner.png"
+---
+
+# Swarms API vs Amazon Bedrock Agents vs Vertex AI Agent Builder: Which Hosted Multi-Agent API Should You Pick in 2026?
+
+If you want several AI agents to plan, research, write and review together, and you do not want to run the servers that host them, you have three realistic options in 2026: the [Swarms API](https://docs.swarms.ai), Amazon Bedrock Agents (now called Agents Classic) with its successor Amazon Bedrock AgentCore, and Google's Vertex AI Agent Builder with the Agent Development Kit (ADK). This guide runs the same three-agent task on each, then compares the parts that decide a platform choice: supported architectures, model catalogue, streaming, batch processing, pricing and the time it takes to get a first result.
+
+The short version: Bedrock and Vertex sell you a runtime. You write the agent code, package it, deploy it and pay for compute by the vCPU-hour while it serves traffic. The Swarms API sells you the result. You describe the agents and the architecture in one JSON body, send one HTTP request and pay per agent plus model tokens. Which is right depends on how much of the orchestration you want to own.
+
+## The task we ran on all three
+
+Every example below builds the same pipeline: a researcher gathers facts, an analyst structures them, a writer produces a competitive brief. The task is a market brief on shared e-scooters in Berlin. It is deliberately ordinary. The point is to see how much code and infrastructure each platform needs to run three cooperating agents.
+
+## Option 1: the Swarms API
+
+The Swarms API exposes multi-agent orchestration as a single endpoint, `POST /v1/swarm/completions`. You pick a `swarm_type`, list the agents with their system prompts and models, and send the task. There is nothing to deploy.
+
+```bash
+curl -X POST https://api.swarms.world/v1/swarm/completions \
+  -H "x-api-key: $SWARMS_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Market Brief Desk",
+    "swarm_type": "SequentialWorkflow",
+    "task": "Write a competitive brief on the shared electric scooter market in Berlin for an operator considering entry in 2027. Cover market size, three main competitors, regulatory risks and a recommendation. Keep it under 500 words.",
+    "agents": [
+      {
+        "agent_name": "Researcher",
+        "system_prompt": "You are a market researcher. List the facts, figures and competitor details relevant to the task as concise bullet points.",
+        "model_name": "gpt-5.4-mini",
+        "max_loops": 1
+      },
+      {
+        "agent_name": "Analyst",
+        "system_prompt": "You are a strategy analyst. Turn the research into structured findings with a recommendation and reasoning.",
+        "model_name": "claude-haiku-5-5",
+        "max_loops": 1
+      },
+      {
+        "agent_name": "Writer",
+        "system_prompt": "You are a business writer. Write the final brief under 500 words with the sections: Market size, Main competitors, Regulatory risks, Recommendation.",
+        "model_name": "claude-sonnet-5-5",
+        "max_loops": 1
+      }
+    ],
+    "max_loops": 1
+  }'
+```
+
+The same call in Python with the official client:
+
+```python
+import os
+from swarms_client import SwarmsClient
+
+client = SwarmsClient(api_key=os.environ["SWARMS_API_KEY"])
+
+result = client.swarms.run(
+    name="Market Brief Desk",
+    swarm_type="SequentialWorkflow",
+    task=(
+        "Write a competitive brief on the shared electric scooter market in Berlin "
+        "for an operator considering entry in 2027. Cover market size, three main "
+        "competitors, regulatory risks and a recommendation. Keep it under 500 words."
+    ),
+    agents=[
+        {
+            "agent_name": "Researcher",
+            "system_prompt": "You are a market researcher. List the facts, figures and competitor details relevant to the task as concise bullet points.",
+            "model_name": "gpt-5.4-mini",
+            "max_loops": 1,
+        },
+        {
+            "agent_name": "Analyst",
+            "system_prompt": "You are a strategy analyst. Turn the research into structured findings with a recommendation and reasoning.",
+            "model_name": "claude-haiku-5-5",
+            "max_loops": 1,
+        },
+        {
+            "agent_name": "Writer",
+            "system_prompt": "You are a business writer. Write the final brief under 500 words with the sections: Market size, Main competitors, Regulatory risks, Recommendation.",
+            "model_name": "claude-sonnet-5-5",
+            "max_loops": 1,
+        },
+    ],
+    max_loops=1,
+)
+
+for step in result["output"]:
+    print(f"\n## {step['role']}\n{step['content']}")
+
+print(result["usage"])
+```
+
+When we ran this request, the response came back in 22 seconds with every agent's output in order and a `usage` block that reads:
+
+```json
+{
+  "input_tokens": 5064,
+  "output_tokens": 3424,
+  "total_tokens": 8488,
+  "total_cost": 0.058763,
+  "billing_info": {
+    "cost_breakdown": {
+      "agent_cost": 0.03,
+      "input_token_cost": 0.007076,
+      "output_token_cost": 0.021687,
+      "num_agents": 3
+    }
+  }
+}
+```
+
+Three agents from two model providers, one request, under six cents, and the bill is itemised in the response. Switching the architecture is a one-word change: set `swarm_type` to `ConcurrentWorkflow` and the agents run in parallel, set it to `HierarchicalSwarm` and a director plans and delegates, set it to `MajorityVoting` and they vote.
+
+## Option 2: Amazon Bedrock Agents and AgentCore
+
+Amazon has two generations here, and the distinction matters in 2026.
+
+**Bedrock Agents Classic** is the original console-configured product: you define an agent with instructions, action groups (Lambda-backed tools) and knowledge bases, then invoke it with `InvokeAgent`. Multi-agent collaboration arrived in March 2025. You designate one agent as the supervisor and associate collaborator agents with it; the supervisor plans and routes work to the collaborators. AWS's own documentation now states that you can no longer sign up for Agents Classic, and existing users are pointed to Amazon Bedrock AgentCore. If you are starting today, Classic is not an option.
+
+**Amazon Bedrock AgentCore** is the replacement: a managed runtime that hosts agent code you write with any framework, most commonly the open-source Strands Agents SDK. You get Runtime (serverless sessions), Gateway (tools as MCP), Memory, Identity, Browser, Code Interpreter and Observability as separate billable services. Multi-agent patterns live in your code, not in the platform.
+
+Here is the same three-agent pipeline with Strands. The `Swarm` class lets agents hand off to each other; the first agent receives the task and the run ends when an agent replies without handing off.
+
+```python
+# agent.py
+from bedrock_agentcore.runtime import BedrockAgentCoreApp
+from strands import Agent
+from strands.multiagent import Swarm
+
+researcher = Agent(
+    name="researcher",
+    system_prompt="You are a market researcher. Gather facts, figures and competitor details, then hand off to the analyst.",
+)
+analyst = Agent(
+    name="analyst",
+    system_prompt="You are a strategy analyst. Structure the research into findings and a recommendation, then hand off to the writer.",
+)
+writer = Agent(
+    name="writer",
+    system_prompt="You are a business writer. Write the final brief under 500 words. Do not hand off.",
+)
+
+swarm = Swarm(
+    [researcher, analyst, writer],
+    entry_point=researcher,
+    max_handoffs=6,
+    max_iterations=6,
+    execution_timeout=600.0,
+)
+
+app = BedrockAgentCoreApp()
+
+
+@app.entrypoint
+def invoke(payload: dict) -> dict:
+    result = swarm(payload["prompt"])
+    return {
+        "status": str(result.status),
+        "path": [node.node_id for node in result.node_history],
+        "output": str(result.results[result.node_history[-1].node_id].result),
+    }
+
+
+if __name__ == "__main__":
+    app.run()
+```
+
+Deploying and calling it:
+
+```bash
+pip install bedrock-agentcore strands-agents bedrock-agentcore-starter-toolkit
+agentcore configure --entrypoint agent.py
+agentcore launch
+agentcore invoke '{"prompt": "Write a competitive brief on the shared electric scooter market in Berlin for an operator considering entry in 2027..."}'
+```
+
+What you are taking on: an AWS account with IAM roles for the runtime, a deployment step for every code change, ARM64 containers if you go the custom route, and model access requests in Bedrock for each model family. Strands itself is model-agnostic (Bedrock, Anthropic, OpenAI, Gemini and LiteLLM providers are supported), but the AgentCore pricing page is explicit that model tokens are billed separately through Bedrock or your provider.
+
+## Option 3: Vertex AI Agent Builder with ADK
+
+Google's path is the Agent Development Kit, an open-source framework in Python, TypeScript, Go, Java and Kotlin, plus Agent Engine, the managed runtime in Vertex AI that hosts it. ADK ships workflow agents that match the Swarms architectures most closely: `SequentialAgent`, `ParallelAgent` and `LoopAgent`, with `LlmAgent` as the leaf.
+
+```python
+# market_brief/agent.py
+from google.adk.agents.llm_agent import LlmAgent
+from google.adk.agents.sequential_agent import SequentialAgent
+
+researcher = LlmAgent(
+    name="Researcher",
+    model="gemini-2.5-flash",
+    instruction=(
+        "You are a market researcher. List the facts, figures and competitor "
+        "details relevant to the user's request as concise bullet points."
+    ),
+    output_key="research",
+)
+
+analyst = LlmAgent(
+    name="Analyst",
+    model="gemini-2.5-flash",
+    instruction=(
+        "You are a strategy analyst. Using the research below, write structured "
+        "findings with a recommendation and reasoning.\n\nResearch:\n{research}"
+    ),
+    output_key="findings",
+)
+
+writer = LlmAgent(
+    name="Writer",
+    model="gemini-2.5-pro",
+    instruction=(
+        "You are a business writer. Using the findings below, write the final "
+        "brief under 500 words with the sections: Market size, Main competitors, "
+        "Regulatory risks, Recommendation.\n\nFindings:\n{findings}"
+    ),
+)
+
+root_agent = SequentialAgent(
+    name="MarketBriefPipeline",
+    sub_agents=[researcher, analyst, writer],
+    description="Research, analyse and write a competitive market brief.",
+)
+```
+
+Running it locally and deploying it:
+
+```bash
+pip install google-adk
+adk run market_brief
+adk deploy agent_engine --project $GOOGLE_CLOUD_PROJECT --region us-central1 \
+  --staging_bucket gs://$STAGING_BUCKET market_brief
+```
+
+ADK is a pleasant framework, and the `output_key` to `{placeholder}` convention for passing state between steps is clean. The cost is the same shape as AWS: a Google Cloud project, a staging bucket, IAM, a deployment per change, and an hourly runtime bill on top of model tokens. Gemini is first-class; Claude, OpenAI and Ollama models work through ADK's model integrations and LiteLLM.
+
+## Side by side
+
+| | Swarms API | Bedrock AgentCore (Strands) | Vertex AI Agent Builder (ADK) |
+|---|---|---|---|
+| What you deploy | Nothing, one HTTP request | Your agent code to Runtime | Your agent code to Agent Engine |
+| Multi-agent architectures | 14 built in: Sequential, Concurrent, Hierarchical, MixtureOfAgents, GroupChat, MajorityVoting, Debate, Council, Router, Rearrange and more | Whatever you code: Strands Swarm, Graph, agents as tools | Sequential, Parallel, Loop workflow agents, plus custom and graph workflows |
+| Change architecture | Change one string | Change code, redeploy | Change code, redeploy |
+| Models | Any id the API serves: GPT-5.4, Claude Sonnet 5.5, Gemini 2.5, DeepSeek, Kimi and OpenRouter catalogue, mixed per agent | Bedrock catalogue plus provider SDKs via Strands | Gemini first, others via integrations and LiteLLM |
+| Streaming | SSE on agents and swarms, with per-agent attribution | Streaming in your code and Runtime | Streaming in ADK and Agent Engine |
+| Batch | `/v1/swarm/batch/completions` and `/v1/agent/batch/completions` (premium) | Build it | Build it |
+| Logs and metrics | `/v1/swarm/logs`, `/v1/metrics/summary` in the API | CloudWatch via Observability | Cloud Logging and Trace |
+| Compute pricing | None | $0.1276 per vCPU-hour and $0.0169 per GB-hour (Runtime v2, consumption) | $0.0864 per vCPU-hour and $0.0090 per GB-hour |
+| Orchestration pricing | $0.01 per agent per request plus model tokens with a 15% service fee | Gateway $0.005 per 1,000 invocations, Memory $0.25 per 1,000 events, plus model tokens | Sessions and Memory Bank $0.25 per 1,000 events, plus model tokens |
+| Time to first result | Minutes: API key and one request | Hours: account, IAM, configure, launch | Hours: project, bucket, deploy |
+
+Pricing figures are from the public pricing pages on 8 November 2026 and change often, so check them before you model costs. Swarms prices come from `GET /v1/models/pricing`, which returns each model's rate with the service fee already included.
+
+## Where each one wins
+
+**Pick the Swarms API when** the product is the multi-agent output, not the hosting. Startups adding an agent feature, teams that want to try five architectures in an afternoon, no-code tools that need one HTTP step, and anyone who wants to mix models from different providers in one run. The itemised `usage` block makes per-customer billing straightforward, and the night-time discount on swarm completions for paid plans halves token costs for batch work scheduled off-peak.
+
+**Pick Bedrock AgentCore when** the rest of your stack already lives in AWS, you need tools exposed through Gateway with IAM-scoped identity, or your compliance team requires data to stay inside your AWS account and VPC. You will write more code, and you will own the deploy pipeline, but you get the full AWS control plane around it.
+
+**Pick Vertex AI Agent Builder when** you are committed to Gemini and Google Cloud, you want ADK's typed workflow agents in a language other than Python, or Agent Engine's sessions and Memory Bank fit a conversational product. The same trade applies: more ownership, more control, more setup.
+
+There is also a hybrid that many teams end up with. Keep your own agent code where it needs tools or private data, and call the Swarms API from inside it for the parts that are pure orchestration: a `MajorityVoting` check before an action, a `HierarchicalSwarm` research pass, a `ConcurrentWorkflow` fan-out across a document set. The API is a plain HTTP call, so it slots into a Strands tool, an ADK function tool or a Lambda equally well.
+
+## FAQ
+
+### Is Amazon Bedrock Agents still available for new projects?
+
+Amazon Bedrock Agents is now Amazon Bedrock Agents Classic, and AWS's documentation states that new sign-ups are no longer accepted. Existing users can keep using it. New projects are directed to Amazon Bedrock AgentCore with a framework such as Strands Agents.
+
+### What is the closest Bedrock alternative that does not require deploying code?
+
+The Swarms API. It accepts the agents and the architecture in one request body, runs them on hosted infrastructure, and returns the output with an itemised bill. There is no runtime to deploy or scale.
+
+### Can the Swarms API use Claude, GPT and Gemini in the same swarm?
+
+Yes. Each agent sets its own `model_name`, so one swarm can use `claude-sonnet-5-5` for writing, `gpt-5.4-mini` for research and `deepseek-v4-pro` for analysis. Call `GET /v1/models/available` for the live list and prices.
+
+### How does Swarms API pricing compare with Agent Engine and AgentCore?
+
+Swarms charges $0.01 per agent per request plus model tokens with a 15% service fee, and nothing for compute. Agent Engine and AgentCore charge for runtime compute by the vCPU-hour and GB-hour, plus per-event fees for sessions or memory, plus model tokens billed separately. For bursty or low-volume workloads the Swarms model is usually cheaper because idle time costs nothing. For a constant high-volume stream of identical calls, run the numbers with your own token counts.
+
+### Does the Swarms API support streaming for multi-agent runs?
+
+Yes. Set `stream: true` on `/v1/swarm/completions` and the API returns Server-Sent Events. For `SequentialWorkflow` and `AgentRearrange` every chunk carries the agent name, so a UI can show which agent is typing. Other swarm types send one chunk with the complete result.
+
+## Get started
+
+```bash
+curl -H "x-api-key: $SWARMS_API_KEY" https://api.swarms.world/v1/swarms/available
+```
+
+That call lists every architecture the API runs today. Get a key at [swarms.world](https://swarms.world/platform/api-keys), read the [Swarms API documentation](https://docs.swarms.ai), and see what the same request looks like for your field on the [industry pages](/industries). If you are weighing the open-source frameworks rather than hosted platforms, the [multi-agent framework comparison](/blog/multi-agent-framework-comparison-2026) covers LangGraph, CrewAI, AutoGen and Swarms.

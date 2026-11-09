@@ -1,0 +1,301 @@
+---
+title: "Swarms API、Amazon Bedrock Agents 与 Vertex AI Agent Builder 对比：2026 年该选哪个托管多智能体 API？"
+description: "三种无需自建服务器即可运行多智能体系统的方式实测对比：Swarms API、Amazon Bedrock Agents 与 AgentCore、Google 的 Vertex AI Agent Builder 与 ADK。同一任务分别实现，逐项比较架构、模型选择、流式输出、批处理、定价以及拿到第一个结果所需的时间。"
+date: "2026-11-08"
+author: "Kye Gomez"
+categories: ["对比", "指南"]
+featured: false
+readTime: "12 分钟阅读"
+image: "/swarms_api_vs_bedrock_agents_vertex_ai_banner.png"
+---
+
+# Swarms API、Amazon Bedrock Agents 与 Vertex AI Agent Builder 对比：2026 年该选哪个托管多智能体 API？
+
+如果你希望多个 AI 智能体协同完成规划、研究、撰写和审核，又不想自己运维承载它们的服务器，那么在 2026 年有三个现实的选项：[Swarms API](https://docs.swarms.ai)、Amazon Bedrock Agents（现已更名为 Agents Classic）及其继任者 Amazon Bedrock AgentCore，以及 Google 的 Vertex AI Agent Builder 搭配 Agent Development Kit（ADK）。本文在三者上运行同一个三智能体任务，然后比较真正决定平台选型的几个方面：支持的架构、模型目录、流式输出、批处理、定价，以及拿到第一个结果所需的时间。
+
+一句话总结：Bedrock 和 Vertex 卖给你的是一个运行时。你编写智能体代码、打包、部署，并在它处理流量时按 vCPU 小时付费。Swarms API 卖给你的是结果。你用一个 JSON 请求体描述智能体和架构，发送一次 HTTP 请求，按智能体数量加模型 token 付费。哪种更合适，取决于你想自己掌控多少编排工作。
+
+## 我们在三个平台上运行的任务
+
+下面每个示例构建的都是同一条流水线：研究员收集事实，分析师整理结构，撰稿人产出一份竞争简报。任务是一份关于柏林共享电动滑板车市场的简报。任务刻意选得平常，重点是看每个平台运行三个协作智能体需要多少代码和基础设施。
+
+## 选项一：Swarms API
+
+Swarms API 把多智能体编排暴露为一个端点：`POST /v1/swarm/completions`。你选择一个 `swarm_type`，列出智能体及其系统提示词和模型，然后发送任务。没有任何东西需要部署。
+
+```bash
+curl -X POST https://api.swarms.world/v1/swarm/completions \
+  -H "x-api-key: $SWARMS_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Market Brief Desk",
+    "swarm_type": "SequentialWorkflow",
+    "task": "Write a competitive brief on the shared electric scooter market in Berlin for an operator considering entry in 2027. Cover market size, three main competitors, regulatory risks and a recommendation. Keep it under 500 words.",
+    "agents": [
+      {
+        "agent_name": "Researcher",
+        "system_prompt": "You are a market researcher. List the facts, figures and competitor details relevant to the task as concise bullet points.",
+        "model_name": "gpt-5.4-mini",
+        "max_loops": 1
+      },
+      {
+        "agent_name": "Analyst",
+        "system_prompt": "You are a strategy analyst. Turn the research into structured findings with a recommendation and reasoning.",
+        "model_name": "claude-haiku-5-5",
+        "max_loops": 1
+      },
+      {
+        "agent_name": "Writer",
+        "system_prompt": "You are a business writer. Write the final brief under 500 words with the sections: Market size, Main competitors, Regulatory risks, Recommendation.",
+        "model_name": "claude-sonnet-5-5",
+        "max_loops": 1
+      }
+    ],
+    "max_loops": 1
+  }'
+```
+
+用官方 Python 客户端发起同样的调用：
+
+```python
+import os
+from swarms_client import SwarmsClient
+
+client = SwarmsClient(api_key=os.environ["SWARMS_API_KEY"])
+
+result = client.swarms.run(
+    name="Market Brief Desk",
+    swarm_type="SequentialWorkflow",
+    task=(
+        "Write a competitive brief on the shared electric scooter market in Berlin "
+        "for an operator considering entry in 2027. Cover market size, three main "
+        "competitors, regulatory risks and a recommendation. Keep it under 500 words."
+    ),
+    agents=[
+        {
+            "agent_name": "Researcher",
+            "system_prompt": "You are a market researcher. List the facts, figures and competitor details relevant to the task as concise bullet points.",
+            "model_name": "gpt-5.4-mini",
+            "max_loops": 1,
+        },
+        {
+            "agent_name": "Analyst",
+            "system_prompt": "You are a strategy analyst. Turn the research into structured findings with a recommendation and reasoning.",
+            "model_name": "claude-haiku-5-5",
+            "max_loops": 1,
+        },
+        {
+            "agent_name": "Writer",
+            "system_prompt": "You are a business writer. Write the final brief under 500 words with the sections: Market size, Main competitors, Regulatory risks, Recommendation.",
+            "model_name": "claude-sonnet-5-5",
+            "max_loops": 1,
+        },
+    ],
+    max_loops=1,
+)
+
+for step in result["output"]:
+    print(f"\n## {step['role']}\n{step['content']}")
+
+print(result["usage"])
+```
+
+我们实际运行这个请求时，22 秒后拿到了响应，其中按顺序包含每个智能体的输出，以及一个 `usage` 块：
+
+```json
+{
+  "input_tokens": 5064,
+  "output_tokens": 3424,
+  "total_tokens": 8488,
+  "total_cost": 0.058763,
+  "billing_info": {
+    "cost_breakdown": {
+      "agent_cost": 0.03,
+      "input_token_cost": 0.007076,
+      "output_token_cost": 0.021687,
+      "num_agents": 3
+    }
+  }
+}
+```
+
+来自两家模型供应商的三个智能体，一次请求，不到六美分，账单在响应里逐项列出。切换架构只需改一个词：把 `swarm_type` 设为 `ConcurrentWorkflow`，智能体就并行运行；设为 `HierarchicalSwarm`，就由一个主管来规划和分派；设为 `MajorityVoting`，它们就进行投票。
+
+## 选项二：Amazon Bedrock Agents 与 AgentCore
+
+Amazon 这里有两代产品，而且在 2026 年这个区别很重要。
+
+**Bedrock Agents Classic** 是最初通过控制台配置的产品：你定义一个带指令、动作组（由 Lambda 支撑的工具）和知识库的智能体，然后用 `InvokeAgent` 调用它。多智能体协作功能在 2025 年 3 月推出。你把一个智能体指定为主管（supervisor），再把协作者智能体关联到它上面；主管负责规划并把工作路由给协作者。AWS 自己的文档现在写明，Agents Classic 已不再接受新注册，现有用户被引导至 Amazon Bedrock AgentCore。如果你今天才开始，Classic 不是一个选项。
+
+**Amazon Bedrock AgentCore** 是替代品：一个托管运行时，承载你用任意框架编写的智能体代码，最常见的是开源的 Strands Agents SDK。你会得到 Runtime（无服务器会话）、Gateway（以 MCP 形式提供的工具）、Memory、Identity、Browser、Code Interpreter 和 Observability，每一项都单独计费。多智能体模式存在于你的代码里，而不是平台里。
+
+下面是用 Strands 实现的同一条三智能体流水线。`Swarm` 类允许智能体之间互相交接；第一个智能体接收任务，当某个智能体回复而不再交接时运行结束。
+
+```python
+# agent.py
+from bedrock_agentcore.runtime import BedrockAgentCoreApp
+from strands import Agent
+from strands.multiagent import Swarm
+
+researcher = Agent(
+    name="researcher",
+    system_prompt="You are a market researcher. Gather facts, figures and competitor details, then hand off to the analyst.",
+)
+analyst = Agent(
+    name="analyst",
+    system_prompt="You are a strategy analyst. Structure the research into findings and a recommendation, then hand off to the writer.",
+)
+writer = Agent(
+    name="writer",
+    system_prompt="You are a business writer. Write the final brief under 500 words. Do not hand off.",
+)
+
+swarm = Swarm(
+    [researcher, analyst, writer],
+    entry_point=researcher,
+    max_handoffs=6,
+    max_iterations=6,
+    execution_timeout=600.0,
+)
+
+app = BedrockAgentCoreApp()
+
+
+@app.entrypoint
+def invoke(payload: dict) -> dict:
+    result = swarm(payload["prompt"])
+    return {
+        "status": str(result.status),
+        "path": [node.node_id for node in result.node_history],
+        "output": str(result.results[result.node_history[-1].node_id].result),
+    }
+
+
+if __name__ == "__main__":
+    app.run()
+```
+
+部署和调用：
+
+```bash
+pip install bedrock-agentcore strands-agents bedrock-agentcore-starter-toolkit
+agentcore configure --entrypoint agent.py
+agentcore launch
+agentcore invoke '{"prompt": "Write a competitive brief on the shared electric scooter market in Berlin for an operator considering entry in 2027..."}'
+```
+
+你要承担的内容：一个带有运行时 IAM 角色的 AWS 账户，每次代码改动都要走一次部署，走自定义路线时需要 ARM64 容器，以及在 Bedrock 中为每个模型系列申请访问权限。Strands 本身与模型无关（支持 Bedrock、Anthropic、OpenAI、Gemini 和 LiteLLM 等提供方），但 AgentCore 的定价页面明确说明，模型 token 通过 Bedrock 或你的供应商单独计费。
+
+## 选项三：Vertex AI Agent Builder 与 ADK
+
+Google 的路线是 Agent Development Kit，一个提供 Python、TypeScript、Go、Java 和 Kotlin 版本的开源框架，再加上 Agent Engine，即 Vertex AI 中承载它的托管运行时。ADK 自带的工作流智能体与 Swarms 的架构最为接近：`SequentialAgent`、`ParallelAgent` 和 `LoopAgent`，叶子节点则是 `LlmAgent`。
+
+```python
+# market_brief/agent.py
+from google.adk.agents.llm_agent import LlmAgent
+from google.adk.agents.sequential_agent import SequentialAgent
+
+researcher = LlmAgent(
+    name="Researcher",
+    model="gemini-2.5-flash",
+    instruction=(
+        "You are a market researcher. List the facts, figures and competitor "
+        "details relevant to the user's request as concise bullet points."
+    ),
+    output_key="research",
+)
+
+analyst = LlmAgent(
+    name="Analyst",
+    model="gemini-2.5-flash",
+    instruction=(
+        "You are a strategy analyst. Using the research below, write structured "
+        "findings with a recommendation and reasoning.\n\nResearch:\n{research}"
+    ),
+    output_key="findings",
+)
+
+writer = LlmAgent(
+    name="Writer",
+    model="gemini-2.5-pro",
+    instruction=(
+        "You are a business writer. Using the findings below, write the final "
+        "brief under 500 words with the sections: Market size, Main competitors, "
+        "Regulatory risks, Recommendation.\n\nFindings:\n{findings}"
+    ),
+)
+
+root_agent = SequentialAgent(
+    name="MarketBriefPipeline",
+    sub_agents=[researcher, analyst, writer],
+    description="Research, analyse and write a competitive market brief.",
+)
+```
+
+本地运行与部署：
+
+```bash
+pip install google-adk
+adk run market_brief
+adk deploy agent_engine --project $GOOGLE_CLOUD_PROJECT --region us-central1 \
+  --staging_bucket gs://$STAGING_BUCKET market_brief
+```
+
+ADK 是一个用起来舒服的框架，用 `output_key` 对应 `{占位符}` 在步骤之间传递状态的约定也很清晰。代价与 AWS 同一个形态：一个 Google Cloud 项目、一个暂存存储桶、IAM、每次改动一次部署，以及在模型 token 之外按小时计费的运行时。Gemini 是一等公民；Claude、OpenAI 和 Ollama 模型通过 ADK 的模型集成和 LiteLLM 使用。
+
+## 并排对比
+
+| | Swarms API | Bedrock AgentCore（Strands） | Vertex AI Agent Builder（ADK） |
+|---|---|---|---|
+| 你需要部署什么 | 不需要，一次 HTTP 请求 | 把你的智能体代码部署到 Runtime | 把你的智能体代码部署到 Agent Engine |
+| 多智能体架构 | 内置 14 种：Sequential、Concurrent、Hierarchical、MixtureOfAgents、GroupChat、MajorityVoting、Debate、Council、Router、Rearrange 等 | 你自己编码：Strands Swarm、Graph、智能体即工具 | Sequential、Parallel、Loop 工作流智能体，以及自定义和图工作流 |
+| 更换架构 | 改一个字符串 | 改代码，重新部署 | 改代码，重新部署 |
+| 模型 | API 提供的任意模型 id：GPT-5.4、Claude Sonnet 5.5、Gemini 2.5、DeepSeek、Kimi 及 OpenRouter 目录，每个智能体可不同 | Bedrock 目录，加上通过 Strands 接入的供应商 SDK | Gemini 优先，其他通过集成和 LiteLLM |
+| 流式输出 | 智能体和集群均支持 SSE，并带有每个智能体的归属标记 | 在你的代码和 Runtime 中实现 | 在 ADK 和 Agent Engine 中实现 |
+| 批处理 | `/v1/swarm/batch/completions` 和 `/v1/agent/batch/completions`（高级版） | 自行构建 | 自行构建 |
+| 日志与指标 | API 内置 `/v1/swarm/logs`、`/v1/metrics/summary` | 通过 Observability 进入 CloudWatch | Cloud Logging 与 Trace |
+| 计算定价 | 无 | 每 vCPU 小时 $0.1276，每 GB 小时 $0.0169（Runtime v2，按用量） | 每 vCPU 小时 $0.0864，每 GB 小时 $0.0090 |
+| 编排定价 | 每次请求每个智能体 $0.01，加模型 token 及 15% 服务费 | Gateway 每 1,000 次调用 $0.005，Memory 每 1,000 个事件 $0.25，加模型 token | Sessions 与 Memory Bank 每 1,000 个事件 $0.25，加模型 token |
+| 拿到第一个结果 | 几分钟：一个 API 密钥和一次请求 | 几小时：账户、IAM、配置、启动 | 几小时：项目、存储桶、部署 |
+
+定价数据取自 2026 年 11 月 8 日的公开定价页面，变动频繁，建模成本前请先核对。Swarms 的价格来自 `GET /v1/models/pricing`，它返回每个模型已包含服务费的费率。
+
+## 各自的优势场景
+
+**选择 Swarms API 的情况**：产品的核心是多智能体的输出，而不是托管。为产品添加智能体功能的创业公司、想在一个下午试完五种架构的团队、需要一个 HTTP 步骤的无代码工具，以及任何想在一次运行中混用不同供应商模型的人。逐项列出的 `usage` 块让按客户计费变得直接，付费计划在集群补全上的夜间折扣，可以让错峰调度的批量工作 token 成本减半。
+
+**选择 Bedrock AgentCore 的情况**：你的其余技术栈已经在 AWS 上，你需要通过 Gateway 暴露工具并用 IAM 限定身份，或者合规团队要求数据留在你的 AWS 账户和 VPC 内。你会写更多代码，也要自己维护部署流水线，但换来的是围绕它的完整 AWS 控制平面。
+
+**选择 Vertex AI Agent Builder 的情况**：你已经选定 Gemini 和 Google Cloud，你想用 Python 之外的语言使用 ADK 的类型化工作流智能体，或者 Agent Engine 的会话和 Memory Bank 适合你的对话类产品。同样的取舍：更多的掌控权，更多的控制力，更多的搭建工作。
+
+还有一种许多团队最终采用的混合方案。把需要工具或私有数据的智能体代码留在自己手里，在其中调用 Swarms API 来处理纯编排的部分：动作执行前的一次 `MajorityVoting` 校验、一次 `HierarchicalSwarm` 研究、对一批文档的 `ConcurrentWorkflow` 扇出。这个 API 就是一个普通的 HTTP 调用，所以无论放进 Strands 工具、ADK 函数工具还是 Lambda，都同样顺手。
+
+## 常见问题
+
+### Amazon Bedrock Agents 还能用于新项目吗？
+
+Amazon Bedrock Agents 现在是 Amazon Bedrock Agents Classic，AWS 的文档写明已不再接受新注册。现有用户可以继续使用。新项目被引导至 Amazon Bedrock AgentCore，搭配 Strands Agents 等框架。
+
+### 最接近 Bedrock、又不需要部署代码的替代方案是什么？
+
+Swarms API。它在一个请求体中接收智能体和架构，在托管基础设施上运行，并返回带逐项账单的输出。没有运行时需要部署或扩容。
+
+### Swarms API 能在同一个集群里混用 Claude、GPT 和 Gemini 吗？
+
+可以。每个智能体设置自己的 `model_name`，所以一个集群可以用 `claude-sonnet-5-5` 撰写、`gpt-5.4-mini` 研究、`deepseek-v4-pro` 分析。调用 `GET /v1/models/available` 获取实时列表和价格。
+
+### Swarms API 的定价与 Agent Engine 和 AgentCore 相比如何？
+
+Swarms 每次请求每个智能体收 $0.01，加上模型 token 及 15% 服务费，计算资源不收费。Agent Engine 和 AgentCore 按 vCPU 小时和 GB 小时收取运行时计算费，加上会话或记忆的按事件费用，模型 token 另行计费。对于突发或低流量的工作负载，Swarms 的模式通常更便宜，因为空闲时间不花钱。对于持续高流量的同类调用，请用你自己的 token 数量算一算。
+
+### Swarms API 支持多智能体运行的流式输出吗？
+
+支持。在 `/v1/swarm/completions` 上设置 `stream: true`，API 会返回 Server-Sent Events。对于 `SequentialWorkflow` 和 `AgentRearrange`，每个分块都带有智能体名称，UI 可以显示是哪个智能体在输出。其他集群类型会发送一个包含完整结果的分块。
+
+## 开始使用
+
+```bash
+curl -H "x-api-key: $SWARMS_API_KEY" https://api.swarms.world/v1/swarms/available
+```
+
+这个调用会列出 API 今天能运行的每一种架构。在 [swarms.world](https://swarms.world/platform/api-keys) 获取密钥，阅读 [Swarms API 文档](https://docs.swarms.ai)，并在[行业页面](/industries)查看同样的请求在你所在领域是什么样子。如果你在权衡的是开源框架而不是托管平台，[多智能体框架对比](/blog/multi-agent-framework-comparison-2026)涵盖了 LangGraph、CrewAI、AutoGen 和 Swarms。

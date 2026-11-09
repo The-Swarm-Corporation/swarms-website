@@ -160,7 +160,7 @@ export OPENAI_API_KEY="..."
 
 # Swarms API (after)
 pip install aiohttp python-dotenv
-export SWARMS_API_KEY="..."   # from https://swarms.world/platform/api-keys
+export SWARMS_API_KEY="..."   # from https://cloud.swarms.world/api-keys
 ```
 
 每个示例中都有两处变化。第一，模型客户端消失了：每个智能体在 `model_name` 中写明自己的模型，一个密钥就能覆盖[模型列表](https://docs.swarms.ai/api-reference/models/get-available-ai-models)中的所有提供商。第二，不再有需要在任务之间保持存活或重置的团队对象：每次调用都是一个普通的 HTTP 请求。AutoGen AgentChat 本来就是异步的，所以 `aiohttp` 版本保留了你熟悉的 `async`/`await` 写法。

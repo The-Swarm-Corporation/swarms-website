@@ -67,7 +67,7 @@ curl -X POST https://api.swarms.world/v1/swarm/completions \
 
 对自动化来说有三个字段重要。`output` 是一个列表，按顺序每个智能体一条，所以完成的工作就是最后一条的 `content`。`usage.total_cost` 是这次运行花费的美元数。`job_id` 让你能在 `GET /v1/swarm/logs` 中再次找到这次运行。上面这次运行耗时 9.7 秒，花费略高于两美分。
 
-在 [swarms.world](https://swarms.world/platform/api-keys) 获取密钥。计费端点需要购买的积分余额高于 1 美元。
+在 [cloud.swarms.world](https://cloud.swarms.world/api-keys) 获取密钥。计费端点需要购买的积分余额高于 1 美元。
 
 ## n8n
 
@@ -286,4 +286,4 @@ Webhooks by Zapier 的 Custom Request 动作。普通的 POST 动作无法发送
 
 ## 开始使用
 
-在 [swarms.world](https://swarms.world/platform/api-keys) 获取密钥，把开头的 cURL 命令粘贴进你的自动化工具的 HTTP 步骤，先用固定任务运行一次，再映射实时数据。[Swarms API 文档](https://docs.swarms.ai)列出了每个字段和全部十四种集群架构，[行业页面](/industries)展示了金融、医疗、营销等领域更长的智能体配置，它们可以直接放进同一个 HTTP 步骤。
+在 [cloud.swarms.world](https://cloud.swarms.world/api-keys) 获取密钥，把开头的 cURL 命令粘贴进你的自动化工具的 HTTP 步骤，先用固定任务运行一次，再映射实时数据。[Swarms API 文档](https://docs.swarms.ai)列出了每个字段和全部十四种集群架构，[行业页面](/industries)展示了金融、医疗、营销等领域更长的智能体配置，它们可以直接放进同一个 HTTP 步骤。

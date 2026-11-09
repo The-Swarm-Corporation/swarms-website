@@ -27,7 +27,7 @@ Model Context Protocol（MCP）是 AI 客户端发现和调用工具的方式。
 | 工具 | 23 个，每个 API 操作一个 |
 | 上游 | `https://api.swarms.world` |
 
-服务器自身不持有任何密钥。每个调用方把自己的密钥作为传输层请求头发送，服务器再转发给上游。因为密钥在请求头中传输，从不作为工具参数出现，所以驱动工具的模型永远看不到它。在 [API 密钥页面](https://swarms.world/platform/api-keys)获取密钥。计费工具需要购买的积分余额高于 1 美元。
+服务器自身不持有任何密钥。每个调用方把自己的密钥作为传输层请求头发送，服务器再转发给上游。因为密钥在请求头中传输，从不作为工具参数出现，所以驱动工具的模型永远看不到它。在 [API 密钥页面](https://cloud.swarms.world/api-keys)获取密钥。计费工具需要购买的积分余额高于 1 美元。
 
 ## 第一步：连接你的客户端
 
@@ -334,7 +334,7 @@ MCP 服务器不额外加价。一次工具调用的计费与其背后的 REST �
 
 ## 保护密钥
 
-- 在 [API 密钥页面](https://swarms.world/platform/api-keys)为 MCP 客户端单独创建一个密钥，这样可以在不影响生产的情况下撤销它。
+- 在 [API 密钥页面](https://cloud.swarms.world/api-keys)为 MCP 客户端单独创建一个密钥，这样可以在不影响生产的情况下撤销它。
 - 把它放在客户端的请求头配置里，永远不要放进提示词或工具参数。服务器的设计保证模型看不到它。
 - 不要把带真实密钥的 `.cursor/mcp.json` 或 `claude_desktop_config.json` 提交到版本控制。使用客户端的环境变量支持或仅本地的文件。
 - 偶尔看看 `get_logs_v1_account_logs_get`。用这个密钥发出的每次调用都会出现在那里。
@@ -383,4 +383,4 @@ claude mcp add --transport http swarms https://api.swarms.world/mcp \
     --header "x-api-key: $SWARMS_API_KEY"
 ```
 
-在 [swarms.world](https://swarms.world/platform/api-keys) 获取密钥，把服务器加进你的客户端，然后让它列出集群类型。[Swarms API MCP 文档](https://docs.swarms.ai/docs/documentation/clients/swarms-api-mcp)有完整的工具参考和 Rust 客户端，[Swarms API 文档](https://docs.swarms.ai)涵盖工具接受的每个参数。市场这一侧，[Swarms Marketplace MCP 服务器](/blog/swarms-marketplace-mcp-server)让同样的客户端访问数千个已发布的智能体和提示词。
+在 [cloud.swarms.world](https://cloud.swarms.world/api-keys) 获取密钥，把服务器加进你的客户端，然后让它列出集群类型。[Swarms API MCP 文档](https://docs.swarms.ai/docs/documentation/clients/swarms-api-mcp)有完整的工具参考和 Rust 客户端，[Swarms API 文档](https://docs.swarms.ai)涵盖工具接受的每个参数。市场这一侧，[Swarms Marketplace MCP 服务器](/blog/swarms-marketplace-mcp-server)让同样的客户端访问数千个已发布的智能体和提示词。

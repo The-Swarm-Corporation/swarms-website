@@ -46,7 +46,7 @@ API 会以 `400` 拒绝作为 `swarm_type` 传入的 `"auto"` 和 `"SpreadSheetS
 
 ## 基础请求
 
-下面的每一种蜂群类型都使用同样的请求结构。这里先给出一个完整的请求：一个由三个智能体组成、用来评估 CI 迁移的 `SequentialWorkflow`。同一个团队和任务会贯穿全文，方便你在同一个问题上比较各种蜂群类型。先安装两个依赖，并从 [API Keys 页面](https://swarms.world/platform/api-keys)获取密钥后设置好：
+下面的每一种蜂群类型都使用同样的请求结构。这里先给出一个完整的请求：一个由三个智能体组成、用来评估 CI 迁移的 `SequentialWorkflow`。同一个团队和任务会贯穿全文，方便你在同一个问题上比较各种蜂群类型。先安装两个依赖，并从 [API Keys 页面](https://cloud.swarms.world/api-keys)获取密钥后设置好：
 
 ```bash
 pip install aiohttp python-dotenv

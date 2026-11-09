@@ -160,7 +160,7 @@ export OPENAI_API_KEY="..."
 
 # Swarms API (after)
 pip install aiohttp python-dotenv
-export SWARMS_API_KEY="..."   # from https://swarms.world/platform/api-keys
+export SWARMS_API_KEY="..."   # from https://cloud.swarms.world/api-keys
 ```
 
 Two things change in every example. First, the model client disappears: each agent names its model in `model_name`, and one key covers every provider on the [models list](https://docs.swarms.ai/api-reference/models/get-available-ai-models). Second, there is no team object to keep alive or reset between tasks: each call is a plain HTTP request. AutoGen AgentChat is already async, so the `aiohttp` versions keep the same `async`/`await` shape you are used to.

@@ -27,7 +27,7 @@ Nothing to install and nothing to run. You give a client two values, the URL and
 | Tools | 23, one per API operation |
 | Upstream | `https://api.swarms.world` |
 
-The server holds no key of its own. Each caller sends their own key as a transport header and the server forwards it upstream. Because the key travels in the header and never as a tool argument, the model driving the tools never sees it. Get a key from the [API Keys page](https://swarms.world/platform/api-keys). Billable tools need a purchased credit balance above $1.
+The server holds no key of its own. Each caller sends their own key as a transport header and the server forwards it upstream. Because the key travels in the header and never as a tool argument, the model driving the tools never sees it. Get a key from the [API Keys page](https://cloud.swarms.world/api-keys). Billable tools need a purchased credit balance above $1.
 
 ## Step 1: connect your client
 
@@ -334,7 +334,7 @@ Rate limits are the account's limits: 100 requests per minute and 1,200 per day 
 
 ## Keeping the key safe
 
-- Create a dedicated key for MCP clients on the [API Keys page](https://swarms.world/platform/api-keys), so you can revoke it without touching production.
+- Create a dedicated key for MCP clients on the [API Keys page](https://cloud.swarms.world/api-keys), so you can revoke it without touching production.
 - Keep it in the client's header configuration, never in a prompt or a tool argument. The server is designed so the model never sees it.
 - Do not commit `.cursor/mcp.json` or `claude_desktop_config.json` with a real key. Use the client's environment-variable support or a local-only file.
 - Watch `get_logs_v1_account_logs_get` occasionally. Every call made with the key appears there.
@@ -383,4 +383,4 @@ claude mcp add --transport http swarms https://api.swarms.world/mcp \
     --header "x-api-key: $SWARMS_API_KEY"
 ```
 
-Get a key at [swarms.world](https://swarms.world/platform/api-keys), add the server to your client, and ask it to list the swarm types. The [Swarms API MCP documentation](https://docs.swarms.ai/docs/documentation/clients/swarms-api-mcp) has the full tool reference and the Rust client, and the [Swarms API documentation](https://docs.swarms.ai) covers every argument the tools accept. For the marketplace side, the [Swarms Marketplace MCP server](/blog/swarms-marketplace-mcp-server) gives the same clients access to thousands of published agents and prompts.
+Get a key at [cloud.swarms.world](https://cloud.swarms.world/api-keys), add the server to your client, and ask it to list the swarm types. The [Swarms API MCP documentation](https://docs.swarms.ai/docs/documentation/clients/swarms-api-mcp) has the full tool reference and the Rust client, and the [Swarms API documentation](https://docs.swarms.ai) covers every argument the tools accept. For the marketplace side, the [Swarms Marketplace MCP server](/blog/swarms-marketplace-mcp-server) gives the same clients access to thousands of published agents and prompts.

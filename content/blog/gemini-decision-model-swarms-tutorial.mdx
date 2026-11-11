@@ -1,56 +1,34 @@
 ---
-title: "How to Use Gemini Decision 1 in Swarms: A Step-by-Step DecisionModel Tutorial"
-description: "A step-by-step tutorial for Google's gemini-decision-1 in the open-source Swarms framework: ask yes/no, choice and score questions with DecisionModel, get calibrated probabilities back, check images, track cost, and route Swarms agents on the answers."
+title: "How to Use Gemini Decision 1 in Swarms"
+description: "Google's gemini-decision-1 answers yes/no, choice and score questions with calibrated probabilities and zero output tokens. Here is how to call it from the open-source Swarms framework with DecisionModel, and how to use it to route requests between agents."
 date: "2026-11-11"
 author: "Swarms Team"
 categories: ["Guides", "Engineering"]
 featured: false
-readTime: "10 min read"
-image: "/gemini_decision_model_swarms_tutorial_banner.png"
+readTime: "5 min read"
+image: "/gemini_decision_model_swarms_banner.png"
 ---
 
-# How to Use Gemini Decision 1 in Swarms: A Step-by-Step DecisionModel Tutorial
+# How to Use Gemini Decision 1 in Swarms
 
-Most agent systems spend a surprising share of their tokens on small judgments: which agent should take this, is this urgent, is the answer good enough to stop. A generative model answers those in prose, and your code then has to parse the prose. Google's **Gemini Decision 1** (`gemini-decision-1`) is built for exactly these judgments. You send it some input and a set of typed questions, and it returns calibrated probabilities with zero output tokens.
+Agent systems spend a lot of tokens on small judgments: which agent should take this, is it urgent, is the answer good enough to stop. A generative model answers those in prose, and your code then has to parse the prose.
 
-The open-source [Swarms framework](https://github.com/kyegomez/swarms) now speaks to it through `DecisionModel`, the same class that already covers TypeSafe, Cloudflare and OpenAI decision models. In this tutorial you will go from one yes/no question to a router that picks which Swarms agent handles a request. Each step is a short script you can run.
+Google's **Gemini Decision 1** (`gemini-decision-1`) is built for these judgments. You send it some input and a set of typed questions, and it returns calibrated probabilities with zero output tokens. The open-source [Swarms framework](https://github.com/kyegomez/swarms) supports it through `DecisionModel`, the same class that covers TypeSafe, Cloudflare and OpenAI decision models.
 
-The full API is in the [DecisionModel reference](https://docs.swarms.world/api/decision-model), and a longer worked example is on the [Gemini decision model example page](https://docs.swarms.world/examples/model-providers/gemini-decision-model).
+This guide covers the three things most people need: a first call, several questions in one request, and routing between agents.
 
-## What you will build
+## Setup
 
-| Step | What it adds |
-| --- | --- |
-| 1 to 2 | Install Swarms and set one key |
-| 3 to 6 | The three question types: yes/no, choice, score |
-| 7 to 8 | Several questions in one request, then thresholds in code |
-| 9 | A question about an image |
-| 10 to 11 | Many items at once with async, and what it cost |
-| 12 | A router that sends each request to the right Swarms agent |
-
-## Step 1: Install
-
-Gemini support in `DecisionModel` is on the `master` branch of Swarms and will ship in the next release. Until then, install from GitHub:
+Gemini support is on the `master` branch of Swarms and will ship in the next release, so install from GitHub for now. Then set a key from [Google AI Studio](https://aistudio.google.com/).
 
 ```bash
 pip install -U git+https://github.com/kyegomez/swarms.git
-```
-
-There is nothing else to install. `DecisionModel` calls Gemini's HTTP API directly, so you do not need the `google-genai` package.
-
-## Step 2: Set your key
-
-Create a Gemini API key in [Google AI Studio](https://aistudio.google.com/) and put it in your environment or in a `.env` file. Swarms loads `.env` when it is imported.
-
-```bash
 export GEMINI_API_KEY="..."
 ```
 
-The model name picks the provider. Any name that starts with `gemini-decision` goes to Gemini's Decisions API and reads `GEMINI_API_KEY`.
+`DecisionModel` calls Gemini's HTTP API directly, so there is no other package to install.
 
-## Step 3: Ask one yes/no question
-
-Create `yes_no.py`:
+## Your first decision
 
 ```python
 from swarms import DecisionModel
@@ -65,110 +43,13 @@ probability = model.noul(
 print(f"Damaged: {probability:.2f}")
 ```
 
-`noul()` returns one float: the probability that the answer is yes. For this message you should see a value close to 1.
+`noul()` returns one float: the probability that the answer is yes. The number is calibrated, so 0.8 is meant to be right about 80% of the time. Gemini keeps it between 0.01 and 0.99.
 
-Two things to know about that number. It is calibrated, so 0.8 is meant to be right about 80% of the time. And Gemini keeps yes/no probabilities between 0.01 and 0.99, so a check for `> 0.99` never passes.
+There are two more question types. `choice()` picks one option from a set you describe, and `score()` rates the input against ordered levels. Both return the answer with a probability for every option and a `confidence`.
 
-## Step 4: Say what yes and no mean
+## Several questions in one request
 
-Short questions are often ambiguous. Is a customer who dislikes the colour reporting a defect? Give each side a description with `criteria`:
-
-```python
-from swarms import DecisionModel
-
-model = DecisionModel(model_name="gemini-decision-1")
-
-probability = model.noul(
-    state="I returned the sweater because I prefer green over blue.",
-    instructions="Is the customer reporting a product defect?",
-    criteria={
-        "true": "The product itself is broken or faulty.",
-        "false": "A preference, sizing, shipping or pricing complaint.",
-    },
-)
-
-print(f"Defect: {probability:.2f}")
-```
-
-`DecisionModel` uses the keys `true` and `false` for every provider and converts them to the names Gemini expects, so the same question works unchanged on another decision model.
-
-## Step 5: Pick one option
-
-`choice()` picks one option from a fixed set. The criteria map each option to a description of when it applies:
-
-```python
-from swarms import DecisionModel
-
-model = DecisionModel(model_name="gemini-decision-1")
-
-answer = model.choice(
-    state="I was charged twice for my order.",
-    instructions="Which department should handle this request?",
-    criteria={
-        "billing": "Payments, invoices and refunds.",
-        "technical": "Problems using the product.",
-        "shipping": "Delivery and tracking.",
-        "other": "Anything outside these categories.",
-    },
-)
-
-print(answer["choice"], answer["confidence"])
-print(answer["probabilities"])
-```
-
-The answer is a dict with this shape (your values will differ):
-
-```json
-{
-  "type": "choice",
-  "choice": "billing",
-  "probabilities": {"billing": 0.97, "technical": 0.01, "shipping": 0.01, "other": 0.01},
-  "confidence": 0.97
-}
-```
-
-A choice question always spreads its probability across your options, even when none fits. Include a catch-all such as `other` with a real description, and check `confidence` before acting.
-
-## Step 6: Rate on a scale
-
-`score()` rates the input against ordered levels, from lowest to highest:
-
-```python
-from swarms import DecisionModel
-
-model = DecisionModel(model_name="gemini-decision-1")
-
-answer = model.score(
-    state="Export fails in Safari but works in Chrome.",
-    instructions="How severe is this issue for the user?",
-    criteria=[
-        "Cosmetic: appearance only, no lost functionality.",
-        "Workaround available: a task fails, but another way works.",
-        "Fully blocked: a task fails with no workaround.",
-    ],
-)
-
-print(f"Severity: {answer['score']:.2f} on a 0-2 scale")
-print(answer["probabilities"])
-```
-
-```json
-{
-  "type": "score",
-  "score": 1.1,
-  "legend": {"0": "Cosmetic: ...", "1": "Workaround available: ...", "2": "Fully blocked: ..."},
-  "probabilities": {"0": 0.05, "1": 0.8, "2": 0.15},
-  "confidence": 0.8
-}
-```
-
-`score` is the probability-weighted level, so it can sit between two levels. With three levels the scale runs from 0 to 2. Use it to rank or filter, and read `probabilities` when you need a single level.
-
-## Step 7: Ask several questions in one request
-
-The helper methods send one question each. `run()` sends as many as you like about the same input, in one request. Gemini answers each question on its own, so adding a question does not change the other answers, and one request can carry up to 1,000 of them.
-
-Create `triage.py`:
+`run()` asks any number of questions about the same input in a single request. Gemini answers each one on its own, so adding a question does not change the others. This script triages a support ticket with all three question types, then decides what to do:
 
 ```python
 from swarms import DecisionModel
@@ -219,15 +100,7 @@ print(f"Queue: {queue['choice']} (confidence {queue['confidence']:.2f})")
 print(f"Severity: {answers['severity']['score']:.2f} on a 0-2 scale")
 print(f"Damaged: {answers['is_damaged']['noul']:.2f}")
 print(f"Within window: {answers['within_window']['noul']:.2f}")
-```
 
-The state here is a dict. `DecisionModel` sends it to Gemini as JSON text, which is why `within_window` can refer to a field by its key path, `order.age_days`.
-
-## Step 8: Act on the answers
-
-The model gives you numbers. The policy stays in your code, where you can read it and test it. Add this to the end of `triage.py`:
-
-```python
 approved = (
     queue["choice"] == "replacements"
     and queue["confidence"] >= 0.7
@@ -241,106 +114,11 @@ else:
     print("Action: send to a human")
 ```
 
-Ask narrow questions and combine them with ordinary `if` statements. Set the thresholds from labelled examples of your own traffic, weighing what a wrong approval costs against a wrong escalation.
+The model gives you numbers and the policy stays in your code, as plain `if` statements you can read and test. The state is a dict, which is sent as JSON text, so a question can refer to a field by its key path, as `within_window` does with `order.age_days`.
 
-## Step 9: Ask about an image
+## Route requests to Swarms agents
 
-Gemini Decision 1 is multimodal. Pass the state as a list of content blocks and it goes to Gemini unchanged. Put a `photo.jpg` next to the script:
-
-```python
-import base64
-from pathlib import Path
-
-from swarms import DecisionModel
-
-model = DecisionModel(model_name="gemini-decision-1")
-
-photo = base64.b64encode(Path("photo.jpg").read_bytes()).decode("ascii")
-
-probability = model.noul(
-    state=[
-        {"type": "text", "text": "Customer photo for return request #8821."},
-        {"type": "image", "data": photo, "mime_type": "image/jpeg"},
-    ],
-    instructions="Does the photo show physical damage to the item?",
-)
-
-print(f"Visible damage: {probability:.2f}")
-```
-
-The same list accepts `audio`, `video` and `document` (PDF) blocks. Always set `mime_type` to the real file format. Question instructions are text only.
-
-## Step 10: Decide about many items at once
-
-Each call is one small HTTP request, so screening a batch is a job for `arun()` and `asyncio.gather`:
-
-```python
-import asyncio
-
-from swarms import DecisionModel
-
-model = DecisionModel(model_name="gemini-decision-1")
-
-reviews = [
-    "Arrived on time and works perfectly.",
-    "The lid does not close. I want my money back.",
-    "Fine for the price, though the colour is duller than the photo.",
-]
-
-questions = {
-    "sentiment": {
-        "type": "choice",
-        "instructions": "What is the overall sentiment of this review?",
-        "criteria": {
-            "positive": "The customer is satisfied.",
-            "neutral": "Mixed or no clear feeling.",
-            "negative": "The customer is dissatisfied.",
-        },
-    },
-    "wants_refund": {
-        "type": "noul",
-        "instructions": "Is the customer asking for a refund?",
-    },
-}
-
-
-async def main() -> None:
-    results = await asyncio.gather(
-        *(model.arun(review, questions) for review in reviews)
-    )
-
-    for review, result in zip(reviews, results):
-        answers = result["answers"]
-        print(
-            f"{answers['sentiment']['choice']:<9}"
-            f"refund {answers['wants_refund']['noul']:.2f}  {review}"
-        )
-
-
-asyncio.run(main())
-```
-
-For a few hundred items, wrap the calls in an `asyncio.Semaphore` so you stay inside your rate limit. `DecisionModel` retries rate limits and overloads on its own, with backoff, up to `max_retries` times.
-
-## Step 11: See what it cost
-
-Every `DecisionModel` counts the tokens its provider reports. Add this to the end of any script above:
-
-```python
-print(model.usage)
-print(model.get_price())
-print(model.calculate_cost())
-```
-
-`usage` is the input and output tokens summed over every request the instance has made. `get_price()` returns US dollars per million tokens, which for `gemini-decision-1` is 0.10 for input and 0 for output: the model produces no output tokens, so you pay for input only. `calculate_cost()` multiplies the two.
-
-The shared input is billed once per request however many questions you ask, which is another reason to group questions in one `run()` call.
-
-## Step 12: Route requests to Swarms agents
-
-Now put it to work in a multi-agent system. A decision model makes a good router: it is fast, it costs a fraction of a generative call, and it tells you how sure it is. The agents below run on Gemini too, through the same `GEMINI_API_KEY`.
-
-Create `route.py`:
+A decision model makes a good router for a multi-agent system. It is fast, it costs a fraction of a generative call, and it tells you how sure it is. The agents below run on Gemini too, with the same key:
 
 ```python
 from swarms import Agent, DecisionModel
@@ -406,13 +184,17 @@ def route(task: str) -> str:
 print(route("I was charged twice for my March invoice, can you refund one?"))
 ```
 
-The options are built from the agents themselves: each `agent_name` is an option and its `agent_description` is the description. Add an agent to the list and the router can pick it. A second question checks that the request is in scope at all, and a confidence floor sends unclear requests to a person. Only then does a generative agent run.
+The options come from the agents themselves: each `agent_name` is an option and its `agent_description` says when to pick it. Add an agent to the list and the router can choose it. A second question checks that the request is in scope, and a confidence floor sends unclear requests to a person. Only then does a generative agent run.
 
-The same pattern works wherever a swarm needs a judgment between steps: stopping a debate when a round adds nothing new, scoring every reply in a group chat before it posts, or choosing the next worker in a hierarchy. The [reference page](https://docs.swarms.world/api/decision-model#using-it-with-agents-and-swarms) has an example of each.
+The same idea works anywhere a swarm needs a judgment between steps: ending a debate when a round adds nothing new, scoring a group chat reply before it posts, or choosing the next worker in a hierarchy. The [reference page](https://docs.swarms.world/api/decision-model#using-it-with-agents-and-swarms) has an example of each.
 
-## Switching provider
+## Good to know
 
-Questions and answers have the same shape for every provider, so changing the model is a one-line change:
+- **Images, audio, video and PDFs.** Pass the state as a list of content blocks, such as a `text` block and an `image` block with base64 `data` and a `mime_type`. The [example page](https://docs.swarms.world/examples/model-providers/gemini-decision-model) shows it in full.
+- **Cost.** `model.calculate_cost()` prices the tokens used so far. `gemini-decision-1` is $0.10 per million input tokens and produces no output tokens.
+- **Many items.** `await model.arun(state, questions)` is the async version of `run()`, for screening a batch with `asyncio.gather`.
+- **Always include a catch-all.** A choice question spreads its probability across your options even when none fits, so add an option such as `other` and check `confidence`.
+- **Other providers.** Questions and answers have the same shape everywhere, so switching is a one-line change:
 
 ```python
 model = DecisionModel(model_name="gemini-decision-1")  # Google, GEMINI_API_KEY
@@ -421,19 +203,9 @@ model = DecisionModel(model_name="clef")               # Cloudflare Workers AI
 model = DecisionModel()                                # TypeSafe jev-latest
 ```
 
-The exception is media. The list of content blocks in Step 9 is Gemini's format; the [Providers section](https://docs.swarms.world/api/decision-model#providers) of the reference shows how each provider takes images.
+## Learn more
 
-## Things to watch for
-
-- **Blocked input.** When Gemini's safety filters block a request it returns HTTP 400, which `DecisionModel` raises as `httpx.HTTPStatusError` with the reason in the message.
-- **Limits.** A choice or score question takes 2 to 255 options or levels, and the input plus all questions must fit in 262,144 tokens.
-- **Question ids.** The model never sees the ids you choose (`queue`, `severity`), so write the whole question in `instructions`.
-- **No conversation history.** The input is one piece of content. To judge a multi-turn exchange, pass the transcript as text.
-
-## Where to go next
-
-- [DecisionModel reference](https://docs.swarms.world/api/decision-model): every method, provider, error and extension hook.
-- [Gemini decision model example](https://docs.swarms.world/examples/model-providers/gemini-decision-model): a return-request decision with a photo check, explained line by line.
-- [Decision model examples on GitHub](https://github.com/kyegomez/swarms/tree/master/examples/decision_models): routing, guarded group chats, screening funnels and an ensemble judge.
+- [DecisionModel reference](https://docs.swarms.world/api/decision-model): every method, provider and error.
+- [Gemini decision model example](https://docs.swarms.world/examples/model-providers/gemini-decision-model): a return-request decision with a photo check.
+- [Decision model examples on GitHub](https://github.com/kyegomez/swarms/tree/master/examples/decision_models): routing, guarded group chats and screening funnels.
 - [Google's Decisions API guide](https://aistudio.google.com/docs/decisions-api): the model's own documentation.
-- [Swarms on GitHub](https://github.com/kyegomez/swarms): the framework, with every multi-agent structure the router above can feed.

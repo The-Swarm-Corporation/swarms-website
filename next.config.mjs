@@ -21,8 +21,18 @@ const nextConfig = {
     root: import.meta.dirname,
   },
   images: {
-    // A few older posts use cover art hosted on Twitter instead of /public.
-    remotePatterns: [{ protocol: "https", hostname: "pbs.twimg.com" }],
+    // Serve AVIF where the browser accepts it, WebP otherwise. Both are far
+    // smaller than the PNG sources in /public.
+    formats: ["image/avif", "image/webp"],
+    // Remote hosts that blog posts embed images from. components/blog/
+    // blog-markdown.tsx routes these through the optimizer; keep its host
+    // list in sync with this one.
+    remotePatterns: [
+      // A few older posts use cover art hosted on Twitter instead of /public.
+      { protocol: "https", hostname: "pbs.twimg.com" },
+      // Marketplace screenshots in the changelog posts (Supabase storage).
+      { protocol: "https", hostname: "db.swarms.world", pathname: "/storage/v1/object/public/**" },
+    ],
   },
   typescript: {
     ignoreBuildErrors: true,

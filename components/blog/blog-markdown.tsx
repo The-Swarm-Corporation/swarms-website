@@ -7,6 +7,24 @@ import { MermaidDiagram } from "@/components/blog/mermaid-diagram"
 import { AppLink } from "@/components/app-link"
 import { CodeBlock } from "@/components/code-block"
 import { rehypeHeadingIds } from "@/lib/blog-toc"
+import { publicImageDimensions } from "@/lib/image-dimensions"
+
+// Remote hosts that post images may come from and that next.config.mjs
+// allowlists for the image optimizer. Keep the two lists in sync.
+const OPTIMIZED_REMOTE_HOSTS = new Set(["db.swarms.world", "pbs.twimg.com"])
+
+// The article column is the max-w-6xl container (1152px) minus the 14rem
+// table of contents and its gap on large screens, so about 870px of image.
+const ARTICLE_IMAGE_SIZES = "(max-width: 1024px) 100vw, 896px"
+
+function remoteHost(src: string): string | null {
+  try {
+    const url = new URL(src)
+    return url.protocol === "https:" ? url.hostname : null
+  } catch {
+    return null
+  }
+}
 
 // Shared article renderer for the English and Chinese blog post pages so the
 // markdown styling stays identical across locales.
@@ -26,20 +44,28 @@ export function BlogMarkdown({ content }: { content: string }) {
         ),
         img: ({ node, src, alt, ...props }) => {
           const className = "mb-8 w-full rounded-2xl border border-white/10"
-          // Post images live in /public, so they can go through the optimizer.
-          // Remote hosts have to be allowlisted in next.config.mjs, and a post
-          // can link anywhere, so those stay plain <img>.
-          if (typeof src === "string" && src.startsWith("/")) {
-            return (
-              <Image
-                src={src}
-                alt={alt ?? ""}
-                width={1920}
-                height={1080}
-                sizes="(max-width: 768px) 100vw, 768px"
-                className={`${className} h-auto`}
-              />
-            )
+          if (typeof src === "string") {
+            // Post images in /public go through the optimizer with their real
+            // dimensions, so the browser reserves the right box before the
+            // bytes arrive. Images on allowlisted hosts also go through it;
+            // their size is unknown at build time, so 16:9 is the layout
+            // guess and h-auto corrects it once loaded. Anything else (a post
+            // can link anywhere) stays a plain <img>.
+            const local = src.startsWith("/") && !src.startsWith("//")
+            const dims = local ? publicImageDimensions(src) : null
+            const host = local ? null : remoteHost(src)
+            if (local || (host && OPTIMIZED_REMOTE_HOSTS.has(host))) {
+              return (
+                <Image
+                  src={src}
+                  alt={alt ?? ""}
+                  width={dims?.width ?? 1920}
+                  height={dims?.height ?? 1080}
+                  sizes={ARTICLE_IMAGE_SIZES}
+                  className={`${className} h-auto`}
+                />
+              )
+            }
           }
           // eslint-disable-next-line @next/next/no-img-element
           return <img {...props} src={src} alt={alt ?? ""} className={className} />

@@ -1,0 +1,439 @@
+---
+title: "如何在 Swarms 中使用 Gemini Decision 1：DecisionModel 分步教程"
+description: "面向 Google gemini-decision-1 的分步教程：在开源 Swarms 框架中用 DecisionModel 提出是非、选择和评分问题，拿回经过校准的概率，检查图片，统计成本，并根据答案把请求路由给 Swarms 智能体。"
+date: "2026-11-11"
+author: "Swarms 团队"
+categories: ["指南", "工程"]
+featured: false
+readTime: "10 分钟阅读"
+image: "/gemini_decision_model_swarms_tutorial_banner.png"
+---
+
+# 如何在 Swarms 中使用 Gemini Decision 1：DecisionModel 分步教程
+
+大多数智能体系统都把相当一部分 token 花在小判断上：这个请求该交给哪个智能体，它是否紧急，答案是否已经足够好可以停止。生成式模型用一段文字来回答这些问题，你的代码还得再去解析这段文字。Google 的 **Gemini Decision 1**（`gemini-decision-1`）正是为这类判断而设计的。你把输入和一组带类型的问题发给它，它返回经过校准的概率，输出 token 为零。
+
+开源的 [Swarms 框架](https://github.com/kyegomez/swarms)现在通过 `DecisionModel` 支持它，这个类此前已经覆盖了 TypeSafe、Cloudflare 和 OpenAI 的决策模型。在本教程中，你将从一个是非问题开始，一步步做到一个路由器，由它决定哪个 Swarms 智能体来处理请求。每一步都是一个可以直接运行的短脚本。
+
+完整的 API 见 [DecisionModel 参考文档](https://docs.swarms.world/api/decision-model)，更长的完整示例见 [Gemini 决策模型示例页](https://docs.swarms.world/examples/model-providers/gemini-decision-model)。
+
+## 你将构建什么
+
+| 步骤 | 新增内容 |
+| --- | --- |
+| 1 到 2 | 安装 Swarms，设置一个密钥 |
+| 3 到 6 | 三种问题类型：是非、选择、评分 |
+| 7 到 8 | 一次请求问多个问题，然后在代码里设阈值 |
+| 9 | 针对图片提问 |
+| 10 到 11 | 用异步一次处理多条数据，并查看成本 |
+| 12 | 一个把每条请求交给合适 Swarms 智能体的路由器 |
+
+## 第 1 步：安装
+
+`DecisionModel` 对 Gemini 的支持目前在 Swarms 的 `master` 分支上，会随下一个版本发布。在那之前，请从 GitHub 安装：
+
+```bash
+pip install -U git+https://github.com/kyegomez/swarms.git
+```
+
+不需要安装别的东西。`DecisionModel` 直接调用 Gemini 的 HTTP API，所以不需要 `google-genai` 包。
+
+## 第 2 步：设置密钥
+
+在 [Google AI Studio](https://aistudio.google.com/) 创建一个 Gemini API 密钥，把它放进环境变量或 `.env` 文件。Swarms 在被导入时会加载 `.env`。
+
+```bash
+export GEMINI_API_KEY="..."
+```
+
+模型名称决定服务商。任何以 `gemini-decision` 开头的名称都会走 Gemini 的 Decisions API，并读取 `GEMINI_API_KEY`。
+
+## 第 3 步：问一个是非问题
+
+创建 `yes_no.py`：
+
+```python
+from swarms import DecisionModel
+
+model = DecisionModel(model_name="gemini-decision-1")
+
+probability = model.noul(
+    state="The blue mug I ordered on Monday arrived cracked on Wednesday.",
+    instructions="Did the item arrive damaged?",
+)
+
+print(f"Damaged: {probability:.2f}")
+```
+
+`noul()` 返回一个浮点数：答案为“是”的概率。对这条消息，你应该看到一个接近 1 的值。
+
+关于这个数字有两点要知道。它是经过校准的，也就是说 0.8 意味着大约 80% 的情况下是对的。另外，Gemini 把是非概率限制在 0.01 到 0.99 之间，所以 `> 0.99` 这样的判断永远不会成立。
+
+## 第 4 步：说明“是”和“否”各指什么
+
+简短的问题常常有歧义。顾客不喜欢颜色，算不算在报告产品缺陷？用 `criteria` 给两边各加一句描述：
+
+```python
+from swarms import DecisionModel
+
+model = DecisionModel(model_name="gemini-decision-1")
+
+probability = model.noul(
+    state="I returned the sweater because I prefer green over blue.",
+    instructions="Is the customer reporting a product defect?",
+    criteria={
+        "true": "The product itself is broken or faulty.",
+        "false": "A preference, sizing, shipping or pricing complaint.",
+    },
+)
+
+print(f"Defect: {probability:.2f}")
+```
+
+`DecisionModel` 对所有服务商都使用 `true` 和 `false` 这两个键，并把它们转换成 Gemini 需要的名称，所以同一个问题不用修改就能用在其他决策模型上。
+
+## 第 5 步：从选项中选一个
+
+`choice()` 从一组固定选项中选出一个。criteria 把每个选项映射到一句说明，描述它在什么情况下适用：
+
+```python
+from swarms import DecisionModel
+
+model = DecisionModel(model_name="gemini-decision-1")
+
+answer = model.choice(
+    state="I was charged twice for my order.",
+    instructions="Which department should handle this request?",
+    criteria={
+        "billing": "Payments, invoices and refunds.",
+        "technical": "Problems using the product.",
+        "shipping": "Delivery and tracking.",
+        "other": "Anything outside these categories.",
+    },
+)
+
+print(answer["choice"], answer["confidence"])
+print(answer["probabilities"])
+```
+
+答案是一个如下结构的字典（你得到的数值会不同）：
+
+```json
+{
+  "type": "choice",
+  "choice": "billing",
+  "probabilities": {"billing": 0.97, "technical": 0.01, "shipping": 0.01, "other": 0.01},
+  "confidence": 0.97
+}
+```
+
+选择题总会把概率分配到你给出的选项上，即使没有一个合适。请加入一个像 `other` 这样的兜底选项并写上真实的描述，在采取行动之前先检查 `confidence`。
+
+## 第 6 步：按等级评分
+
+`score()` 按从低到高排列的等级对输入评分：
+
+```python
+from swarms import DecisionModel
+
+model = DecisionModel(model_name="gemini-decision-1")
+
+answer = model.score(
+    state="Export fails in Safari but works in Chrome.",
+    instructions="How severe is this issue for the user?",
+    criteria=[
+        "Cosmetic: appearance only, no lost functionality.",
+        "Workaround available: a task fails, but another way works.",
+        "Fully blocked: a task fails with no workaround.",
+    ],
+)
+
+print(f"Severity: {answer['score']:.2f} on a 0-2 scale")
+print(answer["probabilities"])
+```
+
+```json
+{
+  "type": "score",
+  "score": 1.1,
+  "legend": {"0": "Cosmetic: ...", "1": "Workaround available: ...", "2": "Fully blocked: ..."},
+  "probabilities": {"0": 0.05, "1": 0.8, "2": 0.15},
+  "confidence": 0.8
+}
+```
+
+`score` 是按概率加权的等级，所以它可能落在两个等级之间。三个等级时，分值范围是 0 到 2。用它来排序或筛选；需要单一等级时，读取 `probabilities`。
+
+## 第 7 步：一次请求问多个问题
+
+辅助方法每次只发送一个问题。`run()` 可以在一次请求里针对同一份输入问任意多个问题。Gemini 会独立回答每个问题，所以增加一个问题不会改变其他答案，一次请求最多可以带 1,000 个问题。
+
+创建 `triage.py`：
+
+```python
+from swarms import DecisionModel
+
+model = DecisionModel(model_name="gemini-decision-1")
+
+ticket = {
+    "message": "The blue mug I ordered on Monday arrived cracked on Wednesday.",
+    "order": {"id": "8821", "age_days": 2},
+}
+
+result = model.run(
+    state=ticket,
+    questions={
+        "queue": {
+            "type": "choice",
+            "instructions": "Which support queue should handle this message?",
+            "criteria": {
+                "billing": "Payment, invoice or refund questions.",
+                "replacements": "Damaged, missing or wrong items.",
+                "general": "Product questions and account updates.",
+            },
+        },
+        "severity": {
+            "type": "score",
+            "instructions": "How severe is this issue for the customer?",
+            "criteria": [
+                "Minor: the item is usable as it is.",
+                "Moderate: the item is usable with a workaround.",
+                "Severe: the item cannot be used.",
+            ],
+        },
+        "is_damaged": {
+            "type": "noul",
+            "instructions": "Did the item arrive damaged?",
+        },
+        "within_window": {
+            "type": "noul",
+            "instructions": "Is order.age_days 30 or less?",
+        },
+    },
+)
+
+answers = result["answers"]
+queue = answers["queue"]
+
+print(f"Queue: {queue['choice']} (confidence {queue['confidence']:.2f})")
+print(f"Severity: {answers['severity']['score']:.2f} on a 0-2 scale")
+print(f"Damaged: {answers['is_damaged']['noul']:.2f}")
+print(f"Within window: {answers['within_window']['noul']:.2f}")
+```
+
+这里的 state 是一个字典。`DecisionModel` 会把它作为 JSON 文本发给 Gemini，所以 `within_window` 可以用键路径 `order.age_days` 来引用其中的字段。
+
+## 第 8 步：根据答案采取行动
+
+模型给你的是数字。策略留在你的代码里，可以阅读，也可以测试。把下面这段加到 `triage.py` 的末尾：
+
+```python
+approved = (
+    queue["choice"] == "replacements"
+    and queue["confidence"] >= 0.7
+    and answers["is_damaged"]["noul"] >= 0.8
+    and answers["within_window"]["noul"] >= 0.8
+)
+
+if approved:
+    print("Action: send a replacement")
+else:
+    print("Action: send to a human")
+```
+
+问题要问得窄，再用普通的 `if` 语句把它们组合起来。阈值应当根据你自己流量中带标注的样本来设定，权衡一次错误批准和一次错误升级各自的代价。
+
+## 第 9 步：针对图片提问
+
+Gemini Decision 1 是多模态的。把 state 写成内容块的列表，它会原样发送给 Gemini。在脚本旁边放一张 `photo.jpg`：
+
+```python
+import base64
+from pathlib import Path
+
+from swarms import DecisionModel
+
+model = DecisionModel(model_name="gemini-decision-1")
+
+photo = base64.b64encode(Path("photo.jpg").read_bytes()).decode("ascii")
+
+probability = model.noul(
+    state=[
+        {"type": "text", "text": "Customer photo for return request #8821."},
+        {"type": "image", "data": photo, "mime_type": "image/jpeg"},
+    ],
+    instructions="Does the photo show physical damage to the item?",
+)
+
+print(f"Visible damage: {probability:.2f}")
+```
+
+同一个列表也接受 `audio`、`video` 和 `document`（PDF）内容块。`mime_type` 必须是文件的真实格式。问题的 instructions 只能是文本。
+
+## 第 10 步：一次判断多条数据
+
+每次调用都是一个很小的 HTTP 请求，所以批量筛选适合用 `arun()` 和 `asyncio.gather`：
+
+```python
+import asyncio
+
+from swarms import DecisionModel
+
+model = DecisionModel(model_name="gemini-decision-1")
+
+reviews = [
+    "Arrived on time and works perfectly.",
+    "The lid does not close. I want my money back.",
+    "Fine for the price, though the colour is duller than the photo.",
+]
+
+questions = {
+    "sentiment": {
+        "type": "choice",
+        "instructions": "What is the overall sentiment of this review?",
+        "criteria": {
+            "positive": "The customer is satisfied.",
+            "neutral": "Mixed or no clear feeling.",
+            "negative": "The customer is dissatisfied.",
+        },
+    },
+    "wants_refund": {
+        "type": "noul",
+        "instructions": "Is the customer asking for a refund?",
+    },
+}
+
+
+async def main() -> None:
+    results = await asyncio.gather(
+        *(model.arun(review, questions) for review in reviews)
+    )
+
+    for review, result in zip(reviews, results):
+        answers = result["answers"]
+        print(
+            f"{answers['sentiment']['choice']:<9}"
+            f"refund {answers['wants_refund']['noul']:.2f}  {review}"
+        )
+
+
+asyncio.run(main())
+```
+
+处理几百条数据时，用 `asyncio.Semaphore` 包住这些调用，以免超出速率限制。遇到限流和过载，`DecisionModel` 会自动退避重试，最多 `max_retries` 次。
+
+## 第 11 步：查看成本
+
+每个 `DecisionModel` 都会累计服务商报告的 token 数。把下面这段加到上面任意脚本的末尾：
+
+```python
+print(model.usage)
+print(model.get_price())
+print(model.calculate_cost())
+```
+
+`usage` 是该实例所有请求的输入和输出 token 之和。`get_price()` 返回每百万 token 的美元价格，`gemini-decision-1` 的输入价格是 0.10，输出是 0：这个模型不产生输出 token，所以你只为输入付费。`calculate_cost()` 把两者相乘。
+
+无论问多少个问题，共享的输入在每次请求中只计费一次，这也是把问题集中到一次 `run()` 调用里的另一个理由。
+
+## 第 12 步：把请求路由给 Swarms 智能体
+
+现在把它用到多智能体系统里。决策模型很适合做路由器：它速度快，成本只是一次生成式调用的一小部分，而且会告诉你它有多确定。下面的智能体同样运行在 Gemini 上，用的是同一个 `GEMINI_API_KEY`。
+
+创建 `route.py`：
+
+```python
+from swarms import Agent, DecisionModel
+
+agents = [
+    Agent(
+        agent_name="Billing-Agent",
+        agent_description="Refunds, invoices, failed payments and subscription changes.",
+        system_prompt="You resolve billing questions clearly and briefly.",
+        model_name="gemini/gemini-2.5-pro",
+        max_loops=1,
+    ),
+    Agent(
+        agent_name="Technical-Agent",
+        agent_description="Bugs, API errors, integrations and outages.",
+        system_prompt="You debug technical problems step by step.",
+        model_name="gemini/gemini-2.5-pro",
+        max_loops=1,
+    ),
+    Agent(
+        agent_name="Sales-Agent",
+        agent_description="Pricing, plan upgrades and new accounts.",
+        system_prompt="You answer pricing and plan questions.",
+        model_name="gemini/gemini-2.5-pro",
+        max_loops=1,
+    ),
+]
+agents_by_name = {agent.agent_name: agent for agent in agents}
+
+router = DecisionModel(model_name="gemini-decision-1")
+
+
+def route(task: str) -> str:
+    answers = router.run(
+        state=task,
+        questions={
+            "agent": {
+                "type": "choice",
+                "instructions": "Which agent should handle this request?",
+                "criteria": {
+                    agent.agent_name: agent.agent_description
+                    for agent in agents
+                },
+            },
+            "in_scope": {
+                "type": "noul",
+                "instructions": "Is this a request a software company's support team should handle?",
+            },
+        },
+    )["answers"]
+
+    if answers["in_scope"]["noul"] < 0.5:
+        return "Declined: out of scope for support."
+
+    decision = answers["agent"]
+    if decision["confidence"] < 0.6:
+        return "Escalated to a human: the router is unsure who owns this."
+
+    print(f"Routing to {decision['choice']}")
+    return agents_by_name[decision["choice"]].run(task)
+
+
+print(route("I was charged twice for my March invoice, can you refund one?"))
+```
+
+选项是从智能体本身生成的：每个 `agent_name` 是一个选项，它的 `agent_description` 就是说明。往列表里加一个智能体，路由器就能选到它。第二个问题检查请求是否在处理范围内，置信度下限则把不明确的请求交给人工。在这之后才会运行生成式智能体。
+
+同样的模式适用于集群在步骤之间需要做判断的任何地方：当一轮辩论没有新论点时提前结束，在群聊中每条回复发出之前先打分，或者在层级结构中选择下一个执行者。[参考文档](https://docs.swarms.world/api/decision-model#using-it-with-agents-and-swarms)里各有一个示例。
+
+## 切换服务商
+
+所有服务商的问题和答案结构都相同，所以更换模型只需要改一行：
+
+```python
+model = DecisionModel(model_name="gemini-decision-1")  # Google, GEMINI_API_KEY
+model = DecisionModel(model_name="gpt-6-luna")         # OpenAI, OPENAI_API_KEY
+model = DecisionModel(model_name="clef")               # Cloudflare Workers AI
+model = DecisionModel()                                # TypeSafe jev-latest
+```
+
+媒体输入是例外。第 9 步中的内容块列表是 Gemini 的格式；参考文档的 [Providers 一节](https://docs.swarms.world/api/decision-model#providers)说明了每个服务商如何接收图片。
+
+## 需要留意的地方
+
+- **输入被拦截。** 当 Gemini 的安全过滤器拦截请求时，它返回 HTTP 400，`DecisionModel` 会把它作为 `httpx.HTTPStatusError` 抛出，原因写在错误信息里。
+- **限制。** 选择题或评分题可以有 2 到 255 个选项或等级，输入加上全部问题必须在 262,144 个 token 以内。
+- **问题 id。** 模型看不到你起的 id（`queue`、`severity`），所以要把完整的问题写进 `instructions`。
+- **没有对话历史。** 输入是一整块内容。要判断多轮对话，请把对话记录作为文本传入。
+
+## 接下来看什么
+
+- [DecisionModel 参考文档](https://docs.swarms.world/api/decision-model)：每个方法、服务商、错误和扩展钩子。
+- [Gemini 决策模型示例](https://docs.swarms.world/examples/model-providers/gemini-decision-model)：一个带照片检查的退货决策，逐行讲解。
+- [GitHub 上的决策模型示例](https://github.com/kyegomez/swarms/tree/master/examples/decision_models)：路由、带防护的群聊、筛选漏斗和集成评审。
+- [Google 的 Decisions API 指南](https://aistudio.google.com/docs/decisions-api)：模型自己的文档。
+- [GitHub 上的 Swarms](https://github.com/kyegomez/swarms)：框架本身，以及上面的路由器可以对接的所有多智能体结构。

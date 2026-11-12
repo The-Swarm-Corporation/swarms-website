@@ -37,7 +37,6 @@ export const metadata: Metadata = {
     description:
       "Swarms 中文博客：多智能体系统工程笔记、产品更新与实战指南。",
     siteName: siteConfig.name,
-    images: [{ url: "/seo_image.jpg", width: 1200, height: 630 }],
   },
 }
 

@@ -64,15 +64,6 @@ export async function generateMetadata(): Promise<Metadata> {
     title,
     description,
     siteName: siteConfig.name,
-    images: [
-      {
-        url: "/seo_image.jpg",
-        width: 1200,
-        height: 630,
-        alt: "Swarms Framework — The Premier Python Framework for Multi-Agent Systems",
-        type: "image/jpeg",
-      },
-    ],
   },
   twitter: {
     card: "summary_large_image",
@@ -80,14 +71,6 @@ export async function generateMetadata(): Promise<Metadata> {
     description,
     creator: "@swarms_corp",
     site: "@swarms_corp",
-    images: [
-      {
-        url: "/seo_image.jpg",
-        width: 1200,
-        height: 630,
-        alt: "Swarms Framework — The Premier Python Framework for Multi-Agent Systems",
-      },
-    ],
   },
   robots: {
     index: true,
@@ -191,7 +174,7 @@ export default async function FrameworkLayout({
     operatingSystem: "Any",
     url,
     description,
-    image: `${siteConfig.url}/seo_image.jpg`,
+    image: `${siteConfig.url}${siteConfig.ogImage}`,
     downloadUrl: "https://pypi.org/project/swarms/",
     codeRepository: "https://github.com/kyegomez/swarms",
     programmingLanguage: "Python",

@@ -41,13 +41,6 @@ export const metadata: Metadata = {
     title,
     description,
     siteName: "Swarms AI",
-    images: [
-      {
-        url: "/seo_image.jpg",
-        width: 1200,
-        height: 630,
-      },
-    ],
   },
 }
 

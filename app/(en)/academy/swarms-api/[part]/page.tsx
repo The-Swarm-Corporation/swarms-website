@@ -75,7 +75,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       title,
       description: part.summary,
       siteName: siteConfig.name,
-      images: [{ url: "/seo_image.jpg", width: 1200, height: 630, alt: title }],
     },
     twitter: {
       card: "summary_large_image",

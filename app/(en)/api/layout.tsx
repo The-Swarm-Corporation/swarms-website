@@ -43,15 +43,6 @@ export const metadata: Metadata = {
     title,
     description,
     siteName: siteConfig.name,
-    images: [
-      {
-        url: "/seo_image.jpg",
-        width: 1200,
-        height: 630,
-        alt: "Swarms API — Multi-Agent Orchestration Platform",
-        type: "image/jpeg",
-      },
-    ],
   },
   twitter: {
     card: "summary_large_image",
@@ -59,14 +50,6 @@ export const metadata: Metadata = {
     description,
     creator: "@swarms_corp",
     site: "@swarms_corp",
-    images: [
-      {
-        url: "/seo_image.jpg",
-        width: 1200,
-        height: 630,
-        alt: "Swarms API — Multi-Agent Orchestration Platform",
-      },
-    ],
   },
   robots: {
     index: true,
@@ -89,7 +72,7 @@ const productJsonLd = {
   operatingSystem: "Cloud",
   description,
   url,
-  image: `${siteConfig.url}/seo_image.jpg`,
+  image: `${siteConfig.url}${siteConfig.ogImage}`,
   brand: {
     "@type": "Organization",
     name: siteConfig.company.name,

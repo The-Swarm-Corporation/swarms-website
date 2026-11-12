@@ -1,7 +1,8 @@
 /**
  * SEO & Favicon improvements
  * - Use /logo.svg for favicon and all icon fields
- * - Use /seo_image.jpg for Open Graph and Twitter images
+ * - Open Graph and Twitter images come from the opengraph-image / twitter-image
+ *   files next to each route, all drawn by lib/og/card.tsx
  * - Add high-performance SEO best practices
  */
 
@@ -38,28 +39,11 @@ export const metadata: Metadata = {
     title: siteConfig.name,
     description: siteConfig.description,
     siteName: siteConfig.name,
-    images: [
-      {
-        url: "/seo_image.jpg",
-        width: 1200,
-        height: 630,
-        alt: "Swarms AI — Multi-Agent Framework & Agent Marketplace",
-        type: "image/jpeg",
-      },
-    ],
   },
   twitter: {
     card: "summary_large_image",
     title: siteConfig.name,
     description: siteConfig.description,
-    images: [
-      {
-        url: "/seo_image.jpg",
-        width: 1200,
-        height: 630,
-        alt: "Swarms AI — Multi-Agent Framework & Agent Marketplace",
-      },
-    ],
     creator: "@swarms_corp",
     site: "@swarms_corp",
   },
@@ -111,7 +95,6 @@ export default function RootLayout({ children }: RootLayoutProps) {
         <link rel="preconnect" href="https://docs.swarms.world" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://docs.swarms.world" />
         {/* SEO: Preload critical images */}
-        <link rel="preload" href="/seo_image.jpg" as="image" type="image/jpeg" />
         <link rel="preload" href="/logo.svg" as="image" type="image/svg+xml" />
         {/* SEO: Additional meta tags */}
         <meta name="theme-color" content="#000000" />
@@ -149,7 +132,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
                   },
                   image: {
                     "@type": "ImageObject",
-                    url: `${siteConfig.url}/seo_image.jpg`,
+                    url: `${siteConfig.url}${siteConfig.ogImage}`,
                     width: 1200,
                     height: 630,
                   },
@@ -176,7 +159,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
                   },
                   image: {
                     "@type": "ImageObject",
-                    url: `${siteConfig.url}/seo_image.jpg`,
+                    url: `${siteConfig.url}${siteConfig.ogImage}`,
                     width: 1200,
                     height: 630,
                   },
@@ -202,13 +185,13 @@ export default function RootLayout({ children }: RootLayoutProps) {
                   keywords: siteConfig.keywords.join(", "),
                   image: {
                     "@type": "ImageObject",
-                    url: `${siteConfig.url}/seo_image.jpg`,
+                    url: `${siteConfig.url}${siteConfig.ogImage}`,
                     width: 1200,
                     height: 630,
                   },
                   screenshot: {
                     "@type": "ImageObject",
-                    url: `${siteConfig.url}/seo_image.jpg`,
+                    url: `${siteConfig.url}${siteConfig.ogImage}`,
                     width: 1200,
                     height: 630,
                   },

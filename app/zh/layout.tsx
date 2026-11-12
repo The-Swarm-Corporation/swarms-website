@@ -31,28 +31,11 @@ export const metadata: Metadata = {
     title: zhSiteConfig.name,
     description: zhSiteConfig.description,
     siteName: siteConfig.name,
-    images: [
-      {
-        url: "/seo_image.jpg",
-        width: 1200,
-        height: 630,
-        alt: zhSiteConfig.name,
-        type: "image/jpeg",
-      },
-    ],
   },
   twitter: {
     card: "summary_large_image",
     title: zhSiteConfig.name,
     description: zhSiteConfig.description,
-    images: [
-      {
-        url: "/seo_image.jpg",
-        width: 1200,
-        height: 630,
-        alt: zhSiteConfig.name,
-      },
-    ],
     creator: "@swarms_corp",
     site: "@swarms_corp",
   },

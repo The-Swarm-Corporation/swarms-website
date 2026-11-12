@@ -8,6 +8,11 @@ import { siteConfig } from "./metadata"
 // protected server-side, never just listed here.
 const disallow = ["/api/", "/admin/", "/private/"]
 
+// The /api product page's social cards live under /api/ too, and Twitterbot
+// and the Facebook/LinkedIn crawlers honor robots.txt when fetching a card
+// image. The longer, more specific allow wins over the /api/ disallow.
+const allow = ["/", "/api/opengraph-image", "/api/twitter-image"]
+
 // AI crawlers we explicitly welcome. A crawler that matches a specific
 // user-agent group ignores the * group entirely, so each group must carry the
 // same disallows or the bot ends up with MORE access than generic crawlers.
@@ -27,12 +32,12 @@ export default function robots(): MetadataRoute.Robots {
     rules: [
       {
         userAgent: "*",
-        allow: "/",
+        allow,
         disallow,
       },
       ...aiCrawlers.map((userAgent) => ({
         userAgent,
-        allow: "/",
+        allow,
         disallow,
       })),
     ],

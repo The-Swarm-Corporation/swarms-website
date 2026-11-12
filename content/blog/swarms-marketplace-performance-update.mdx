@@ -1,0 +1,81 @@
+---
+title: "The Swarms Marketplace Is Faster: 41 Pages Served From the Edge and Less JavaScript on Every Page"
+description: "This week we rebuilt how swarms.world delivers its pages. 41 pages are now prerendered and served from the CDN, most pages load about a quarter less JavaScript, and the app runs on Next.js 16 and React 19. Here is what changed and what we measured."
+date: "2026-11-11"
+author: "Swarms Team"
+categories: ["Product", "Engineering"]
+featured: true
+readTime: "5 min read"
+image: "/swarms_marketplace_performance_update_banner.png"
+---
+
+# The Swarms Marketplace Is Faster: 41 Pages Served From the Edge and Less JavaScript on Every Page
+
+The [Swarms Marketplace](https://swarms.world) got a round of performance work this week. The marketplace does the same things it did before. Pages now reach you sooner, and your browser downloads less before you can use them.
+
+Three things shipped:
+
+1. **41 pages are now served from the CDN** instead of being rebuilt on a server for every visit.
+2. **Most pages load about a quarter less JavaScript**, because wallet and animation code now loads only when it is needed.
+3. **The app moved to Next.js 16 and React 19**, which makes our own builds about three times faster.
+
+This post explains each change in plain terms, shows the numbers, and says how we measured them.
+
+## The Numbers
+
+| What we measured | Before | After |
+|---|---|---|
+| Pages served from the CDN | 0 | 41 |
+| Server response, signed in, pricing page | 236 ms | 62 ms |
+| Server response, signed in, developers page | 185 ms | 45 ms |
+| Server response, signed in, home page | 282 ms | 126 ms |
+| Main content painted, pricing page | 1,004 ms | 344 ms |
+| JavaScript loaded up front, home page | 577 KB | 446 KB |
+| JavaScript loaded up front, explorer | 557 KB | 412 KB |
+| JavaScript loaded up front, pricing page | 567 KB | 419 KB |
+| Helvetica font files | 333 KB | 237 KB |
+| Production build time | 52.6 s | 19.0 s |
+
+All of these come from production builds of the old and new code running side by side on one machine. They are not measurements from swarms.world itself, so treat them as a comparison of the two versions. The numbers you see will depend on your device and connection. JavaScript sizes are gzipped.
+
+## Pages Served From the Edge
+
+Until this week, every page on swarms.world was built on a server at the moment you asked for it, including pages that look the same for everyone, like pricing or the developer docs.
+
+The cause was one line of work in the layout that wraps every page. It read your login cookie on the server to decide whether to show you as signed in. Because that happened for every request, the framework had to treat every page as personal, and nothing could be stored on the CDN.
+
+We moved that check into the browser. The page now arrives first, and your browser works out who you are a moment later. With the server no longer looking at cookies, 41 pages can be built once at deploy time and handed out by the CDN location nearest to you. That list includes the home page, pricing, developers, frenzy, the screener, the legal pages, and the shells of the dashboard and account pages.
+
+Two live data feeds got the same treatment in a smaller way. The competition leaderboard and the frenzy price feed are identical for every viewer, so the CDN now answers them from one shared copy that refreshes every 30 seconds and every 5 seconds. Before, every open tab asked the server separately.
+
+There is one visible trade-off. If you are signed in, you may see the signed-out navigation bar for an instant before your account appears. That is the cost of serving the same stored page to everyone.
+
+## Less JavaScript
+
+Every page used to download 560 to 740 KB of JavaScript before it became interactive. When we looked at what was inside, two things stood out.
+
+**Wallet code.** The Solana wallet adapters, the transaction library, and the wallet picker were loaded on every page, about 125 KB, even on pages with nothing to buy or sign. That code now loads when it has a job to do: when you click Connect Wallet, when you have connected a wallet before, or when you signed in with Phantom. Everyone else never downloads it.
+
+**Animation code.** The full animation library came along with the navigation bar. Pages now ship a small core and fetch the rest after the first paint.
+
+Together these cut the JavaScript loaded up front by 23 to 26 percent on most pages. Product pages and the screener improved by about 9 to 12 percent, because they use more of that code themselves.
+
+We also converted the site's Helvetica fonts to WOFF2, which made them 29 percent smaller, and the image optimizer now serves AVIF to browsers that support it. In one sample image that was 28 percent smaller than the WebP it replaced.
+
+## Next.js 16 and React 19
+
+The marketplace now runs on Next.js 16 and React 19. For visitors this is mostly invisible. For us it means a production build takes 19 seconds instead of 53, and the development server compiles pages about twice as fast. Shorter builds mean fixes and features reach you sooner.
+
+## Conclusion
+
+This round of work made the marketplace quicker to reach and lighter to load. 41 pages now come from the CDN location nearest to you, most pages download about a quarter less JavaScript before you can use them, and fonts and images are smaller. Under the hood, Next.js 16 and React 19 cut our build time by almost two thirds, so improvements ship sooner.
+
+Speed is something we will keep working on, and we will share the numbers each time, measured the same way.
+
+## Try It
+
+Open [swarms.world](https://swarms.world) and click around. Pricing, developers, frenzy, and the screener are the places where the difference is easiest to feel.
+
+**Browse the marketplace:** [swarms.world](https://swarms.world)
+
+**Publish your own agent:** [swarms.world/launch](https://swarms.world/launch)

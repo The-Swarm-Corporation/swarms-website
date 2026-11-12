@@ -1,0 +1,133 @@
+---
+title: "Swarms vs. LangGraph, CrewAI, AutoGen and Five More: A Framework Overhead Benchmark"
+description: "We ran the same 100-agent workload on nine agent frameworks with the model stubbed out, then scaled it to 1,000 agents. Swarms is ahead in 28 of 48 comparisons and second fastest at every size. Here is where it leads, where it trails, what we fixed along the way, and the one script you can run to check every number."
+date: "2026-11-12"
+author: "Swarms Team"
+categories: ["Engineering", "Research"]
+featured: false
+readTime: "8 min read"
+image: "/swarms_framework_benchmark_banner_v3.png"
+---
+
+# Swarms vs. LangGraph, CrewAI, AutoGen and Five More: A Framework Overhead Benchmark
+
+Every agent framework says it is fast. Very few publish a number you can reproduce. So we wrote one script that runs the same workload on nine frameworks, and this post reports what it printed, including the rows where Swarms does not come first.
+
+The frameworks: [Swarms](https://github.com/kyegomez/swarms), LangGraph, LangChain, CrewAI, AutoGen, the OpenAI Agents SDK, Pydantic AI, LlamaIndex and Agno.
+
+## What the benchmark measures
+
+When you run a hundred agents, most of the wall time is the model. That part is the same whichever framework you use. What differs is everything the framework does around the call: building the agents, scheduling them, keeping their state. That is the part a framework is responsible for, so that is what we measure.
+
+The script replaces the model with a stub that waits 0.2 seconds and returns a fixed string. Each framework then:
+
+1. Builds 100 of its own agent objects around that stub.
+2. Runs all 100 at once, using its own native way of doing that.
+3. Reports how long it took beyond the 0.2 seconds, how much memory it used, and how many threads it needed.
+
+Every framework is measured in its own process, and a row in the output confirms that each one made exactly one model call per agent. Thread-based frameworks call a blocking stub and async frameworks await an async one, as each would with a real model client. Swarms runs on its async path, the same way the fastest competitors do: `ConcurrentWorkflow.run()` awaits every agent on one event loop.
+
+## The results at 100 agents
+
+![Benchmark table: Swarms against eight agent frameworks. Green cells mark where Swarms is ahead.](/swarms_framework_benchmark_table_v2.png)
+
+Green marks a comparison where Swarms is ahead of that framework by 5% or more. Swarms is ahead in 28 of 48. The numbers are the median of three runs.
+
+| Measure | Swarms | Ahead of |
+| --- | --- | --- |
+| Fan-out overhead | 11 ms | 7 of 8 |
+| Fan-out peak memory | 1.6 MB | 7 of 8 |
+| Agent construction | 32 µs | 6 of 8 |
+| Cold import | 0.33 s | 4 of 8 |
+| Peak threads | 2 | 4 of 8 |
+| Memory per agent | 8.0 KB | none |
+
+**Where Swarms leads.** The number that matters most for a swarm is fan-out overhead: the time the framework adds when many agents run together. Swarms adds 11 ms for 100 agents. That is 2.1 times less than LangGraph, 2.8 times less than LangChain, 5.5 times less than the OpenAI Agents SDK, 9 times less than Pydantic AI, 18 times less than LlamaIndex and 62 times less than CrewAI. Only AutoGen is level, at 10 ms. Peak memory during the run tells the same story: 1.6 MB for Swarms against 9.3 MB for Pydantic AI, 17.1 MB for CrewAI and 26 MB for LlamaIndex, with only AutoGen lighter at 1.0 MB. And the whole fan-out runs on 2 threads, where the thread-based frameworks use one per agent.
+
+**Where Swarms trails.** A single Swarms agent holds 8.0 KB, more than an agent in any other framework here. AutoGen is ahead of or level with Swarms on every row, and Agno builds an agent faster. We come back to memory below.
+
+## How it scales
+
+One hundred agents is a small swarm. We ran the same benchmark from 10 to 1,000 agents to see what happens as the swarm grows.
+
+![Line chart: fan-out overhead from 10 to 1,000 agents for nine frameworks.](/swarms_framework_benchmark_scaling_overhead_v2.png)
+
+At 1,000 agents running at once, Swarms adds 73 ms. The gap to most of the field widens with scale:
+
+| Framework | Overhead at 10 agents | Overhead at 1,000 agents | Against Swarms at 1,000 |
+| --- | --- | --- | --- |
+| AutoGen | 4 ms | 48 ms | 1.5x less |
+| **Swarms** | **5 ms** | **73 ms** | |
+| Agno | 5 ms | 82 ms | 1.1x more |
+| LangChain | 14 ms | 314 ms | 4.3x more |
+| LangGraph | 12 ms | 321 ms | 4.4x more |
+| OpenAI Agents SDK | 12 ms | 589 ms | 8.1x more |
+| Pydantic AI | 22 ms | 1,419 ms | 19x more |
+| LlamaIndex | 42 ms | 2,394 ms | 33x more |
+| CrewAI | 89 ms | 8,591 ms | 118x more |
+
+Swarms is second at every size we measured (level with Agno at 10 agents), and it scales better than seven of the eight frameworks. LangGraph is a clear example: at 10 agents it adds 2.4 times what Swarms does, and at 1,000 it adds 4.4 times as much. AutoGen stays ahead, and its lead grows from about level at 100 agents to 1.5 times at 1,000.
+
+![Line chart: peak memory from 10 to 1,000 agents for nine frameworks.](/swarms_framework_benchmark_scaling_memory_v2.png)
+
+Memory grows in a straight line for everyone. At 1,000 agents Swarms peaks at 15.6 MB, second to AutoGen at 10 MB and ahead of Agno (16.8 MB), LangGraph (18.4 MB) and LangChain (19.1 MB). The OpenAI Agents SDK (34 MB), Pydantic AI (88 MB), LlamaIndex (104 MB) and CrewAI (107 MB) are far heavier.
+
+The scaling numbers come from one run at each size, so treat small differences as noise. The 100-agent point here reads 9 ms for Swarms, against an 11 ms median in the table above.
+
+## What we fixed along the way
+
+The first time we ran this, Swarms was second to last on agent construction, last on memory per agent, and used a thread for every agent. The benchmark told us where to look, and three changes followed:
+
+- **A random state-file name on every construction.** Each agent generated one with dozens of secure-random calls, whether or not it was ever saved ([#3411](https://github.com/kyegomez/swarms/pull/3411)).
+- **A second conversation object.** Every agent built one for autonomous mode, even agents that never run autonomously ([#3412](https://github.com/kyegomez/swarms/pull/3412)).
+- **A thread per agent.** `ConcurrentWorkflow.run()` now awaits its agents on one event loop, so a model call holds no thread while it waits ([#3414](https://github.com/kyegomez/swarms/pull/3414)). You call it exactly as before.
+
+| | First run | Now |
+| --- | --- | --- |
+| Construction per agent | 180 µs | 32 µs |
+| Memory per agent | 10.4 KB | 8.0 KB |
+| Fan-out overhead, 1,000 agents | 140 ms | 73 ms |
+| Peak threads, 1,000 agents | 1,002 | 2 |
+
+That is the reason to publish a benchmark that includes your weak rows: you find out where they are.
+
+## What we are working on next
+
+The remaining gaps are tracked in the open:
+
+- **Memory per agent.** A Swarms agent carries more than a hundred settings on every instance. Shrinking that is [#3408](https://github.com/kyegomez/swarms/issues/3408), and creating unused helpers on demand is [#3409](https://github.com/kyegomez/swarms/issues/3409).
+- **Construction time.** Each agent still works out a save path for its conversation when it is built. Deferring that is [#3407](https://github.com/kyegomez/swarms/issues/3407).
+- **The gap to AutoGen at scale.** AutoGen adds 48 ms at 1,000 agents against 73 ms for Swarms. We have not profiled that difference yet.
+
+## Read the numbers with these in mind
+
+- **The agents are not equally capable objects.** A LangGraph node is a bare function, and the LangChain column is a prompt plus a model. Swarms, CrewAI, AutoGen and the rest build a full agent with history and a run loop. That makes the two lighter columns look better on memory and construction than a like-for-like agent would.
+- **One machine.** Everything ran on an Apple M3 Pro with Python 3.12. Your absolute numbers will differ; the ordering should hold.
+- **Versions matter.** langgraph 0.5.4, langchain-core 0.3.63, crewai 1.15.40, autogen-agentchat 0.7.5, openai-agents 0.20.0, pydantic-ai 2.68.0, llama-index-core 0.14.25, agno 3.2.0, and Swarms at commit `c00c686ff`.
+- **It measures overhead, not answers.** A stubbed model says nothing about how good a framework's prompts, tools or orchestration patterns are.
+
+## Run it yourself
+
+The whole benchmark is one file, [`tests/benchmark.py`](https://github.com/kyegomez/swarms/blob/master/tests/benchmark.py). It needs no API key. A framework you have not installed shows up as `not installed`, so it runs with any subset.
+
+```bash
+git clone https://github.com/kyegomez/swarms.git && cd swarms
+pip install -e .
+pip install langgraph langchain-core crewai autogen-agentchat "autogen-ext[openai]" \
+  openai-agents pydantic-ai-slim llama-index-core agno
+
+PYTHONPATH=. python tests/benchmark.py
+PYTHONPATH=. python tests/benchmark.py --agents 1000
+```
+
+If your numbers disagree with ours, or you think an adapter treats a framework unfairly, open an issue. Each adapter is about twenty lines, and we would rather be corrected than wrong.
+
+## Star, fork and contribute
+
+Swarms is open source, and this benchmark is part of how it gets better. If it was useful:
+
+- **Star** the repository at [github.com/kyegomez/swarms](https://github.com/kyegomez/swarms). It is the simplest way to help other people find the project.
+- **Fork** it and run the benchmark on your own hardware. Results from other machines are welcome.
+- **Contribute.** The open performance issues above are a good place to start, and so is adding a framework we left out. The [contributing guide](https://github.com/kyegomez/swarms/blob/master/CONTRIBUTING.md) covers the rest.
+
+The documentation is at [docs.swarms.world](https://docs.swarms.world).

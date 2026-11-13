@@ -1,8 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { apiError } from "@/lib/api-error"
-import { Resend } from "resend"
-
-const resend = new Resend(process.env.RESEND_API_KEY)
+import { getResend } from "@/lib/resend"
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,6 +14,11 @@ export async function POST(request: NextRequest) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(email)) {
       return apiError(400, "invalid_email", "Invalid email format", "Provide a valid address like you@example.com.")
+    }
+
+    const resend = getResend()
+    if (!resend) {
+      return apiError(503, "email_unavailable", "Signups are unavailable right now.", "Retry later; if it persists, email kye@swarms.world.")
     }
 
     console.log("AgentHQ waitlist signup:", { email })

@@ -472,7 +472,7 @@ Two related fixes: a `streaming_callback` now receives tokens even when `streami
 
 The plan in [#2959](https://github.com/kyegomez/swarms/issues/2959) is to put the fan-out structures on `Agent.arun` with a caller-settable bound. Three pieces landed.
 
-`run_agents_concurrently_async` now awaits each agent's `arun` instead of pushing `run` onto a thread, and takes `max_concurrency` ([#3093](https://github.com/kyegomez/swarms/pull/3093)). Results stay in input order and the first exception propagates. `None` runs every agent at once; a value below 1 raises `ValueError`, because `asyncio.Semaphore(0)` would wait forever.
+`run_agents_concurrently_async` now awaits each agent's `arun` instead of pushing `run` onto a thread, and takes `max_concurrency` ([#3093](https://github.com/kyegomez/swarms/pull/3093)). Results stay in input order and the first exception propagates. `None` sets no cap of its own, but since `Agent.arun` still runs on a thread (see below), the event loop's default executor limits it to `min(32, os.cpu_count() + 4)` agents at once. To run more, give the loop a bigger pool with `asyncio.get_running_loop().set_default_executor(ThreadPoolExecutor(max_workers=len(agents)))` before the call. A value below 1 raises `ValueError`, because `asyncio.Semaphore(0)` would wait forever.
 
 ```python
 import asyncio
@@ -658,7 +658,7 @@ from swarms.structs.agent import AgentLLMError
 agent = Agent(
     agent_name="Analyst",
     model_name="claude-sonnet-5-5",
-    fallback_models=["gpt-5.4", "gemini/gemini-2.5-pro"],
+    fallback_models=["claude-sonnet-5-5", "gpt-5.4", "gemini/gemini-2.5-pro"],  # primary first
     retry_attempts=3,   # retries per model, made by the client: 4 calls at most
 )
 
@@ -668,7 +668,7 @@ except AgentLLMError as error:
     print("every model failed:", error.__cause__)
 ```
 
-Now the client owns retries (`retry_attempts` travels with every request as `num_retries`, and rate limits back off exponentially), and `Agent.run` walks `fallback_models` in one flat loop. Only an `AgentLLMError` moves it to the next model; any other error raises at once. Every run starts from the primary model again, where a successful fallback used to leave the agent switched for good. `fallback_model_name` is folded into `fallback_models` at construction, and the caller's `messages` now reach the fallback model ([#2806](https://github.com/kyegomez/swarms/pull/2806)).
+Now the client owns retries (`retry_attempts` travels with every request as `num_retries`, and rate limits back off exponentially), and `Agent.run` walks `fallback_models` in one flat loop. Only an `AgentLLMError` moves it to the next model; any other error raises at once. Every run starts from the primary model again, where a successful fallback used to leave the agent switched for good. `fallback_models` is the whole chain, so list the primary first: when it is set, `model_name` is replaced by its first entry. `fallback_model_name` is folded into `fallback_models` at construction, and the caller's `messages` now reach the fallback model ([#2806](https://github.com/kyegomez/swarms/pull/2806)).
 
 ---
 
@@ -887,7 +887,7 @@ Read this section before upgrading. Many removed keyword arguments land in a `**
 | `Agent(multi_modal=...)` | Ignored | Nothing: vision is detected from `model_name` | [#2554](https://github.com/kyegomez/swarms/pull/2554), [#2555](https://github.com/kyegomez/swarms/pull/2555) |
 | `Agent(sop=..., sop_list=...)` | Ignored | Skills: `Agent(skills_dir=...)` | [#2556](https://github.com/kyegomez/swarms/pull/2556) |
 | `Agent(output_cleaner=...)`, `output_cleaner_op` | Ignored | Post-process the value `run()` returns | [#2801](https://github.com/kyegomez/swarms/pull/2801) |
-| `Agent.run(n=...)` | `TypeError` | `[agent.run(task) for _ in range(n)]` | [#2981](https://github.com/kyegomez/swarms/pull/2981) |
+| `Agent.run(n=...)` | Falls into `**kwargs` and is passed on to the model request | `[agent.run(task) for _ in range(n)]` | [#2981](https://github.com/kyegomez/swarms/pull/2981) |
 | `Agent.run(correct_answer=...)` | Falls into `**kwargs`; it was the 4th positional parameter, so pass `streaming_callback` and later arguments by keyword | Drop it: nothing read it | [#2920](https://github.com/kyegomez/swarms/pull/2920) |
 | `Agent.bulk_run` | `AttributeError` | `agent.run_batched(tasks)` or `[agent.run(**item) for item in inputs]` | [#3035](https://github.com/kyegomez/swarms/pull/3035) |
 | `Agent.check_available_tokens` | `AttributeError` | `agent.input_tokens` | [#2891](https://github.com/kyegomez/swarms/pull/2891) |
@@ -895,7 +895,7 @@ Read this section before upgrading. Many removed keyword arguments land in a `**
 | `LiteLLM(audio=...)`, constructor `max_completion_tokens`, the `modalities` attribute, `audio_processing`, `reasoning_check`, `get_media_base64`, `LiteLLM.check_internet_connection` | Forwarded to the provider as ordinary kwargs, or `AttributeError` | `max_tokens`; explicit `messages` for audio | [#3038](https://github.com/kyegomez/swarms/pull/3038), [#2729](https://github.com/kyegomez/swarms/pull/2729) |
 | `Conversation(output_metadata=...)` | `TypeError` | Drop it: nothing read it | [#2872](https://github.com/kyegomez/swarms/pull/2872) |
 | `GroupChat(idle_timeout=...)` | `TypeError` | `max_loops`, `threshold` | [#2918](https://github.com/kyegomez/swarms/pull/2918) |
-| `AgentRearrange(memory_system=...)` | Ignored | Query your store and pass the records in the task | [#2911](https://github.com/kyegomez/swarms/pull/2911) |
+| `AgentRearrange(memory_system=...)` | `TypeError` | Query your store and pass the records in the task | [#2911](https://github.com/kyegomez/swarms/pull/2911) |
 | `SequentialWorkflow(shared_memory_system=...)`, `MultiAgentRouter(shared_memory_system=...)` | Ignored, or forwarded to the router's LLM | Nothing read it | [#2912](https://github.com/kyegomez/swarms/pull/2912), [#2917](https://github.com/kyegomez/swarms/pull/2917) |
 | `ForestSwarm(shared_memory=...)` | Ignored; `rules` and `verbose` move up one position | Nothing read it | [#3092](https://github.com/kyegomez/swarms/pull/3092) |
 | `SwarmRouter(agents_config=...)`, `SwarmRouter.fetch_message_history_as_string` | Ignored, or `AttributeError` | `router.swarm.conversation` | [#3128](https://github.com/kyegomez/swarms/pull/3128), [#2889](https://github.com/kyegomez/swarms/pull/2889) |
@@ -1645,7 +1645,7 @@ ShryukGrandhi landed 55 commits, including the MCP hardening (stdio servers, sha
 2. **Expect swarms to raise.** `HeavySwarm`, `MixtureOfAgents`, `MajorityVoting`, `AuctionSwarm` and parallel `AgentRearrange` steps now raise where they returned an error string. Catch the exception, or run them under `SwarmRouter(fallback_swarms=[...])`, which now actually falls back. Provider errors arrive as `AgentLLMError` with the original as `__cause__`.
 3. **Turn file output back on where you need it.** Pass `autosave=True` to `SequentialWorkflow`, `ConcurrentWorkflow`, `AgentRearrange` or `SpreadSheetSwarm`, and set `SWARMS_LOG_FILES=True` for log files.
 4. **Replace removed structures and loaders.** `SwarmRearrange` becomes `AgentRearrange(agents=[...swarms])`; `create_agents_from_yaml`, `CSVAgentLoader` and `MarkdownAgentLoader` become `AgentLoader`; `ImageAgentBatchProcessor` lives in the vision examples.
-5. **Search for removed keyword arguments.** `multi_modal`, `sop`, `sop_list`, `output_cleaner`, `agents_config`, `memory_system`, `shared_memory_system` and `shared_memory` are now ignored silently. `n`, `idle_timeout`, `auto_generate_prompts` and `output_metadata` raise `TypeError`. `bulk_run` and the fallback-chain methods are gone.
+5. **Search for removed keyword arguments.** `multi_modal`, `sop`, `sop_list`, `output_cleaner`, `agents_config`, `shared_memory_system` and `shared_memory` are now ignored silently. `memory_system`, `idle_timeout`, `auto_generate_prompts` and `output_metadata` raise `TypeError`. `Agent.run(n=...)` no longer repeats the task: `n` is passed on to the model request. `bulk_run` and the fallback-chain methods are gone.
 6. **Set a concurrency cap if your provider rate-limits you.** `ConcurrentWorkflow` and `GraphWorkflow` now run every agent in a layer at once: use `max_workers` and `max_parallel_nodes`.
 7. **Move stdio MCP servers to `MCPConnection(command=..., args=[...])`** and pass the environment variables they need explicitly.
 8. **Check what streaming consumers receive.** Callbacks and `run_stream` now include tool-call and thinking text behind `[tool call]` and `[thinking]` headers.

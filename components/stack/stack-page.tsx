@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 
 import { StackCoverage } from "./stack-coverage"
 import { StackDiagram } from "./stack-diagram"
-import { StackExplorer } from "./stack-explorer"
+import { StackExplorer, type StackCodeBlocks } from "./stack-explorer"
 import { StackLifecycle } from "./stack-lifecycle"
 import type { ProductId } from "./stack-data"
 import { useReducedMotionSafe } from "./use-reduced-motion-safe"
@@ -17,7 +17,7 @@ const ease: [number, number, number, number] = [0.22, 1, 0.36, 1]
 
 // Owns the selected layer so the hero diagram and the coverage matrix can
 // both open a product in the explorer.
-export function StackPage() {
+export function StackPage({ codeBlocks }: { codeBlocks: StackCodeBlocks }) {
   const reduceMotion = useReducedMotionSafe()
   const [selected, setSelected] = useState<ProductId>("python")
 
@@ -31,7 +31,7 @@ export function StackPage() {
   return (
     <MotionConfig reducedMotion="user">
       <StackHero onSelect={openLayer} />
-      <StackExplorer value={selected} onValueChange={setSelected} />
+      <StackExplorer value={selected} onValueChange={setSelected} codeBlocks={codeBlocks} />
       <StackLifecycle />
       <StackCoverage onSelect={openLayer} />
     </MotionConfig>

@@ -3,12 +3,27 @@
 import { useCallback, useEffect, useState } from "react"
 import { Check, Copy, Loader2, Play } from "lucide-react"
 import { POINTS, recordTrial, useAcademyProgress } from "@/lib/academy/progress"
-import { CodeBlock } from "@/components/code-block"
 import { CopyButton } from "@/components/copy-button"
+import { cn } from "@/lib/utils"
 
 const KEY_STORAGE = "swarms-academy-api-key"
 const KEY_EVENT = "swarms-academy-api-key-change"
 const BASE_URL = "https://api.swarms.world"
+const RESPONSE_CLASS = "max-h-80 overflow-auto rounded-b-lg bg-black p-3 font-mono text-[11.5px] leading-relaxed"
+
+// The response is the only code this component highlights, and it exists only
+// after the user runs a request, so the highlighter is fetched on demand
+// (one shared promise) instead of being bundled into the page.
+let highlighterModule: Promise<typeof import("./highlight-json")> | undefined
+function loadHighlighter() {
+  highlighterModule ??= import("./highlight-json").catch((error: unknown) => {
+    // Forget a failed load (for example a tab left open across a deploy, whose
+    // chunk URL is gone) so the next run retries instead of reusing the rejection.
+    highlighterModule = undefined
+    throw error
+  })
+  return highlighterModule
+}
 
 type TrialResult = {
   ok: boolean
@@ -32,6 +47,9 @@ export function ApiTrial({
   const [bodyText, setBodyText] = useState(body ?? "")
   const [running, setRunning] = useState(false)
   const [result, setResult] = useState<TrialResult | null>(null)
+  // Highlighted HTML for `result.body`; the body it was made from is kept so a
+  // newer result never shows an older result's highlighting.
+  const [highlighted, setHighlighted] = useState<{ body: string; html: string } | null>(null)
   const [copied, setCopied] = useState(false)
   const [earnedNow, setEarnedNow] = useState(false)
   const progress = useAcademyProgress()
@@ -45,6 +63,21 @@ export function ApiTrial({
     window.addEventListener(KEY_EVENT, sync)
     return () => window.removeEventListener(KEY_EVENT, sync)
   }, [])
+
+  useEffect(() => {
+    if (!result) return
+    let cancelled = false
+    loadHighlighter()
+      .then(({ highlightJson }) => {
+        if (!cancelled) setHighlighted({ body: result.body, html: highlightJson(result.body, RESPONSE_CLASS) })
+      })
+      .catch(() => {
+        // The plain <pre> below already shows the response; nothing else to do.
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [result])
 
   const onKeyChange = useCallback((value: string) => {
     setApiKey(value)
@@ -68,6 +101,9 @@ export function ApiTrial({
     }
     setRunning(true)
     setResult(null)
+    // Start fetching the highlighter now so it is usually ready with the response.
+    // A failure is handled where the response is rendered.
+    loadHighlighter().catch(() => {})
     const started = performance.now()
     try {
       const response = await fetch(`${BASE_URL}${path}`, {
@@ -201,11 +237,16 @@ export function ApiTrial({
                 className={earnedNow ? "ml-3" : "ml-auto"}
               />
             </div>
-            <CodeBlock
-              code={result.body}
-              lang="json"
-              className="max-h-80 overflow-auto rounded-b-lg bg-black p-3 font-mono text-[11.5px] leading-relaxed"
-            />
+            {highlighted?.body === result.body ? (
+              <div dangerouslySetInnerHTML={{ __html: highlighted.html }} />
+            ) : (
+              // Same wrapper and classes as Shiki's output, shown until the highlighter has loaded.
+              <div>
+                <pre className={cn("shiki github-dark-default overflow-x-auto", RESPONSE_CLASS)} tabIndex={0}>
+                  <code>{result.body}</code>
+                </pre>
+              </div>
+            )}
           </div>
         )}
       </div>

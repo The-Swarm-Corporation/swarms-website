@@ -83,12 +83,18 @@ const collectionJsonLd = {
       {
         "@type": "ScholarlyArticle",
         position: 1,
+        name: "AgentRearrange: Simplifying Multi-Agent Workflow Orchestration",
+        url: "https://github.com/The-Swarm-Corporation/AgentRearrange-Paper/blob/main/paper.pdf",
+      },
+      {
+        "@type": "ScholarlyArticle",
+        position: 2,
         name: "RouteHub: A Low-Overhead, SDK-Native LLM Gateway for Agentic Workloads",
         url: "https://github.com/The-Swarm-Corporation/RouteHub/blob/main/docs/routehub.pdf",
       },
       {
         "@type": "ScholarlyArticle",
-        position: 2,
+        position: 3,
         name: "GraphWorkflow: A Low-Overhead Compile-Once Graph Execution Engine for Multi-Agent Systems",
         url: "https://github.com/The-Swarm-Corporation/GraphWorkflow-Paper/blob/main/main.pdf",
       },

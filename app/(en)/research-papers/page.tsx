@@ -15,6 +15,10 @@ const ease: [number, number, number, number] = [0.22, 1, 0.36, 1]
 
 const researchPapers = [
   {
+    title: "AgentRearrange: Simplifying Multi-Agent Workflow Orchestration",
+    link: "https://github.com/The-Swarm-Corporation/AgentRearrange-Paper",
+  },
+  {
     title: "GraphWorkflow: A Low-Overhead Compile-Once Graph Execution Engine for Multi-Agent Systems",
     link: "https://github.com/The-Swarm-Corporation/GraphWorkflow-Paper",
   },

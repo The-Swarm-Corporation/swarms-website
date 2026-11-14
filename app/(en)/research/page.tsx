@@ -14,6 +14,7 @@ import {
   Hospital,
   Activity,
   Workflow,
+  Shuffle,
 } from "lucide-react"
 
 const ease: [number, number, number, number] = [0.22, 1, 0.36, 1]
@@ -32,6 +33,17 @@ function RouteHubIcon({ className }: { className?: string; strokeWidth?: number 
 }
 
 const researchProjects = [
+  {
+    icon: Shuffle,
+    title: "AgentRearrange",
+    subtitle: "Simplifying Multi-Agent Workflow Orchestration",
+    description: "A paper on the workflow primitive of the Swarms framework, where a whole multi-agent workflow is one string: -> runs steps in sequence and a comma runs the agents of a step in parallel. Gives the grammar and execution model, compares the code for the same workflow in LangGraph, AutoGen, LangChain, Agno and CrewAI, and benchmarks four workflow shapes from 8 to 512 agents. On wide workflows it adds 37 to 42 ms of overhead at 512 agents, 2.5x less than LangGraph with function nodes, and changes topology 9x to 100x faster than rebuilding a graph.",
+    paper: "https://github.com/The-Swarm-Corporation/AgentRearrange-Paper/blob/main/paper.pdf",
+    tags: ["Orchestration", "Workflow Language", "Benchmarks", "Multi-Agent"],
+    status: "Published",
+    impact: "High",
+    categories: ["multi-agent", "novel-architecture"]
+  },
   {
     icon: RouteHubIcon,
     title: "RouteHub",

@@ -1,14 +1,11 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { Resend } from "resend"
 
 import { apiError } from "@/lib/api-error"
 import { salesProductLabel } from "@/lib/contact-sales"
-import { confirmationEmail, escapeHtml, notificationEmail } from "@/lib/contact-sales-emails"
+import { confirmationEmail, notificationEmail } from "@/lib/contact-sales-emails"
 import { rateLimit } from "@/lib/rate-limit"
+import { getResend, sendEmail } from "@/lib/send-email"
 
-const resend = new Resend(process.env.RESEND_API_KEY)
-
-const FROM = "Swarms <notifications@swarms.world>"
 const SALES_INBOX = "kye@swarms.world"
 
 // WHATWG HTML-spec email pattern (same as the newsletter route).
@@ -66,6 +63,7 @@ export async function POST(request: NextRequest) {
     // 1. Add them as a Resend contact. An existing contact is fine.
     try {
       const audienceId = process.env.RESEND_AUDIENCE_ID
+      const resend = getResend()
       const { error } = audienceId
         ? await resend.contacts.create({ audienceId, email: cleanEmail, firstName, lastName, unsubscribed: false })
         : await resend.contacts.create({ email: cleanEmail, firstName, lastName, unsubscribed: false })
@@ -76,12 +74,14 @@ export async function POST(request: NextRequest) {
 
     // 2. Notify sales. This is the email that must not be lost, so a failure
     //    here fails the request and the visitor is asked to retry.
-    const { error: notifyError } = await resend.emails.send({
-      from: FROM,
+    //    The template escapes every field, so raw values go in.
+    const notification = notificationEmail(cleanName, cleanEmail, productLabel, ip)
+    const { error: notifyError } = await sendEmail({
       to: [SALES_INBOX],
       replyTo: cleanEmail,
       subject: `Sales inquiry: ${cleanName} (${productLabel})`,
-      html: notificationEmail(escapeHtml(cleanName), escapeHtml(cleanEmail), escapeHtml(productLabel), escapeHtml(ip)),
+      html: notification.html,
+      text: notification.text,
     })
     if (notifyError) {
       console.error("contact-sales: notification failed", notifyError)
@@ -89,12 +89,13 @@ export async function POST(request: NextRequest) {
     }
 
     // 3. Confirm to the visitor. Logged but not fatal: sales already has it.
-    const { error: confirmError } = await resend.emails.send({
-      from: FROM,
+    const confirmation = confirmationEmail(firstName, productLabel)
+    const { error: confirmError } = await sendEmail({
       to: [cleanEmail],
       replyTo: SALES_INBOX,
       subject: "Thanks for contacting Swarms",
-      html: confirmationEmail(escapeHtml(firstName), escapeHtml(productLabel)),
+      html: confirmation.html,
+      text: confirmation.text,
     })
     if (confirmError) console.error("contact-sales: confirmation failed", confirmError)
 
